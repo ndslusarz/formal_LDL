@@ -10,20 +10,20 @@ Require Export Coq.Strings.String.
 what to do with Reals.*)
 Inductive ty : Type :=
   | Bool_T : ty
-  | Index_T : ty
+  | Index_T : nat -> ty
   | Real_T : ty
-  | Vector_T : ty
+  | Vector_T : nat -> ty (*add no of elements*)
   | Arrow_T : ty -> ty -> ty.
 
   (*Just some parts of syntax, will expand if this is the correct approach*)
 Inductive expr : Type :=
-  | var : string -> expr
+  | var : string -> expr (*variable type instead*)
   | f : expr
   | r : expr
   | i : expr
-  | b : expr
+  | b : Bool -> expr
   | app : expr -> expr -> expr
-  | lam : expr -> expr (*?*)
+  | lam : (string -> expr) -> expr (*?*)
   | let_E : expr (*?*)
   | and_E : expr -> expr -> expr.
 
