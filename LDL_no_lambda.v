@@ -55,11 +55,13 @@ Section expr.
   | minus_E : expr (Simple_T Real_T) -> expr (Simple_T Real_T)
 
   (*quantifiers*)
-  | forall_E: forall t, expr t -> expr (Simple_T Bool_T)(*is there a way to exclue arrow type?*)
+  | forall_E: forall t, expr t -> expr (Simple_T Bool_T)
   | exists_E: forall t, expr t -> expr (Simple_T Bool_T)
 
   (*comparisons*)
   | comparisons_E : comparisons -> expr (Simple_T Real_T) -> expr (Simple_T Real_T) -> expr (Simple_T Bool_T)
+
+  | app_E : forall t1 t2, expr (t1 --> t2) -> expr (Simple_T t1) -> expr t2
 
   (*other - needed for DL translations*)
   | abs_E : expr (Simple_T Real_T) -> expr (Simple_T Real_T)
@@ -71,11 +73,8 @@ Section expr.
 End expr.
 
 
-(*Declare Custom Entry ldl.
-Notation "S -> T" := (Arrow_T S T) (in custom ldl at level 50, right associativity).
-Notation "x y" := (app x y) (in custom ldl at level 1, left associativity).
-Notation "x + y" := (add_E x y) (in custom ldl at level 50, right associativity).
-Notation "x * y" := (mult_E x y) (in custom ldl at level 50, right associativity).*)
+
+
 
 (*adding implicit arguments*)
 Arguments Var [var t].
@@ -93,6 +92,8 @@ Arguments max_E [var].
 Arguments min_E [var].
 Arguments identity_E [var].
 Arguments division_E [var].
+Arguments app_E [var t1 t2].
+
 
 Definition Expr t := forall var, expr var t.
 
@@ -142,6 +143,10 @@ Definition impl_E' (e1 e2 : Expr (Simple_T Bool_T)) : Expr (Simple_T Bool_T) :=
 Definition not_E' (e: Expr (Simple_T Bool_T)) : Expr (Simple_T Bool_T) :=
     fun _ => not_E (e _).
 
+    (*making notation easier - application*)
+Definition app_E' t1 t2 (F : Expr (t1 --> t2)) (X : Expr (Simple_T t1)) : Expr t2 :=
+    fun _ => app_E (F _) (X _).
+
 Definition abs_E' (e1 : Expr (Simple_T Real_T)) : Expr (Simple_T Real_T ):=
     fun _ => abs_E (e1 _).
 Definition max_E' (e1 e2 : Expr (Simple_T Real_T)) : Expr (Simple_T Real_T) :=
@@ -153,11 +158,16 @@ Definition identity_E' (e1 e2 : Expr (Simple_T Real_T)) : Expr (Simple_T Real_T)
 Definition division_E' (e1 e2 : Expr (Simple_T Real_T)) : Expr (Simple_T Real_T) :=
   fun _ => division_E (e1 _) (e2 _).
 
+(*Declare Custom Entry ldl.
+Notation "S -> T" := (Arrow_T S T) (in custom ldl at level 50, right associativity).
+Notation "x + y" := (add_E' x y) (in custom ldl at level 50, right associativity).
+Notation "x * y" := (mult_E' x y) (in custom ldl at level 50, right associativity).
+
 (*small tests*)
-Example zero_add :=  add_E' zeroR zeroR.
+Example zero_add :=  zeroR + zeroR.
 Example true_and := and_E' tr tr.
 Example eq_zero := eq_E' zeroR zeroR.
-
+*)
 (*-------------------------------------------------------------------------------
 SEMANTICS*)
 
@@ -233,7 +243,23 @@ Inductive translation : forall t t', Expr t -> Expr t' -> Prop :=
    (add_E' (add_E' (R' 1) (minus_E' (abs_E' (division_E' (add_E' E2' (minus_E' E1'))
    (add_E' E2' E1'))))) (minus_E' (R' 1)))) 
   (R' 0)
+| app_T : forall dom ran dom' ran' (E1 : Expr (dom --> ran)) E2 (E1' : Expr (dom' --> ran')) E2' ,
+  E1 ===> E1' ->
+  E2 ===> E2' ->
+  app_E' E1 E2 ===> app_E' E1' E2'
 
   where "E1  ===> E2" := (translation E1 E2).
+
+  (*Example*)
+
+(*this one will need to be updated to add distance between vectors of some kind*)
+Definition distance x1 x2 : Expr (Simple_T Real_T) :=
+    add_E' x1 (minus_E' x2).
+
+Definition bounded x1 x2 epsilon : Expr (Simple_T Bool_T) :=
+    leq_E' (distance x1 x2 ) epsilon.
+
+Definition robustness epsilon delta  x y f : Expr (Simple_T Bool_T) :=
+    impl_E' (bounded x y epsilon) (bounded (app_E' f x) (app_E' f y) delta).
 
 
