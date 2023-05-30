@@ -17,7 +17,6 @@ Inductive type : Type :=
 | Simple_T : simple_type -> type
 | Arrow_T : simple_type -> type -> type.
 
-
 Infix "-->" := Arrow_T (right associativity, at level 60).
 
 Inductive comparisons : Type :=
@@ -55,8 +54,8 @@ Section expr.
   | minus_E : expr (Simple_T Real_T) -> expr (Simple_T Real_T)
 
   (*quantifiers*)
-  | forall_E: forall t, expr t -> expr (Simple_T Bool_T)(*is there a way to exclue arrow type?*)
-  | exists_E: forall t, expr t -> expr (Simple_T Bool_T)
+  | forall_E: forall t, expr (Simple_T t) -> expr (Simple_T Bool_T)(*is there a way to exclue arrow type?*)
+  | exists_E: forall t, expr (Simple_T t) -> expr (Simple_T Bool_T)
 
   (*comparisons*)
   | comparisons_E : comparisons -> expr (Simple_T Real_T) -> expr (Simple_T Real_T) -> expr (Simple_T Bool_T)
@@ -201,7 +200,55 @@ Fixpoint translation_type (t : type) : type :=
     | Arrow_T t1 t2 => Arrow_T (translation_simple_type t1) (translation_type t2)
   end.*)
 
+(*
+Definition example__Type_of_simple_type (ty : simple_type) :=
+  match ty with
+  | Bool_T => bool
+  | Index_T => nat
+  | Real_T => unit
+  | Vector_T => nat -> unit
+  | Network_T => unit
+  end.
+
+Fixpoint Type_of_type (Type_of_simple_type : simple_type -> Type) (ty : type) :=
+  match ty with
+  | Simple_T sty =>
+      Type_of_simple_type sty
+  | Arrow_T sty ty' =>
+      Type_of_simple_type sty -> Type_of_type Type_of_simple_type ty'
+  end.
+*)
+
 Reserved Notation "E1 ===> E2" (no associativity, at level 90).
+
+(* 1. list the necessary operations for translation like:*)
+(*
+Record some_alg_str :=
+  { car : Type;
+    max : car -> car -> car;
+    min : car -> car -> car
+    add : car -> car -> car;
+    minus : car -> car;
+    div : car -> car -> car;
+...
+  }.
+preferably with Hierarchy Builder
+*)
+
+(* 2. instantiate it with a realType *)
+
+(* 3. define Type_of_simple_type and Type_of_type using some_alg_str *)
+
+(* 4. define the translator *)
+
+(*
+Fixpoint translation' t (expr : Expr t) : Type_of_type t :=
+  match expr with
+  | R' r => r
+  | I' i => i
+  | B' b => b
+  | and_E' E1 E2 => 
+*)
 
 
 (*currently for Łukasiewicz*)
@@ -211,7 +258,7 @@ Inductive translation : forall t t', Expr t -> Expr t' -> Prop :=
 | I_T : forall i,
   I' i ===> I' i
 | B_T : forall b,
-  I' b ===> R' b
+  B' b ===> R' b
 
 | and_T : forall E1 E2 E1' E2' ,
   E1 ===> E1' ->

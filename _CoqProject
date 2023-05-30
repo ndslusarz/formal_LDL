@@ -1,0 +1,13 @@
+-R . LDL
+
+# suppress warnings as done in mathcomp-analysis
+-arg -w -arg -parsing
+-arg -w -arg +undeclared-scope
+-arg -w -arg +non-primitive-record
+-arg -w -arg -ambiguous-paths
+-arg -w -arg -redundant-canonical-projection
+-arg -w -arg -projection-no-head-constant
+
+LDL.v
+LDL_no_lambda.v
+#Test.v
