@@ -252,6 +252,8 @@ Inductive translation : forall t t', Expr t -> Expr t' -> Prop :=
 
   (*Example*)
 
+
+
 (*this one will need to be updated to add distance between vectors of some kind*)
 Definition distance x1 x2 : Expr (Simple_T Real_T) :=
     add_E' x1 (minus_E' x2).
