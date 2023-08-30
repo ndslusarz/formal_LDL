@@ -10,7 +10,7 @@ Inductive simple_type : Type :=
 | Bool_T : simple_type
 | Index_T : simple_type
 | Real_T : simple_type
-| Vector_T : simple_type
+| Vector_T : nat -> simple_type
 | Network_T : simple_type.
 
 Inductive type : Type :=
@@ -35,7 +35,7 @@ Inductive binary_logical : Type :=
 
 Section expr.
   Variable var : type -> Type.
-  Variable net : type -> Type.
+  Variable net : nat -> nat -> type -> Type.
 
   Inductive expr : type -> Type :=
   | R : nat -> expr (Simple_T Real_T) (*temporary, couldn't get real to typecheck*)
@@ -173,7 +173,6 @@ SEMANTICS*)
 
 Reserved Notation "E1 ===> E2" (no associativity, at level 90).
 
-
 (*currently for Łukasiewicz*)
 Inductive translation : forall t t', Expr t -> Expr t' -> Prop :=
 | R_T : forall r,
@@ -252,6 +251,44 @@ Inductive translation : forall t t', Expr t -> Expr t' -> Prop :=
 
   (*Example*)
 
+Lemma commutativity_add : forall E1 E2,
+  add_E' E1 E2 = add_E' E2 E1.
+Admitted.
+
+Lemma associativity_add : forall E1 E2 E3,
+  add_E' (add_E' E1 E2) E3 = add_E' E1 (add_E' E2 E3).
+Admitted.
+
+(*Theorem commutativity_and : forall E1 E2,
+  and_E' E1 E2 = and_E' E2 E1.
+Proof.
+  intros.*)
+
+Theorem commutativity_and : forall E1 E2 E1' E2', 
+  (and (and_E' E1 E2 ===> max_E' (add_E' E1' (add_E' E2' (minus_E' (R' 1)))) (R' 0)) 
+  (and_E' E2 E1 ===> max_E' (add_E' E2' (add_E' E1' (minus_E' (R' 1)))) (R' 0))) ->
+  (max_E' (add_E' E1' (add_E' E2' (minus_E' (R' 1)))) (R' 0)) = 
+  (max_E' (add_E' E2' (add_E' E1' (minus_E' (R' 1)))) (R' 0)).
+Proof.
+  intros. 
+  rewrite (commutativity_add E1' (add_E' E2' (minus_E' (R' 1)))). 
+  rewrite (associativity_add E2' (minus_E' (R' 1))).
+  rewrite <- (commutativity_add (minus_E' (R' 1)) E1').
+  reflexivity.
+Qed.
+
+Theorem associativity_and : forall E1 E2 E3, 
+  and_E' (and_E' E1 E2) E3 ===> and_E' E1 (and_E' E2 E3).
+Proof.
+  intros. 
+  Admitted.
+
+Theorem idempotence_and : forall E1, 
+  and_E' E1 E1 ===> B' E1.
+Proof.
+  intros. 
+  Admitted.
+
 
 
 (*this one will need to be updated to add distance between vectors of some kind*)
@@ -263,5 +300,6 @@ Definition bounded x1 x2 epsilon : Expr (Simple_T Bool_T) :=
 
 Definition robustness epsilon delta  x y f : Expr (Simple_T Bool_T) :=
     impl_E' (bounded x y epsilon) (bounded (app_E' f x) (app_E' f y) delta).
+
 
 
