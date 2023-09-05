@@ -34,15 +34,12 @@ Inductive binary_logical : Type :=
 | impl_E : binary_logical.
 
 Section expr.
-  Variable var : type -> Type.
-  Variable net : nat -> nat -> type -> Type.
 
   Inductive expr : type -> Type :=
   | R : nat -> expr (Simple_T Real_T) (*temporary, couldn't get real to typecheck*)
   | I : nat -> expr (Simple_T Index_T)
   | B : bool -> expr (Simple_T Bool_T)
 
-  | Var : forall t, var t -> expr t
   | Net : nat -> nat -> expr (Simple_T Network_T)
 
   (*logical connectives*)
@@ -72,34 +69,18 @@ Section expr.
 
 End expr.
 
-(*adding implicit arguments*)
-Arguments Var [var t].
-Arguments R [var].
-Arguments I [var].
-Arguments B [var].
-Arguments add_E [var].
-Arguments mult_E [var].
-Arguments minus_E [var].
-Arguments binary_logical_E [var].
-Arguments not_E [var].
-Arguments comparisons_E [var].
-Arguments abs_E [var].
-Arguments max_E [var].
-Arguments min_E [var].
-Arguments identity_E [var].
-Arguments division_E [var].
-Arguments app_E [var t1 t2].
 
 
-Definition Expr t := forall var, expr var t.
+
+Definition Expr t := expr t.
 
 (*making some notation easier - basic*)
 Definition R' (n : nat) : Expr (Simple_T Real_T) :=
-  fun _ => R n.
+  R n.
 Definition I' (n : nat) : Expr (Simple_T Index_T) :=
-fun _ => I n.
+I n.
 Definition B' (n : bool) : Expr (Simple_T Bool_T) :=
-fun _ => B n.
+B n.
 (*minor tests*)
 Example zeroR := R' 0.
 Example zero := I' 0.
@@ -107,52 +88,52 @@ Example tr := B' true.
 
 (*making some notation easier - arithmetic and logical*)
 Definition add_E' (e1 e2 : Expr (Simple_T Real_T)) : Expr (Simple_T Real_T) :=
-  fun _ => add_E (e1 _) (e2 _).
+  add_E e1 e2 .
 Definition mult_E' (e1 e2 : Expr (Simple_T Real_T)) : Expr (Simple_T Real_T ):=
-  fun _ => mult_E (e1 _) (e2 _).
+  mult_E e1 e2.
 Definition minus_E' (e1 : Expr (Simple_T Real_T)) : Expr (Simple_T Real_T) :=
-  fun _ => minus_E (e1 _).
+  minus_E e1.
 
 
 Definition leq_E' (e1 e2 : Expr (Simple_T Real_T)) : Expr (Simple_T Bool_T) :=
-  fun _ => comparisons_E leq_E (e1 _) (e2 _).
+  comparisons_E leq_E e1 e2.
 Definition le_E' (e1 e2 : Expr (Simple_T Real_T)) : Expr (Simple_T Bool_T) :=
-  fun _ => comparisons_E le_E (e1 _) (e2 _).
+  comparisons_E le_E e1 e2.
 Definition geq_E' (e1 e2 : Expr (Simple_T Real_T)) : Expr (Simple_T Bool_T) :=
-  fun _ => comparisons_E geq_E (e1 _) (e2 _).
+  comparisons_E geq_E e1 e2.
 Definition ge_E' (e1 e2 : Expr (Simple_T Real_T)) : Expr (Simple_T Bool_T) :=
-  fun _ => comparisons_E ge_E (e1 _) (e2 _).
+  comparisons_E ge_E e1 e2.
 Definition eq_E' (e1 e2 : Expr (Simple_T Real_T)) : Expr (Simple_T Bool_T) :=
-  fun _ => comparisons_E eq_E (e1 _) (e2 _).
+  comparisons_E eq_E e1 e2.
 Definition neq_E' (e1 e2 : Expr (Simple_T Real_T)) : Expr (Simple_T Bool_T) :=
-  fun _ => comparisons_E neq_E (e1 _) (e2 _).
+  comparisons_E neq_E e1 e2.
 
 Definition binary_logical_E' op (e1 e2 : Expr (Simple_T Bool_T)) : Expr (Simple_T Bool_T) :=
-    fun _ => binary_logical_E op (e1 _) (e2 _).
+    binary_logical_E op e1 e2.
 
 Definition and_E' (e1 e2 : Expr (Simple_T Bool_T)) : Expr (Simple_T Bool_T) :=
-    fun _ => binary_logical_E and_E (e1 _) (e2 _).
+    binary_logical_E and_E e1 e2.
 Definition or_E' (e1 e2 : Expr (Simple_T Bool_T)) : Expr (Simple_T Bool_T) :=
-    fun _ => binary_logical_E or_E (e1 _) (e2 _).
+    binary_logical_E or_E e1 e2.
 Definition impl_E' (e1 e2 : Expr (Simple_T Bool_T)) : Expr (Simple_T Bool_T) :=
-    fun _ => binary_logical_E impl_E (e1 _) (e2 _).
+    binary_logical_E impl_E e1 e2.
 Definition not_E' (e: Expr (Simple_T Bool_T)) : Expr (Simple_T Bool_T) :=
-    fun _ => not_E (e _).
+    not_E e.
 
     (*making notation easier - application*)
 Definition app_E' t1 t2 (F : Expr (t1 --> t2)) (X : Expr (Simple_T t1)) : Expr t2 :=
-    fun _ => app_E (F _) (X _).
+    app_E F X.
 
 Definition abs_E' (e1 : Expr (Simple_T Real_T)) : Expr (Simple_T Real_T ):=
-    fun _ => abs_E (e1 _).
+  abs_E e1.
 Definition max_E' (e1 e2 : Expr (Simple_T Real_T)) : Expr (Simple_T Real_T) :=
-  fun _ => max_E (e1 _) (e2 _).
+  max_E e1 e2.
 Definition min_E' (e1 e2 : Expr (Simple_T Real_T)) : Expr (Simple_T Real_T) :=
-  fun _ => min_E (e1 _) (e2 _).
+  min_E e1 e2.
 Definition identity_E' (e1 e2 : Expr (Simple_T Real_T)) : Expr (Simple_T Real_T) :=
-  fun _ => identity_E (e1 _) (e2 _).
+  identity_E e1 e2.
 Definition division_E' (e1 e2 : Expr (Simple_T Real_T)) : Expr (Simple_T Real_T) :=
-  fun _ => division_E (e1 _) (e2 _).
+  division_E e1 e2.
 
 (*Declare Custom Entry ldl.
 Notation "S -> T" := (Arrow_T S T) (in custom ldl at level 50, right associativity).
@@ -185,7 +166,7 @@ Inductive translation : forall t t', Expr t -> Expr t' -> Prop :=
 | or_T : forall E1 E2 E1' E2',
   E1 ===> E1' ->
   E2 ===> E2' ->
-  and_E' E1 E2 ===> min_E' (add_E' E1' E2') (R' 1)
+  or_E' E1 E2 ===> min_E' (add_E' E1' E2') (R' 1)
 | impl_T : forall E1 E2 E1' E2',
   E1 ===> E1' ->
   E2 ===> E2' ->
@@ -255,14 +236,18 @@ Lemma associativity_add : forall E1 E2 E3,
   add_E' (add_E' E1 E2) E3 = add_E' E1 (add_E' E2 E3).
 Admitted.
 
-(*Theorem commutativity_and : forall E1 E2,
-  and_E' E1 E2 = and_E' E2 E1.
+Print or_T.
+Theorem commutativity_and : forall (E1 E2 : Expr (Simple_T Bool_T))  (B1 B2 : Expr (Simple_T Real_T)),
+  (and_E' E1 E2 ===> B1) -> 
+  (and_E' E2 E1 ===> B2) ->
+  B1 = B2.
 Proof.
-  intros.*)
+  intros. inversion H. inversion H0. subst. dependent inversion H3.
+  
+
 
 Theorem commutativity_and : forall E1 E2 E1' E2', 
-  (and (and_E' E1 E2 ===> max_E' (add_E' E1' (add_E' E2' (minus_E' (R' 1)))) (R' 0)) 
-  (and_E' E2 E1 ===> max_E' (add_E' E2' (add_E' E1' (minus_E' (R' 1)))) (R' 0))) ->
+  
   (max_E' (add_E' E1' (add_E' E2' (minus_E' (R' 1)))) (R' 0)) = 
   (max_E' (add_E' E2' (add_E' E1' (minus_E' (R' 1)))) (R' 0)).
 Proof.
@@ -279,11 +264,7 @@ Proof.
   intros. 
   Admitted.
 
-Theorem idempotence_and : forall E1, 
-  and_E' E1 E1 ===> B' E1.
-Proof.
-  intros. 
-  Admitted.
+
 
 
 
