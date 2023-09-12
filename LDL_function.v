@@ -11,7 +11,7 @@ Inductive simple_type : Type :=
 | Index_T : simple_type
 | Real_T : simple_type
 | Vector_T : nat -> simple_type
-| Network_T : simple_type.
+| Network_T : nat -> nat -> simple_type.
 
 Inductive type : Type :=
 | Simple_T : simple_type -> type
@@ -137,11 +137,25 @@ Definition division_E' (e1 e2 : Expr (Simple_T Real_T)) : Expr (Simple_T Real_T)
 
 
 (*currently for Łukasiewicz*)
-Fixpoint translation t (e: Expr t) : Expr (Simple_T Real_T):=
+
+Definition simple_type_translation (t: simple_type) : simple_type :=
+  match t with
+  | Bool_T => Real_T
+  | Index_T => Index_T
+  | Real_T => Real_T
+  | Vector_T => Vector_T
+  | Network_T => Network_T.
+
+Definition type_translation (t:type) : type :=
+  match t with
+  | Simple_T => simple_type_translation t
+  | Arrow_T => Arrow_T.
+
+Fixpoint translation t (e: Expr t) : t :=
     match e with
-    | R t => R t
-    | I t => R t (*need to actually work out indexing*)
-    | B t => R t (*need to figure out mapping of bool to real*)
+    | R => type_translation t
+    | I t => type_translation t (*need to actually work out indexing*)
+    | B t => type_translation t (*need to figure out mapping of bool to real*)
 
     | binary_logical_E and_E E1 E2 =>
         max_E (add_E (translation E1) (add_E (translation E2) (minus_E (R 1)))) (R 0)
