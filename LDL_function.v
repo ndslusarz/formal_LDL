@@ -1,4 +1,3 @@
-From mathcomp Require Import all_ssreflect.
 From mathcomp Require Import all_ssreflect all_algebra ssralg ssrint ssrnum sequences.
 Require Import Coq.Arith.Plus.
 
@@ -11,7 +10,7 @@ Inductive simple_type : Type :=
 | Index_T : nat -> simple_type
 | Real_T : simple_type
 | Vector_T : nat -> simple_type
-| Network_T : nat -> nat -> simple_type.
+(* | Network_T : nat -> nat -> simple_type *).
 
 (* Inductive type : Type :=
 | Simple_T : simple_type -> type
@@ -33,40 +32,52 @@ Inductive binary_logical : Type :=
 | or_E : binary_logical
 | impl_E : binary_logical.
 
+(* Inductive net_context (n m : nat) : Type :=
+  | network : net_context n m. *)
+
+Inductive net_context : Type :=
+  | network : nat -> nat -> net_context.
+
+
 Variable R : realFieldType.
 Section expr.
 
-  Inductive expr : simple_type -> Type :=
-  | Real : R -> expr Real_T
-  | Bool : bool -> expr Bool_T
-  | Index n : nat -> expr (Index_T n)
+
+
+Inductive expr (net: net_context) : simple_type -> Type :=
+  | Real : R -> expr net Real_T
+  | Bool : bool -> expr net Bool_T
+  | Index n : nat -> expr net (Index_T n)
+  | Vector n : nat -> expr net (Vector_T n)
 
   (*| Net : nat -> nat -> expr (Simple_T Network_T)*)
 
   (*logical connectives*)
-  | binary_logical_E : binary_logical -> expr Bool_T -> expr Bool_T -> expr Bool_T
-  | not_E : expr Bool_T -> expr Bool_T
+  | binary_logical_E : binary_logical -> expr net Bool_T -> expr net Bool_T -> expr net Bool_T
+  | not_E : expr net Bool_T -> expr net Bool_T
 
   (*arithmetic operations*)
-  | add_E : expr Real_T -> expr Real_T -> expr Real_T
-  | mult_E : expr Real_T -> expr Real_T -> expr Real_T
-  | minus_E : expr Real_T -> expr Real_T
+  | add_E : expr net Real_T -> expr net Real_T -> expr net Real_T
+  | mult_E : expr net Real_T -> expr net Real_T -> expr net Real_T
+  | minus_E : expr net Real_T -> expr net Real_T
 
   (*quantifiers - left for later consideration*)
   (*)| forall_E: forall t, expr t -> expr (Simple_T Bool_T)
   | exists_E: forall t, expr t -> expr (Simple_T Bool_T)*)
 
+  | app_net n: expr net (Vector_T n) -> expr net Real_T
+
   (*comparisons*)
-  | comparisons_E : comparisons -> expr Real_T -> expr Real_T -> expr Bool_T
+  | comparisons_E : comparisons -> expr net Real_T -> expr net Real_T -> expr net Bool_T
   (* | lookup_E v i: expr (Simple_T Vector_T) -> expr (Simple_T Index_T) -> expr (Simple_T Real_T) 
   I had this one before probably need to add this again, why did it get deleted?*)
 
   (*other - needed for DL translations*)
-  | abs_E : expr Real_T -> expr Real_T
-  | max_E : expr Real_T -> expr Real_T -> expr Real_T
-  | min_E : expr Real_T -> expr Real_T -> expr Real_T
-  | identity_E : expr Real_T -> expr Real_T -> expr Real_T
-  | division_E : expr Real_T -> expr Real_T -> expr Real_T.
+  | abs_E : expr net Real_T -> expr net Real_T
+  | max_E : expr net Real_T -> expr net Real_T -> expr net Real_T
+  | min_E : expr net Real_T -> expr net Real_T -> expr net Real_T
+  | identity_E : expr net Real_T -> expr net Real_T -> expr net Real_T
+  | division_E : expr net Real_T -> expr net Real_T -> expr net Real_T.
 
 End expr.
 
@@ -75,21 +86,32 @@ End expr.
 
 Definition type_translation (t: simple_type) : Type:=
   match t with
-  | Bool_T => R ^nat
-  | Real_T => R ^nat
+  | Bool_T => R
+  | Real_T => R
   | Vector_T n => R ^nat (*both of these need to be wrapped in something record type, then get 
 some proof added on that they are of length n*)
   | Index_T n => R ^nat (*to do*)
-  | Network_T n m => R ^nat (*this one I am purposefully leaving for later*)
+  (* | Network_T n m => R ^nat *) (* -> R ^nat *)(*delete completely if network in context*)
 end.
 
-
-Fixpoint translation t (e: expr t) : Type :=
+Compute (type_translation Real_T).
+Compute R.
+Fixpoint translation t net (e: expr net t) : (type_translation t) :=
     match e with
-    | Real n => n%(type_translation t)
-    | Bool t => type_translation t (*need to figure out mapping of bool to real*)
-    | Index t n => (type_translation t) n (*again, in progress because the type_translation for this is in progress*)
+    | Bool true => 1%R (* (1%(type_translation Bool_T)) *)
+    | Bool false => 0%R
+    | Real n => n%R
+    | Index t n => _(*again, in progress because the type_translation for this is in progress*)
+    | Vector n => _ (*need to figure it out in type_translation*)
 
+    
+
+(*anything below to be corrected and rewritten after:
+
+- the type of this function is settled
+- the problem of using R, which is a variable and does not compile to Type is settled
+
+but should primarily be non-problematic, inductive on above base cases*)
     | binary_logical_E and_E E1 E2 =>
         max_E (add_E (translation E1) (add_E (translation E2) (minus_E (R 1)))) (R 0)
     | binary_logical_E or_E E1 E2 =>
