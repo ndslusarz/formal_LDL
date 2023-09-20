@@ -9,7 +9,7 @@ Inductive simple_type : Type :=
 | Bool_T : simple_type
 | Index_T : nat -> simple_type
 | Real_T : simple_type
-(*| Vector_T : nat -> simple_type*)
+| Vector_T : nat -> simple_type
 (* | Network_T : nat -> nat -> simple_type *).
 
 (* Inductive type : Type :=
@@ -40,42 +40,42 @@ Inductive net_context : Type :=
 
 
 Variable R : realFieldType.
+
 Section expr.
+Inductive expr : simple_type -> Type :=
+  | Real : R -> expr Real_T
+  | Bool : bool -> expr Bool_T
+  | Index : forall n : nat, 'I_n -> expr (Index_T n)
+  | Vector : forall n : nat, n.-tuple R -> expr (Vector_T n)
 
-Inductive expr (net: net_context) : simple_type -> Type :=
-  | Real : R -> expr net Real_T
-  | Bool : bool -> expr net Bool_T
-  | Index n : nat -> expr net (Index_T n)
-(*  | Vector n : nat -> expr net (Vector_T n)*)
-
-  (*| Net : nat -> nat -> expr (Simple_T Network_T)*)
+  (*| : nat -> nat -> expr (Simple_Twork_T)*)
 
   (*logical connectives*)
-  | binary_logical_E : binary_logical -> expr net Bool_T -> expr net Bool_T -> expr net Bool_T
-  | not_E : expr net Bool_T -> expr net Bool_T
+  | binary_logical_E : binary_logical -> expr Bool_T -> expr Bool_T -> expr Bool_T
+  | not_E : expr Bool_T -> expr Bool_T
 
   (*arithmetic operations*)
-  | add_E : expr net Real_T -> expr net Real_T -> expr net Real_T
-  | mult_E : expr net Real_T -> expr net Real_T -> expr net Real_T
-  | minus_E : expr net Real_T -> expr net Real_T
+  | add_E : expr Real_T -> expr Real_T -> expr Real_T
+  | mult_E : expr Real_T -> expr Real_T -> expr Real_T
+  | minus_E : expr Real_T -> expr Real_T
 
   (*quantifiers - left for later consideration*)
   (*)| forall_E: forall t, expr t -> expr (Simple_T Bool_T)
   | exists_E: forall t, expr t -> expr (Simple_T Bool_T)*)
 
-(*  | app_net n: expr net (Vector_T n) -> expr net Real_T*)
+(*  | app_net n: expr (Vector_T n) -> expr Real_T*)
 
   (*comparisons*)
-  | comparisons_E : comparisons -> expr net Real_T -> expr net Real_T -> expr net Bool_T
+  | comparisons_E : comparisons -> expr Real_T -> expr Real_T -> expr Bool_T
   (* | lookup_E v i: expr (Simple_T Vector_T) -> expr (Simple_T Index_T) -> expr (Simple_T Real_T) 
   I had this one before probably need to add this again, why did it get deleted?*)
 
   (*other - needed for DL translations*)
-  | abs_E : expr net Real_T -> expr net Real_T
-  | max_E : expr net Real_T -> expr net Real_T -> expr net Real_T
-  | min_E : expr net Real_T -> expr net Real_T -> expr net Real_T
-  | identity_E : expr net Real_T -> expr net Real_T -> expr net Real_T
-  | division_E : expr net Real_T -> expr net Real_T -> expr net Real_T.
+  | abs_E : expr Real_T -> expr Real_T
+  | max_E : expr Real_T -> expr Real_T -> expr Real_T
+  | min_E : expr Real_T -> expr Real_T -> expr Real_T
+  | identity_E : expr Real_T -> expr Real_T -> expr Real_T
+  | division_E : expr Real_T -> expr Real_T -> expr Real_T.
 
 End expr.
 
@@ -86,23 +86,28 @@ Definition type_translation (t: simple_type) : Type:=
   match t with
   | Bool_T => R
   | Real_T => R
-(*  | Vector_T n => R ^nat (*both of these need to be wrapped in something record type, then get *)
-some proof added on that they are of length n*)
-  | Index_T n => R ^nat (*to do*)
+  | Vector_T n => n.-tuple R
+(*R ^nat *) (*both of these need to be wrapped in something record type, then get *)
+(*some proof added on that they are of length n*)
+  | Index_T n => (*R ^nat*) (*to do*) 'I_n
   (* | Network_T n m => R ^nat *) (* -> R ^nat *)(*delete completely if network in context*)
 end.
 
 Compute (type_translation Real_T).
 Compute R.
-Fixpoint translation t net (e: expr net t) : (type_translation t) :=
-    match e in expr _ t return type_translation t with
-    | Bool true => 1%R (* (1%(type_translation Bool_T)) *)
+Section defintion_of_the_translation.
+Variable net : net_context.
+
+Import GRing.Theory Num.Def.
+Local Open Scope ring_scope.
+
+Fixpoint translation t (e: expr t) : type_translation t :=
+    match e in expr t return type_translation t with
+    | Bool true => (1%R : type_translation Bool_T) (* (1%(type_translation Bool_T)) *)
     | Bool false => 0%R
     | Real r => r%R
-    | Index t n => _(*again, in progress because the type_translation for this is in progress*)
-(*    | Vector n => _ (*need to figure it out in type_translation*)*)
-
-    
+    | Index n i => i(*again, in progress because the type_translation for this is in progress*)
+    | Vector n t => t (*need to figure it out in type_translation*)
 
 (*anything below to be corrected and rewritten after:
 
@@ -111,35 +116,38 @@ Fixpoint translation t net (e: expr net t) : (type_translation t) :=
 
 but should primarily be non-problematic, inductive on above base cases*)
     | binary_logical_E and_E E1 E2 =>
-        max_E (add_E (translation E1) (add_E (translation E2) (minus_E (R 1)))) (R 0)
+        maxr (translation E1 + translation E2 - 1)%R 0
     | binary_logical_E or_E E1 E2 =>
-        min_E (add_E (translation E1) (translation E2)) (R 1)
+        minr (translation E1 + translation E2)%R 1
     | binary_logical_E impl_E' E1 E2 =>
-        min_E (add_E (R 1) (add_E (minus_E (translation E1)) (translation E2))) (R 1)
+        minr (1 - translation E1 + translation E2) 1
     | not_E E1 =>
-        add_E (R 1) (minus_E (translation E1))
+        1 - translation E1
 
     (*simple airthmetic*)
-    | add_E E1 E2 => add_E (translation E1) (translation E2)
-    | mult_E E1 E2 => mult_E (translation E1) (translation E2)
-    | minus_E E1 => minus_E (translation E1)
+    | add_E E1 E2 => translation E1 + translation E2
+    | mult_E E1 E2 => translation E1 * translation E2
+    | minus_E E1 => - translation E1
 
     (*comparisons*)
-    | comparisons_E leq_E E1 E2 => add_E (R 1) (minus_E (abs_E (division_E (add_E E1 (minus_E E2))
-    (add_E E1 E2))))
-    | comparisons_E eq_E E1 E2 => add_E (R 1) (minus_E (max_E (division_E (add_E E1 (minus_E E2))
-    (add_E E1 E2)) (R 0)))
-    | comparisons_E neq_E E1 E2 => add_E (R 1) (minus_E (identity_E E1 E2))
-    | comparisons_E geq_E E1 E2 => add_E (R 1) (minus_E (abs_E (division_E (add_E E2 (minus_E E1))
-    (add_E E2 E1))))
-    | comparisons_E le_E E1 E2 => max_E (add_E (add_E (R 1) (minus_E (abs_E (division_E (add_E E1 (minus_E E2))
+    | comparisons_E leq_E E1 E2 => 1 - `|(translation E1 - translation E2) / (translation E1 + translation E2)|
+    | comparisons_E eq_E E1 E2 => 1 - maxr ((translation E1 - translation E2) / (translation E1 + translation E2)) 0
+    | comparisons_E neq_E E1 E2 => (*add_E (R 1) (minus_E (identity_E E1 E2))*) 0
+    | comparisons_E geq_E E1 E2 => (*add_E (R 1) (minus_E (abs_E (division_E (add_E E2 (minus_E E1))
+    (add_E E2 E1))))*) 0
+    | comparisons_E le_E E1 E2 => (*max_E (add_E (add_E (R 1) (minus_E (abs_E (division_E (add_E E1 (minus_E E2))
     (add_E E1 E2))))) (add_E (add_E (R 1) (minus_E (identity_E E1 E2))) (minus_E (R 1))))
-     (R 0)
-    | comparisons_E ge_E E1 E2 => max_E (add_E (add_E (R 1) (minus_E (abs_E (division_E (add_E E2 (minus_E E1))
+     (R 0)*) 0
+    | comparisons_E ge_E E1 E2 => (*max_E (add_E (add_E (R 1) (minus_E (abs_E (division_E (add_E E2 (minus_E E1))
       (add_E E2 E1)))))
       (add_E (add_E (R 1) (minus_E (abs_E (division_E (add_E E2 (minus_E E1))
-      (add_E E2 E1))))) (minus_E (R 1)))) 
-      (R 0)
+      (add_E E2 E1))))) (minus_E (R 1))))
+      (R 0)*) 0
+    | abs_E _ => 0
+    | max_E _ _ => 0
+    | min_E _ _ => 0
+    | division_E _ _ => 0
+    | identity_E _ _ => 0
     end.
 
 (* 
