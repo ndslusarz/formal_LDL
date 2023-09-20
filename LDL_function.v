@@ -9,7 +9,7 @@ Inductive simple_type : Type :=
 | Bool_T : simple_type
 | Index_T : nat -> simple_type
 | Real_T : simple_type
-| Vector_T : nat -> simple_type
+(*| Vector_T : nat -> simple_type*)
 (* | Network_T : nat -> nat -> simple_type *).
 
 (* Inductive type : Type :=
@@ -42,13 +42,11 @@ Inductive net_context : Type :=
 Variable R : realFieldType.
 Section expr.
 
-
-
 Inductive expr (net: net_context) : simple_type -> Type :=
   | Real : R -> expr net Real_T
   | Bool : bool -> expr net Bool_T
   | Index n : nat -> expr net (Index_T n)
-  | Vector n : nat -> expr net (Vector_T n)
+(*  | Vector n : nat -> expr net (Vector_T n)*)
 
   (*| Net : nat -> nat -> expr (Simple_T Network_T)*)
 
@@ -65,7 +63,7 @@ Inductive expr (net: net_context) : simple_type -> Type :=
   (*)| forall_E: forall t, expr t -> expr (Simple_T Bool_T)
   | exists_E: forall t, expr t -> expr (Simple_T Bool_T)*)
 
-  | app_net n: expr net (Vector_T n) -> expr net Real_T
+(*  | app_net n: expr net (Vector_T n) -> expr net Real_T*)
 
   (*comparisons*)
   | comparisons_E : comparisons -> expr net Real_T -> expr net Real_T -> expr net Bool_T
@@ -88,7 +86,7 @@ Definition type_translation (t: simple_type) : Type:=
   match t with
   | Bool_T => R
   | Real_T => R
-  | Vector_T n => R ^nat (*both of these need to be wrapped in something record type, then get 
+(*  | Vector_T n => R ^nat (*both of these need to be wrapped in something record type, then get *)
 some proof added on that they are of length n*)
   | Index_T n => R ^nat (*to do*)
   (* | Network_T n m => R ^nat *) (* -> R ^nat *)(*delete completely if network in context*)
@@ -97,12 +95,12 @@ end.
 Compute (type_translation Real_T).
 Compute R.
 Fixpoint translation t net (e: expr net t) : (type_translation t) :=
-    match e with
+    match e in expr _ t return type_translation t with
     | Bool true => 1%R (* (1%(type_translation Bool_T)) *)
     | Bool false => 0%R
-    | Real n => n%R
+    | Real r => r%R
     | Index t n => _(*again, in progress because the type_translation for this is in progress*)
-    | Vector n => _ (*need to figure it out in type_translation*)
+(*    | Vector n => _ (*need to figure it out in type_translation*)*)
 
     
 
