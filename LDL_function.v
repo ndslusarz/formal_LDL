@@ -177,6 +177,39 @@ case: l.
 Qed.
 
 
+Require Import Coq.Program.Equality.
+
+Lemma translate_Bool_T_01 (e : expr Bool_T) :
+  0 <= [[ e ]]_l <= 1.
+Proof.
+dependent induction e => //=.
+- by case: ifPn => //; lra.
+- have := IHe1 e1 erefl JMeq_refl.
+  have := IHe2 e2 erefl JMeq_refl.
+  set t1 := _ e1.
+  set t2 := _ e2.
+  case: l => /= t2_01 t1_01.
+  + case: b.
+    * rewrite /maxr; case: ifP; lra.
+    * rewrite /minr; case: ifP; lra.
+    * rewrite /minr; case: ifP; lra.
+  + case: b.
+    * rewrite /maxr; case: ifP=>h1; first lra.
+      apply/andP; split; last by rewrite cprD oppr_le0 powR_ge0.
+      lra.
+    * rewrite /minr; case: ifP=>h1; last lra.
+      apply/andP; split; first exact: powR_ge0.
+      lra.
+    * rewrite /minr; case: ifP=>h1; last lra.
+      apply/andP; split; [exact: powR_ge0|auto].
+- have := IHe e erefl JMeq_refl.
+  set t := _ e.
+  lra.
+- set t1 := _ e1.
+  set t2 := _ e2.
+  case: c; admit.
+Admitted.
+
 Lemma translate_Bool_T_01 l (e : expr Bool_T) :
   0 <= [[ e ]]_l <= 1.
 Admitted.
@@ -200,29 +233,6 @@ Admitted.
 (*Lemma translate_Bool_T_01 t (e : expr t) :
   0 <= (translation e : R) <= 1.
 Proof.*)
-
-Require Import Coq.Program.Equality.
-
-Lemma translate_Bool_T_01 (e : expr Bool_T) :
-  0 <= [[ e ]] <= 1.
-Proof.
-dependent induction e => //=.
-- by case: ifPn => //; lra.
-- set t1 := _ e1.
-  set t2 := _ e2.
-  case: b.
-  + have [t1t2|t1t2] := lerP (t1 + t2 - 1) 0.
-      lra.
-    have := IHe1 e1 erefl JMeq_refl.
-    rewrite -/t1 => ?.
-    have := IHe2 e2 erefl JMeq_refl.
-    rewrite -/t2 => ?.
-    lra.
-  + admit.
-  + admit.
-- admit.
-- case: c => //.
-Admitted.
 
 Lemma translate_Real_T_01 (e : expr Real_T) :
   0 <= (translation e : R) <= 1.
