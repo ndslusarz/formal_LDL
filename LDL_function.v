@@ -1,5 +1,7 @@
-From mathcomp Require Import all_ssreflect all_algebra ssralg ssrint ssrnum sequences.
-Require Import Coq.Arith.Plus.
+From mathcomp Require Import all_ssreflect all_algebra.
+From mathcomp Require Import lra.
+From mathcomp Require Import sequences.
+
 Import Num.Def Num.Theory.
 
 Set Implicit Arguments.
@@ -26,9 +28,10 @@ Inductive binary_logical : Type :=
 | or_E : binary_logical
 | impl_E : binary_logical.
 
+Print Grammar constr. (* to check precedence levels *)
+
 Inductive net_context : Type :=
   | network : nat -> nat -> net_context.
-
 
 Variable R : realFieldType.
 
@@ -79,14 +82,13 @@ end.
 Compute (type_translation Real_T).
 Compute R.
 Section defintion_of_the_translation.
-Variable net : net_context.
+(*Variable net : net_context.*)
 
 Import GRing.Theory Num.Def.
 Local Open Scope ring_scope.
 
 Definition identity (x y : R) : R :=
   if x == y then 1 else 0.
-
 
 Fixpoint translation t (e: expr t) : type_translation t :=
     match e in expr t return type_translation t with
@@ -145,9 +147,13 @@ Proof.
 intros. Search lt. Search (_ < _ -> _ != _).
 rewrite lt0r_neq0.  *)
 
-Theorem commutativity_and : forall (B1 B2 : expr Bool_T),
+Theorem commutativity_and (B1 B2 : expr Bool_T) :
   translation (and_E' B1 B2) = translation (and_E' B2 B1).
 Proof.
+rewrite /=.
+by rewrite (addrC (_ B1)).
+Qed.
+(*simpl.
 intros. simpl.
 Search maxr.
 case: lerP.
@@ -164,16 +170,72 @@ Search (_ = _ -> _ != _).
 intros H2.
 Search (_ = _ -> _). *)
 (* rewrite -> lt0r_neq0. *)
+Admitted.*)
 
+(*Lemma translate_Bool_T_01 t (e : expr t) :
+  0 <= (translation e : R) <= 1.
+Proof.*)
+
+Require Import Coq.Program.Equality.
+
+Lemma translate_Bool_T_01 (e : expr Bool_T) :
+  0 <= (translation e : R) <= 1.
+Proof.
+dependent induction e => //=.
+- by case: ifPn => //; lra.
+- set t1 := _ e1.
+  set t2 := _ e2.
+  case: b.
+  + have [t1t2|t1t2] := lerP (t1 + t2 - 1) 0.
+      lra.
+    have := IHe1 e1 erefl JMeq_refl.
+    rewrite -/t1 => ?.
+    have := IHe2 e2 erefl JMeq_refl.
+    rewrite -/t2 => ?.
+    lra.
+  + admit.
+  + admit.
+- admit.
+- case: c => //.
 Admitted.
 
-Theorem associativity_and : forall (B1 B2 B3: expr Bool_T),
-translation ( and_E' (and_E' B1 B2) B3) = translation (and_E' B1 (and_E' B2 B3)).
+Lemma translate_Real_T_01 (e : expr Real_T) :
+  0 <= (translation e : R) <= 1.
 Proof.
-intros. simpl.
+dependent induction e => //=.
+Admitted.
+
+Theorem associativity_and (B1 B2 B3: expr Bool_T) :
+  translation (and_E' (and_E' B1 B2) B3) = translation (and_E' B1 (and_E' B2 B3)).
+Proof.
+rewrite /=.
+set t1 := _ B1.
+set t2 := _ B2.
+set t3 := _ B3.
+simpl in *.
+have t101 : 0 <= t1 <= 1 := translate_Bool_T_01 B1.
+have t201 : 0 <= t2 <= 1 := translate_Bool_T_01 B2.
+have t301 : 0 <= t3 <= 1 := translate_Bool_T_01 B3.
+have [t1t2|t1t2] := lerP (t1 + t2 - 1) 0.
+  rewrite add0r.
+  have [t31|t31] := lerP (t3 - 1) 0.
+    have [t2t3|t2t3] := lerP (t2 + t3 - 1) 0.
+      rewrite addr0.
+      by have [t10|t10] := lerP (t1 - 1) 0; lra.
+    rewrite !addrA.
+    by have [t1t2t3|t1t2t3] := lerP (t1 + t2 + t3 - 1 - 1) 0; lra.
+  have [t2t3|t2t3] := lerP (t2 + t3 - 1) 0.
+    rewrite addr0.
+    by have [t10|t10] := lerP (t1 - 1) 0; lra.
+  rewrite !addrA.
+  by have [t1t2t3|t1t2t3] := lerP (t1 + t2 + t3 - 1 - 1) 0; lra.
+admit.
+Admitted.
+
+(*intros. simpl.
 case: lerP.
 intros H1.
-case: lerP.
+case: lerP.*)
 
 (* Search (?n:R + ?m:R = ?m:R + ?n:R). *)
 (* Search ( 0 < ?m -> 0 != ?m). *)
@@ -198,6 +260,3 @@ Proof.
   intros. inversion H. inversion H0. subst. dependent inversion H3. (*tbc after redoing into functional*)
   
 Qed. *)
-
-
-
