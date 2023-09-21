@@ -93,9 +93,25 @@ Definition type_translation (t: simple_type) : Type:=
 end.
 
 Inductive DL := Lukasiewicz | Yager.
-Parameter (l : DL).
+Variable (l : DL).
 Parameter (p : R).
 Parameter (p1 : 1 <= p).
+
+Definition translation_binop op a1 a2 :=
+  match l with
+  | Lukasiewicz =>
+      match op with
+      | and_E => maxr (a1 + a2 - 1) 0
+      | or_E => minr (a1 + a2) 1
+      | impl_E => minr (1 - a1 + a2) 1
+      end
+  | Yager =>
+      match op with
+      | and_E => maxr (1 - ((1 - a1) `^ p + (1 - a2) `^ p) `^ (p^-1)) 0
+      | or_E => minr ((a1 `^ p + a2 `^ p) `^ (p^-1)) 1
+      | impl_E => minr (((1 - a1) `^ p + a2 `^ p) `^ (p^-1)) 1
+      end
+  end.
 
 Reserved Notation "[[ e ]]".
 Fixpoint translation t (e: expr t) : type_translation t :=
@@ -106,21 +122,8 @@ Fixpoint translation t (e: expr t) : type_translation t :=
     | Index n i => i
     | Vector n t => t
 
-    | E1 /\ E2 => 
-        match l with
-        | Lukasiewicz => maxr ([[ E1 ]] + [[ E2 ]] - 1)%R 0
-        | Yager => maxr (1 - ((1 - [[ E1 ]]) `^ p + (1 - [[ E2 ]]) `^ p) `^ (p^-1)) 0
-        end
-    | E1 \/ E2 => 
-        match l with
-        | Lukasiewicz => minr ([[ E1 ]] + [[ E2 ]])%R 1
-        | Yager => minr (([[ E1 ]] `^ p + [[ E2 ]] `^ p) `^ (p^-1)) 1
-        end
-    | E1 `=> E2 => 
-        match l with
-        | Lukasiewicz => minr (1 - [[ E1 ]] + [[ E2 ]]) 1
-        | Yager => minr (((1 - [[ E1 ]]) `^ p + [[ E2 ]] `^ p) `^ (p^-1)) 1 (* defined in terms of not and or *)
-        end
+    | binary_logical_E op E1 E2 => translation_binop op [[ E1 ]] [[ E2 ]]
+
     | `~ E1 => 1 - [[ E1 ]]
 
     (*simple arithmetic*)
@@ -145,7 +148,7 @@ where "[[ e ]]" := (translation e).
 
 End translation_def.
 
-Notation "[[ e ]]" := (translation e) (at level 0).
+Notation "[[ e ]]_ l" := (translation l e) (at level 10).
 
 (* Lemma lt_and_eq_0 : forall x : R,
   0 < x -> (0 = x) = False.
@@ -156,10 +159,12 @@ rewrite lt0r_neq0.  *)
 Section translation_lemmas.
 Local Open Scope ring_scope.
 
-Theorem commutativity_and (B1 B2 : expr Bool_T) :
-  translation (B1 /\ B2) = translation (B2 /\ B1).
+Theorem commutativity_and (l : DL) (B1 B2 : expr Bool_T) :
+  translation l (B1 /\ B2) = translation l (B2 /\ B1).
 Proof.
-by rewrite /= (addrC (_ B1)).
+case: l.
+by rewrite /translation_binop /= (addrC (_ B1)).
+by rewrite /translation_binop /= (addrC (_ `^ _)).
 Qed.
 
 (*Lemma translate_Bool_T_01 t (e : expr t) :
