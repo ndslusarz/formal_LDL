@@ -74,7 +74,9 @@ Notation "a `< b" := (comparisons_E lt_E a b) (at level 10).
 Notation "a `>= b" := (comparisons_E le_E b a) (at level 10).
 Notation "a `> b" := (comparisons_E lt_E b a) (at level 10).
 Notation "a `== b" := (comparisons_E eq_E a b) (at level 10).
-Notation "a `!= b" := (comparisons_E neq_E a b) (at level 10). (* TODO: fix levels *)
+Notation "a `!= b" := (comparisons_E neq_E a b) (at level 10).
+Notation "a `=== b" := (identity_E a b) (at level 10).
+(* TODO: fix levels *)
 
 (*currently for Łukasiewicz*)
 
@@ -90,14 +92,10 @@ end.
 Section defintion_of_the_translation.
 Local Open Scope ring_scope.
 
-Inductive LDL := Luk | God.
-
-Parameter (l : LDL).
-
 Reserved Notation "[[ e ]]".
 Fixpoint translation t (e: expr t) : type_translation t :=
     match e in expr t return type_translation t with
-    | Bool true => (1%R : type_translation Bool_T) 
+    | Bool true => (1%R : type_translation Bool_T)
     | Bool false => (0%R : type_translation Bool_T)
     | Real r => r%R
     | Index n i => i
@@ -121,7 +119,7 @@ Fixpoint translation t (e: expr t) : type_translation t :=
       ((1 - maxr (([[ E1 ]] - [[ E2 ]]) / ([[ E1 ]] + [[ E2 ]])) 0)
         + ([[ E1 ]] != [[ E2 ]])%:R - 1)
       0 
-    | identity_E E1 E2 => ([[ E1 ]] == [[ E2 ]])%:R (* ale: where is this arising from? *)
+    | identity_E E1 E2 => ([[ E1 ]] == [[ E2 ]])%:R
 
     | net n m f => f
     | app_net n m f v => [[ f ]] [[ v ]]
@@ -129,7 +127,7 @@ Fixpoint translation t (e: expr t) : type_translation t :=
 where "[[ e ]]" := (translation e).
 End defintion_of_the_translation.
 
-Notation "[[ e ]]_Luk" := (translation e) (at level 0).
+Notation "[[ e ]]" := (translation e) (at level 0).
 
 (* Lemma lt_and_eq_0 : forall x : R,
   0 < x -> (0 = x) = False.
@@ -153,7 +151,7 @@ Proof.*)
 Require Import Coq.Program.Equality.
 
 Lemma translate_Bool_T_01 (e : expr Bool_T) :
-  0 <= [[ e ]]_Luk <= 1.
+  0 <= [[ e ]] <= 1.
 Proof.
 dependent induction e => //=.
 - by case: ifPn => //; lra.
