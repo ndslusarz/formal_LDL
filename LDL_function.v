@@ -1,6 +1,6 @@
 From mathcomp Require Import all_ssreflect all_algebra.
 From mathcomp Require Import lra.
-From mathcomp Require Import sequences.
+From mathcomp Require Import sequences reals exp.
 
 Import Num.Def Num.Theory GRing.Theory.
 
@@ -26,7 +26,7 @@ Inductive binary_logical : Type :=
 | or_E : binary_logical
 | impl_E : binary_logical.
 
-Variable R : realFieldType.
+Variable R : realType.
 
 Section expr.
 Inductive expr : simple_type -> Type :=
@@ -80,17 +80,22 @@ Notation "a `=== b" := (identity_E a b) (at level 10).
 
 (*currently for Łukasiewicz*)
 
+Section translation_def.
+Local Open Scope ring_scope.
+
 Definition type_translation (t: simple_type) : Type:=
   match t with
   | Bool_T => R
   | Real_T => R
   | Vector_T n => n.-tuple R
-  | Index_T n => (*R ^nat*) (*to do*) 'I_n
+  | Index_T n => 'I_n
   | Network_T n m => n.-tuple R -> m.-tuple R
 end.
 
-Section defintion_of_the_translation.
-Local Open Scope ring_scope.
+Inductive DL := Lukasiewicz | Yager.
+Parameter (l : DL).
+Parameter (p : R).
+Parameter (p1 : 1 <= p).
 
 Reserved Notation "[[ e ]]".
 Fixpoint translation t (e: expr t) : type_translation t :=
@@ -101,9 +106,21 @@ Fixpoint translation t (e: expr t) : type_translation t :=
     | Index n i => i
     | Vector n t => t
 
-    | E1 /\ E2 => maxr ([[ E1 ]] + [[ E2 ]] - 1)%R 0
-    | E1 \/ E2 => minr ([[ E1 ]] + [[ E2 ]])%R 1
-    | E1 `=> E2 => minr (1 - [[ E1 ]] + [[ E2 ]]) 1
+    | E1 /\ E2 => 
+        match l with
+        | Lukasiewicz => maxr ([[ E1 ]] + [[ E2 ]] - 1)%R 0
+        | Yager => maxr (1 - ((1 - [[ E1 ]]) `^ p + (1 - [[ E2 ]]) `^ p) `^ (p^-1)) 0
+        end
+    | E1 \/ E2 => 
+        match l with
+        | Lukasiewicz => minr ([[ E1 ]] + [[ E2 ]])%R 1
+        | Yager => minr (([[ E1 ]] `^ p + [[ E2 ]] `^ p) `^ (p^-1)) 1
+        end
+    | E1 `=> E2 => 
+        match l with
+        | Lukasiewicz => minr (1 - [[ E1 ]] + [[ E2 ]]) 1
+        | Yager => minr (((1 - [[ E1 ]]) `^ p + [[ E2 ]] `^ p) `^ (p^-1)) 1 (* defined in terms of not and or *)
+        end
     | `~ E1 => 1 - [[ E1 ]]
 
     (*simple arithmetic*)
@@ -125,7 +142,8 @@ Fixpoint translation t (e: expr t) : type_translation t :=
     | app_net n m f v => [[ f ]] [[ v ]]
     end
 where "[[ e ]]" := (translation e).
-End defintion_of_the_translation.
+
+End translation_def.
 
 Notation "[[ e ]]" := (translation e) (at level 0).
 
