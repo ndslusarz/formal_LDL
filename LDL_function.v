@@ -2,7 +2,7 @@ From mathcomp Require Import all_ssreflect all_algebra.
 From mathcomp Require Import lra.
 From mathcomp Require Import sequences.
 
-Import Num.Def Num.Theory.
+Import Num.Def Num.Theory GRing.Theory.
 
 Set Implicit Arguments.
 Unset Strict Implicit.
@@ -13,13 +13,11 @@ Inductive simple_type : Type :=
 | Index_T : nat -> simple_type
 | Real_T : simple_type
 | Vector_T : nat -> simple_type
-(* | Network_T : nat -> nat -> simple_type *).
+| Network_T : nat -> nat -> simple_type.
 
 Inductive comparisons : Type :=
-| leq_E : comparisons
 | le_E : comparisons
-| geq_E : comparisons
-| ge_E : comparisons
+| lt_E : comparisons
 | eq_E : comparisons
 | neq_E : comparisons.
 
@@ -27,11 +25,6 @@ Inductive binary_logical : Type :=
 | and_E : binary_logical
 | or_E : binary_logical
 | impl_E : binary_logical.
-
-Print Grammar constr. (* to check precedence levels *)
-
-Inductive net_context : Type :=
-  | network : nat -> nat -> net_context.
 
 Variable R : realFieldType.
 
@@ -55,7 +48,9 @@ Inductive expr : simple_type -> Type :=
   (*)| forall_E: forall t, expr t -> expr (Simple_T Bool_T)
   | exists_E: forall t, expr t -> expr (Simple_T Bool_T)*)
 
-  | app_net n : net_context -> expr (Vector_T n) -> expr Real_T
+  (* networks and applications *)
+  | net : forall n m : nat, (n.-tuple R -> m.-tuple R) -> expr (Network_T n m)
+  | app_net : forall n m : nat, expr (Network_T n m) -> expr (Vector_T n) -> expr (Vector_T m)
 
   (*comparisons*)
   | comparisons_E : comparisons -> expr Real_T -> expr Real_T -> expr Bool_T
@@ -64,10 +59,24 @@ Inductive expr : simple_type -> Type :=
 
   (*other - needed for DL translations*)
   | identity_E : expr Real_T -> expr Real_T -> expr Real_T.
-
-
 End expr.
 
+Notation "a /\ b" := (binary_logical_E and_E a b).
+Notation "a \/ b" := (binary_logical_E or_E a b).
+Notation "a `=> b" := (binary_logical_E impl_E a b) (at level 10).
+Notation "`~ a" := (not_E a) (at level 10).
+Notation "a `+ b" := (add_E a b) (at level 10).
+Notation "a `* b" := (mult_E a b) (at level 10).
+Notation "`- a" := (minus_E a) (at level 10).
+
+Notation "a `<= b" := (comparisons_E le_E a b) (at level 10).
+Notation "a `< b" := (comparisons_E lt_E a b) (at level 10).
+Notation "a `>= b" := (comparisons_E le_E b a) (at level 10).
+Notation "a `> b" := (comparisons_E lt_E b a) (at level 10).
+Notation "a `== b" := (comparisons_E eq_E a b) (at level 10).
+Notation "a `!= b" := (comparisons_E neq_E a b) (at level 10).
+Notation "a `=== b" := (identity_E a b) (at level 10).
+(* TODO: fix levels *)
 
 (*currently for Łukasiewicz*)
 
@@ -77,69 +86,48 @@ Definition type_translation (t: simple_type) : Type:=
   | Real_T => R
   | Vector_T n => n.-tuple R
   | Index_T n => (*R ^nat*) (*to do*) 'I_n
+  | Network_T n m => n.-tuple R -> m.-tuple R
 end.
 
-Compute (type_translation Real_T).
-Compute R.
 Section defintion_of_the_translation.
-(*Variable net : net_context.*)
-
-Import GRing.Theory Num.Def.
 Local Open Scope ring_scope.
 
-Definition identity (x y : R) : R :=
-  if x == y then 1 else 0.
-
+Reserved Notation "[[ e ]]".
 Fixpoint translation t (e: expr t) : type_translation t :=
     match e in expr t return type_translation t with
-    | Bool true => (1%R : type_translation Bool_T) 
+    | Bool true => (1%R : type_translation Bool_T)
     | Bool false => (0%R : type_translation Bool_T)
     | Real r => r%R
-    | Index n i => i(*again, in progress because the type_translation for this is in progress*)
-    | Vector n t => t (*need to figure it out in type_translation*)
+    | Index n i => i
+    | Vector n t => t
 
-    | binary_logical_E and_E E1 E2 =>
-        maxr (translation E1 + translation E2 - 1)%R 0
-    | binary_logical_E or_E E1 E2 =>
-        minr (translation E1 + translation E2)%R 1
-    | binary_logical_E impl_E E1 E2 =>
-        minr (1 - translation E1 + translation E2) 1
-    | not_E E1 =>
-        1 - translation E1
+    | E1 /\ E2 => maxr ([[ E1 ]] + [[ E2 ]] - 1)%R 0
+    | E1 \/ E2 => minr ([[ E1 ]] + [[ E2 ]])%R 1
+    | E1 `=> E2 => minr (1 - [[ E1 ]] + [[ E2 ]]) 1
+    | `~ E1 => 1 - [[ E1 ]]
 
-    (*simple airthmetic*)
-    | add_E E1 E2 => translation E1 + translation E2
-    | mult_E E1 E2 => translation E1 * translation E2
-    | minus_E E1 => - translation E1
+    (*simple arithmetic*)
+    | E1 `+ E2 => [[ E1 ]] + [[ E2 ]]
+    | E1 `* E2 => [[ E1 ]] * [[ E2 ]]
+    | `- E1 => - [[ E1 ]]
 
     (*comparisons*)
-    | comparisons_E eq_E E1 E2 => 1 - `|(translation E1 - translation E2) / (translation E1 + translation E2)|
-    | comparisons_E leq_E E1 E2 => 1 - maxr ((translation E1 - translation E2) / (translation E1 + translation E2)) 0
-    | comparisons_E neq_E E1 E2 => 1 - identity (translation E1) (translation E2)
-    | comparisons_E geq_E E1 E2 => 1 - maxr ((translation E2 - translation E1) / (translation E2 + translation E1)) 0
-    | comparisons_E le_E E1 E2 => maxr 
-      ((1 - maxr ((translation E1 - translation E2) / (translation E1 + translation E2)) 0)
-        + (1 - identity (translation E1) (translation E2)) - 1)
+    | E1 `== E2 => 1 - `|([[ E1 ]] - [[ E2 ]]) / ([[ E1 ]] + [[ E2 ]])|
+    | E1 `<= E2 => 1 - maxr (([[ E1 ]] - [[ E2 ]]) / ([[ E1 ]] + [[ E2 ]])) 0
+    | E1 `!= E2 => 1 - ([[ E1 ]] == [[ E2 ]])%:R
+    | E1 `< E2 => maxr 
+      ((1 - maxr (([[ E1 ]] - [[ E2 ]]) / ([[ E1 ]] + [[ E2 ]])) 0)
+        + ([[ E1 ]] != [[ E2 ]])%:R - 1)
       0 
-    | comparisons_E ge_E E1 E2 => maxr (
-      (1 - maxr ((translation E2 - translation E1) / (translation E2 + translation E1)) 0)
-        + (1 - identity (translation E1) (translation E2)) - 1
-      )
-      0
-    | identity_E E1 E2 => identity (translation E1) (translation E2)
+    | identity_E E1 E2 => ([[ E1 ]] == [[ E2 ]])%:R
 
-  (*network application - in progress, I should be able to get the size from the network_context somehow...*)
-  (*also need to think how to get a value here*)
-    | app_net size et v => 0
-    end.
+    | net n m f => f
+    | app_net n m f v => [[ f ]] [[ v ]]
+    end
+where "[[ e ]]" := (translation e).
+End defintion_of_the_translation.
 
-Definition and_E' (e1 e2 : expr Bool_T) : expr Bool_T :=
-    binary_logical_E and_E e1 e2.
-Definition or_E' (e1 e2 : expr Bool_T) : expr Bool_T :=
-    binary_logical_E or_E e1 e2.
-Definition impl_E' (e1 e2 : expr Bool_T) : expr Bool_T :=
-    binary_logical_E impl_E e1 e2.
-
+Notation "[[ e ]]" := (translation e) (at level 0).
 
 (* Lemma lt_and_eq_0 : forall x : R,
   0 < x -> (0 = x) = False.
@@ -147,30 +135,14 @@ Proof.
 intros. Search lt. Search (_ < _ -> _ != _).
 rewrite lt0r_neq0.  *)
 
+Section translation_lemmas.
+Local Open Scope ring_scope.
+
 Theorem commutativity_and (B1 B2 : expr Bool_T) :
-  translation (and_E' B1 B2) = translation (and_E' B2 B1).
+  translation (B1 /\ B2) = translation (B2 /\ B1).
 Proof.
-rewrite /=.
-by rewrite (addrC (_ B1)).
+by rewrite /= (addrC (_ B1)).
 Qed.
-(*simpl.
-intros. simpl.
-Search maxr.
-case: lerP.
-intros H1.
-symmetry.
-Print ltrP.
-Search (maxr). 
-case: real_ltgt0P.
-case: ltrP. elim. reflexivity. auto.
-(* case: lerP.
-elim. reflexivity.
-Search (_ < _ -> _ != _).
-Search (_ = _ -> _ != _).
-intros H2.
-Search (_ = _ -> _). *)
-(* rewrite -> lt0r_neq0. *)
-Admitted.*)
 
 (*Lemma translate_Bool_T_01 t (e : expr t) :
   0 <= (translation e : R) <= 1.
@@ -179,7 +151,7 @@ Proof.*)
 Require Import Coq.Program.Equality.
 
 Lemma translate_Bool_T_01 (e : expr Bool_T) :
-  0 <= (translation e : R) <= 1.
+  0 <= [[ e ]] <= 1.
 Proof.
 dependent induction e => //=.
 - by case: ifPn => //; lra.
