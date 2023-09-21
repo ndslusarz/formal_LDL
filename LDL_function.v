@@ -158,14 +158,44 @@ rewrite lt0r_neq0.  *)
 
 Section translation_lemmas.
 Local Open Scope ring_scope.
+Parameter (l : DL).
 
-Theorem commutativity_and (l : DL) (B1 B2 : expr Bool_T) :
-  translation l (B1 /\ B2) = translation l (B2 /\ B1).
+Lemma andC e1 e2 :
+  [[ e1 /\ e2 ]]_l = [[ e2 /\ e1 ]]_l.
 Proof.
 case: l.
-by rewrite /translation_binop /= (addrC (_ B1)).
-by rewrite /translation_binop /= (addrC (_ `^ _)).
+- by rewrite /= (addrC (_ e1)).
+- by rewrite /= (addrC (_ `^ _)).
 Qed.
+
+Lemma orC e1 e2 :
+  [[ e1 \/ e2 ]]_l = [[ e2 \/ e1 ]]_l.
+Proof.
+case: l.
+- by rewrite /= (addrC (_ e1)).
+- by rewrite /= (addrC (_ `^ _)).
+Qed.
+
+
+Lemma translate_Bool_T_01 l (e : expr Bool_T) :
+  0 <= [[ e ]]_l <= 1.
+Admitted.
+
+Lemma orA e1 e2 e3 :
+  [[ (e1 \/ (e2 \/ e3)) ]]_l = [[ ((e1 \/ e2) \/ e3) ]]_l.
+Proof.
+rewrite /=.
+have := translate_Bool_T_01 l e1.
+have := translate_Bool_T_01 l e2.
+have := translate_Bool_T_01 l e3.
+set t1 := _ e1.
+set t2 := _ e2.
+set t3 := _ e3.
+case: l => ht1 ht2 ht3 /=.
+rewrite /minr.
+case: ifP; case: ifP; case: ifP; case: ifP; lra.
+admit.
+Admitted.
 
 (*Lemma translate_Bool_T_01 t (e : expr t) :
   0 <= (translation e : R) <= 1.
