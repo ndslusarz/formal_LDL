@@ -328,12 +328,12 @@ case: l => /=.
 Qed.
 
 
-Theorem andA (B1 B2 B3: expr Bool_T) :
+Theorem andA l (B1 B2 B3: expr Bool_T) :
   [[ (B1 /\ B2) /\ B3]]_l = [[ B1 /\ (B2 /\ B3) ]]_l.
 Proof.
-have := translate_Bool_T_01 B1.
-have := translate_Bool_T_01 B2.
-have := translate_Bool_T_01 B3.
+have := translate_Bool_T_01 l B1.
+have := translate_Bool_T_01 l B2.
+have := translate_Bool_T_01 l B3.
 case: l => /=.
 + set t1 := _ B1.
   set t2 := _ B2.
@@ -343,8 +343,94 @@ case: l => /=.
 + set t1 := _ B1.
   set t2 := _ B2.
   set t3 := _ B3.
-  rewrite /minr=> ht3 ht2 ht1.
-  admit.
+  rewrite {2}/maxr=> ht3 ht2 ht1.
+  case: ifPn => [h1|].
+  {
+    rewrite subr0 {1}/maxr.
+    case: ifPn => [h2|].
+    {
+      rewrite {2}/maxr.
+      case: ifPn => [h3|].
+      {
+        rewrite subr0 {1}/maxr.
+        case: ifPn => //.
+        rewrite -leNgt subr_ge0 powR1.
+        have {3}->: 1 = 1 `^ p^-1 by rewrite powR1.
+        move=> h4.
+        admit.
+      }
+      rewrite -leNgt => h3.
+      {
+        rewrite {1}/maxr.
+        case: ifPn => //.
+        rewrite -leNgt => h4.
+        admit.
+      }
+    }
+    rewrite -leNgt => h2.
+    {
+      rewrite {2}/maxr.
+      case: ifPn => [h3|].
+      {
+        rewrite subr0 {1}/maxr.
+        case: ifPn => [h4|].
+        admit.
+        rewrite -leNgt => h4.
+        admit.
+      }
+      rewrite -leNgt => h3.
+      {
+        rewrite {1}/maxr.
+        case: ifPn => [h4|].
+        admit.
+        rewrite -leNgt => h4.
+        admit.
+      }
+    }
+  }
+  rewrite -leNgt => h1.
+  {
+    rewrite {1}/maxr.
+    case: ifPn => [h2|].
+    {
+      rewrite {2}/maxr.
+      case: ifPn => [h3|].
+      rewrite subr0 powR1.
+      {
+        rewrite {1}/maxr.
+        case: ifPn => //.
+        rewrite -leNgt => h4.
+        admit.
+      }
+      rewrite -leNgt => h3.
+      {
+        rewrite {1}/maxr.
+        case: ifPn => //.
+        rewrite -leNgt => h4.
+        admit.
+      }
+    }
+    rewrite -leNgt => h2.
+    {
+      rewrite {2}/maxr.
+      case: ifPn => [h3|].
+      {
+        rewrite {1}/maxr.
+        case: ifPn => [h4|].
+        admit.
+        rewrite -leNgt => h4.
+        admit.
+      }
+      rewrite -leNgt => h3.
+      {
+        rewrite {1}/maxr.
+        case: ifPn => [h4|].
+        admit.
+        rewrite -leNgt => h4.
+        admit.
+      }
+    }
+  }
 Admitted.
 
 (*intros. simpl.
