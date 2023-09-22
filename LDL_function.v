@@ -210,23 +210,21 @@ dependent induction e => //=.
   case: c; admit.
 Admitted.
 
-Lemma translate_Bool_T_01 l (e : expr Bool_T) :
-  0 <= [[ e ]]_l <= 1.
-Admitted.
-
 Lemma orA e1 e2 e3 :
   [[ (e1 \/ (e2 \/ e3)) ]]_l = [[ ((e1 \/ e2) \/ e3) ]]_l.
 Proof.
-rewrite /=.
-have := translate_Bool_T_01 l e1.
-have := translate_Bool_T_01 l e2.
-have := translate_Bool_T_01 l e3.
+have := translate_Bool_T_01 e1.
+have := translate_Bool_T_01 e2.
+have := translate_Bool_T_01 e3.
+case: l => /=.
 set t1 := _ e1.
 set t2 := _ e2.
 set t3 := _ e3.
-case: l => ht1 ht2 ht3 /=.
 rewrite /minr.
 case: ifP; case: ifP; case: ifP; case: ifP; lra.
+set t1 := _ e1.
+set t2 := _ e2.
+set t3 := _ e3.
 admit.
 Admitted.
 
