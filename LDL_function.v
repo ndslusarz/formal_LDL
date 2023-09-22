@@ -66,22 +66,19 @@ End expr.
 
 Notation "a /\ b" := (binary_logical_E and_E a b).
 Notation "a \/ b" := (binary_logical_E or_E a b).
-Notation "a `=> b" := (binary_logical_E impl_E a b) (at level 10).
-Notation "`~ a" := (not_E a) (at level 10).
-Notation "a `+ b" := (add_E a b) (at level 10).
-Notation "a `* b" := (mult_E a b) (at level 10).
-Notation "`- a" := (minus_E a) (at level 10).
+Notation "a `=> b" := (binary_logical_E impl_E a b) (at level 55).
+Notation "`~ a" := (not_E a) (at level 75).
+Notation "a `+ b" := (add_E a b) (at level 50).
+Notation "a `* b" := (mult_E a b) (at level 40).
+Notation "`- a" := (minus_E a) (at level 45).
 
-Notation "a `<= b" := (comparisons_E le_E a b) (at level 10).
-Notation "a `< b" := (comparisons_E lt_E a b) (at level 10).
-Notation "a `>= b" := (comparisons_E le_E b a) (at level 10).
-Notation "a `> b" := (comparisons_E lt_E b a) (at level 10).
-Notation "a `== b" := (comparisons_E eq_E a b) (at level 10).
-Notation "a `!= b" := (comparisons_E neq_E a b) (at level 10).
-Notation "a `=== b" := (identity_E a b) (at level 10).
-(* TODO: fix levels *)
-
-(*currently for Łukasiewicz*)
+Notation "a `<= b" := (comparisons_E le_E a b) (at level 70).
+Notation "a `< b" := (comparisons_E lt_E a b) (at level 70).
+Notation "a `>= b" := (comparisons_E le_E b a) (at level 70).
+Notation "a `> b" := (comparisons_E lt_E b a) (at level 70).
+Notation "a `== b" := (comparisons_E eq_E a b) (at level 70).
+Notation "a `!= b" := (comparisons_E neq_E a b) (at level 70).
+Notation "a `=== b" := (identity_E a b) (at level 70).
 
 Section translation_def.
 Local Open Scope ring_scope.
