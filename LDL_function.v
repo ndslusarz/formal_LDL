@@ -158,9 +158,7 @@ Notation "[[ e ]]_ l" := (translation l e) (at level 10).
 Section translation_lemmas.
 Local Open Scope ring_scope.
 
-Parameter (l : DL).
-
-Lemma andC e1 e2 :
+Lemma andC l e1 e2 :
   [[ e1 /\ e2 ]]_l = [[ e2 /\ e1 ]]_l.
 Proof.
 case: l.
@@ -168,7 +166,7 @@ case: l.
 - by rewrite /= (addrC (_ `^ _)).
 Qed.
 
-Lemma orC e1 e2 :
+Lemma orC l e1 e2 :
   [[ e1 \/ e2 ]]_l = [[ e2 \/ e1 ]]_l.
 Proof.
 case: l.
@@ -178,16 +176,30 @@ Qed.
 Require Import Coq.Program.Equality.
 
 Local Open Scope order_scope.
-Lemma translate_Bool_T_01 (e : expr Bool_T) :
+Lemma translate_Bool_T_01 l (e : expr Bool_T) :
   0 <= [[ e ]]_l <= 1.
 Proof.
+case: l.
 dependent induction e => //=.
 - by case: ifPn => //; lra.
 - have := IHe1 e1 erefl JMeq_refl.
   have := IHe2 e2 erefl JMeq_refl.
   set t1 := _ e1.
   set t2 := _ e2.
-  by case: l => /=; rewrite /minr/maxr; case: b; case: ifP; rewrite ?cprD ?oppr_le0 ?powR_ge0; lra.
+  by rewrite /= /minr/maxr; case: b; case: ifP; lra.
+- have := IHe e erefl JMeq_refl.
+  set t := _ e.
+  by lra.
+- set t1 := _ e1.
+  set t2 := _ e2.
+  by case: c; rewrite /maxr; repeat case: ifP; try case: eqP; lra.
+dependent induction e => //=.
+- by case: ifPn => //; lra.
+- have := IHe1 e1 erefl JMeq_refl.
+  have := IHe2 e2 erefl JMeq_refl.
+  set t1 := _ e1.
+  set t2 := _ e2.
+  by rewrite /= /minr/maxr; case: b; case: ifP; rewrite ?cprD ?oppr_le0 ?powR_ge0; lra.
 - have := IHe e erefl JMeq_refl.
   set t := _ e.
   by lra.
@@ -196,22 +208,38 @@ dependent induction e => //=.
   by case: c; rewrite /maxr; repeat case: ifP; try case: eqP; lra.
 Qed.
 
-Lemma orA e1 e2 e3 :
+Lemma orA l e1 e2 e3 : (p != 0) -> 
   [[ (e1 \/ (e2 \/ e3)) ]]_l = [[ ((e1 \/ e2) \/ e3) ]]_l.
 Proof.
-have := translate_Bool_T_01 e1.
-have := translate_Bool_T_01 e2.
-have := translate_Bool_T_01 e3.
+move => p0.
+have := translate_Bool_T_01 l e1.
+have := translate_Bool_T_01 l e2.
+have := translate_Bool_T_01 l e3.
 case: l => /=.
-+ set t1 := _ e1.
+- set t1 := _ e1.
   set t2 := _ e2.
   set t3 := _ e3.
   rewrite /minr.
   by repeat case: ifP; lra.
-+ set t1 := _ e1.
+- set t1 := _ e1.
   set t2 := _ e2.
   set t3 := _ e3.
-  rewrite /minr=> ht3 ht2 ht1. (* case: ifP hangs *)
+  move => ht3 ht2 ht1.
+  rewrite {2}/minr.
+  case: ifPn => h1.
+  + rewrite -powRrM mulVf ?p0 ?powRr1 ?addr_ge0 ?powR_ge0//.
+    rewrite {1}/minr.
+    case: ifPn => h2.
+    rewrite {2}/minr.
+    case: ifPn => h3.
+    rewrite {1}/minr.
+    * case: ifPn => h4.
+      by rewrite -{1}powRrM mulVf ?p0 ?powRr1 ?addr_ge0 ?powR_ge0 ?addrA.
+      rewrite addrA; move: h2; rewrite addrA; move: h4;
+      rewrite -{1}powRrM mulVf ?p0 ?powRr1 ?addr_ge0 ?powR_ge0//;
+      lra.
+    * case: ifPn => h4.
+
   admit.
 Admitted.
 
