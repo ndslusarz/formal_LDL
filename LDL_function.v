@@ -1,8 +1,11 @@
 From mathcomp Require Import all_ssreflect all_algebra.
 From mathcomp Require Import lra.
+From mathcomp Require Import order.
 From mathcomp Require Import sequences reals exp.
 
+
 Import Num.Def Num.Theory GRing.Theory.
+Import Order.TTheory.
 
 Set Implicit Arguments.
 Unset Strict Implicit.
@@ -83,6 +86,7 @@ Notation "a `=== b" := (identity_E a b) (at level 10).
 Section translation_def.
 Local Open Scope ring_scope.
 
+
 Definition type_translation (t: simple_type) : Type:=
   match t with
   | Bool_T => R
@@ -153,6 +157,7 @@ Notation "[[ e ]]_ l" := (translation l e) (at level 10).
 
 Section translation_lemmas.
 Local Open Scope ring_scope.
+
 Parameter (l : DL).
 
 Lemma andC e1 e2 :
@@ -172,7 +177,7 @@ case: l.
 Qed.
 Require Import Coq.Program.Equality.
 
-
+Local Open Scope order_scope.
 Lemma translate_Bool_T_01 (e : expr Bool_T) :
   0 <= [[ e ]]_l <= 1.
 Proof.
@@ -195,15 +200,29 @@ dependent induction e => //=.
     rewrite -/t1 => ?.
     have := IHe2 e2 erefl JMeq_refl.
     rewrite -/t2 => ?.
+    have [t1t2|t1t2] := lerP ((t1 `^ p + t2 `^ p) `^ p^-1) 1.
+      apply/andP; split. 
+        by rewrite powR_ge0. 
+    lra.
     lra.
   + have [t1t2|t1t2] := lerP (t1 + t2) 1.
     have := IHe1 e1 erefl JMeq_refl.
     rewrite -/t1 => ?.
     have := IHe2 e2 erefl JMeq_refl.
     rewrite -/t2 => ?.
-    lra.
+    have [t1t2'|t1t2'] := lerP (((1 - t1) `^ p + t2 `^ p) `^ p^-1) 1.
+      apply/andP; split.
+        by rewrite powR_ge0. 
+        lra.
   + lra.
-  + have [t1t2|] := lerP (1 - t1 + t2) 1.
+    have [t1t2'|t1t2'] := lerP (((1 - t1) `^ p + t2 `^ p) `^ p^-1) 1.
+    apply/andP; split.
+        by rewrite powR_ge0. 
+        lra.
+       lra.
+    apply/andP; split. 
+
+(*   + have [t1t2|] := lerP (1 - t1 + t2) 1.
     have := IHe1 e1 erefl JMeq_refl.
     rewrite -/t1 => ?.
     have := IHe2 e2 erefl JMeq_refl.
@@ -213,12 +232,16 @@ dependent induction e => //=.
     rewrite -/t1 => ?.
     have := IHe2 e2 erefl JMeq_refl.
     rewrite -/t2 => ?.
+    lra. *)
+- set t := _ e.
+    have := IHe e erefl JMeq_refl.
+    rewrite -/t => ?.
     lra.
 - set t := _ e.
     have := IHe e erefl JMeq_refl.
     rewrite -/t => ?.
     lra.
-- set t1 := _ e1.
+  set t1 := _ e1.
   set t2 := _ e2.
   case: c => //.
   + have [t1t2|t1t2] := ltrP ((t1 - t2) / (t1 + t2)) 0. 
@@ -228,8 +251,26 @@ dependent induction e => //=.
       lra. 
       rewrite subr_ge0. lra.
         have [t1t2'|t1t2'] := ltrP (1 - (t1 - t2) / (t1 + t2)) 0; lra.
-  + have [t1t2|t1t2] := lerP (1 - maxr ((t1 - t2) / (t1 + t2)) 0 + (t1 != t2)%:R - 1) 0.
-      have [t0|t0] := ltrP 0 0; lra. 
+  + have [t1t2|t1t2] := lerP ((t1 - t2) / (t1 + t2)) 0.
+
+      have [t1t2'|t1t2'] := ltrP (1 - 0 + (t1 != t2)%:R - 1) 0. 
+        have [t0|t0] := lerP 0 0. 
+          by rewrite ler01 Bool.andb_true_r.
+          by rewrite ler01 Bool.andb_true_r.
+        have [t1t2''|t1t2''] := lerP (1 - 0 + (t1 != t2)%:R - 1) 0. 
+          by rewrite ler01 Bool.andb_true_r. rewrite t1t2'.  rewrite andTb. 
+          case:eqP =>/=. by rewrite addr0 subr0 subrr ler01. 
+          by rewrite subr0 -addrA subrr addr0. 
+    have [t1t2'|t1t2'] := lerP (1 - (t1 - t2) / (t1 + t2) + (t1 != t2)%:R - 1) 0.
+      have [t0|t0] := lerP 0 0. 
+          by rewrite ler01 Bool.andb_true_r.
+          by rewrite ler01 Bool.andb_true_r.
+      have [t1t2''|t1t2''] := lerP (1 - (t1 - t2) / (t1 + t2) + (t1 != t2)%:R - 1) 0.
+        by rewrite ler01 Bool.andb_true_r.
+      case:eqP =>/=.
+      by have [t0|t0] := lerP 0 0. 
+      have [t0|t0] := lerP 0 0. by rewrite ler01. by rewrite ler01.
+      rewrite/maxr/=. case: ifP. rewrite ler01. Search (?x <= ?x).
       have [t1t2'|t1t2'] := lerP (1 - maxr ((t1 - t2) / (t1 + t2)) 0 + (t1 != t2)%:R - 1) 0.
         lra.
         apply/andP; split.
@@ -262,19 +303,9 @@ set t3 := _ e3.
 admit.
 Admitted.
 
-(*Lemma translate_Bool_T_01 t (e : expr t) :
-  0 <= (translation e : R) <= 1.
-Proof.*)
-
-Lemma translate_Real_T_01 (e : expr Real_T) :
-  0 <= (translation e : R) <= 1.
-Proof.
-dependent induction e => //=.
-Admitted.
 
 Theorem associativity_and (B1 B2 B3: expr Bool_T) :
 [[ (B1 /\ B2) /\ B3]] = [[ B1 /\ (B2 /\ B3) ]].
-  (* translation (and_E' (and_E' B1 B2) B3) = translation (and_E' B1 (and_E' B2 B3)). *)
 Proof.
 rewrite /=.
 set t1 := _ B1.
