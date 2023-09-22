@@ -1,6 +1,6 @@
 From mathcomp Require Import all_ssreflect all_algebra.
 From mathcomp Require Import lra.
-From mathcomp Require Import sequences.
+From mathcomp Require Import sequences reals exp.
 
 Import Num.Def Num.Theory GRing.Theory.
 
@@ -26,7 +26,7 @@ Inductive binary_logical : Type :=
 | or_E : binary_logical
 | impl_E : binary_logical.
 
-Variable R : realFieldType.
+Variable R : realType.
 
 Section expr.
 Inductive expr : simple_type -> Type :=
@@ -80,17 +80,38 @@ Notation "a `=== b" := (identity_E a b) (at level 10).
 
 (*currently for Łukasiewicz*)
 
+Section translation_def.
+Local Open Scope ring_scope.
+
 Definition type_translation (t: simple_type) : Type:=
   match t with
   | Bool_T => R
   | Real_T => R
   | Vector_T n => n.-tuple R
-  | Index_T n => (*R ^nat*) (*to do*) 'I_n
+  | Index_T n => 'I_n
   | Network_T n m => n.-tuple R -> m.-tuple R
 end.
 
-Section defintion_of_the_translation.
-Local Open Scope ring_scope.
+Inductive DL := Lukasiewicz | Yager.
+Variable (l : DL).
+Parameter (p : R).
+Parameter (p1 : 1 <= p).
+
+Definition translation_binop op a1 a2 :=
+  match l with
+  | Lukasiewicz =>
+      match op with
+      | and_E => maxr (a1 + a2 - 1) 0
+      | or_E => minr (a1 + a2) 1
+      | impl_E => minr (1 - a1 + a2) 1
+      end
+  | Yager =>
+      match op with
+      | and_E => maxr (1 - ((1 - a1) `^ p + (1 - a2) `^ p) `^ (p^-1)) 0
+      | or_E => minr ((a1 `^ p + a2 `^ p) `^ (p^-1)) 1
+      | impl_E => minr (((1 - a1) `^ p + a2 `^ p) `^ (p^-1)) 1
+      end
+  end.
 
 Reserved Notation "[[ e ]]".
 Fixpoint translation t (e: expr t) : type_translation t :=
@@ -101,9 +122,8 @@ Fixpoint translation t (e: expr t) : type_translation t :=
     | Index n i => i
     | Vector n t => t
 
-    | E1 /\ E2 => maxr ([[ E1 ]] + [[ E2 ]] - 1)%R 0
-    | E1 \/ E2 => minr ([[ E1 ]] + [[ E2 ]])%R 1
-    | E1 `=> E2 => minr (1 - [[ E1 ]] + [[ E2 ]]) 1
+    | binary_logical_E op E1 E2 => translation_binop op [[ E1 ]] [[ E2 ]]
+
     | `~ E1 => 1 - [[ E1 ]]
 
     (*simple arithmetic*)
@@ -125,9 +145,10 @@ Fixpoint translation t (e: expr t) : type_translation t :=
     | app_net n m f v => [[ f ]] [[ v ]]
     end
 where "[[ e ]]" := (translation e).
-End defintion_of_the_translation.
 
-Notation "[[ e ]]" := (translation e) (at level 0).
+End translation_def.
+
+Notation "[[ e ]]_ l" := (translation l e) (at level 10).
 
 (* Lemma lt_and_eq_0 : forall x : R,
   0 < x -> (0 = x) = False.
@@ -137,39 +158,79 @@ rewrite lt0r_neq0.  *)
 
 Section translation_lemmas.
 Local Open Scope ring_scope.
+Parameter (l : DL).
 
-Theorem commutativity_and (B1 B2 : expr Bool_T) :
-  translation (B1 /\ B2) = translation (B2 /\ B1).
+Lemma andC e1 e2 :
+  [[ e1 /\ e2 ]]_l = [[ e2 /\ e1 ]]_l.
 Proof.
-by rewrite /= (addrC (_ B1)).
+case: l.
+- by rewrite /= (addrC (_ e1)).
+- by rewrite /= (addrC (_ `^ _)).
 Qed.
 
-(*Lemma translate_Bool_T_01 t (e : expr t) :
-  0 <= (translation e : R) <= 1.
-Proof.*)
+Lemma orC e1 e2 :
+  [[ e1 \/ e2 ]]_l = [[ e2 \/ e1 ]]_l.
+Proof.
+case: l.
+- by rewrite /= (addrC (_ e1)).
+- by rewrite /= (addrC (_ `^ _)).
+Qed.
+
 
 Require Import Coq.Program.Equality.
 
 Lemma translate_Bool_T_01 (e : expr Bool_T) :
-  0 <= [[ e ]] <= 1.
+  0 <= [[ e ]]_l <= 1.
 Proof.
 dependent induction e => //=.
 - by case: ifPn => //; lra.
+- have := IHe1 e1 erefl JMeq_refl.
+  have := IHe2 e2 erefl JMeq_refl.
+  set t1 := _ e1.
+  set t2 := _ e2.
+  case: l => /= t2_01 t1_01.
+  + case: b.
+    * rewrite /maxr; case: ifP; lra.
+    * rewrite /minr; case: ifP; lra.
+    * rewrite /minr; case: ifP; lra.
+  + case: b.
+    * rewrite /maxr; case: ifP=>h1; first lra.
+      apply/andP; split; last by rewrite cprD oppr_le0 powR_ge0.
+      lra.
+    * rewrite /minr; case: ifP=>h1; last lra.
+      apply/andP; split; first exact: powR_ge0.
+      lra.
+    * rewrite /minr; case: ifP=>h1; last lra.
+      apply/andP; split; [exact: powR_ge0|auto].
+- have := IHe e erefl JMeq_refl.
+  set t := _ e.
+  lra.
 - set t1 := _ e1.
   set t2 := _ e2.
-  case: b.
-  + have [t1t2|t1t2] := lerP (t1 + t2 - 1) 0.
-      lra.
-    have := IHe1 e1 erefl JMeq_refl.
-    rewrite -/t1 => ?.
-    have := IHe2 e2 erefl JMeq_refl.
-    rewrite -/t2 => ?.
-    lra.
-  + admit.
-  + admit.
-- admit.
-- case: c => //.
+  case: c; admit.
 Admitted.
+
+Lemma orA e1 e2 e3 :
+  [[ (e1 \/ (e2 \/ e3)) ]]_l = [[ ((e1 \/ e2) \/ e3) ]]_l.
+Proof.
+have := translate_Bool_T_01 e1.
+have := translate_Bool_T_01 e2.
+have := translate_Bool_T_01 e3.
+case: l => /=.
+set t1 := _ e1.
+set t2 := _ e2.
+set t3 := _ e3.
+rewrite /minr.
+case: ifP; case: ifP; case: ifP; case: ifP; lra.
+set t1 := _ e1.
+set t2 := _ e2.
+set t3 := _ e3.
+admit.
+Admitted.
+
+(*Lemma translate_Bool_T_01 t (e : expr t) :
+  0 <= (translation e : R) <= 1.
+Proof.*)
 
 Lemma translate_Real_T_01 (e : expr Real_T) :
   0 <= (translation e : R) <= 1.
