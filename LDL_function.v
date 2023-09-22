@@ -187,20 +187,13 @@ dependent induction e => //=.
   have := IHe2 e2 erefl JMeq_refl.
   set t1 := _ e1.
   set t2 := _ e2.
-  case: l => /= t2_01 t1_01.
-  + by case: b; rewrite /minr/maxr; case: ifP; lra.
-  + by case: b; rewrite /minr/maxr; case: ifP; try lra; rewrite ?cprD ?oppr_le0 powR_ge0; lra.
+  by case: l => /=; rewrite /minr/maxr; case: b; case: ifP; rewrite ?cprD ?oppr_le0 ?powR_ge0; lra.
 - have := IHe e erefl JMeq_refl.
   set t := _ e.
   by lra.
 - set t1 := _ e1.
   set t2 := _ e2.
-  case: c.
-  + by rewrite /maxr; repeat case: ifP; lra.
-  + by rewrite /maxr; repeat case: ifP;
-    try case: eqP => /=; rewrite ?subr0 ?addr0 -?addrA ?subrr ?addr0 ?ler01 ?lexx; lra.
-  + by case: eqP => /=; rewrite ler01 lexx.
-  + by case: eqP => /=; lra.
+  by case: c; rewrite /maxr; repeat case: ifP; try case: eqP; lra.
 Qed.
 
 Lemma orA e1 e2 e3 :
@@ -218,8 +211,7 @@ case: l => /=.
 + set t1 := _ e1.
   set t2 := _ e2.
   set t3 := _ e3.
-  rewrite /minr=> ht3 ht2 ht1.
-  case: ifP.
+  rewrite /minr=> ht3 ht2 ht1. (* case: ifP hangs *)
   admit.
 Admitted.
 
