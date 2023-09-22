@@ -208,10 +208,11 @@ dependent induction e => //=.
   by case: c; rewrite /maxr; repeat case: ifP; try case: eqP; lra.
 Qed.
 
-Lemma orA l e1 e2 e3 : (p != 0) -> 
+Lemma orA l e1 e2 e3 : (0 < p) -> 
   [[ (e1 \/ (e2 \/ e3)) ]]_l = [[ ((e1 \/ e2) \/ e3) ]]_l.
 Proof.
 move => p0.
+have ? : p != 0 by exact: lt0r_neq0.
 have := translate_Bool_T_01 l e1.
 have := translate_Bool_T_01 l e2.
 have := translate_Bool_T_01 l e3.
@@ -227,21 +228,104 @@ case: l => /=.
   move => ht3 ht2 ht1.
   rewrite {2}/minr.
   case: ifPn => h1.
-  + rewrite -powRrM mulVf ?p0 ?powRr1 ?addr_ge0 ?powR_ge0//.
+  {
+    rewrite -powRrM mulVf ?p0 ?powRr1 ?addr_ge0 ?powR_ge0//.
     rewrite {1}/minr.
     case: ifPn => h2.
-    rewrite {2}/minr.
-    case: ifPn => h3.
+    {
+      rewrite {2}/minr.
+      case: ifPn => h3.
+      {
+        rewrite {1}/minr.
+        case: ifPn => h4.
+        by rewrite -{1}powRrM mulVf ?powRr1 ?addr_ge0 ?powR_ge0 ?addrA.
+        rewrite addrA; move: h2; rewrite addrA; move: h4;
+        rewrite -{1}powRrM mulVf ?powRr1 ?addr_ge0 ?powR_ge0//;
+        lra.
+      }
+      {
+        rewrite {1}/minr.
+        - have: (t1 `^ p + (t2 `^ p + t3 `^ p)) `^ p^-1 >= (t1 `^ p + t2 `^ p) `^ p^-1.
+          rewrite gt0_ler_powR//.
+          + by rewrite invr_ge0 ltW.
+          + by rewrite in_itv /= andbT addr_ge0// powR_ge0.
+          + by rewrite in_itv /= andbT !addr_ge0// powR_ge0.
+          + by rewrite lerD// lerDl powR_ge0.
+            lra.
+      }
+    }
+    {
+      rewrite {2}/minr.
+      case: ifPn => h3.
+      {
+        rewrite -{1}powRrM mulVf// powRr1 ?addr_ge0 ?powR_ge0//.
+        rewrite {1}/minr.
+        case: ifPn => // h4.
+        move: h2. rewrite addrA. lra.
+      }
+      {
+        rewrite {1}/minr.
+        case: ifPn => //.
+        have: (1 `^ p + t3 `^ p) `^ p^-1 >= 1.
+        - have {1}->: 1 = 1 `^ p^-1 by rewrite powR1.
+          rewrite gt0_ler_powR//.
+          + by rewrite invr_ge0 ltW.
+          + by rewrite in_itv /= andbT.
+          + by rewrite in_itv /= addr_ge0// powR_ge0.
+          by rewrite powR1 lerDl powR_ge0.
+          set a := (1 `^ p + t3 `^ p) `^ p^-1.
+          lra.
+      }
+    }
+  }
+  {
     rewrite {1}/minr.
-    * case: ifPn => h4.
-      by rewrite -{1}powRrM mulVf ?p0 ?powRr1 ?addr_ge0 ?powR_ge0 ?addrA.
-      rewrite addrA; move: h2; rewrite addrA; move: h4;
-      rewrite -{1}powRrM mulVf ?p0 ?powRr1 ?addr_ge0 ?powR_ge0//;
+    case: ifPn => // h2.
+    {
+      have: (t1 `^ p + 1 `^ p) `^ p^-1 >= 1.
+      - have {1}->: 1 = 1`^p^-1 by rewrite powR1.
+        rewrite gt0_ler_powR//.
+        + by rewrite invr_ge0 ltW.
+        + by rewrite in_itv /= andbT.
+        + by rewrite in_itv /= addr_ge0// powR_ge0.
+        by rewrite powR1 lerDr powR_ge0.
+      move: h2.
+      set a := (t1 `^ p + 1 `^ p) `^ p^-1.
       lra.
-    * case: ifPn => h4.
-
-  admit.
-Admitted.
+    }
+    {
+      rewrite {2}/minr.
+      case: ifPn => h3.
+      {
+        rewrite {1}/minr.
+        case: ifPn => //.
+        rewrite -powRrM mulVf// powRr1.
+        move=> h4.
+        have h5: (t1 `^ p + t2 `^ p + t3 `^ p) `^ p^-1 >= (t2 `^ p + t3 `^ p) `^ p^-1.
+        rewrite gt0_ler_powR//.
+        + by rewrite invr_ge0 ltW.
+        + by rewrite in_itv /= addr_ge0// powR_ge0.
+        + by rewrite in_itv /= !addr_ge0// powR_ge0.
+        by rewrite lerD// lerDr powR_ge0.
+        lra.
+        by rewrite addr_ge0 ?powR_ge0.
+      }
+      {
+        rewrite {1}/minr.
+        case: ifPn => //.
+        have: (1 `^ p + t3 `^ p) `^ p^-1 >= 1.
+        - have {1}->: 1 = 1`^p^-1 by rewrite powR1.
+          rewrite gt0_ler_powR//.
+          + by rewrite invr_ge0 ltW.
+          + by rewrite in_itv /= andbT.
+          + by rewrite in_itv /= addr_ge0// powR_ge0.
+          by rewrite powR1 lerDl powR_ge0.
+        set a := (1 `^ p + t3 `^ p) `^ p^-1.
+        lra.
+      }
+    }
+  }
+Qed.
 
 
 Theorem andA (B1 B2 B3: expr Bool_T) :
