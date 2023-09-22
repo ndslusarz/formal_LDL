@@ -96,7 +96,7 @@ Definition type_translation (t: simple_type) : Type:=
   | Network_T n m => n.-tuple R -> m.-tuple R
 end.
 
-Inductive DL := Lukasiewicz | Yager.
+Inductive DL := Lukasiewicz | Yager | Godel.
 Variable (l : DL).
 Parameter (p : R).
 Parameter (p1 : 1 <= p).
@@ -114,6 +114,12 @@ Definition translation_binop op a1 a2 :=
       | and_E => maxr (1 - ((1 - a1) `^ p + (1 - a2) `^ p) `^ (p^-1)) 0
       | or_E => minr ((a1 `^ p + a2 `^ p) `^ (p^-1)) 1
       | impl_E => minr (((1 - a1) `^ p + a2 `^ p) `^ (p^-1)) 1
+      end
+  | Godel =>
+      match op with
+      | and_E => minr a1 a2
+      | or_E => maxr a1 a2
+      | impl_E => maxr (1 - a1) a2
       end
   end.
 
@@ -164,6 +170,7 @@ Proof.
 case: l.
 - by rewrite /= (addrC (_ e1)).
 - by rewrite /= (addrC (_ `^ _)).
+- by rewrite /=/minr; repeat case: ifP; lra.
 Qed.
 
 Lemma orC l e1 e2 :
@@ -172,6 +179,7 @@ Proof.
 case: l.
 - by rewrite /= (addrC (_ e1)).
 - by rewrite /= (addrC (_ `^ _)).
+- by rewrite /=/maxr; repeat case: ifP; lra.
 Qed.
 Require Import Coq.Program.Equality.
 
@@ -200,6 +208,19 @@ dependent induction e => //=.
   set t1 := _ e1.
   set t2 := _ e2.
   by rewrite /= /minr/maxr; case: b; case: ifP; rewrite ?cprD ?oppr_le0 ?powR_ge0; lra.
+- have := IHe e erefl JMeq_refl.
+  set t := _ e.
+  by lra.
+- set t1 := _ e1.
+  set t2 := _ e2.
+  by case: c; rewrite /maxr; repeat case: ifP; try case: eqP; lra.
+dependent induction e => //=.
+- by case: ifPn => //; lra.
+- have := IHe1 e1 erefl JMeq_refl.
+  have := IHe2 e2 erefl JMeq_refl.
+  set t1 := _ e1.
+  set t2 := _ e2.
+  by case: b; rewrite /minr/maxr; try case: ifP; try lra.
 - have := IHe e erefl JMeq_refl.
   set t := _ e.
   by lra.
@@ -325,24 +346,29 @@ case: l => /=.
       }
     }
   }
+- set t1 := _ e1.
+  set t2 := _ e2.
+  set t3 := _ e3.
+  rewrite /maxr.
+  by repeat case: ifP; lra.
 Qed.
 
 
-Theorem andA l (B1 B2 B3: expr Bool_T) :
-  [[ (B1 /\ B2) /\ B3]]_l = [[ B1 /\ (B2 /\ B3) ]]_l.
+Theorem andA l e1 e2 e3 : (0 < p) ->
+  [[ (e1 /\ e2) /\ e3]]_l = [[ e1 /\ (e2 /\ e3) ]]_l.
 Proof.
-have := translate_Bool_T_01 l B1.
-have := translate_Bool_T_01 l B2.
-have := translate_Bool_T_01 l B3.
+have := translate_Bool_T_01 l e1.
+have := translate_Bool_T_01 l e2.
+have := translate_Bool_T_01 l e3.
 case: l => /=.
-+ set t1 := _ B1.
-  set t2 := _ B2.
-  set t3 := _ B3.
++ set t1 := _ e1.
+  set t2 := _ e2.
+  set t3 := _ e3.
   rewrite /maxr.
   by repeat case: ifP; lra.
-+ set t1 := _ B1.
-  set t2 := _ B2.
-  set t3 := _ B3.
++ set t1 := _ e1.
+  set t2 := _ e2.
+  set t3 := _ e3.
   rewrite {2}/maxr=> ht3 ht2 ht1.
   case: ifPn => [h1|].
   {
@@ -431,33 +457,10 @@ case: l => /=.
       }
     }
   }
++ set t1 := _ e1.
+  set t2 := _ e2.
+  set t3 := _ e3.
+  rewrite /minr.
+  by repeat case: ifP; lra.
 Admitted.
 
-(*intros. simpl.
-case: lerP.
-intros H1.
-case: lerP.*)
-
-(* Search (?n:R + ?m:R = ?m:R + ?n:R). *)
-(* Search ( 0 < ?m -> 0 != ?m). *)
-
-
-
-
-
-(* Lemma commutativity_add : forall E1 E2,
-  add_E' E1 E2 = add_E' E2 E1.
-Admitted.
-
-Lemma associativity_add : forall E1 E2 E3,
-  add_E' (add_E' E1 E2) E3 = add_E' E1 (add_E' E2 E3).
-Admitted.
-
-Theorem commutativity_and : forall (E1 E2 : Expr (Simple_T Bool_T))  (B1 B2 : Expr (Simple_T Real_T)),
-  (and_E' E1 E2 ===> B1) -> 
-  (and_E' E2 E1 ===> B2) ->
-  B1 = B2.
-Proof.
-  intros. inversion H. inversion H0. subst. dependent inversion H3. (*tbc after redoing into functional*)
-  
-Qed. *)
