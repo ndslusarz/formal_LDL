@@ -112,12 +112,12 @@ Fixpoint translation t (e: expr t) : type_translation t :=
     | `- E1 => - [[ E1 ]]
 
     (*comparisons*)
-    | E1 `== E2 => 1 - `|([[ E1 ]] - [[ E2 ]]) / ([[ E1 ]] + [[ E2 ]])|
-    | E1 `<= E2 => 1 - maxr (([[ E1 ]] - [[ E2 ]]) / ([[ E1 ]] + [[ E2 ]])) 0
+    | E1 `== E2 => ([[ E1 ]] == [[ E2 ]])%:R(* 1 - `|([[ E1 ]] - [[ E2 ]]) / ([[ E1 ]] + [[ E2 ]])| *)
+    | E1 `<= E2 => maxr (1 - maxr (([[ E1 ]] - [[ E2 ]]) / ([[ E1 ]] + [[ E2 ]])) 0) 0
     | E1 `!= E2 => 1 - ([[ E1 ]] == [[ E2 ]])%:R
     | E1 `< E2 => maxr 
-      ((1 - maxr (([[ E1 ]] - [[ E2 ]]) / ([[ E1 ]] + [[ E2 ]])) 0)
-        + ([[ E1 ]] != [[ E2 ]])%:R - 1)
+      (maxr ((1 - maxr (([[ E1 ]] - [[ E2 ]]) / ([[ E1 ]] + [[ E2 ]])) 0)
+        + ([[ E1 ]] != [[ E2 ]])%:R - 1) 0)
       0 
     | identity_E E1 E2 => ([[ E1 ]] == [[ E2 ]])%:R
 
@@ -141,13 +141,6 @@ Qed.
 
 Require Import Coq.Program.Equality.
 
-Lemma fraction_in_01 (x y : R) :
-  0 <= (x - y) / (x + y) -> (x - y) / (x + y) <= 1.
-Proof.
-  intros. 
-  Search (_ / _ >= 0). have H1 := divr_ge0. 
-  move: H1. 
-Admitted.
 
 Lemma translate_Bool_T_01 (e : expr Bool_T) :
   0 <= (translation e : R) <= 1.
@@ -189,31 +182,28 @@ dependent induction e => //=.
 - set t1 := _ e1.
   set t2 := _ e2.
   case: c => //.
-  + have [t1t2|t1t2] := ltrP ((t1 - t2) / (t1 + t2)) 0.
-    lra.
+  + have [t1t2|t1t2] := ltrP ((t1 - t2) / (t1 + t2)) 0. 
+      have [t0|t0] := ltrP (1-0) 0; lra. 
     apply/andP; split.
-      rewrite subr_ge0.
-        by rewrite fraction_in_01.
-      lra.
-  + have [t1t2|t1t2] := lerP (1 - maxr ((t1 - t2) / (t1 + t2)) 0 + (t1 != t2)%:R - 1) 0. 
-    lra.
-    apply/andP; split.
-      lra.
-      case: eqP =>/=.
+    have [t1t2'|t1t2'] := ltrP (1 - (t1 - t2) / (t1 + t2)) 0.
+      lra. 
+      rewrite subr_ge0. lra.
+        have [t1t2'|t1t2'] := ltrP (1 - (t1 - t2) / (t1 + t2)) 0; lra.
+  + have [t1t2|t1t2] := lerP (1 - maxr ((t1 - t2) / (t1 + t2)) 0 + (t1 != t2)%:R - 1) 0.
+      have [t0|t0] := ltrP 0 0; lra. 
+      have [t1t2'|t1t2'] := lerP (1 - maxr ((t1 - t2) / (t1 + t2)) 0 + (t1 != t2)%:R - 1) 0.
+        lra.
+        apply/andP; split.
+        lra.
+        case: eqP =>/=.
         rewrite addr0.  intros eq12. 
-        have [t1t2'|t1t2'] := lerP ((t1 - t2) / (t1 + t2)) 0; lra.
+        have [t1t2''|t1t2''] := lerP ((t1 - t2) / (t1 + t2)) 0; lra.
         intros H.
-        have [t1t2'|t1t2'] := lerP ((t1 - t2) / (t1 + t2)) 0; lra.
-  + apply/andP; split. Search (_ <= _+ _ ).
-      rewrite lerBrDl addr0. Search ( `| _ | <= _). 
-      rewrite ler_norml. apply/andP; split.
-       admit.
-       admit.
-      by rewrite gerDl oppr_le0 normr_ge0.
+        have [t1t2''|t1t2''] := lerP ((t1 - t2) / (t1 + t2)) 0; lra.
+  + apply/andP; split; case:eqP =>/=; lra.
   + apply/andP; split. case:eqP =>/=; lra.
   + case:eqP =>/=; lra.
-Admitted.
-
+Qed.
 
 Theorem associativity_and (B1 B2 B3: expr Bool_T) :
 [[ (B1 /\ B2) /\ B3]] = [[ B1 /\ (B2 /\ B3) ]].
