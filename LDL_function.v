@@ -188,101 +188,19 @@ dependent induction e => //=.
   set t1 := _ e1.
   set t2 := _ e2.
   case: l => /= t2_01 t1_01.
-  + case: b.
-    * rewrite /maxr; case: ifP; lra.
-    * rewrite /minr; case: ifP; lra.
-    * rewrite /minr; case: ifP; lra.
-  + case: b.
-    * rewrite /maxr; case: ifP=>h1; first lra.
-      apply/andP; split; last by rewrite cprD oppr_le0 powR_ge0.
-      lra.
-    have := IHe1 e1 erefl JMeq_refl.
-    rewrite -/t1 => ?.
-    have := IHe2 e2 erefl JMeq_refl.
-    rewrite -/t2 => ?.
-    have [t1t2|t1t2] := lerP ((t1 `^ p + t2 `^ p) `^ p^-1) 1.
-      apply/andP; split. 
-        by rewrite powR_ge0. 
-    lra.
-    lra.
-  + have [t1t2|t1t2] := lerP (t1 + t2) 1.
-    have := IHe1 e1 erefl JMeq_refl.
-    rewrite -/t1 => ?.
-    have := IHe2 e2 erefl JMeq_refl.
-    rewrite -/t2 => ?.
-    have [t1t2'|t1t2'] := lerP (((1 - t1) `^ p + t2 `^ p) `^ p^-1) 1.
-      apply/andP; split.
-        by rewrite powR_ge0. 
-        lra.
-  + lra.
-    have [t1t2'|t1t2'] := lerP (((1 - t1) `^ p + t2 `^ p) `^ p^-1) 1.
-    apply/andP; split.
-        by rewrite powR_ge0. 
-        lra.
-       lra.
-    apply/andP; split. 
-
-(*   + have [t1t2|] := lerP (1 - t1 + t2) 1.
-    have := IHe1 e1 erefl JMeq_refl.
-    rewrite -/t1 => ?.
-    have := IHe2 e2 erefl JMeq_refl.
-    rewrite -/t2 => ?.
-    lra.
-    have := IHe1 e1 erefl JMeq_refl.
-    rewrite -/t1 => ?.
-    have := IHe2 e2 erefl JMeq_refl.
-    rewrite -/t2 => ?.
-    lra. *)
-- set t := _ e.
-    have := IHe e erefl JMeq_refl.
-    rewrite -/t => ?.
-    lra.
-- set t := _ e.
-    have := IHe e erefl JMeq_refl.
-    rewrite -/t => ?.
-    lra.
-  set t1 := _ e1.
+  + by case: b; rewrite /minr/maxr; case: ifP; lra.
+  + by case: b; rewrite /minr/maxr; case: ifP; try lra; rewrite ?cprD ?oppr_le0 powR_ge0; lra.
+- have := IHe e erefl JMeq_refl.
+  set t := _ e.
+  by lra.
+- set t1 := _ e1.
   set t2 := _ e2.
-  case: c => //.
-  + have [t1t2|t1t2] := ltrP ((t1 - t2) / (t1 + t2)) 0. 
-      have [t0|t0] := ltrP (1-0) 0; lra. 
-    apply/andP; split.
-    have [t1t2'|t1t2'] := ltrP (1 - (t1 - t2) / (t1 + t2)) 0.
-      lra. 
-      rewrite subr_ge0. lra.
-        have [t1t2'|t1t2'] := ltrP (1 - (t1 - t2) / (t1 + t2)) 0; lra.
-  + have [t1t2|t1t2] := lerP ((t1 - t2) / (t1 + t2)) 0.
-
-      have [t1t2'|t1t2'] := ltrP (1 - 0 + (t1 != t2)%:R - 1) 0. 
-        have [t0|t0] := lerP 0 0. 
-          by rewrite ler01 Bool.andb_true_r.
-          by rewrite ler01 Bool.andb_true_r.
-        have [t1t2''|t1t2''] := lerP (1 - 0 + (t1 != t2)%:R - 1) 0. 
-          by rewrite ler01 Bool.andb_true_r. rewrite t1t2'.  rewrite andTb. 
-          case:eqP =>/=. by rewrite addr0 subr0 subrr ler01. 
-          by rewrite subr0 -addrA subrr addr0. 
-    have [t1t2'|t1t2'] := lerP (1 - (t1 - t2) / (t1 + t2) + (t1 != t2)%:R - 1) 0.
-      have [t0|t0] := lerP 0 0. 
-          by rewrite ler01 Bool.andb_true_r.
-          by rewrite ler01 Bool.andb_true_r.
-      have [t1t2''|t1t2''] := lerP (1 - (t1 - t2) / (t1 + t2) + (t1 != t2)%:R - 1) 0.
-        by rewrite ler01 Bool.andb_true_r.
-      case:eqP =>/=.
-      by have [t0|t0] := lerP 0 0. 
-      have [t0|t0] := lerP 0 0. by rewrite ler01. by rewrite ler01.
-      rewrite/maxr/=. case: ifP. rewrite ler01. Search (?x <= ?x).
-      have [t1t2'|t1t2'] := lerP (1 - maxr ((t1 - t2) / (t1 + t2)) 0 + (t1 != t2)%:R - 1) 0.
-        lra.
-        apply/andP; split.
-        lra.
-        case: eqP =>/=.
-        rewrite addr0.  intros eq12. 
-        have [t1t2''|t1t2''] := lerP ((t1 - t2) / (t1 + t2)) 0; lra.
-        intros H.
-        have [t1t2''|t1t2''] := lerP ((t1 - t2) / (t1 + t2)) 0; lra.
-  + apply/andP; split; case:eqP =>/=; lra.
-  + apply/andP; split. case:eqP =>/=; lra.
-  + case:eqP =>/=; lra.
+  case: c.
+  + by rewrite /maxr; repeat case: ifP; lra.
+  + by rewrite /maxr; repeat case: ifP;
+    try case: eqP => /=; rewrite ?subr0 ?addr0 -?addrA ?subrr ?addr0 ?ler01 ?lexx; lra.
+  + by case: eqP => /=; rewrite ler01 lexx.
+  + by case: eqP => /=; lra.
 Qed.
 
 Lemma orA e1 e2 e3 :
@@ -292,61 +210,38 @@ have := translate_Bool_T_01 e1.
 have := translate_Bool_T_01 e2.
 have := translate_Bool_T_01 e3.
 case: l => /=.
-set t1 := _ e1.
-set t2 := _ e2.
-set t3 := _ e3.
-rewrite /minr.
-case: ifP; case: ifP; case: ifP; case: ifP; lra.
-set t1 := _ e1.
-set t2 := _ e2.
-set t3 := _ e3.
-admit.
++ set t1 := _ e1.
+  set t2 := _ e2.
+  set t3 := _ e3.
+  rewrite /minr.
+  by repeat case: ifP; lra.
++ set t1 := _ e1.
+  set t2 := _ e2.
+  set t3 := _ e3.
+  rewrite /minr=> ht3 ht2 ht1.
+  case: ifP.
+  admit.
 Admitted.
 
 
-Theorem associativity_and (B1 B2 B3: expr Bool_T) :
-[[ (B1 /\ B2) /\ B3]] = [[ B1 /\ (B2 /\ B3) ]].
+Theorem andA (B1 B2 B3: expr Bool_T) :
+  [[ (B1 /\ B2) /\ B3]]_l = [[ B1 /\ (B2 /\ B3) ]]_l.
 Proof.
-rewrite /=.
-set t1 := _ B1.
-set t2 := _ B2.
-set t3 := _ B3.
-simpl in *.
-have t101 : 0 <= t1 <= 1 := translate_Bool_T_01 B1.
-have t201 : 0 <= t2 <= 1 := translate_Bool_T_01 B2.
-have t301 : 0 <= t3 <= 1 := translate_Bool_T_01 B3.
-have [t1t2|t1t2] := lerP (t1 + t2 - 1) 0.
-  rewrite add0r.
-  have [t31|t31] := lerP (t3 - 1) 0.
-    have [t2t3|t2t3] := lerP (t2 + t3 - 1) 0.
-      rewrite addr0.
-      by have [t10|t10] := lerP (t1 - 1) 0; lra.
-    rewrite !addrA.
-    by have [t1t2t3|t1t2t3] := lerP (t1 + t2 + t3 - 1 - 1) 0; lra.
-  have [t2t3|t2t3] := lerP (t2 + t3 - 1) 0.
-    rewrite addr0.
-    by have [t10|t10] := lerP (t1 - 1) 0; lra.
-  rewrite !addrA.
-  by have [t1t2t3|t1t2t3] := ltrP (t1 + t2 + t3 - 1 - 1) 0; lra.
-
-have [t23|t23] := ltrP (t2 + t3 - 1) 0.
-have [t123|t123] := ltrP (t1 + maxr (t2 + t3 - 1) 0 - 1) 0.
-
-have [t1t2t3|t1t2t3] := lerP (t1 + t2 - 1 + t3 - 1) 0.
-rewrite addr0.
-have [t1'|t1'] := ltrP (t1 - 1) 0. lra. lra.
-rewrite addr0.
-have [t1'|t1'] := ltrP (t1 - 1) 0. lra. lra.
-have [t123'|t123'] := ltrP (t1 + t2 - 1 + t3 -1) 0. 
-rewrite addr0.
-have [t1'|t1'] := ltrP (t1 - 1) 0. lra. lra.
-rewrite addr0.
-have [t1'|t1'] := ltrP (t1 - 1) 0. lra. lra.
-have [t1'|t1'] := ltrP (t1 + t2 - 1 + t3 - 1) 0.
-have [t123'|t123'] := ltrP (t1 + (t2 + t3 - 1) - 1) 0. lra. lra.
-have [t123'|t123'] := ltrP (t1 + (t2 + t3 - 1) - 1) 0. lra. lra.
-
-Qed.
+have := translate_Bool_T_01 B1.
+have := translate_Bool_T_01 B2.
+have := translate_Bool_T_01 B3.
+case: l => /=.
++ set t1 := _ B1.
+  set t2 := _ B2.
+  set t3 := _ B3.
+  rewrite /maxr.
+  by repeat case: ifP; lra.
++ set t1 := _ B1.
+  set t2 := _ B2.
+  set t3 := _ B3.
+  rewrite /minr=> ht3 ht2 ht1.
+  admit.
+Admitted.
 
 (*intros. simpl.
 case: lerP.
