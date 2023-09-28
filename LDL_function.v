@@ -95,7 +95,7 @@ Definition type_translation (t: simple_type) : Type:=
   | Network_T n m => n.-tuple R -> m.-tuple R
 end.
 
-Inductive DL := Lukasiewicz | Yager | Godel.
+Inductive DL := Lukasiewicz | Yager | Godel | product.
 Variable (l : DL).
 Parameter (p : R).
 Parameter (p1 : 1 <= p).
@@ -119,6 +119,12 @@ Definition translation_binop op a1 a2 :=
       | and_E => minr a1 a2
       | or_E => maxr a1 a2
       | impl_E => maxr (1 - a1) a2
+      end
+  | product => 
+      match op with
+      | and_E => a1 * a2
+      | or_E => a1 + a2 - a1 * a2
+      | impl_E => 1 - a1 + a1 * a2
       end
   end.
 
@@ -168,6 +174,7 @@ case: l.
 - by rewrite /= (addrC (_ e1)).
 - by rewrite /= (addrC (_ `^ _)).
 - by rewrite /=/minr; repeat case: ifP; lra.
+- by rewrite /= mulrC.
 Qed.
 
 Lemma orC l e1 e2 :
@@ -177,6 +184,7 @@ case: l.
 - by rewrite /= (addrC (_ e1)).
 - by rewrite /= (addrC (_ `^ _)).
 - by rewrite /=/maxr; repeat case: ifP; lra.
+- by rewrite /= (addrC (_ e1)) (mulrC (_ e1)). 
 Qed.
 
 Local Open Scope order_scope.
@@ -184,6 +192,7 @@ Lemma translate_Bool_T_01 l (e : expr Bool_T) :
   0 <= [[ e ]]_l <= 1.
 Proof.
 case: l.
+(*Łukasiewicz*)
 dependent induction e => //=.
 - by case: ifPn => //; lra.
 - have := IHe1 e1 erefl JMeq_refl.
@@ -197,6 +206,7 @@ dependent induction e => //=.
 - set t1 := _ e1.
   set t2 := _ e2.
   by case: c; rewrite /maxr; repeat case: ifP; try case: eqP; lra.
+(*Yager*)
 dependent induction e => //=.
 - by case: ifPn => //; lra.
 - have := IHe1 e1 erefl JMeq_refl.
@@ -210,6 +220,7 @@ dependent induction e => //=.
 - set t1 := _ e1.
   set t2 := _ e2.
   by case: c; rewrite /maxr; repeat case: ifP; try case: eqP; lra.
+(*Godel*)
 dependent induction e => //=.
 - by case: ifPn => //; lra.
 - have := IHe1 e1 erefl JMeq_refl.
@@ -217,6 +228,20 @@ dependent induction e => //=.
   set t1 := _ e1.
   set t2 := _ e2.
   by case: b; rewrite /minr/maxr; try case: ifP; try lra.
+- have := IHe e erefl JMeq_refl.
+  set t := _ e.
+  by lra.
+- set t1 := _ e1.
+  set t2 := _ e2.
+  by case: c; rewrite /maxr; repeat case: ifP; try case: eqP; lra.
+(*product*)
+dependent induction e => //=.
+- by case: ifPn => //; lra.
+- have := IHe1 e1 erefl JMeq_refl.
+  have := IHe2 e2 erefl JMeq_refl.
+  set t1 := _ e1.
+  set t2 := _ e2.
+  by case: b; nra.
 - have := IHe e erefl JMeq_refl.
   set t := _ e.
   by lra.
@@ -233,12 +258,14 @@ have ? : p != 0 by exact: lt0r_neq0.
 have := translate_Bool_T_01 l e1.
 have := translate_Bool_T_01 l e2.
 have := translate_Bool_T_01 l e3.
+(*Łukasiewicz*)
 case: l => /=.
 - set t1 := _ e1.
   set t2 := _ e2.
   set t3 := _ e3.
   rewrite /minr.
   by repeat case: ifP; lra.
+(*Yager*)
 - set t1 := _ e1.
   set t2 := _ e2.
   set t3 := _ e3.
@@ -330,11 +357,17 @@ case: l => /=.
         lra.
       }
     }
+(*Godel*)
 - set t1 := _ e1.
   set t2 := _ e2.
   set t3 := _ e3.
   rewrite /maxr.
   by repeat case: ifP; lra.
+(*product*)
+- set t1 := _ e1.
+  set t2 := _ e2.
+  set t3 := _ e3.
+  lra.
 Qed.
 
 
@@ -344,12 +377,14 @@ Proof.
 have := translate_Bool_T_01 l e1.
 have := translate_Bool_T_01 l e2.
 have := translate_Bool_T_01 l e3.
+(*Łukasiewicz*)
 case: l => /=.
 + set t1 := _ e1.
   set t2 := _ e2.
   set t3 := _ e3.
   rewrite /maxr.
   by repeat case: ifP; lra.
+(*Yager*)
 + set t1 := _ e1.
   set t2 := _ e2.
   set t3 := _ e3.
@@ -441,10 +476,16 @@ case: l => /=.
       }
     }
   }
+(*Godel*)
 + set t1 := _ e1.
   set t2 := _ e2.
   set t3 := _ e3.
   rewrite /minr.
   by repeat case: ifP; lra.
+(*product*)
+- set t1 := _ e1.
+  set t2 := _ e2.
+  set t3 := _ e3.
+  lra.
 Admitted.
 
