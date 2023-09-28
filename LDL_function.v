@@ -297,7 +297,27 @@ move=> he1 he2.
 case: l => /=.
 - rewrite /maxr; case: ifPn => e12lt0 _.
 (* FIX: e1 < 1 /\ e2 < 1 maybe the right goal *)
-*)
+ *)
+
+Lemma inversion_orE0 e1 e2 :
+  0 <= e1 <= 1 -> 0 <= e2 <= 1 ->
+    translation_binop l p or_E e1 e2 = 0 -> e1 = 0 /\ e2 = 0.
+have p0 := lt_le_trans ltr01 p1.
+move=> he1 he2.
+case: l => /=.
+- rewrite /minr; case: ifPn; lra.
+- rewrite /minr; case: ifPn => _; last lra.
+  have [->|e11 /eqP] := eqVneq e1 0.
+  have [->//|e21 /eqP] := eqVneq e2 0.
+  + rewrite powR0 ?(gt_eqF p0)// add0r.
+    rewrite -powRrM divff ?(gt_eqF p0)// powRr1.
+    lra. lra.
+  + rewrite powR_eq0 (paddr_eq0 (powR_ge0 _ _) (powR_ge0 _ _)) => /andP [].
+    rewrite powR_eq0.
+    lra.
+- rewrite /maxr; case: ifPn; lra.
+- by nra.
+Qed.
 
 Lemma soundness e b : [[ e ]]_l = [[ Bool b ]]_l -> << e >>_l = b.
 Proof.
@@ -311,6 +331,12 @@ dependent induction e => //=.
     move/(IHe1 true) => ->.
     by move/(IHe2 true) => ->.
   + (* FIX: should use inversoin_andE0 *)
+    admit.
+  + admit.
+  + move/(inversion_orE0 (translate_Bool_T_01 _) (translate_Bool_T_01 _)).
+    case.
+    move/(IHe1 false) => ->.
+    by move/(IHe2 false) => ->.
 Admitted.
 
 Lemma andC e1 e2 :
