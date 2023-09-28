@@ -23,9 +23,7 @@ Inductive simple_type : Type :=
 
 Inductive comparisons : Type :=
 | le_E : comparisons
-| lt_E : comparisons
-| eq_E : comparisons
-| neq_E : comparisons.
+| eq_E : comparisons.
 
 Inductive binary_logical : Type :=
 | and_E : binary_logical
@@ -76,11 +74,11 @@ Notation "a `* b" := (mult_E a b) (at level 40).
 Notation "`- a" := (minus_E a) (at level 45).
 
 Notation "a `<= b" := (comparisons_E le_E a b) (at level 70).
-Notation "a `< b" := (comparisons_E lt_E a b) (at level 70).
-Notation "a `>= b" := (comparisons_E le_E b a) (at level 70).
-Notation "a `> b" := (comparisons_E lt_E b a) (at level 70).
 Notation "a `== b" := (comparisons_E eq_E a b) (at level 70).
-Notation "a `!= b" := (comparisons_E neq_E a b) (at level 70).
+Notation "a `!= b" := (`~ (a == b)) (at level 70).
+Notation "a `< b" := (a `<= b /\ a `!= b) (at level 70).
+Notation "a `>= b" := (b `<= a) (at level 70).
+Notation "a `> b" := (b `< a) (at level 70).
 
 Section translation_def.
 Local Open Scope ring_scope.
@@ -146,13 +144,8 @@ Fixpoint translation t (e: expr t) : type_translation t :=
     | `- E1 => - [[ E1 ]]
 
     (*comparisons*)
-    | E1 `== E2 => maxr (1 - `|([[ E1 ]] - [[ E2 ]]) / ([[ E1 ]] + [[ E2 ]])|) 0
-    | E1 `<= E2 => maxr (1 - maxr (([[ E1 ]] - [[ E2 ]]) / ([[ E1 ]] + [[ E2 ]])) 0) 0
-    | E1 `!= E2 => 1 - ([[ E1 ]] == [[ E2 ]])%:R
-    | E1 `< E2 => maxr 
-      (maxr ((1 - maxr (([[ E1 ]] - [[ E2 ]]) / ([[ E1 ]] + [[ E2 ]])) 0)
-        + ([[ E1 ]] != [[ E2 ]])%:R - 1) 0)
-      0 
+    | E1 `== E2 => if [[ E1 ]] == -[[ E2 ]] then ([[ E1 ]] == [[ E2 ]])%:R else maxr (1 - `|([[ E1 ]] - [[ E2 ]]) / ([[ E1 ]] + [[ E2 ]])|) 0
+    | E1 `<= E2 => if [[ E1 ]] == -[[ E2 ]] then ([[ E1 ]] <= [[ E2 ]])%R%:R else maxr (1 - maxr (([[ E1 ]] - [[ E2 ]]) / `|[[ E1 ]] + [[ E2 ]]|) 0) 0
 
     | net n m f => f
     | app_net n m f v => [[ f ]] [[ v ]]
@@ -195,8 +188,6 @@ Fixpoint bool_translation t (e: expr t) : bool_type_translation t :=
   (*comparisons*)
   | E1 `== E2 => << E1 >> == << E2 >>
   | E1 `<= E2 => << E1 >> <= << E2 >>
-  | E1 `!= E2 => << E1 >> != << E2 >>
-  | E1 `< E2 => << E1 >> < << E2 >>
   | net n m f => f
   | app_net n m f v => << f >> << v >>
   end
@@ -215,6 +206,13 @@ Variable (p1 : 1 <= p).
 Local Notation "[[ e ]]_ l" := (translation l p e) (at level 10).
 Local Notation "<< e >>_ l" := (bool_translation e) (at level 10).
 
+Lemma translations_Real_coincide (e : expr Real_T):
+  [[ e ]]_l = << e >>_l.
+Proof.
+dependent induction e => //=;
+by rewrite ?(IHe1 e1 erefl JMeq_refl) ?(IHe2 e2 erefl JMeq_refl) ?(IHe e erefl JMeq_refl).
+Qed.
+
 Lemma translate_Bool_T_01 (e : expr Bool_T) :
   0 <= [[ e ]]_l <= 1.
 Proof.
@@ -230,9 +228,15 @@ dependent induction e => //=.
   by lra.
 - set t1 := _ e1.
   set t2 := _ e2.
-  case: c; rewrite /maxr; repeat case: ifP; try case: eqP; try lra.
-  have := normr_ge0 ((t1 - t2) / (t1 + t2)).
-  lra.
+  case: c; rewrite /maxr; case: ifP => [/eqP ->|?].
+  + have [] := leP (-t2) t2; lra.
+  + case: ifP; first lra.
+    case: ifP; first lra.
+    lra.
+  + have [] := eqVneq (-t2) t2; lra.
+  + case: ifP; first lra.
+    have := normr_ge0 ((t1 - t2) / (t1 + t2)).
+    lra.
 Qed.
 
 Lemma gt0_ltr_powR (r : R) : 0 < r ->
@@ -287,17 +291,34 @@ case: l => /=.
 - by nra.
 Qed.
 
-(*
 Lemma inversion_andE0 e1 e2 :
-  0 <= e1 <= 1 -> 0 <= e2 <= 1 ->
+  0 <= e1 <= 1 -> 0 <= e2 <= 1 -> l <> Lukasiewicz -> l <> Yager ->
     translation_binop l p and_E e1 e2 = 0 -> e1 = 0 \/ e2 = 0.
 Proof.
 have p0 := lt_le_trans ltr01 p1.
 move=> he1 he2.
-case: l => /=.
-- rewrite /maxr; case: ifPn => e12lt0 _.
+case: l => //=.
+(*- rewrite /maxr; case: ifPn.
+  rewrite subr_cp0.
+  have {1}<-: 1 `^ p^-1 = 1 by rewrite powR1.
+  move/(@gt0_ltr_powR _ p0 _).
+  rewrite !in_itv/= !powR_ge0 -!powRrM !mulVf ?powRr1 ?gt_eqF ?addr_ge0 ?powR_ge0//.
+  admit. admit.*)
+- rewrite /minr; case: ifPn; lra.
+- nra.
+Qed.
 (* FIX: e1 < 1 /\ e2 < 1 maybe the right goal *)
- *)
+
+Lemma inversion_orE1 e1 e2 :
+  0 <= e1 <= 1 -> 0 <= e2 <= 1 -> l <> Lukasiewicz -> l <> Yager ->
+    translation_binop l p or_E e1 e2 = 1 -> e1 = 1 \/ e2 = 1.
+Proof.
+have p0 := lt_le_trans ltr01 p1.
+move=> he1 he2.
+case: l => //=.
+- rewrite /maxr; case: ifPn; lra.
+- nra.
+Qed.
 
 Lemma inversion_orE0 e1 e2 :
   0 <= e1 <= 1 -> 0 <= e2 <= 1 ->
@@ -371,6 +392,49 @@ dependent induction e => //=.
   by move/(IHe false) => ->.
   have: [[ e ]]_l = 1 by lra.
   by move/(IHe true) => ->.
+- case: c; rewrite -!translations_Real_coincide;
+  set t1 := _ e1; set t2 := _ e2.
+  + case: ifPn => [/eqP ->|e12eq].
+    have [] := leP (-t2) t2 => /=; case: b; lra.
+    rewrite /maxr.
+    have ? : 0 < `|t1 + t2| by rewrite normr_gt0 addr_eq0.
+    have ? : 0 < `|t1 + t2|^-1 by rewrite invr_gt0.
+    case: b; repeat case: ifPn; try lra; rewrite -?leNgt.
+    * rewrite pmulr_llt0; lra.
+    * rewrite pmulr_lge0// subr_ge0 => t120 _ ?.
+      have : (t1 - t2) / `|t1 + t2| = 0 by lra.
+      nra.
+    * rewrite pmulr_lge0// subr_ge0 => t120.
+      rewrite subr_lt0.
+      rewrite ltr_pdivlMr ?normr_gt0 ?addr_eq0// mul1r.
+      rewrite lter_norml opprD opprK.
+      lra.
+    * rewrite pmulr_lge0// => t120.
+      rewrite subr_ge0 ler_pdivrMr ?normr_gt0 ?addr_eq0// mul1r.
+      rewrite lter_normr => ? ?.
+      have : (t1 - t2) / `|t1 + t2| = 1 by lra.
+      move/divr1_eq => /eqP.
+      rewrite eq_sym eqr_norml; lra.
+  + case: ifP => [/eqP ->|e12eq].
+    have [] := eqVneq (-t2) t2 => /=; case: b; lra.
+    rewrite /maxr.
+    case: b; case: ifPn; try lra; rewrite -?leNgt.
+    * move=> _ ?.
+      have : `|(t1 - t2) / (t1 + t2)| == 0 by lra.
+      rewrite normr_eq0 mulf_eq0 invr_eq0; lra.
+    * rewrite subr_lt0 lter_normr.
+      have [|t120] := leP (t1+t2) 0.
+      rewrite le_eqVlt => /orP [|t120]; first lra.
+      rewrite -mulNr !ltr_ndivlMr// !mul1r opprD opprK.
+      lra.
+      rewrite -mulNr.
+      rewrite !ltr_pdivlMr// !mul1r opprD opprK.
+      lra.
+    * move=> _ ?.
+      have : `|(t1 - t2) / (t1 + t2)| == 1 by lra.
+      Search (`| _ | == _).
+      rewrite eqr_norml.
+      nra.
 Admitted.
 
 Lemma andC e1 e2 :
