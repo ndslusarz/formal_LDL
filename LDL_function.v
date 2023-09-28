@@ -242,14 +242,14 @@ dependent induction e => //=.
   have := IHe2 e2 erefl JMeq_refl.
   set t1 := _ e1.
   set t2 := _ e2.
-  admit.
+  by case: b; nra.
 - have := IHe e erefl JMeq_refl.
   set t := _ e.
   by lra.
 - set t1 := _ e1.
   set t2 := _ e2.
   by case: c; rewrite /maxr; repeat case: ifP; try case: eqP; lra.
-Admitted.
+Qed.
 
 Lemma orA l e1 e2 e3 : (0 < p) -> 
   [[ (e1 \/ (e2 \/ e3)) ]]_l = [[ ((e1 \/ e2) \/ e3) ]]_l.
