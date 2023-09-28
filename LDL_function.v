@@ -1,11 +1,13 @@
+Require Import Coq.Program.Equality.
 From mathcomp Require Import all_ssreflect all_algebra.
 From mathcomp Require Import lra.
 From mathcomp Require Import order.
 From mathcomp Require Import sequences reals exp.
 
-
 Import Num.Def Num.Theory GRing.Theory.
 Import Order.TTheory.
+
+Reserved Notation "[[ e ]]" (format "[[  e  ]]").
 
 Set Implicit Arguments.
 Unset Strict Implicit.
@@ -120,7 +122,6 @@ Definition translation_binop op a1 a2 :=
       end
   end.
 
-Reserved Notation "[[ e ]]".
 Fixpoint translation t (e: expr t) : type_translation t :=
     match e in expr t return type_translation t with
     | Bool true => (1%R : type_translation Bool_T)
@@ -157,7 +158,6 @@ End translation_def.
 
 Notation "[[ e ]]_ l" := (translation l e) (at level 10).
 
-
 Section translation_lemmas.
 Local Open Scope ring_scope.
 
@@ -178,7 +178,6 @@ case: l.
 - by rewrite /= (addrC (_ `^ _)).
 - by rewrite /=/maxr; repeat case: ifP; lra.
 Qed.
-Require Import Coq.Program.Equality.
 
 Local Open Scope order_scope.
 Lemma translate_Bool_T_01 l (e : expr Bool_T) :
@@ -246,34 +245,26 @@ case: l => /=.
   move => ht3 ht2 ht1.
   rewrite {2}/minr.
   case: ifPn => h1.
-  {
-    rewrite -powRrM mulVf ?p0 ?powRr1 ?addr_ge0 ?powR_ge0//.
+  + rewrite -powRrM mulVf ?p0 ?powRr1 ?addr_ge0 ?powR_ge0//.
     rewrite {1}/minr.
     case: ifPn => h2.
-    {
-      rewrite {2}/minr.
+    * rewrite {2}/minr.
       case: ifPn => h3.
-      {
-        rewrite {1}/minr.
+      - rewrite {1}/minr.
         case: ifPn => h4.
-        by rewrite -{1}powRrM mulVf ?powRr1 ?addr_ge0 ?powR_ge0 ?addrA.
+          by rewrite -{1}powRrM mulVf ?powRr1 ?addr_ge0 ?powR_ge0 ?addrA.
         rewrite addrA; move: h2; rewrite addrA; move: h4;
         rewrite -{1}powRrM mulVf ?powRr1 ?addr_ge0 ?powR_ge0//;
         lra.
-      }
-      {
-        rewrite {1}/minr.
-        - have: (t1 `^ p + (t2 `^ p + t3 `^ p)) `^ p^-1 >= (t1 `^ p + t2 `^ p) `^ p^-1.
-          rewrite gt0_ler_powR//.
-          + by rewrite invr_ge0 ltW.
-          + by rewrite in_itv /= andbT addr_ge0// powR_ge0.
-          + by rewrite in_itv /= andbT !addr_ge0// powR_ge0.
-          + by rewrite lerD// lerDl powR_ge0.
-            lra.
-      }
-    }
-    {
-      rewrite {2}/minr.
+      - rewrite {1}/minr.
+        suff: (t1 `^ p + (t2 `^ p + t3 `^ p)) `^ p^-1 >=
+              (t1 `^ p + t2 `^ p) `^ p^-1 by lra.
+        rewrite gt0_ler_powR//.
+        + by rewrite invr_ge0 ltW.
+        + by rewrite in_itv /= andbT addr_ge0// powR_ge0.
+        + by rewrite in_itv /= andbT !addr_ge0// powR_ge0.
+        + by rewrite lerD// lerDl powR_ge0.
+    * rewrite {2}/minr.
       case: ifPn => h3.
       {
         rewrite -{1}powRrM mulVf// powRr1 ?addr_ge0 ?powR_ge0//.
@@ -294,10 +285,7 @@ case: l => /=.
           set a := (1 `^ p + t3 `^ p) `^ p^-1.
           lra.
       }
-    }
-  }
-  {
-    rewrite {1}/minr.
+  + rewrite {1}/minr.
     case: ifPn => // h2.
     {
       have: (t1 `^ p + 1 `^ p) `^ p^-1 >= 1.
@@ -342,7 +330,6 @@ case: l => /=.
         lra.
       }
     }
-  }
 - set t1 := _ e1.
   set t2 := _ e2.
   set t3 := _ e3.
