@@ -302,6 +302,7 @@ case: l => /=.
 Lemma inversion_orE0 e1 e2 :
   0 <= e1 <= 1 -> 0 <= e2 <= 1 ->
     translation_binop l p or_E e1 e2 = 0 -> e1 = 0 /\ e2 = 0.
+Proof.
 have p0 := lt_le_trans ltr01 p1.
 move=> he1 he2.
 case: l => /=.
@@ -314,6 +315,28 @@ case: l => /=.
     lra. lra.
   + rewrite powR_eq0 (paddr_eq0 (powR_ge0 _ _) (powR_ge0 _ _)) => /andP [].
     rewrite powR_eq0.
+    lra.
+- rewrite /maxr; case: ifPn; lra.
+- by nra.
+Qed.
+
+Lemma inversion_implE0 e1 e2 :
+  0 <= e1 <= 1 -> 0 <= e2 <= 1 ->
+    translation_binop l p impl_E e1 e2 = 0 -> e1 = 1 /\ e2 = 0.
+Proof.
+have p0 := lt_le_trans ltr01 p1.
+move=> he1 he2.
+case: l => /=.
+- rewrite /minr; case: ifPn; lra.
+- rewrite /minr; case: ifPn => _; last lra.
+  have [-> /eqP|e11 /eqP] := eqVneq e1 0.
+  + by rewrite subr0 powR1 powR_eq0 paddr_eq0// ?powR_ge0; lra.
+  have [->//|e21] := eqVneq e2 0.
+  + rewrite powR0 ?(gt_eqF p0)// addr0.
+    rewrite -powRrM divff ?(gt_eqF p0)// powRr1.
+    lra. lra.
+  + rewrite powR_eq0 (paddr_eq0 (powR_ge0 _ _) (powR_ge0 _ _)) => /andP [].
+    rewrite !powR_eq0.
     lra.
 - rewrite /maxr; case: ifPn; lra.
 - by nra.
@@ -336,6 +359,11 @@ dependent induction e => //=.
   + move/(inversion_orE0 (translate_Bool_T_01 _) (translate_Bool_T_01 _)).
     case.
     move/(IHe1 false) => ->.
+    by move/(IHe2 false) => ->.
+  + admit.
+  + move/(inversion_implE0 (translate_Bool_T_01 _) (translate_Bool_T_01 _)).
+    case.
+    move/(IHe1 true) => ->.
     by move/(IHe2 false) => ->.
 Admitted.
 
