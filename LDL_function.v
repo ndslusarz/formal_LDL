@@ -365,6 +365,12 @@ dependent induction e => //=.
     case.
     move/(IHe1 true) => ->.
     by move/(IHe2 false) => ->.
+- have {} IHe := IHe e erefl JMeq_refl.
+  case: b => ?.
+  have: [[ e ]]_l = 0 by lra.
+  by move/(IHe false) => ->.
+  have: [[ e ]]_l = 1 by lra.
+  by move/(IHe true) => ->.
 Admitted.
 
 Lemma andC e1 e2 :
