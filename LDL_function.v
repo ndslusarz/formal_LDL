@@ -49,18 +49,17 @@ Inductive expr : simple_type -> Type :=
   | minus_E : expr Real_T -> expr Real_T
 
   (*quantifiers - left for later consideration*)
-  (*)| forall_E: forall t, expr t -> expr (Simple_T Bool_T)
-  | exists_E: forall t, expr t -> expr (Simple_T Bool_T)*)
+  (*| forall_E: forall t, expr t -> expr Bool_T
+    | exists_E: forall t, expr t -> expr Bool_T*)
 
   (* networks and applications *)
   | net : forall n m : nat, (n.-tuple R -> m.-tuple R) -> expr (Network_T n m)
   | app_net : forall n m : nat, expr (Network_T n m) -> expr (Vector_T n) -> expr (Vector_T m)
+  | lookup_E n: expr (Vector_T n) -> expr (Index_T n) -> expr Real_T
 
   (*comparisons*)
-  | comparisons_E : comparisons -> expr Real_T -> expr Real_T -> expr Bool_T.
-  (* | lookup_E v i: expr (Simple_T Vector_T) -> expr (Simple_T Index_T) -> expr (Simple_T Real_T) 
-  I had this one before probably need to add this again, why did it get deleted?*)
-
+  | comparisons_E : comparisons -> expr Real_T -> expr Real_T -> expr Bool_T
+.
   (*other - needed for DL translations*)
   (*| identity_E : expr Real_T -> expr Real_T -> expr Real_T.*)
 End expr.
@@ -149,6 +148,7 @@ Fixpoint translation t (e: expr t) : type_translation t :=
 
     | net n m f => f
     | app_net n m f v => [[ f ]] [[ v ]]
+    | lookup_E n v i => tnth [[ v ]] [[ i ]]
     end
 where "[[ e ]]" := (translation e).
 
@@ -190,6 +190,7 @@ Fixpoint bool_translation t (e: expr t) : bool_type_translation t :=
   | E1 `<= E2 => << E1 >> <= << E2 >>
   | net n m f => f
   | app_net n m f v => << f >> << v >>
+  | lookup_E n v i => tnth << v >> << i >>
   end
 where "<< e >>" := (bool_translation e).
 
@@ -206,11 +207,32 @@ Variable (p1 : 1 <= p).
 Local Notation "[[ e ]]_ l" := (translation l p e) (at level 10).
 Local Notation "<< e >>_ l" := (bool_translation e) (at level 10).
 
+Lemma translations_Network_coincide:
+  forall n m (e : expr (Network_T n m)),
+    [[ e ]]_l = << e >>_l.
+Proof.
+dependent induction e => //=.
+Qed.
+
+Lemma translations_Vector_coincide: forall n (e : expr (Vector_T n)),
+  [[ e ]]_l = << e >>_l.
+Proof.
+dependent induction e => //=.
+by rewrite translations_Network_coincide (IHe2 p1 _ e2 erefl JMeq_refl).
+Qed.
+
+Lemma translations_Index_coincide: forall n (e : expr (Index_T n)),
+  [[ e ]]_l = << e >>_l.
+Proof.
+dependent induction e => //=.
+Qed.
+
 Lemma translations_Real_coincide (e : expr Real_T):
   [[ e ]]_l = << e >>_l.
 Proof.
 dependent induction e => //=;
-by rewrite ?(IHe1 e1 erefl JMeq_refl) ?(IHe2 e2 erefl JMeq_refl) ?(IHe e erefl JMeq_refl).
+rewrite ?(IHe1 e1 erefl JMeq_refl) ?(IHe2 e2 erefl JMeq_refl) ?(IHe e erefl JMeq_refl) //=.
+by rewrite translations_Vector_coincide translations_Index_coincide.
 Qed.
 
 Lemma translate_Bool_T_01 (e : expr Bool_T) :
