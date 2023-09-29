@@ -613,14 +613,14 @@ case: l => /=.
   lra.
 Qed.
 
-
 Theorem andA e1 e2 e3 : (0 < p) ->
   [[ (e1 /\ e2) /\ e3]]_l = [[ e1 /\ (e2 /\ e3) ]]_l.
 Proof.
+move=> p0.
+have pneq0 : p != 0 by exact: lt0r_neq0.
 have := translate_Bool_T_01 e1.
 have := translate_Bool_T_01 e2.
 have := translate_Bool_T_01 e3.
-(*Łukasiewicz*)
 case: l => /=.
 + set t1 := _ e1.
   set t2 := _ e2.
@@ -631,91 +631,132 @@ case: l => /=.
 + set t1 := _ e1.
   set t2 := _ e2.
   set t3 := _ e3.
+  set a1 := (1 - t1)`^p.
+  set a2 := (1 - t2)`^p.
+  set a3 := (1 - t3)`^p.
+  have se_ge0 r := @addr_ge0 R _ _ (@powR_ge0 _ _ r) (@powR_ge0 _ _ r).
   rewrite {2}/maxr=> ht3 ht2 ht1.
-  case: ifPn => [h1|].
+  case: ifPn.
   {
-    rewrite subr0 {1}/maxr.
-    case: ifPn => [h2|].
+    move/(help (se_ge0 _ _ _) p0).
+    rewrite subr0 {1}/maxr -/a1 -/a2 => h1.
+    case: ifPn.
     {
-      rewrite {2}/maxr.
-      case: ifPn => [h3|].
+      move/(help (se_ge0 _ _ _) p0).
+      rewrite {2}/maxr -/a3 powR1 ltrDl => h2.
+      case: ifPn.
       {
-        rewrite subr0 {1}/maxr.
+        move/(help (se_ge0 _ _ _) p0).
+        rewrite /maxr -/a2 -/a3 => h3.
         case: ifPn => //.
-        rewrite -leNgt subr_ge0 powR1.
-        have {3}->: 1 = 1 `^ p^-1 by rewrite powR1.
-        move=> h4.
-        admit.
+        rewrite subr0 powR1.
+        move/(help' (addr_ge0 (powR_ge0 _ _) (ltW ltr01)) p0).
+        rewrite -/a1 gerDr => h4.
+        have h5: 0 <= a1 by apply powR_ge0.
+        have ->: a1 = 0 by lra.
+        by rewrite add0r powR1 subrr.
       }
-      rewrite -leNgt => h3.
+      move/(help' (se_ge0 _ _ _) p0).
+      rewrite -/a2 -/a3 => h3.
       {
         rewrite {1}/maxr.
         case: ifPn => //.
-        rewrite -leNgt => h4.
-        admit.
+        move/(help' (se_ge0 _ _ _) p0).
+        rewrite -/a1.
+        rewrite opprD opprK addrA subrr add0r -powRrM mulVf// powRr1.
+        nra.
+        by rewrite addr_ge0 /a2 /a3// powR_ge0.
       }
     }
-    rewrite -leNgt => h2.
+    move/(help' (se_ge0 _ _ _) p0).
+    rewrite powR1 gerDl -/a3 => h2.
+    have ->: a3 = 0 by have := powR_ge0 _ _ : 0 <= a3; lra.
+    rewrite !addr0 powR1 subrr.
     {
       rewrite {2}/maxr.
-      case: ifPn => [h3|].
+      case: ifPn.
       {
-        rewrite subr0 {1}/maxr.
-        case: ifPn => [h4|].
-        admit.
-        rewrite -leNgt => h4.
-        admit.
+        move/(help (powR_ge0 _ _) p0).
+        rewrite -/a2 {1}/maxr => h3.
+        case: ifPn => //.
+        move/(help' (se_ge0 _ _ _) p0).
+        rewrite -/a1 subr0 powR1 gerDr => h4.
+        have ->: a1 = 0 by have := powR_ge0 _ _ : 0 <= a1; lra.
+        by rewrite add0r powR1 subrr.
       }
-      rewrite -leNgt => h3.
+      move/(help' (powR_ge0 _ _) p0).
+      rewrite -/a2 => h3.
       {
         rewrite {1}/maxr.
-        case: ifPn => [h4|].
-        admit.
-        rewrite -leNgt => h4.
-        admit.
+        case: ifPn => //.
+        move/(help' (se_ge0 _ _ _) p0).
+        rewrite -/a1.
+        rewrite opprD opprK addrA subrr add0r -powRrM mulVf// powRr1.
+        lra.
+        by rewrite /a2 powR_ge0.
       }
     }
   }
-  rewrite -leNgt => h1.
+  move/(help' (se_ge0 _ _ _) p0).
+  rewrite -/a1 -/a2 => h1.
   {
     rewrite {1}/maxr.
-    case: ifPn => [h2|].
+    case: ifPn.
+    move/(help (se_ge0 _ _ _) p0).
+    rewrite -/a3 opprD opprK addrA subrr add0r -powRrM mulVf// /a1 /a2 (powRr1 (addr_ge0 (powR_ge0 _ _) (powR_ge0 _ _))) -/a1 -/a2 => h2.
     {
       rewrite {2}/maxr.
-      case: ifPn => [h3|].
-      rewrite subr0 powR1.
+      case: ifPn.
+      move/(help (se_ge0 _ _ _) p0).
+      rewrite -/a2 -/a3 => h3.
       {
+        rewrite subr0 powR1.
         rewrite {1}/maxr.
         case: ifPn => //.
-        rewrite -leNgt => h4.
-        admit.
+        move/(help' (addr_ge0 (powR_ge0 _ _) (ltW ltr01)) p0).
+        rewrite -/a1 gerDr => h4.
+        have ->: a1 = 0 by have := powR_ge0 _ _ : 0 <= a1; lra.
+        by rewrite add0r powR1 subrr.
       }
-      rewrite -leNgt => h3.
+      move/(help' (se_ge0 _ _ _) p0).
+      rewrite -/a2 -/a3 => h3.
       {
         rewrite {1}/maxr.
         case: ifPn => //.
-        rewrite -leNgt => h4.
-        admit.
+        move/(help' (se_ge0 _ _ _) p0).
+        rewrite opprD opprK addrA subrr add0r -/a1 -powRrM mulVf// ?powRr1.
+        lra.
+        by rewrite addr_ge0 ?powR_ge0.
       }
     }
-    rewrite -leNgt => h2.
+    move/(help' (se_ge0 _ _ _) p0).
+    rewrite -/a3 opprD opprK addrA subrr add0r -powRrM mulVf ?powRr1 ?(addr_ge0 (powR_ge0 _ _) (powR_ge0 _ _)) => //h2.
     {
       rewrite {2}/maxr.
-      case: ifPn => [h3|].
+      case: ifPn.
+      move/(help (se_ge0 _ _ _) p0).
+      rewrite -/a1 -/a2 -/a3 subr0 powR1 => h3.
       {
         rewrite {1}/maxr.
-        case: ifPn => [h4|].
-        admit.
-        rewrite -leNgt => h4.
-        admit.
+        case: ifPn.
+        move/(help (addr_ge0 (powR_ge0 _ _) (ltW ltr01)) p0).
+        rewrite -/a1 ltrDr => h4.
+        lra.
+        move/(help' (addr_ge0 (powR_ge0 _ _) (ltW ltr01)) p0).
+        rewrite -/a1 gerDr => h4.
+        have : a1 = 0 by have := powR_ge0 _ _ : 0 <= a1; lra.
+        lra.
       }
-      rewrite -leNgt => h3.
+      move/(help' (se_ge0 _ _ _) p0).
+      rewrite -/a2 -/a3 => h3.
       {
         rewrite {1}/maxr.
-        case: ifPn => [h4|].
-        admit.
-        rewrite -leNgt => h4.
-        admit.
+        case: ifPn.
+        move/(help (se_ge0 _ _ _) p0).
+        rewrite -/a1 opprD opprK addrA subrr add0r -powRrM mulVf// ?powRr1 ?(addr_ge0 (powR_ge0 _ _) (powR_ge0 _ _))// => h4.
+        lra.
+        move => _.
+        by rewrite -/a1 opprD opprK addrA subrr add0r -powRrM mulVf ?pneq0 ?powRr1 ?(addr_ge0 (powR_ge0 _ _) (powR_ge0 _ _)) ?addrA.
       }
     }
   }
@@ -730,4 +771,5 @@ case: l => /=.
   set t2 := _ e2.
   set t3 := _ e3.
   lra.
-Admitted.
+Qed.
+End translation_lemmas.
