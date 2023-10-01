@@ -2,11 +2,113 @@ Require Import Coq.Program.Equality.
 
 From mathcomp Require Import all_ssreflect all_algebra.
 From mathcomp Require Import lra.
-From mathcomp Require Import order.
-From mathcomp Require Import sequences reals exp.
+From mathcomp Require Import order seq.
+From mathcomp Require Import sequences reals ereal exp.
+From mathcomp Require Import functions classical_sets functions measure lebesgue_measure lebesgue_integral boolp.
 
 Import Num.Def Num.Theory GRing.Theory.
 Import Order.TTheory.
+
+(* BEGIN: borrowed from hoelder.v *)
+
+Set Implicit Arguments.
+Unset Strict Implicit.
+Unset Printing Implicit Defensive.
+Import Order.TTheory GRing.Theory Num.Def Num.Theory.
+
+Reserved Notation "'N[ mu ]_ p [ F ]"
+  (at level 5, F at level 36, mu at level 10,
+  format "'[' ''N[' mu ]_ p '/  ' [ F ] ']'").
+(* for use as a local notation when the measure is in context: *)
+Reserved Notation "'N_ p [ F ]"
+  (at level 5, F at level 36, format "'[' ''N_' p '/  ' [ F ] ']'").
+
+Declare Scope Lnorm_scope.
+
+Local Open Scope classical_set_scope.
+Local Open Scope ring_scope.
+Local Open Scope ereal_scope.
+
+
+Section essential_supremum.
+Context d {T : measurableType d} {R : realType}.
+Variable mu : {measure set T -> \bar R}.
+Implicit Types f : T -> R.
+
+Definition ess_sup f :=
+  ereal_inf (EFin @` [set r | mu (f @^-1` `]r, +oo[) = 0]).
+
+Lemma ess_sup_ge0 f : 0 < mu [set: T] -> (forall t, 0 <= f t)%R ->
+  0 <= ess_sup f.
+Proof.
+move=> muT f0; apply: lb_ereal_inf => _ /= [r /eqP rf <-]; rewrite leNgt.
+apply/negP => r0; apply/negP : rf; rewrite gt_eqF// (_ : _ @^-1` _ = setT)//.
+by apply/seteqP; split => // x _ /=; rewrite in_itv/= (lt_le_trans _ (f0 x)).
+Qed.
+
+End essential_supremum.
+
+Section Lnorm.
+Context d {T : measurableType d} {R : realType}.
+Variable mu : {measure set T -> \bar R}.
+Local Open Scope ereal_scope.
+Implicit Types (p : \bar R) (f g : T -> R) (r : R).
+
+Definition Lnorm p f :=
+  match p with
+  | p%:E => if p == 0%R then
+              mu (f @^-1` (setT `\ 0%R))
+            else
+              (\int[mu]_x (`|f x| `^ p)%:E) `^ p^-1
+  | +oo => if mu [set: T] > 0 then ess_sup mu (normr \o f) else 0
+  | -oo => 0
+  end.
+
+Local Notation "'N_ p [ f ]" := (Lnorm p f).
+
+Lemma Lnorm1 f : 'N_1[f] = \int[mu]_x `|f x|%:E.
+Proof.
+rewrite /Lnorm oner_eq0 invr1// poweRe1//.
+  by apply: eq_integral => t _; rewrite powRr1.
+by apply: integral_ge0 => t _; rewrite powRr1 ?lee_fin ?normr_ge0.
+Qed.
+
+Lemma Lnorm_ge0 p f : 0 <= 'N_p[f].
+Proof.
+move: p => [r/=|/=|//].
+  by case: ifPn => // r0; exact: poweR_ge0.
+by case: ifPn => // /ess_sup_ge0; apply => t/=.
+Qed.
+
+Lemma eq_Lnorm p f g : f =1 g -> 'N_p[f] = 'N_p[g].
+Proof. by move=> fg; congr Lnorm; exact/funext. Qed.
+
+Lemma Lnorm_eq0_eq0 r f : (0 < r)%R -> measurable_fun setT f ->
+  'N_r%:E[f] = 0 -> ae_eq mu [set: T] (fun t => (`|f t| `^ r)%:E) (cst 0).
+Proof.
+move=> r0 mf/=; rewrite (gt_eqF r0) => /poweR_eq0_eq0 fp.
+apply/ae_eq_integral_abs => //=.
+  apply: measurableT_comp => //.
+  apply: (@measurableT_comp _ _ _ _ _ _ (@powR R ^~ r)) => //.
+  exact: measurableT_comp.
+under eq_integral => x _ do rewrite ger0_norm ?powR_ge0//.
+by rewrite fp//; apply: integral_ge0 => t _; rewrite lee_fin powR_ge0.
+Qed.
+
+End Lnorm.
+#[global]
+Hint Extern 0 (0 <= Lnorm _ _ _) => solve [apply: Lnorm_ge0] : core.
+
+Notation "'N[ mu ]_ p [ f ]" := (Lnorm mu p f).
+
+Section lnorm.
+(* lnorm is just Lnorm applied to counting *)
+Context d {T : measurableType d} {R : realType}.
+
+End lnorm.
+
+Notation "'N_ p [ f ]" := (Lnorm [the measure _ _ of counting] p f).
+(* END borrowing *)
 
 Reserved Notation "[[ e ]]" (format "[[  e  ]]").
 
@@ -25,11 +127,6 @@ Inductive comparisons : Type :=
 | le_E : comparisons
 | eq_E : comparisons.
 
-Inductive binary_logical : Type :=
-| and_E : binary_logical
-| or_E : binary_logical
-| impl_E : binary_logical.
-
 Variable R : realType.
 
 Section expr.
@@ -40,7 +137,9 @@ Inductive expr : simple_type -> Type :=
   | Vector : forall n : nat, n.-tuple R -> expr (Vector_T n)
 
   (*logical connectives*)
-  | binary_logical_E : binary_logical -> expr Bool_T -> expr Bool_T -> expr Bool_T
+  | and_E : seq (expr Bool_T) -> expr Bool_T
+  | or_E : seq (expr Bool_T) -> expr Bool_T
+  | impl_E : expr Bool_T -> expr Bool_T -> expr Bool_T
   | not_E : expr Bool_T -> expr Bool_T
 
   (*arithmetic operations*)
@@ -64,9 +163,9 @@ Inductive expr : simple_type -> Type :=
   (*| identity_E : expr Real_T -> expr Real_T -> expr Real_T.*)
 End expr.
 
-Notation "a /\ b" := (binary_logical_E and_E a b).
-Notation "a \/ b" := (binary_logical_E or_E a b).
-Notation "a `=> b" := (binary_logical_E impl_E a b) (at level 55).
+Notation "a /\ b" := (and_E [:: a; b]).
+Notation "a \/ b" := (or_E [:: a; b]).
+Notation "a `=> b" := (impl_E a b) (at level 55).
 Notation "`~ a" := (not_E a) (at level 75).
 Notation "a `+ b" := (add_E a b) (at level 50).
 Notation "a `* b" := (mult_E a b) (at level 40).
@@ -82,7 +181,6 @@ Notation "a `> b" := (b `< a) (at level 70).
 Section translation_def.
 Local Open Scope ring_scope.
 
-
 Definition type_translation (t: simple_type) : Type:=
   match t with
   | Bool_T => R
@@ -96,34 +194,8 @@ Inductive DL := Lukasiewicz | Yager | Godel | product.
 Variable (l : DL).
 Variable (p : R).
 Variable (p1 : 1 <= p).
-
-Definition translation_binop op a1 a2 :=
-  match l with
-  | Lukasiewicz =>
-      match op with
-      | and_E => maxr (a1 + a2 - 1) 0
-      | or_E => minr (a1 + a2) 1
-      | impl_E => minr (1 - a1 + a2) 1
-      end
-  | Yager =>
-      match op with
-      | and_E => maxr (1 - ((1 - a1) `^ p + (1 - a2) `^ p) `^ (p^-1)) 0
-      | or_E => minr ((a1 `^ p + a2 `^ p) `^ (p^-1)) 1
-      | impl_E => minr (((1 - a1) `^ p + a2 `^ p) `^ (p^-1)) 1
-      end
-  | Godel =>
-      match op with
-      | and_E => minr a1 a2
-      | or_E => maxr a1 a2
-      | impl_E => maxr (1 - a1) a2
-      end
-  | product => 
-      match op with
-      | and_E => a1 * a2
-      | or_E => a1 + a2 - a1 * a2
-      | impl_E => 1 - a1 + a1 * a2
-      end
-  end.
+Variable (nu : R).
+Variable (nu0 : 0 < nu).
 
 Fixpoint translation t (e: expr t) : type_translation t :=
     match e in expr t return type_translation t with
@@ -133,7 +205,27 @@ Fixpoint translation t (e: expr t) : type_translation t :=
     | Index n i => i
     | Vector n t => t
 
-    | binary_logical_E op E1 E2 => translation_binop op [[ E1 ]] [[ E2 ]]
+    | and_E Es =>
+        match l with
+        | Lukasiewicz => maxr ((\sum_(E <- Es) [[ E ]]) - (length Es)%:R) 0
+        | Yager => maxr (1 - fine ('N_(p%:E) [ map (fun E => 1 - ([[ E ]] : type_translation Bool_T)%:E)%E Es ])) 0
+        | Godel => foldr minr 1 (map translation Es)
+        | product => foldr ( *%R ) 1 (map translation Es)
+        end
+    | or_E Es =>
+        match l with
+        | Lukasiewicz => minr (\sum_(E <- Es) [[ E ]]) 1
+        | Yager => minr (fine ('N_p [ map (fun E => [[ E ]]%:E) Es ])) 1
+        | Godel => foldr maxr 0 (map translation Es)
+        | product => foldr (fun a1 a2 => a1 + a2 - a1 * a2) 0 (map translation Es)
+        end
+    | impl_E E1 E2 =>
+        match l with
+        | Lukasiewicz => minr (1 - [[ E1 ]] + [[ E2 ]]) 1
+        | Yager => minr (((1 - [[ E1 ]]) `^ p + [[ E2 ]] `^ p) `^ (p^-1)) 1
+        | Godel => maxr (1 - [[ E1 ]]) [[ E2 ]]
+        | product => 1 - [[ E1 ]] + [[ E1 ]] * [[ E2 ]]
+        end
 
     | `~ E1 => 1 - [[ E1 ]]
 
@@ -152,6 +244,95 @@ Fixpoint translation t (e: expr t) : type_translation t :=
     end
 where "[[ e ]]" := (translation e).
 
+Definition dl2_type_translation (t: simple_type) : Type:=
+  match t with
+  | Bool_T => \bar R
+  | Real_T => R
+  | Vector_T n => n.-tuple R
+  | Index_T n => 'I_n
+  | Network_T n m => n.-tuple R -> m.-tuple R
+end.
+
+Reserved Notation "[[ e ]]".
+Fixpoint dl2_translation t (e: expr t) : dl2_type_translation t :=
+    match e in expr t return dl2_type_translation t with
+    | Bool true => (0 : dl2_type_translation Bool_T)%E
+    | Bool false => (-oo : dl2_type_translation Bool_T)%E
+    | Real r => r%R
+    | Index n i => i
+    | Vector n t => t
+
+    | and_E Es => (\sum_(E <- Es) [[ E ]])%E
+    | or_E Es => (-1^+(1+length Es)%nat * \prod_(E <- Es) [[ E ]])%E
+    | impl_E E1 E2 => (-oo)%E (* FIX: this case is not covered by DL2 *)
+    | `~ E1 => (-oo)%E (* FIX: this case is not covered by DL2 *)
+
+    (*simple arithmetic*)
+    | E1 `+ E2 => [[ E1 ]] + [[ E2 ]]
+    | E1 `* E2 => [[ E1 ]] * [[ E2 ]]
+    | `- E1 => - [[ E1 ]]
+
+    (*comparisons*)
+    | E1 `== E2 => (-`| [[ E1 ]]%:E - [[ E2 ]]%:E |)%E
+    | E1 `<= E2 => (- maxe ([[ E1 ]]%:E - [[ E2 ]]%:E) 0)%E
+
+    | net n m f => f
+    | app_net n m f v => [[ f ]] [[ v ]]
+    | lookup_E n v i => tnth [[ v ]] [[ i ]]
+    end
+where "[[ e ]]" := (dl2_translation e).
+
+Definition stl_type_translation (t: simple_type) : Type:=
+  match t with
+  | Bool_T => \bar R
+  | Real_T => R
+  | Vector_T n => n.-tuple R
+  | Index_T n => 'I_n
+  | Network_T n m => n.-tuple R -> m.-tuple R
+end.
+
+Reserved Notation "[[ e ]]".
+Fixpoint stl_translation t (e: expr t) : stl_type_translation t :=
+    match e in expr t return stl_type_translation t with
+    | Bool true => (+oo : stl_type_translation Bool_T)%E
+    | Bool false => (-oo : stl_type_translation Bool_T)%E
+    | Real r => r%R
+    | Index n i => i
+    | Vector n t => t
+
+    | and_E Es =>
+        let a := map stl_translation Es in
+        let a_min := foldr mine (+oo)%E a in
+        let a_ i := nth 0 a i in
+        let a'_ i := (a_ i - a_min) / a_min in
+        if a_min < 0 then (\sum_(i < +oo) a_min * expR (a'_ i (* CHECK: sure it's not a_ i? *)) * expR (nu * a'_ i)) / (\sum_(i < +oo) expR (nu * a'_ i))
+        else if a_min > 0 then (\sum_(i < +oo) a_ i * expR (-nu * a'_ i)) / (\sum_(i < +oo) expR (nu * a'_ i))
+             else 0
+    | or_E Es =>
+        let a := map stl_translation Es in
+        let a_max := foldr maxe (+oo)%E a in
+        let a_ i := nth 0 a i in
+        let a'_ i := (a_ i - a_max) / a_max in
+        if a_max < 0 then (\sum_(i < +oo) a_max * expR (a'_ i (* CHECK: sure it's not a_ i? *)) * expR (nu * a'_ i)) / (\sum_(i < +oo) expR (nu * a'_ i))
+        else if a_max > 0 then (\sum_(i < +oo) a_ i * expR (-nu * a'_ i)) / (\sum_(i < +oo) expR (nu * a'_ i))
+             else 0
+
+    | `~ E1 => (- [[ E1 ]])%E
+
+    (*simple arithmetic*)
+    | E1 `+ E2 => [[ E1 ]] + [[ E2 ]]
+    | E1 `* E2 => [[ E1 ]] * [[ E2 ]]
+    | `- E1 => - [[ E1 ]]
+
+    (*comparisons*)
+    | E1 `== E2 => (-`| [[ E1 ]]%:E - [[ E2 ]]%:E |)%E
+    | E1 `<= E2 => (- maxe ([[ E1 ]]%:E - [[ E2 ]]%:E) 0)%E
+
+    | net n m f => f
+    | app_net n m f v => [[ f ]] [[ v ]]
+    | lookup_E n v i => tnth [[ v ]] [[ i ]]
+    end
+where "[[ e ]]" := (stl_translation e).
 
 Definition bool_type_translation (t: simple_type) : Type:=
   match t with
