@@ -8,6 +8,5 @@
 -arg -w -arg -redundant-canonical-projection
 -arg -w -arg -projection-no-head-constant
 
-LDL.v
-LDL_no_lambda.v
+LDL_function.v
 #Test.v

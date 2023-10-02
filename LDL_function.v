@@ -197,7 +197,9 @@ Variable (p1 : 1 <= p).
 Variable (nu : R).
 Variable (nu0 : 0 < nu).
 
-Fixpoint translation t (e: expr t) : type_translation t :=
+(* TODO: Definition Sum Es := foldr.... *)
+
+Fixpoint translation t (e: expr t) {struct e} : type_translation t :=
     match e in expr t return type_translation t with
     | Bool true => (1%R : type_translation Bool_T)
     | Bool false => (0%R : type_translation Bool_T)
@@ -207,17 +209,17 @@ Fixpoint translation t (e: expr t) : type_translation t :=
 
     | and_E Es =>
         match l with
-        | Lukasiewicz => maxr ((\sum_(E <- Es) [[ E ]]) - (length Es)%:R) 0
-        | Yager => maxr (1 - fine ('N_(p%:E) [ map (fun E => 1 - ([[ E ]] : type_translation Bool_T)%:E)%E Es ])) 0
-        | Godel => foldr minr 1 (map translation Es)
-        | product => foldr ( *%R ) 1 (map translation Es)
+        | Lukasiewicz => maxr ((foldr ( +%R ) 0 (map (@translation _) Es)) - (length Es)%:R) 0 (* FIX: introduce notation for foldr... *)
+        | Yager => maxr (1 - ((foldr ( +%R ) 0 (map (fun E => (1 - ([[ E ]]: type_translation Bool_T))`^p)%R Es))`^p^-1)) 0
+        | Godel => foldr minr 1 (map (@translation _) Es)
+        | product => foldr ( *%R ) 1 (map (@translation _) Es)
         end
     | or_E Es =>
         match l with
-        | Lukasiewicz => minr (\sum_(E <- Es) [[ E ]]) 1
-        | Yager => minr (fine ('N_p [ map (fun E => [[ E ]]%:E) Es ])) 1
-        | Godel => foldr maxr 0 (map translation Es)
-        | product => foldr (fun a1 a2 => a1 + a2 - a1 * a2) 0 (map translation Es)
+        | Lukasiewicz => minr (foldr ( +%R ) 0 (map (@translation _) Es)) 1
+        | Yager => minr ((foldr ( +%R ) 0 (map (fun E => ([[ E ]] : type_translation Bool_T)`^p) Es))`^p^-1) 1
+        | Godel => foldr maxr 0 (map (@translation _) Es)
+        | product => foldr (fun a1 a2 => a1 + a2 - a1 * a2) 0 (map (@translation _) Es)
         end
     | impl_E E1 E2 =>
         match l with
@@ -239,8 +241,8 @@ Fixpoint translation t (e: expr t) : type_translation t :=
     | E1 `<= E2 => if [[ E1 ]] == -[[ E2 ]] then ([[ E1 ]] <= [[ E2 ]])%R%:R else maxr (1 - maxr (([[ E1 ]] - [[ E2 ]]) / `|[[ E1 ]] + [[ E2 ]]|) 0) 0
 
     | net n m f => f
-    | app_net n m f v => [[ f ]] [[ v ]]
-    | lookup_E n v i => tnth [[ v ]] [[ i ]]
+    | app_net n m f v => (translation f) (translation v)
+    | lookup_E n v i => tnth (translation v) (translation i)
     end
 where "[[ e ]]" := (translation e).
 
@@ -264,8 +266,8 @@ Fixpoint dl2_translation t (e: expr t) : dl2_type_translation t :=
 
     | and_E Es => (\sum_(E <- Es) [[ E ]])%E
     | or_E Es => (-1^+(1+length Es)%nat * \prod_(E <- Es) [[ E ]])%E
-    | impl_E E1 E2 => (-oo)%E (* FIX: this case is not covered by DL2 *)
-    | `~ E1 => (-oo)%E (* FIX: this case is not covered by DL2 *)
+    | impl_E E1 E2 => (+oo)%E (* FIX: this case is not covered by DL2 *)
+    | `~ E1 => (+oo)%E (* FIX: this case is not covered by DL2 *)
 
     (*simple arithmetic*)
     | E1 `+ E2 => [[ E1 ]] + [[ E2 ]]
@@ -300,7 +302,7 @@ Fixpoint stl_translation t (e: expr t) : stl_type_translation t :=
     | Index n i => i
     | Vector n t => t
 
-    | and_E Es =>
+    | and_E Es => (* TODO: define as fold instead of infinite sums *)
         let a := map stl_translation Es in
         let a_min := foldr mine (+oo)%E a in
         let a_ i := nth 0 a i in
@@ -308,7 +310,7 @@ Fixpoint stl_translation t (e: expr t) : stl_type_translation t :=
         if a_min < 0 then (\sum_(i < +oo) a_min * expR (a'_ i (* CHECK: sure it's not a_ i? *)) * expR (nu * a'_ i)) / (\sum_(i < +oo) expR (nu * a'_ i))
         else if a_min > 0 then (\sum_(i < +oo) a_ i * expR (-nu * a'_ i)) / (\sum_(i < +oo) expR (nu * a'_ i))
              else 0
-    | or_E Es =>
+    | or_E Es => (* TODO: double check *)
         let a := map stl_translation Es in
         let a_max := foldr maxe (+oo)%E a in
         let a_ i := nth 0 a i in
