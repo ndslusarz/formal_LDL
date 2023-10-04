@@ -3,112 +3,11 @@ Require Import Coq.Program.Equality.
 From mathcomp Require Import all_ssreflect all_algebra.
 From mathcomp Require Import lra.
 From mathcomp Require Import order seq.
-From mathcomp Require Import sequences reals ereal exp.
-From mathcomp Require Import functions classical_sets functions measure lebesgue_measure lebesgue_integral boolp.
+From mathcomp Require Import sequences reals ereal exp hoelder.
+From mathcomp Require Import functions classical_sets functions measure lebesgue_measure lebesgue_integral boolp .
 
 Import Num.Def Num.Theory GRing.Theory.
 Import Order.TTheory.
-
-(* BEGIN: borrowed from hoelder.v *)
-
-Set Implicit Arguments.
-Unset Strict Implicit.
-Unset Printing Implicit Defensive.
-Import Order.TTheory GRing.Theory Num.Def Num.Theory.
-
-Reserved Notation "'N[ mu ]_ p [ F ]"
-  (at level 5, F at level 36, mu at level 10,
-  format "'[' ''N[' mu ]_ p '/  ' [ F ] ']'").
-(* for use as a local notation when the measure is in context: *)
-Reserved Notation "'N_ p [ F ]"
-  (at level 5, F at level 36, format "'[' ''N_' p '/  ' [ F ] ']'").
-
-Declare Scope Lnorm_scope.
-
-Local Open Scope classical_set_scope.
-Local Open Scope ring_scope.
-Local Open Scope ereal_scope.
-
-
-Section essential_supremum.
-Context d {T : measurableType d} {R : realType}.
-Variable mu : {measure set T -> \bar R}.
-Implicit Types f : T -> R.
-
-Definition ess_sup f :=
-  ereal_inf (EFin @` [set r | mu (f @^-1` `]r, +oo[) = 0]).
-
-Lemma ess_sup_ge0 f : 0 < mu [set: T] -> (forall t, 0 <= f t)%R ->
-  0 <= ess_sup f.
-Proof.
-move=> muT f0; apply: lb_ereal_inf => _ /= [r /eqP rf <-]; rewrite leNgt.
-apply/negP => r0; apply/negP : rf; rewrite gt_eqF// (_ : _ @^-1` _ = setT)//.
-by apply/seteqP; split => // x _ /=; rewrite in_itv/= (lt_le_trans _ (f0 x)).
-Qed.
-
-End essential_supremum.
-
-Section Lnorm.
-Context d {T : measurableType d} {R : realType}.
-Variable mu : {measure set T -> \bar R}.
-Local Open Scope ereal_scope.
-Implicit Types (p : \bar R) (f g : T -> R) (r : R).
-
-Definition Lnorm p f :=
-  match p with
-  | p%:E => if p == 0%R then
-              mu (f @^-1` (setT `\ 0%R))
-            else
-              (\int[mu]_x (`|f x| `^ p)%:E) `^ p^-1
-  | +oo => if mu [set: T] > 0 then ess_sup mu (normr \o f) else 0
-  | -oo => 0
-  end.
-
-Local Notation "'N_ p [ f ]" := (Lnorm p f).
-
-Lemma Lnorm1 f : 'N_1[f] = \int[mu]_x `|f x|%:E.
-Proof.
-rewrite /Lnorm oner_eq0 invr1// poweRe1//.
-  by apply: eq_integral => t _; rewrite powRr1.
-by apply: integral_ge0 => t _; rewrite powRr1 ?lee_fin ?normr_ge0.
-Qed.
-
-Lemma Lnorm_ge0 p f : 0 <= 'N_p[f].
-Proof.
-move: p => [r/=|/=|//].
-  by case: ifPn => // r0; exact: poweR_ge0.
-by case: ifPn => // /ess_sup_ge0; apply => t/=.
-Qed.
-
-Lemma eq_Lnorm p f g : f =1 g -> 'N_p[f] = 'N_p[g].
-Proof. by move=> fg; congr Lnorm; exact/funext. Qed.
-
-Lemma Lnorm_eq0_eq0 r f : (0 < r)%R -> measurable_fun setT f ->
-  'N_r%:E[f] = 0 -> ae_eq mu [set: T] (fun t => (`|f t| `^ r)%:E) (cst 0).
-Proof.
-move=> r0 mf/=; rewrite (gt_eqF r0) => /poweR_eq0_eq0 fp.
-apply/ae_eq_integral_abs => //=.
-  apply: measurableT_comp => //.
-  apply: (@measurableT_comp _ _ _ _ _ _ (@powR R ^~ r)) => //.
-  exact: measurableT_comp.
-under eq_integral => x _ do rewrite ger0_norm ?powR_ge0//.
-by rewrite fp//; apply: integral_ge0 => t _; rewrite lee_fin powR_ge0.
-Qed.
-
-End Lnorm.
-#[global]
-Hint Extern 0 (0 <= Lnorm _ _ _) => solve [apply: Lnorm_ge0] : core.
-
-Notation "'N[ mu ]_ p [ f ]" := (Lnorm mu p f).
-
-Section lnorm.
-(* lnorm is just Lnorm applied to counting *)
-Context d {T : measurableType d} {R : realType}.
-
-End lnorm.
-
-Notation "'N_ p [ f ]" := (Lnorm [the measure _ _ of counting] p f).
-(* END borrowing *)
 
 Reserved Notation "[[ e ]]" (format "[[  e  ]]").
 
@@ -197,9 +96,7 @@ Variable (p1 : 1 <= p).
 Variable (nu : R).
 Variable (nu0 : 0 < nu).
 
-Print foldr.
-
-Definition sum (Es : seq R) : R := foldr ( +%R ) 0 Es. 
+Definition sumR (Es : seq R) : R := foldr ( +%R ) 0 Es. 
 
 Fixpoint translation t (e: expr t) {struct e} : type_translation t :=
     match e in expr t return type_translation t with
@@ -211,15 +108,15 @@ Fixpoint translation t (e: expr t) {struct e} : type_translation t :=
 
     | and_E Es =>
         match l with
-        | Lukasiewicz => maxr (sum 0:R (map (@translation _) Es)(* :(seq R) *) - (length Es)%:R) 0 (* FIX: introduce notation for foldr... *)
-        | Yager => maxr (1 - ((foldr ( +%R ) 0 (map (fun E => (1 - ([[ E ]]: type_translation Bool_T))`^p)%R Es))`^p^-1)) 0
+        | Lukasiewicz => maxr (sumR (map (@translation _) Es)- (length Es)%:R) 0
+        | Yager => maxr (1 - ((sumR (map (fun E => (1 - ([[ E ]]: type_translation Bool_T))`^p)%R Es))`^p^-1)) 0
         | Godel => foldr minr 1 (map (@translation _) Es)
         | product => foldr ( *%R ) 1 (map (@translation _) Es)
         end
     | or_E Es =>
         match l with
-        | Lukasiewicz => minr (foldr ( +%R ) 0 (map (@translation _) Es)) 1
-        | Yager => minr ((foldr ( +%R ) 0 (map (fun E => ([[ E ]] : type_translation Bool_T)`^p) Es))`^p^-1) 1
+        | Lukasiewicz => minr (sumR (map (@translation _) Es)) 1
+        | Yager => minr ((sumR (map (fun E => ([[ E ]] : type_translation Bool_T)`^p) Es))`^p^-1) 1
         | Godel => foldr maxr 0 (map (@translation _) Es)
         | product => foldr (fun a1 a2 => a1 + a2 - a1 * a2) 0 (map (@translation _) Es)
         end
@@ -248,6 +145,8 @@ Fixpoint translation t (e: expr t) {struct e} : type_translation t :=
     end
 where "[[ e ]]" := (translation e).
 
+Definition sumE (Es : seq \bar R) : \bar R := foldr ( +%E ) 0%E Es. 
+
 Definition dl2_type_translation (t: simple_type) : Type:=
   match t with
   | Bool_T => \bar R
@@ -266,8 +165,8 @@ Fixpoint dl2_translation t (e: expr t) {struct e} : dl2_type_translation t :=
     | Index n i => i
     | Vector n t => t
 
-    | and_E Es => foldr ( +%R ) 0 (map (@dl2_translation _) Es)  (\sum_(E <- Es) [[ E ]])%E 
-    | or_E Es => (-1^+(1+length Es)%nat * (foldr * 1 (map (@translation _) Es)))%E
+    | and_E Es => sumE (map (@dl2_translation _) Es)  (* (\sum_(E <- Es) [[ E ]])%E  *)
+    | or_E Es => (-1^+(1+length Es)%nat * (sumE (map (@dl2_translation _) Es)))%E
     | impl_E E1 E2 => (+oo)%E (* FIX: this case is not covered by DL2 *)
     | `~ E1 => (+oo)%E (* FIX: this case is not covered by DL2 *)
 
@@ -305,21 +204,40 @@ Fixpoint stl_translation t (e: expr t) : stl_type_translation t :=
     | Vector n t => t
 
     | and_E Es => (* TODO: define as fold instead of infinite sums *)
-        let a := map stl_translation Es in
-        let a_min := foldr mine (+oo)%E a in
-        let a_ i := nth 0 a i in
-        let a'_ i := (a_ i - a_min) / a_min in
-        if a_min < 0 then (\sum_(i < +oo) a_min * expR (a'_ i (* CHECK: sure it's not a_ i? *)) * expR (nu * a'_ i)) / (\sum_(i < +oo) expR (nu * a'_ i))
-        else if a_min > 0 then (\sum_(i < +oo) a_ i * expR (-nu * a'_ i)) / (\sum_(i < +oo) expR (nu * a'_ i))
+        let A := map (@stl_translation _) Es in
+        let a_min := foldr mine (+oo)%E A in
+        let a'_i a_i := (a_i - a_min) / a_min in
+        (* let a_ i := nth 0 a i in
+        let a'_ i := (a_ i - a_min) / a_min in *)
+        if a_min < 0 then 
+          sumE (fun a => a_min * expR ((a'_i a) (* CHECK: sure it's not a_ i? *)) * expR (nu * (a'_i a))) A /
+          sumE (fun a => expR (nu * (a'_i a))) A
+        else if a_min > 0 then 
+          sumE (fun a => a * expR (-nu * (a'_i a))) A /
+          sumE (fun a => expR (nu * (a'_i a))) A
              else 0
     | or_E Es => (* TODO: double check *)
-        let a := map stl_translation Es in
-        let a_max := foldr maxe (+oo)%E a in
-        let a_ i := nth 0 a i in
-        let a'_ i := (a_ i - a_max) / a_max in
-        if a_max < 0 then (\sum_(i < +oo) a_max * expR (a'_ i (* CHECK: sure it's not a_ i? *)) * expR (nu * a'_ i)) / (\sum_(i < +oo) expR (nu * a'_ i))
-        else if a_max > 0 then (\sum_(i < +oo) a_ i * expR (-nu * a'_ i)) / (\sum_(i < +oo) expR (nu * a'_ i))
+        let A := map stl_translation Es in
+        let a_max:= - (foldr maxe (+oo)%E A) in
+        let a'_i a_i := (- a_i - a_max) / a_max in
+(*         let a_ i := nth 0 a i in
+  
+        let a'_ i := (a_ i - a_max) / a_max in *)
+        if a_max < 0 then 
+          sumE (fun a => a_max * expR ((a'_i a) (* CHECK: sure it's not a_ i? *)) * expR (nu * (a'_i a))) A /
+          sumE (fun a => expR (nu * (a'_i a)))
+        else if a_max > 0 then 
+          sumE (fun a => a * expR (-nu * (a'_i a))) A /
+          sumE (fun a => expR (nu * (a'_i a))) A
              else 0
+(*         if a_max < 0 then 
+          sumE (fun a => a_min * expR ((a'_i a) (* CHECK: sure it's not a_ i? *)) * expR (nu * (a'_i a))) Es /
+          sumE (fun a => expR (nu * (a'_i a)))
+
+
+(\sum_(i < +oo) a_max * expR (a'_ i (* CHECK: sure it's not a_ i? *)) * expR (nu * a'_ i)) / (\sum_(i < +oo) expR (nu * a'_ i))
+        else if a_max > 0 then (\sum_(i < +oo) a_ i * expR (-nu * a'_ i)) / (\sum_(i < +oo) expR (nu * a'_ i))
+             else 0 *)
 
     | `~ E1 => (- [[ E1 ]])%E
 
