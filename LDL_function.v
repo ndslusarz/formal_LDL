@@ -197,7 +197,9 @@ Variable (p1 : 1 <= p).
 Variable (nu : R).
 Variable (nu0 : 0 < nu).
 
-(* TODO: Definition Sum Es := foldr.... *)
+Print foldr.
+
+Definition sum (Es : seq R) : R := foldr ( +%R ) 0 Es. 
 
 Fixpoint translation t (e: expr t) {struct e} : type_translation t :=
     match e in expr t return type_translation t with
@@ -209,7 +211,7 @@ Fixpoint translation t (e: expr t) {struct e} : type_translation t :=
 
     | and_E Es =>
         match l with
-        | Lukasiewicz => maxr ((foldr ( +%R ) 0 (map (@translation _) Es)) - (length Es)%:R) 0 (* FIX: introduce notation for foldr... *)
+        | Lukasiewicz => maxr (sum 0:R (map (@translation _) Es)(* :(seq R) *) - (length Es)%:R) 0 (* FIX: introduce notation for foldr... *)
         | Yager => maxr (1 - ((foldr ( +%R ) 0 (map (fun E => (1 - ([[ E ]]: type_translation Bool_T))`^p)%R Es))`^p^-1)) 0
         | Godel => foldr minr 1 (map (@translation _) Es)
         | product => foldr ( *%R ) 1 (map (@translation _) Es)
@@ -256,7 +258,7 @@ Definition dl2_type_translation (t: simple_type) : Type:=
 end.
 
 Reserved Notation "[[ e ]]".
-Fixpoint dl2_translation t (e: expr t) : dl2_type_translation t :=
+Fixpoint dl2_translation t (e: expr t) {struct e} : dl2_type_translation t :=
     match e in expr t return dl2_type_translation t with
     | Bool true => (0 : dl2_type_translation Bool_T)%E
     | Bool false => (-oo : dl2_type_translation Bool_T)%E
@@ -264,8 +266,8 @@ Fixpoint dl2_translation t (e: expr t) : dl2_type_translation t :=
     | Index n i => i
     | Vector n t => t
 
-    | and_E Es => (\sum_(E <- Es) [[ E ]])%E
-    | or_E Es => (-1^+(1+length Es)%nat * \prod_(E <- Es) [[ E ]])%E
+    | and_E Es => foldr ( +%R ) 0 (map (@dl2_translation _) Es)  (\sum_(E <- Es) [[ E ]])%E 
+    | or_E Es => (-1^+(1+length Es)%nat * (foldr * 1 (map (@translation _) Es)))%E
     | impl_E E1 E2 => (+oo)%E (* FIX: this case is not covered by DL2 *)
     | `~ E1 => (+oo)%E (* FIX: this case is not covered by DL2 *)
 
@@ -282,7 +284,7 @@ Fixpoint dl2_translation t (e: expr t) : dl2_type_translation t :=
     | app_net n m f v => [[ f ]] [[ v ]]
     | lookup_E n v i => tnth [[ v ]] [[ i ]]
     end
-where "[[ e ]]" := (dl2_translation e).
+where "[[ e ]]" := (dl2_translation e). 
 
 Definition stl_type_translation (t: simple_type) : Type:=
   match t with
