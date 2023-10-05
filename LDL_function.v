@@ -156,28 +156,30 @@ Definition dl2_type_translation (t: simple_type) : Type:=
   | Network_T n m => n.-tuple R -> m.-tuple R
 end.
 
+Open Scope ereal_scope.
+
 Reserved Notation "[[ e ]]".
 Fixpoint dl2_translation t (e: expr t) {struct e} : dl2_type_translation t :=
     match e in expr t return dl2_type_translation t with
-    | Bool true => (0 : dl2_type_translation Bool_T)%E
-    | Bool false => (-oo : dl2_type_translation Bool_T)%E
-    | Real r => r%R
+    | Bool true => 0
+    | Bool false => -oo
+    | Real r => r
     | Index n i => i
     | Vector n t => t
 
-    | and_E Es => sumE (map (@dl2_translation _) Es)  (* (\sum_(E <- Es) [[ E ]])%E  *)
-    | or_E Es => (-1^+(1+length Es)%nat * (sumE (map (@dl2_translation _) Es)))%E
+    | and_E Es => sumE (map (@dl2_translation _) Es)  
+    | or_E Es => (-1^+(1+length Es)%nat * (sumE (map (@dl2_translation _) Es)))
     | impl_E E1 E2 => (+oo)%E (* FIX: this case is not covered by DL2 *)
     | `~ E1 => (+oo)%E (* FIX: this case is not covered by DL2 *)
 
     (*simple arithmetic*)
-    | E1 `+ E2 => [[ E1 ]] + [[ E2 ]]
-    | E1 `* E2 => [[ E1 ]] * [[ E2 ]]
-    | `- E1 => - [[ E1 ]]
+    | E1 `+ E2 => ([[ E1 ]] + [[ E2 ]])%R
+    | E1 `* E2 => ([[ E1 ]] * [[ E2 ]])%R
+    | `- E1 => (- [[ E1 ]])%R
 
     (*comparisons*)
-    | E1 `== E2 => (-`| [[ E1 ]]%:E - [[ E2 ]]%:E |)%E
-    | E1 `<= E2 => (- maxe ([[ E1 ]]%:E - [[ E2 ]]%:E) 0)%E
+    | E1 `== E2 => (- `| [[ E1 ]] - [[ E2 ]]|)%:E
+    | E1 `<= E2 => (- maxr ([[ E1 ]] - [[ E2 ]]) 0)%:E
 
     | net n m f => f
     | app_net n m f v => [[ f ]] [[ v ]]
@@ -194,61 +196,58 @@ Definition stl_type_translation (t: simple_type) : Type:=
   | Network_T n m => n.-tuple R -> m.-tuple R
 end.
 
+Definition expeR (x : \bar R) := 
+  match x with 
+  | EFin r => (expR r)%:E
+  | +oo => +oo
+  | -oo => 0
+  end.
+
+About sumE.
+
 Reserved Notation "[[ e ]]".
 Fixpoint stl_translation t (e: expr t) : stl_type_translation t :=
     match e in expr t return stl_type_translation t with
-    | Bool true => (+oo : stl_type_translation Bool_T)%E
-    | Bool false => (-oo : stl_type_translation Bool_T)%E
-    | Real r => r%R
+    | Bool true => +oo
+    | Bool false => -oo 
+    | Real r => r
     | Index n i => i
     | Vector n t => t
 
-    | and_E Es => (* TODO: define as fold instead of infinite sums *)
+    | and_E Es => 
         let A := map (@stl_translation _) Es in
-        let a_min := foldr mine (+oo)%E A in
-        let a'_i a_i := (a_i - a_min) / a_min in
-        (* let a_ i := nth 0 a i in
-        let a'_ i := (a_ i - a_min) / a_min in *)
-        if a_min < 0 then 
-          sumE (fun a => a_min * expR ((a'_i a) (* CHECK: sure it's not a_ i? *)) * expR (nu * (a'_i a))) A /
-          sumE (fun a => expR (nu * (a'_i a))) A
+        let a_min: \bar R := foldr mine (+oo) A in
+        let a'_i (a_i: \bar R) := (a_i - a_min) * (fine a_min)^-1%:E in
+        if a_min < 0 then  
+          sumE (map (fun a => a_min * expeR (a'_i a) * expeR (nu%:E * a'_i a)) A) *
+          (fine (sumE (map (fun a => expeR (nu%:E * a'_i a)) A)))^-1%:E
         else if a_min > 0 then 
-          sumE (fun a => a * expR (-nu * (a'_i a))) A /
-          sumE (fun a => expR (nu * (a'_i a))) A
+          sumE (map (fun a => a * expeR (-nu%:E * a'_i a)) A) *
+          (fine (sumE (map (fun a => expeR (nu%:E * (a'_i a))) A)))^-1%:E
              else 0
     | or_E Es => (* TODO: double check *)
-        let A := map stl_translation Es in
-        let a_max:= - (foldr maxe (+oo)%E A) in
-        let a'_i a_i := (- a_i - a_max) / a_max in
-(*         let a_ i := nth 0 a i in
-  
-        let a'_ i := (a_ i - a_max) / a_max in *)
+        let A := map (@stl_translation _) Es in
+        let a_max: \bar R := - (foldr maxe (+oo)%E A) in
+        let a'_i (a_i: \bar R) := (- a_i - a_max) * (fine a_max)^-1%:E  in
         if a_max < 0 then 
-          sumE (fun a => a_max * expR ((a'_i a) (* CHECK: sure it's not a_ i? *)) * expR (nu * (a'_i a))) A /
-          sumE (fun a => expR (nu * (a'_i a)))
+          sumE (map (fun a => a_max * expeR (a'_i a) * expeR (nu%:E * a'_i a)) A) *
+          (fine (sumE (map (fun a => expeR (nu%:E * (a'_i a))) A)))^-1%:E
         else if a_max > 0 then 
-          sumE (fun a => a * expR (-nu * (a'_i a))) A /
-          sumE (fun a => expR (nu * (a'_i a))) A
+          sumE (map (fun a => a * expeR (-nu%:E * (a'_i a))) A) *
+          (fine (sumE (map (fun a => expeR (nu%:E * (a'_i a))) A)))^-1%:E
              else 0
-(*         if a_max < 0 then 
-          sumE (fun a => a_min * expR ((a'_i a) (* CHECK: sure it's not a_ i? *)) * expR (nu * (a'_i a))) Es /
-          sumE (fun a => expR (nu * (a'_i a)))
-
-
-(\sum_(i < +oo) a_max * expR (a'_ i (* CHECK: sure it's not a_ i? *)) * expR (nu * a'_ i)) / (\sum_(i < +oo) expR (nu * a'_ i))
-        else if a_max > 0 then (\sum_(i < +oo) a_ i * expR (-nu * a'_ i)) / (\sum_(i < +oo) expR (nu * a'_ i))
-             else 0 *)
+    | impl_E E1 E2 => [[ E1 ]] - [[ E2 ]] (*placeholder for now*)
 
     | `~ E1 => (- [[ E1 ]])%E
 
     (*simple arithmetic*)
-    | E1 `+ E2 => [[ E1 ]] + [[ E2 ]]
-    | E1 `* E2 => [[ E1 ]] * [[ E2 ]]
-    | `- E1 => - [[ E1 ]]
+    | E1 `+ E2 => ([[ E1 ]] + [[ E2 ]])%R
+    | E1 `* E2 => ([[ E1 ]] * [[ E2 ]])%R
+    | `- E1 => (- [[ E1 ]])%R
 
     (*comparisons*)
-    | E1 `== E2 => (-`| [[ E1 ]]%:E - [[ E2 ]]%:E |)%E
-    | E1 `<= E2 => (- maxe ([[ E1 ]]%:E - [[ E2 ]]%:E) 0)%E
+    | E1 `== E2 => (- `| [[ E1 ]] - [[ E2 ]]|)%:E
+    | E1 `<= E2 => (- maxr ([[ E1 ]] - [[ E2 ]]) 0)%:E
 
     | net n m f => f
     | app_net n m f v => [[ f ]] [[ v ]]
