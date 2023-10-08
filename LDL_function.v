@@ -9,11 +9,24 @@ From mathcomp Require Import functions classical_sets functions measure lebesgue
 Import Num.Def Num.Theory GRing.Theory.
 Import Order.TTheory.
 
+
 Reserved Notation "[[ e ]]" (format "[[  e  ]]").
 
 Set Implicit Arguments.
 Unset Strict Implicit.
 Unset Printing Implicit Defensive.
+
+Section hyperbolic_function.
+
+Variable R : realType.
+Local Open Scope ring_scope.
+
+
+Definition sinh (x : R) := (expR x - expR (- x)) / 2.
+Definition cosh (x : R) := (expR x + expR (- x)) / 2.
+Definition tanh (x : R) := sinh x / cosh x.
+
+End hyperbolic_function.
 
 Inductive simple_type : Type :=
 | Bool_T : simple_type
@@ -27,8 +40,9 @@ Inductive comparisons : Type :=
 | eq_E : comparisons.
 
 Variable R : realType.
-
 Section expr.
+
+
 Inductive expr : simple_type -> Type :=
   | Real : R -> expr Real_T
   | Bool : bool -> expr Bool_T
@@ -264,14 +278,14 @@ Definition bool_type_translation (t: simple_type) : Type:=
   | Network_T n m => n.-tuple R -> m.-tuple R
   end.
 
-Definition bool_translation_binop op x y :=
+(*Definition bool_translation_binop op xs :=
   match op with
-  | and_E => x && y
-  | or_E => x || y
+  | and_E xs => map && xs (* x && y *)
+  | or_E xs => map || xs
   | impl_E => x ==> y
-  end.
+  end.*)
 
-Reserved Notation "<< e >>".
+(* Reserved Notation "<< e >>".
 Fixpoint bool_translation t (e: expr t) : bool_type_translation t :=
   match e in expr t return bool_type_translation t with
   | Bool x => x
@@ -279,7 +293,8 @@ Fixpoint bool_translation t (e: expr t) : bool_type_translation t :=
   | Index n i => i
   | Vector n t => t
 
-  | binary_logical_E op E1 E2 => bool_translation_binop op << E1 >> << E2 >>
+  (* | binary_logical_E op E1 E2 => bool_translation_binop op << E1 >> << E2 >> *)
+  | and_E Es => map ( and ) (map bool_translation Bool_T (Es : seq Bool_T))
   | `~ E1 => ~~ << E1 >>
 
   (* arith *)
@@ -294,7 +309,7 @@ Fixpoint bool_translation t (e: expr t) : bool_type_translation t :=
   | app_net n m f v => << f >> << v >>
   | lookup_E n v i => tnth << v >> << i >>
   end
-where "<< e >>" := (bool_translation e).
+where "<< e >>" := (bool_translation e). *)
 
 End translation_def.
 
@@ -307,9 +322,11 @@ Variable (p : R).
 Variable (p1 : 1 <= p).
 
 Local Notation "[[ e ]]_ l" := (translation l p e) (at level 10).
-Local Notation "<< e >>_ l" := (bool_translation e) (at level 10).
+(*Local Notation "<< e >>_ l" := (bool_translation e) (at level 10).*)
+Local Notation "[[ e ]]_stl" := (stl_translation e) (at level 10).
+Local Notation "[[ e ]]_dl2" := (dl2_translation e) (at level 10).
 
-Lemma translations_Network_coincide:
+(*Lemma translations_Network_coincide:
   forall n m (e : expr (Network_T n m)),
     [[ e ]]_l = << e >>_l.
 Proof.
@@ -335,14 +352,25 @@ Proof.
 dependent induction e => //=;
 rewrite ?(IHe1 e1 erefl JMeq_refl) ?(IHe2 e2 erefl JMeq_refl) ?(IHe e erefl JMeq_refl) //=.
 by rewrite translations_Vector_coincide translations_Index_coincide.
-Qed.
+Qed.*)
 
 Lemma translate_Bool_T_01 (e : expr Bool_T) :
   0 <= [[ e ]]_l <= 1.
 Proof.
 dependent induction e => //=.
 - by case: ifPn => //; lra.
-- have := IHe1 e1 erefl JMeq_refl.
+- case l.
+  + rewrite /maxr. case: ifP.
+      lra.
+      admit.
+  + rewrite /maxr. case: ifP.
+      lra.
+      admit.
+  + rewrite /minr. 
+Admitted.
+
+(*OLD VERSION*)
+(* - have := IHe1 e1 erefl JMeq_refl.
   have := IHe2 e2 erefl JMeq_refl.
   set t1 := _ e1.
   set t2 := _ e2.
@@ -361,9 +389,9 @@ dependent induction e => //=.
   + case: ifP; first lra.
     have := normr_ge0 ((t1 - t2) / (t1 + t2)).
     lra.
-Qed.
+Qed. *)
 
-Lemma gt0_ltr_powR (r : R) : 0 < r ->
+(*Lemma gt0_ltr_powR (r : R) : 0 < r ->
   {in `[0, +oo[ &, {homo (@powR R) ^~ r : x y / x < y >-> x < y}}.
 Proof.
 move=> r0 x y; rewrite !in_itv/= !andbT !le_eqVlt => /predU1P[<-|x0].
@@ -573,26 +601,38 @@ dependent induction e => ll ly //=.
       Search (`| _ | == _).
       rewrite eqr_norml.
       nra.
-Qed.
+Qed. *)
 
 Lemma andC e1 e2 :
   [[ e1 /\ e2 ]]_l = [[ e2 /\ e1 ]]_l.
 Proof.
 case: l.
-- by rewrite /= (addrC (_ e1)).
-- by rewrite /= (addrC (_ `^ _)).
+- by rewrite /= addr0 addr0 (addrC (_ e1)).
+- by rewrite /= addr0 addr0 (addrC (_ `^ _)).
 - by rewrite /=/minr; repeat case: ifP; lra.
-- by rewrite /= mulrC.
+- by rewrite /= mulr1 mulr1 mulrC.
 Qed.
+
+Lemma andC_dl2 e1 e2 :
+  [[ e1 /\ e2 ]]_dl2 = [[ e2 /\ e1 ]]_dl2.
+Proof.
+  by rewrite /= adde0 adde0 addeC. 
+Qed.
+
+(* Lemma andC_dl2 e1 e2 :
+  [[ e1 /\ e2 ]]_stl = [[ e2 /\ e1 ]]_stl.
+Proof.
+Admitted. *)
+  
 
 Lemma orC e1 e2 :
   [[ e1 \/ e2 ]]_l = [[ e2 \/ e1 ]]_l.
 Proof.
 case: l.
-- by rewrite /= (addrC (_ e1)).
-- by rewrite /= (addrC (_ `^ _)).
+- by rewrite /= addr0 addr0 (addrC (_ e1)).
+- by rewrite /= addr0 addr0 (addrC (_ `^ _)).
 - by rewrite /=/maxr; repeat case: ifP; lra.
-- by rewrite /= mulrC -(addrC (_ e2)).
+- by rewrite /= addr0 addr0 mulr0 mulr0 subr0 subr0 mulrC -(addrC (_ e2)).
 Qed.
 
 Lemma orA e1 e2 e3 :
