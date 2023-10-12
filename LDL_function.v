@@ -285,7 +285,9 @@ Definition bool_type_translation (t: simple_type) : Type:=
   | impl_E => x ==> y
   end.*)
 
-(* Reserved Notation "<< e >>".
+Local Open Scope ring_scope.
+
+Reserved Notation "<< e >>".
 Fixpoint bool_translation t (e: expr t) : bool_type_translation t :=
   match e in expr t return bool_type_translation t with
   | Bool x => x
@@ -294,7 +296,9 @@ Fixpoint bool_translation t (e: expr t) : bool_type_translation t :=
   | Vector n t => t
 
   (* | binary_logical_E op E1 E2 => bool_translation_binop op << E1 >> << E2 >> *)
-  | and_E Es => map ( and ) (map bool_translation Bool_T (Es : seq Bool_T))
+  | and_E Es => foldr ( andb ) true (map (@bool_translation Bool_T) Es)
+  | or_E Es => foldr orb false (map (@bool_translation Bool_T) Es)
+  | impl_E e1 e2 => << e1 >> ==> << e2 >>
   | `~ E1 => ~~ << E1 >>
 
   (* arith *)
@@ -309,7 +313,7 @@ Fixpoint bool_translation t (e: expr t) : bool_type_translation t :=
   | app_net n m f v => << f >> << v >>
   | lookup_E n v i => tnth << v >> << i >>
   end
-where "<< e >>" := (bool_translation e). *)
+where "<< e >>" := (bool_translation e). 
 
 End translation_def.
 
@@ -321,12 +325,15 @@ Variable (l : DL).
 Variable (p : R).
 Variable (p1 : 1 <= p).
 
-Local Notation "[[ e ]]_ l" := (translation l p e) (at level 10).
-(*Local Notation "<< e >>_ l" := (bool_translation e) (at level 10).*)
-Local Notation "[[ e ]]_stl" := (stl_translation e) (at level 10).
-Local Notation "[[ e ]]_dl2" := (dl2_translation e) (at level 10).
+Reserved Notation "[[ e ]]_ l" (at level 10, format "[[ e ]]_ l").
+Local Notation "[[ e ]]_ l" := (translation l p e).
+Local Notation "<< e >>_ l" := (bool_translation e) (at level 10, format "<< e >>_ l").
+Reserved Notation "nu .-[[ e ]]_stl" (at level 10, format "nu .-[[ e ]]_stl").
+Local Notation "nu .-[[ e ]]_stl" := (stl_translation nu e) (at level 10).
+Reserved Notation "[[ e ]]_dl2" (at level 10, format "[[ e ]]_dl2").
+Local Notation "[[ e ]]_dl2" := (dl2_translation e) (at level 10, format "[[ e ]]_dl2").
 
-(*Lemma translations_Network_coincide:
+Lemma translations_Network_coincide:
   forall n m (e : expr (Network_T n m)),
     [[ e ]]_l = << e >>_l.
 Proof.
@@ -352,7 +359,7 @@ Proof.
 dependent induction e => //=;
 rewrite ?(IHe1 e1 erefl JMeq_refl) ?(IHe2 e2 erefl JMeq_refl) ?(IHe e erefl JMeq_refl) //=.
 by rewrite translations_Vector_coincide translations_Index_coincide.
-Qed.*)
+Qed.
 
 Lemma translate_Bool_T_01 (e : expr Bool_T) :
   0 <= [[ e ]]_l <= 1.
@@ -391,7 +398,7 @@ Admitted.
     lra.
 Qed. *)
 
-(*Lemma gt0_ltr_powR (r : R) : 0 < r ->
+Lemma gt0_ltr_powR (r : R) : 0 < r ->
   {in `[0, +oo[ &, {homo (@powR R) ^~ r : x y / x < y >-> x < y}}.
 Proof.
 move=> r0 x y; rewrite !in_itv/= !andbT !le_eqVlt => /predU1P[<-|x0].
@@ -410,16 +417,16 @@ rewrite !in_itv/= !andbT !powR_ge0 -!powRrM !mulVf ?neq_lt ?r0 ?orbT// powR1 pow
 by apply.
 Qed.
 
-Lemma help' (x r : R) : 0 <= x -> 0 < r -> ~~ (1 - x `^ r^-1 < 0) -> x <= 1.
+(*Lemma help' (x r : R) : 0 <= x -> 0 < r -> ~~ (1 - x `^ r^-1 < 0) -> x <= 1.
 Proof.
 have {1}->: 1 = 1 `^ r^-1 by rewrite powR1.
 rewrite subr_lt0 -leNgt => x0 r0.
 move/(@gt0_ler_powR _ r (ltW r0)).
-rewrite !in_itv/= !andbT !powR_ge0 -!powRrM !mulVf ?neq_lt ?r0 ?orbT// powR1 powRr1//.
+rewrite !in_itv. /= !andbT !powR_ge0 -!powRrM !mulVf ?neq_lt ?r0 ?orbT// powR1 powRr1//.
 by apply.
-Qed.
+Qed.*)
 
-Lemma inversion_andE1 e1 e2 :
+(* Lemma inversion_andE1 e1 e2 :
   0 <= e1 <= 1 -> 0 <= e2 <= 1 ->
     translation_binop l p and_E e1 e2 = 1 -> e1 = 1 /\ e2 = 1.
 Proof.
@@ -618,11 +625,11 @@ Lemma andC_dl2 e1 e2 :
 Proof.
   by rewrite /= adde0 adde0 addeC. 
 Qed.
-
-(* Lemma andC_stl e1 e2 :
-  [[ e1 /\ e2 ]]_stl = [[ e2 /\ e1 ]]_stl.
+About stl_translation.
+Lemma andC_stl nu e1 e2 :
+  nu.-[[e1 /\ e2]]_stl = nu.-[[e2 /\ e1]]_stl.
 Proof.
-Admitted.  *)
+Admitted. 
   
 
 Lemma orC e1 e2 :
@@ -651,11 +658,12 @@ case: l => /=.
   rewrite /minr.
   by repeat case: ifP; lra.
 (*Yager*)
-- set t1 := _ e1.
+- rewrite ![in _ `^ p + _]addr0.
+  set t1 := _ e1.
   set t2 := _ e2.
   set t3 := _ e3.
   move => ht3 ht2 ht1.
-  rewrite {2}/minr.
+  rewrite {2}/minr. 
   case: ifPn => h1.
   + rewrite -powRrM mulVf ?p0 ?powRr1 ?addr_ge0 ?powR_ge0//.
     rewrite {1}/minr.
@@ -668,82 +676,72 @@ case: l => /=.
           (* by rewrite -{1}powRrM mulVf ?powRr1 ?addr_ge0 ?powR_ge0 ?addrA. *)
         rewrite addrA; move: h2; rewrite addrA; move: h4;
         rewrite -{1}powRrM mulVf ?powRr1 ?addr_ge0 ?powR_ge0//. 
+        rewrite !addr0. 
         (* lra. *) admit.
       - rewrite {1}/minr.
         suff: (t1 `^ p + (t2 `^ p + t3 `^ p)) `^ p^-1 >=
               (t1 `^ p + t2 `^ p) `^ p^-1. admit. (* by lra. *)
         rewrite gt0_ler_powR//.
         + by rewrite invr_ge0 ltW.
-        + admit. (* by rewrite in_itv /= andbT addr_ge0// powR_ge0. *)
-        + admit. (* by rewrite in_itv /= andbT !addr_ge0// powR_ge0. *)
+        + by rewrite nnegrE addr_ge0// powR_ge0. 
+        + by rewrite nnegrE !addr_ge0// powR_ge0.
         + by rewrite lerD// lerDl powR_ge0.
     * rewrite {2}/minr.
       case: ifPn => h3.
-      {
-        rewrite -{1}powRrM mulVf// powRr1 ?addr_ge0 ?powR_ge0//.
-        rewrite {1}/minr.
-        case: ifPn => // h4.
-        move: h2. rewrite addrA. admit. (* lra. *)
-      }
-      {
+      - rewrite -{1}powRrM mulVf// powRr1 ?addr_ge0 ?powR_ge0//.
         rewrite {1}/minr.
         case: ifPn => //.
+        move: h2 => /[swap]. by rewrite !addr0 !addrA => ->.
+      - rewrite {1}/minr.
+        case: ifPn => //.
         have: (1 `^ p + t3 `^ p) `^ p^-1 >= 1.
-        - have {1}->: 1 = 1 `^ p^-1 by rewrite powR1.
+          have {1}->: 1 = 1 `^ p^-1 by rewrite powR1.
           rewrite gt0_ler_powR//.
           + by rewrite invr_ge0 ltW.
-          + admit. (* by rewrite in_itv /= andbT. *)
-          + admit. (* by rewrite in_itv /= addr_ge0// powR_ge0. *)
+          + by rewrite nnegrE .
+          + by rewrite nnegrE addr_ge0// powR_ge0. 
           by rewrite powR1 lerDl powR_ge0.
-          set a := (1 `^ p + t3 `^ p) `^ p^-1.
-          admit. (* lra. *)
-      }
+        rewrite addr0.
+        set a := (1 `^ p + t3 `^ p) `^ p^-1.
+        move => /le_lt_trans /[apply]. 
+        by rewrite ltxx.
   + rewrite {1}/minr.
     case: ifPn => // h2.
-    {
-      have: (t1 `^ p + 1 `^ p) `^ p^-1 >= 1.
-      - have {1}->: 1 = 1`^p^-1 by rewrite powR1.
+    - have: (t1 `^ p + 1 `^ p) `^ p^-1 >= 1.
+        have {1}->: 1 = 1`^p^-1 by rewrite powR1.
         rewrite gt0_ler_powR//.
         + by rewrite invr_ge0 ltW.
-        + admit. (* by rewrite in_itv /= andbT. *)
-        + admit. (* by rewrite in_itv /= addr_ge0// powR_ge0. *)
+        + by rewrite nnegrE .
+        + by rewrite nnegrE addr_ge0// powR_ge0.
         by rewrite powR1 lerDr powR_ge0.
       move: h2.
-      set a := (t1 `^ p + 1 `^ p) `^ p^-1.
-      admit.
-      (* lra. *)
-    }
-    {
-      rewrite {2}/minr.
+      set a := (t1 `^ p + 1 `^ p) `^ p^-1. lra.
+    * rewrite {2}/minr.
       case: ifPn => h3.
-      {
-        rewrite {1}/minr.
+      - rewrite {1}/minr.
         case: ifPn => //.
         rewrite -powRrM mulVf// powRr1.
         move=> h4.
         have h5: (t1 `^ p + t2 `^ p + t3 `^ p) `^ p^-1 >= (t2 `^ p + t3 `^ p) `^ p^-1.
         rewrite gt0_ler_powR//.
         + by rewrite invr_ge0 ltW.
-        + admit. (* by rewrite in_itv /= addr_ge0// powR_ge0. *)
-        + admit. (* by rewrite in_itv /= !addr_ge0// powR_ge0. *)
+        + by rewrite nnegrE addr_ge0// powR_ge0. 
+        + by rewrite nnegrE !addr_ge0// powR_ge0.
         by rewrite lerD// lerDr powR_ge0.
+        move: h4. rewrite !addr0. (* Search (_ `^ _ < _).  *)
         admit. (* lra. *)
-        admit. (* by rewrite addr_ge0 ?powR_ge0. *)
-      }
-      {
-        rewrite {1}/minr.
+        by rewrite addr_ge0 ?powR_ge0 ?addr0 ?powR_ge0. (* by rewrite addr_ge0 ?powR_ge0. *)
+      - rewrite {1}/minr.
         case: ifPn => //.
         have: (1 `^ p + t3 `^ p) `^ p^-1 >= 1.
         - have {1}->: 1 = 1`^p^-1 by rewrite powR1.
           rewrite gt0_ler_powR//.
           + by rewrite invr_ge0 ltW.
-          + admit. (* by rewrite in_itv /= andbT. *)
-          + admit. (* by rewrite in_itv /= addr_ge0// powR_ge0. *)
+          + by rewrite nnegrE .
+          + by rewrite nnegrE addr_ge0// powR_ge0.
           by rewrite powR1 lerDl powR_ge0.
-        set a := (1 `^ p + t3 `^ p) `^ p^-1.
+        set a := (1 `^ p + t3 `^ p) `^ p^-1. 
         admit. (* lra. *)
-      }
-    }
 (*Godel*)
 - set t1 := _ e1.
   set t2 := _ e2.
