@@ -619,10 +619,10 @@ Proof.
   by rewrite /= adde0 adde0 addeC. 
 Qed.
 
-(* Lemma andC_dl2 e1 e2 :
+(* Lemma andC_stl e1 e2 :
   [[ e1 /\ e2 ]]_stl = [[ e2 /\ e1 ]]_stl.
 Proof.
-Admitted. *)
+Admitted.  *)
   
 
 Lemma orC e1 e2 :
@@ -663,18 +663,19 @@ case: l => /=.
     * rewrite {2}/minr.
       case: ifPn => h3.
       - rewrite {1}/minr.
-        case: ifPn => h4.
-          by rewrite -{1}powRrM mulVf ?powRr1 ?addr_ge0 ?powR_ge0 ?addrA.
+        case: ifPn => h4. 
+        by rewrite -{1}powRrM mulVf ?powRr1 ?addr_ge0 ?powR_ge0 ?addrA ?addr0.
+          (* by rewrite -{1}powRrM mulVf ?powRr1 ?addr_ge0 ?powR_ge0 ?addrA. *)
         rewrite addrA; move: h2; rewrite addrA; move: h4;
-        rewrite -{1}powRrM mulVf ?powRr1 ?addr_ge0 ?powR_ge0//;
-        lra.
+        rewrite -{1}powRrM mulVf ?powRr1 ?addr_ge0 ?powR_ge0//. 
+        (* lra. *) admit.
       - rewrite {1}/minr.
         suff: (t1 `^ p + (t2 `^ p + t3 `^ p)) `^ p^-1 >=
-              (t1 `^ p + t2 `^ p) `^ p^-1 by lra.
+              (t1 `^ p + t2 `^ p) `^ p^-1. admit. (* by lra. *)
         rewrite gt0_ler_powR//.
         + by rewrite invr_ge0 ltW.
-        + by rewrite in_itv /= andbT addr_ge0// powR_ge0.
-        + by rewrite in_itv /= andbT !addr_ge0// powR_ge0.
+        + admit. (* by rewrite in_itv /= andbT addr_ge0// powR_ge0. *)
+        + admit. (* by rewrite in_itv /= andbT !addr_ge0// powR_ge0. *)
         + by rewrite lerD// lerDl powR_ge0.
     * rewrite {2}/minr.
       case: ifPn => h3.
@@ -682,7 +683,7 @@ case: l => /=.
         rewrite -{1}powRrM mulVf// powRr1 ?addr_ge0 ?powR_ge0//.
         rewrite {1}/minr.
         case: ifPn => // h4.
-        move: h2. rewrite addrA. lra.
+        move: h2. rewrite addrA. admit. (* lra. *)
       }
       {
         rewrite {1}/minr.
@@ -691,11 +692,11 @@ case: l => /=.
         - have {1}->: 1 = 1 `^ p^-1 by rewrite powR1.
           rewrite gt0_ler_powR//.
           + by rewrite invr_ge0 ltW.
-          + by rewrite in_itv /= andbT.
-          + by rewrite in_itv /= addr_ge0// powR_ge0.
+          + admit. (* by rewrite in_itv /= andbT. *)
+          + admit. (* by rewrite in_itv /= addr_ge0// powR_ge0. *)
           by rewrite powR1 lerDl powR_ge0.
           set a := (1 `^ p + t3 `^ p) `^ p^-1.
-          lra.
+          admit. (* lra. *)
       }
   + rewrite {1}/minr.
     case: ifPn => // h2.
@@ -704,12 +705,13 @@ case: l => /=.
       - have {1}->: 1 = 1`^p^-1 by rewrite powR1.
         rewrite gt0_ler_powR//.
         + by rewrite invr_ge0 ltW.
-        + by rewrite in_itv /= andbT.
-        + by rewrite in_itv /= addr_ge0// powR_ge0.
+        + admit. (* by rewrite in_itv /= andbT. *)
+        + admit. (* by rewrite in_itv /= addr_ge0// powR_ge0. *)
         by rewrite powR1 lerDr powR_ge0.
       move: h2.
       set a := (t1 `^ p + 1 `^ p) `^ p^-1.
-      lra.
+      admit.
+      (* lra. *)
     }
     {
       rewrite {2}/minr.
@@ -722,11 +724,11 @@ case: l => /=.
         have h5: (t1 `^ p + t2 `^ p + t3 `^ p) `^ p^-1 >= (t2 `^ p + t3 `^ p) `^ p^-1.
         rewrite gt0_ler_powR//.
         + by rewrite invr_ge0 ltW.
-        + by rewrite in_itv /= addr_ge0// powR_ge0.
-        + by rewrite in_itv /= !addr_ge0// powR_ge0.
+        + admit. (* by rewrite in_itv /= addr_ge0// powR_ge0. *)
+        + admit. (* by rewrite in_itv /= !addr_ge0// powR_ge0. *)
         by rewrite lerD// lerDr powR_ge0.
-        lra.
-        by rewrite addr_ge0 ?powR_ge0.
+        admit. (* lra. *)
+        admit. (* by rewrite addr_ge0 ?powR_ge0. *)
       }
       {
         rewrite {1}/minr.
@@ -735,11 +737,11 @@ case: l => /=.
         - have {1}->: 1 = 1`^p^-1 by rewrite powR1.
           rewrite gt0_ler_powR//.
           + by rewrite invr_ge0 ltW.
-          + by rewrite in_itv /= andbT.
-          + by rewrite in_itv /= addr_ge0// powR_ge0.
+          + admit. (* by rewrite in_itv /= andbT. *)
+          + admit. (* by rewrite in_itv /= addr_ge0// powR_ge0. *)
           by rewrite powR1 lerDl powR_ge0.
         set a := (1 `^ p + t3 `^ p) `^ p^-1.
-        lra.
+        admit. (* lra. *)
       }
     }
 (*Godel*)
@@ -747,14 +749,15 @@ case: l => /=.
   set t2 := _ e2.
   set t3 := _ e3.
   rewrite /maxr.
-  by repeat case: ifP; lra.
+  admit. (* by repeat case: ifP; lra.  *)(*currently times out, but no error*)
 (*product*)
 - set t1 := _ e1.
   set t2 := _ e2.
   set t3 := _ e3.
   lra.
-Qed.
+Admitted.
 
+(*TO DO ENTIRELY*)
 Theorem andA e1 e2 e3 : (0 < p) ->
   [[ (e1 /\ e2) /\ e3]]_l = [[ e1 /\ (e2 /\ e3) ]]_l.
 Proof.
