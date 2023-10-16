@@ -485,45 +485,47 @@ have He1 := translate_Bool_T_01 e1.
 have He2 := translate_Bool_T_01 e2.
 move: He1 He2.
 have p0 := lt_le_trans ltr01 p1.
-move=> he1 he2.
 case: l => /= ; move=> He1; move=> He2.
-- rewrite /minr; case: ifPn. rewrite addr0. lra.
+- rewrite /minr; case: ifPn; rewrite addr0; lra.
 - rewrite /minr; case: ifPn => _; last lra.
-  have [->|e11 /eqP] := eqVneq e1 0.
-  have [->//|e21 /eqP] := eqVneq e2 0.
+  have [->|e11 /eqP] := eqVneq ([[e1]]_Yager) 0.
+  have [->//|e21 /eqP] := eqVneq ([[e2]]_Yager) 0.
   + rewrite powR0 ?(gt_eqF p0)// add0r.
-    rewrite -powRrM divff ?(gt_eqF p0)// powRr1.
+    rewrite addr0 -powRrM divff ?(gt_eqF p0)// powRr1.
     lra. lra.
-  + rewrite powR_eq0 (paddr_eq0 (powR_ge0 _ _) (powR_ge0 _ _)) => /andP [].
+  + rewrite addr0 powR_eq0 (paddr_eq0 (powR_ge0 _ _) (powR_ge0 _ _)) => /andP [].
     rewrite powR_eq0.
     lra.
-- rewrite /maxr; case: ifPn; lra.
+- rewrite /maxr; case: ifPn; case: ifPn; lra.
 - by nra.
-Qed. *)
+Qed.
 
-(* Lemma inversion_implE1 e1 e2 :
-  0 <= e1 <= 1 -> 0 <= e2 <= 1 -> l <> Lukasiewicz -> l <> Yager ->
-    translation_binop l p impl_E e1 e2 = 1 -> e1 = 0 \/ e2 = 1.
+Lemma inversion_implE1 e1 e2 :
+  l <> Lukasiewicz -> l <> Yager ->
+    [[ impl_E e1 e2 ]]_ l = 1 -> [[e1]]_ l = 0 \/ [[e2]]_ l = 1.
 Proof.
+have He1 := translate_Bool_T_01 e1.
+have He2 := translate_Bool_T_01 e2.
+move: He1 He2.
 have p0 := lt_le_trans ltr01 p1.
-move=> he1 he2.
-case: l => //=.
+case: l => //=; move=> He1; move=> He2.
 - rewrite /maxr; case: ifPn; lra.
 - nra.
-Qed. *)
+Qed.
 
-(* Lemma inversion_implE0 e1 e2 :
-  0 <= e1 <= 1 -> 0 <= e2 <= 1 ->
-    translation_binop l p impl_E e1 e2 = 0 -> e1 = 1 /\ e2 = 0.
+Lemma inversion_implE0 e1 e2 :
+  [[ impl_E e1 e2 ]]_ l = 0 -> [[e1]]_ l  = 1 /\ [[e2]]_ l = 0.
 Proof.
+have He1 := translate_Bool_T_01 e1.
+have He2 := translate_Bool_T_01 e2.
+move: He1 He2.
 have p0 := lt_le_trans ltr01 p1.
-move=> he1 he2.
-case: l => /=.
+case: l => /=; move=> He1; move=> He2.
 - rewrite /minr; case: ifPn; lra.
 - rewrite /minr; case: ifPn => _; last lra.
-  have [-> /eqP|e11 /eqP] := eqVneq e1 0.
+  have [-> /eqP|e11 /eqP] := eqVneq ([[e1]]_Yager) 0.
   + by rewrite subr0 powR1 powR_eq0 paddr_eq0// ?powR_ge0; lra.
-  have [->//|e21] := eqVneq e2 0.
+  have [->//|e21] := eqVneq ([[e2]]_Yager) 0.
   + rewrite powR0 ?(gt_eqF p0)// addr0.
     rewrite -powRrM divff ?(gt_eqF p0)// powRr1.
     lra. lra.
@@ -532,7 +534,7 @@ case: l => /=.
     lra.
 - rewrite /maxr; case: ifPn; lra.
 - by nra.
-Qed. *)
+Qed.
 
 (* Lemma soundness e b :
   l <> Lukasiewicz -> l <> Yager ->
