@@ -361,7 +361,7 @@ Proof.
 dependent induction e => //=.
 - by case: ifPn => //; lra.
 - case l.
-  + rewrite /maxr. case: ifP.
+  + rewrite /maxr. case: ifP. 
       lra.
       admit.
   + rewrite /maxr. case: ifP.
@@ -424,8 +424,6 @@ apply.
 Qed.
 
 Lemma inversion_andE1 (e1 e2 : expr Bool_T) :
-   (* 0 <= e1 <= 1 -> 0 <= e2 <= 1 -> *)
-    (* translation l p and_E e1 e2 = 1 -> e1 = 1 /\ e2 = 1. *)
     [[ and_E [:: e1; e2] ]]_ l = 1 -> [[e1]]_ l = 1 /\ [[e2]]_ l = 1. 
 Proof.
 have He1 := translate_Bool_T_01 e1.
@@ -536,12 +534,15 @@ case: l => /=; move=> He1; move=> He2.
 - by nra.
 Qed.
 
-(* Lemma soundness e b :
+(*Lemma soundness e b :
   l <> Lukasiewicz -> l <> Yager ->
     [[ e ]]_l = [[ Bool b ]]_l -> << e >>_l = b.
 Proof.
-dependent induction e => ll ly //=.
+dependent induction e(* ll ly //= *).
 - move: b b0 => [] [] //; lra.
+- case: l => /=.
+  + 
+
 - have {} IHe1 := IHe1 e1 erefl JMeq_refl.
   have {} IHe2 := IHe2 e2 erefl JMeq_refl.
   move: b b0 => [] [] //=.
@@ -636,9 +637,15 @@ Proof.
   by rewrite /= adde0 adde0 addeC. 
 Qed.
 About stl_translation.
+
+
 Lemma andC_stl nu e1 e2 :
   nu.-[[e1 /\ e2]]_stl = nu.-[[e2 /\ e1]]_stl.
 Proof.
+rewrite /=. case: ifPn.
+- rewrite /mine; repeat case: ifPn; intros . 
+(*TO DO IN ONE LINE PREFERABLY BECAUSE THIS IS 48 CASES*)
+
 Admitted. 
   
 
@@ -789,11 +796,11 @@ case: l => /=.
   set a3 := (1 - t3)`^p.
   have se_ge0 r := @addr_ge0 R _ _ (@powR_ge0 _ _ r) (@powR_ge0 _ _ r).
   rewrite {2}/maxr=> ht3 ht2 ht1.
-  case: ifPn.
+  case: ifPn; rewrite addr0.
   {
     move/(help (se_ge0 _ _ _) p0).
     rewrite subr0 {1}/maxr -/a1 -/a2 => h1.
-    case: ifPn.
+    case: ifPn; rewrite addr0.
     {
       move/(help (se_ge0 _ _ _) p0).
       rewrite {2}/maxr -/a3 powR1 ltrDl => h2.
@@ -802,7 +809,7 @@ case: l => /=.
         move/(help (se_ge0 _ _ _) p0).
         rewrite /maxr -/a2 -/a3 => h3.
         case: ifPn => //.
-        rewrite subr0 powR1.
+        rewrite subr0 powR1 addr0.
         move/(help' (addr_ge0 (powR_ge0 _ _) (ltW ltr01)) p0).
         rewrite -/a1 gerDr => h4.
         have h5: 0 <= a1 by apply powR_ge0.
@@ -813,7 +820,7 @@ case: l => /=.
       rewrite -/a2 -/a3 => h3.
       {
         rewrite {1}/maxr.
-        case: ifPn => //.
+        case: ifPn => //; rewrite addr0.
         move/(help' (se_ge0 _ _ _) p0).
         rewrite -/a1.
         rewrite opprD opprK addrA subrr add0r -powRrM mulVf// powRr1.
@@ -821,14 +828,15 @@ case: l => /=.
         by rewrite addr_ge0 /a2 /a3// powR_ge0.
       }
     }
+
     move/(help' (se_ge0 _ _ _) p0).
-    rewrite powR1 gerDl -/a3 => h2.
+    rewrite powR1 addr0 gerDl -/a3 => h2. 
     have ->: a3 = 0 by have := powR_ge0 _ _ : 0 <= a3; lra.
-    rewrite !addr0 powR1 subrr.
+    rewrite !addr0 powR1 subrr. 
     {
       rewrite {2}/maxr.
       case: ifPn.
-      {
+      { About powR_ge0.
         move/(help (powR_ge0 _ _) p0).
         rewrite -/a2 {1}/maxr => h3.
         case: ifPn => //.
@@ -849,7 +857,7 @@ case: l => /=.
         by rewrite /a2 powR_ge0.
       }
     }
-  }
+ (*Finished here*)
   move/(help' (se_ge0 _ _ _) p0).
   rewrite -/a1 -/a2 => h1.
   {
