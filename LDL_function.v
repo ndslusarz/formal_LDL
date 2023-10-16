@@ -60,10 +60,6 @@ Inductive expr : simple_type -> Type :=
   | mult_E : expr Real_T -> expr Real_T -> expr Real_T
   | minus_E : expr Real_T -> expr Real_T
 
-  (*quantifiers - left for later consideration*)
-  (*| forall_E: forall t, expr t -> expr Bool_T
-    | exists_E: forall t, expr t -> expr Bool_T*)
-
   (* networks and applications *)
   | net : forall n m : nat, (n.-tuple R -> m.-tuple R) -> expr (Network_T n m)
   | app_net : forall n m : nat, expr (Network_T n m) -> expr (Vector_T n) -> expr (Vector_T m)
@@ -72,8 +68,6 @@ Inductive expr : simple_type -> Type :=
   (*comparisons*)
   | comparisons_E : comparisons -> expr Real_T -> expr Real_T -> expr Bool_T
 .
-  (*other - needed for DL translations*)
-  (*| identity_E : expr Real_T -> expr Real_T -> expr Real_T.*)
 End expr.
 
 Notation "a /\ b" := (and_E [:: a; b]).
@@ -362,7 +356,7 @@ by rewrite translations_Vector_coincide translations_Index_coincide.
 Qed.
 
 Lemma translate_Bool_T_01 (e : expr Bool_T) :
-  0 <= [[ e ]]_l <= 1.
+  0 <= [[ e ]]_ l <= 1.
 Proof.
 dependent induction e => //=.
 - by case: ifPn => //; lra.
@@ -417,69 +411,83 @@ rewrite !in_itv/= !andbT !powR_ge0 -!powRrM !mulVf ?neq_lt ?r0 ?orbT// powR1 pow
 by apply.
 Qed.
 
-(*Lemma help' (x r : R) : 0 <= x -> 0 < r -> ~~ (1 - x `^ r^-1 < 0) -> x <= 1.
+Lemma help' (x r : R) : 0 <= x -> 0 < r -> ~~ (1 - x `^ r^-1 < 0) -> x <= 1.
 Proof.
 have {1}->: 1 = 1 `^ r^-1 by rewrite powR1.
 rewrite subr_lt0 -leNgt => x0 r0.
-move/(@gt0_ler_powR _ r (ltW r0)).
-rewrite !in_itv. /= !andbT !powR_ge0 -!powRrM !mulVf ?neq_lt ?r0 ?orbT// powR1 powRr1//.
-by apply.
-Qed.*)
+move/(@gt0_ler_powR _ r (ltW r0)). 
+rewrite nnegrE. 
+rewrite !powR_ge0 -!powRrM !mulVf ?neq_lt ?r0 ?orbT// powR1 powRr1//.
+apply. 
+  exact.
+  by rewrite nnegrE.
+Qed.
 
-(* Lemma inversion_andE1 e1 e2 :
-  0 <= e1 <= 1 -> 0 <= e2 <= 1 ->
-    translation_binop l p and_E e1 e2 = 1 -> e1 = 1 /\ e2 = 1.
+Lemma inversion_andE1 (e1 e2 : expr Bool_T) :
+   (* 0 <= e1 <= 1 -> 0 <= e2 <= 1 -> *)
+    (* translation l p and_E e1 e2 = 1 -> e1 = 1 /\ e2 = 1. *)
+    [[ and_E [:: e1; e2] ]]_ l = 1 -> [[e1]]_ l = 1 /\ [[e2]]_ l = 1. 
 Proof.
+have He1 := translate_Bool_T_01 e1.
+have He2 := translate_Bool_T_01 e2.
+move: He1 He2.
 have p0 := lt_le_trans ltr01 p1.
-move=> he1 he2.
-case: l => /=.
+case: l => /=; move=> He1; move=> He2.
 - rewrite /maxr; case: ifPn; lra.
 - rewrite /maxr; case: ifPn. lra.
   move=> _.
-  have [->|e11 /eqP] := eqVneq e1 1.
-  have [->//|e21 /eqP] := eqVneq e2 1.
+  have [->|e11 /eqP] := eqVneq ([[e1]]_Yager) 1.
+  have [->//|e21 /eqP] := eqVneq ([[e2]]_Yager) 1. 
   + rewrite subrr powR0 ?(gt_eqF p0)// add0r.
     rewrite eq_sym addrC -subr_eq subrr eq_sym oppr_eq0. (* FIXME *)
-    rewrite -powRrM divff ?(gt_eqF p0)// powRr1.
+    rewrite addr0 -powRrM divff ?(gt_eqF p0)// powRr1.
     lra. lra.
   + rewrite eq_sym addrC -subr_eq subrr eq_sym oppr_eq0. (* FIXME *)
-    rewrite powR_eq0 (paddr_eq0 (powR_ge0 _ _) (powR_ge0 _ _)) => /andP [].
+    rewrite addr0 powR_eq0 (paddr_eq0 (powR_ge0 _ _) (powR_ge0 _ _)) => /andP [].
     rewrite powR_eq0.
     lra.
-- rewrite /minr; case: ifPn; lra.
+- rewrite /minr; case: ifPn; case: ifPn; lra.
 - by nra.
-Qed.
+Qed. 
 
 Lemma inversion_andE0 e1 e2 :
-  0 <= e1 <= 1 -> 0 <= e2 <= 1 -> l <> Lukasiewicz -> l <> Yager ->
-    translation_binop l p and_E e1 e2 = 0 -> e1 = 0 \/ e2 = 0.
+  l <> Lukasiewicz -> l <> Yager ->
+    [[ and_E [:: e1; e2] ]]_ l = 0 -> [[e1]]_ l = 0 \/ [[e2]]_ l = 0.
 Proof.
+have He1 := translate_Bool_T_01 e1.
+have He2 := translate_Bool_T_01 e2.
+move: He1 He2.
 have p0 := lt_le_trans ltr01 p1.
 move=> he1 he2.
 case: l => //=.
-- rewrite /minr; case: ifPn; lra.
+- rewrite /minr; case: ifPn; case: ifPn; lra.
 - nra.
 Qed.
 
 Lemma inversion_orE1 e1 e2 :
-  0 <= e1 <= 1 -> 0 <= e2 <= 1 -> l <> Lukasiewicz -> l <> Yager ->
-    translation_binop l p or_E e1 e2 = 1 -> e1 = 1 \/ e2 = 1.
+  l <> Lukasiewicz -> l <> Yager ->
+    [[ or_E [:: e1; e2] ]]_ l = 1 -> [[e1]]_ l = 1 \/ [[e2]]_ l = 1.
 Proof.
+have He1 := translate_Bool_T_01 e1.
+have He2 := translate_Bool_T_01 e2.
+move: He1 He2.
 have p0 := lt_le_trans ltr01 p1.
 move=> he1 he2.
 case: l => //=.
-- rewrite /maxr; case: ifPn; lra.
+- rewrite /maxr; case: ifPn; case: ifPn; lra.
 - nra.
 Qed.
 
 Lemma inversion_orE0 e1 e2 :
-  0 <= e1 <= 1 -> 0 <= e2 <= 1 ->
-    translation_binop l p or_E e1 e2 = 0 -> e1 = 0 /\ e2 = 0.
+    [[ or_E [:: e1; e2] ]]_ l = 0 -> [[e1]]_ l = 0 /\ [[e2]]_ l = 0.
 Proof.
+have He1 := translate_Bool_T_01 e1.
+have He2 := translate_Bool_T_01 e2.
+move: He1 He2.
 have p0 := lt_le_trans ltr01 p1.
 move=> he1 he2.
-case: l => /=.
-- rewrite /minr; case: ifPn; lra.
+case: l => /= ; move=> He1; move=> He2.
+- rewrite /minr; case: ifPn. rewrite addr0. lra.
 - rewrite /minr; case: ifPn => _; last lra.
   have [->|e11 /eqP] := eqVneq e1 0.
   have [->//|e21 /eqP] := eqVneq e2 0.
@@ -491,9 +499,9 @@ case: l => /=.
     lra.
 - rewrite /maxr; case: ifPn; lra.
 - by nra.
-Qed.
+Qed. *)
 
-Lemma inversion_implE1 e1 e2 :
+(* Lemma inversion_implE1 e1 e2 :
   0 <= e1 <= 1 -> 0 <= e2 <= 1 -> l <> Lukasiewicz -> l <> Yager ->
     translation_binop l p impl_E e1 e2 = 1 -> e1 = 0 \/ e2 = 1.
 Proof.
@@ -502,9 +510,9 @@ move=> he1 he2.
 case: l => //=.
 - rewrite /maxr; case: ifPn; lra.
 - nra.
-Qed.
+Qed. *)
 
-Lemma inversion_implE0 e1 e2 :
+(* Lemma inversion_implE0 e1 e2 :
   0 <= e1 <= 1 -> 0 <= e2 <= 1 ->
     translation_binop l p impl_E e1 e2 = 0 -> e1 = 1 /\ e2 = 0.
 Proof.
@@ -524,9 +532,9 @@ case: l => /=.
     lra.
 - rewrite /maxr; case: ifPn; lra.
 - by nra.
-Qed.
+Qed. *)
 
-Lemma soundness e b :
+(* Lemma soundness e b :
   l <> Lukasiewicz -> l <> Yager ->
     [[ e ]]_l = [[ Bool b ]]_l -> << e >>_l = b.
 Proof.
@@ -608,7 +616,7 @@ dependent induction e => ll ly //=.
       Search (`| _ | == _).
       rewrite eqr_norml.
       nra.
-Qed. *)
+Qed.  *)
 
 Lemma andC e1 e2 :
   [[ e1 /\ e2 ]]_l = [[ e2 /\ e1 ]]_l.
