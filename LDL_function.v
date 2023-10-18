@@ -360,37 +360,40 @@ Lemma translate_Bool_T_01 (e : expr Bool_T) :
 Proof.
 dependent induction e => //=.
 - by case: ifPn => //; lra.
-- case l.
-  + rewrite /maxr. case: ifP. 
-      lra.
-      admit.
-  + rewrite /maxr. case: ifP.
-      lra.
-      admit.
+- case l => //=.
+  + rewrite /maxr. case: ifP => //=. 
+    * lra.
+    * admit.
+  + rewrite /maxr. case: ifP => //=.
+    * lra.
+    * admit.
   + rewrite /minr. 
-Admitted.
-
-(*OLD VERSION*)
-(* - have := IHe1 e1 erefl JMeq_refl.
+    admit.
+  + admit.
+- case l.
+  + rewrite /minr. case: ifP => //=.
+    * admit.
+    * lra.
+  + rewrite /minr. case: ifP => //=.
+    * admit.
+    * lra.
+  + rewrite /maxr. admit.
+  + admit.
+- have := IHe1 e1 erefl JMeq_refl.
   have := IHe2 e2 erefl JMeq_refl.
-  set t1 := _ e1.
-  set t2 := _ e2.
-  case: l; case: b; rewrite /=/minr/maxr; try case: ifP; rewrite ?cprD ?oppr_le0 ?powR_ge0; nra.
+  case l; rewrite /minr/maxr; try case: ifP; rewrite ?cprD ?oppr_le0 ?powR_ge0; nra. 
 - have := IHe e erefl JMeq_refl.
-  set t := _ e.
   by lra.
-- set t1 := _ e1.
-  set t2 := _ e2.
-  case: c; rewrite /maxr; case: ifP => [/eqP ->|?].
-  + have [] := leP (-t2) t2; lra.
+- case: c; rewrite /maxr; case: ifP => [/eqP ->|?].
+  +  have [] := leP (- [[e2]]_l) ([[ e2 ]]_l); lra.
   + case: ifP; first lra.
     case: ifP; first lra.
     lra.
-  + have [] := eqVneq (-t2) t2; lra.
+  + have [] := eqVneq (- [[e2]]_l) ([[ e2 ]]_l); lra.
   + case: ifP; first lra.
-    have := normr_ge0 ((t1 - t2) / (t1 + t2)).
+    have := normr_ge0 ((([[ e1 ]]_l) - ([[ e2 ]]_l)) / (([[ e1 ]]_l) + ([[ e2 ]]_l))).
     lra.
-Qed. *)
+Admitted.
 
 Lemma gt0_ltr_powR (r : R) : 0 < r ->
   {in `[0, +oo[ &, {homo (@powR R) ^~ r : x y / x < y >-> x < y}}.
@@ -534,14 +537,24 @@ case: l => /=; move=> He1; move=> He2.
 - by nra.
 Qed.
 
-(*Lemma soundness e b :
+
+(*will need to rewrite inversion lemmas for n-ary, not sure
+why I decided to go with binary*)
+(* Lemma soundness e b :
   l <> Lukasiewicz -> l <> Yager ->
-    [[ e ]]_l = [[ Bool b ]]_l -> << e >>_l = b.
+    [[ e ]]_ l = [[ Bool b ]]_ l -> << e >>_ l = b.
 Proof.
-dependent induction e(* ll ly //= *).
+- case: l => //=.
+  + dependent induction e.
+    * move: b b0 => [] [] //=; lra.
+    * move: inversion_andE1.
+      case.
+
+(*old version*)
+  dependent induction e(* ll ly //= *).
 - move: b b0 => [] [] //; lra.
 - case: l => /=.
-  + 
+  + move/(inversion_andE1 (translate_Bool_T_01 _) (translate_Bool_T_01 _)).
 
 - have {} IHe1 := IHe1 e1 erefl JMeq_refl.
   have {} IHe2 := IHe2 e2 erefl JMeq_refl.
@@ -619,7 +632,7 @@ dependent induction e(* ll ly //= *).
       Search (`| _ | == _).
       rewrite eqr_norml.
       nra.
-Qed.  *)
+Qed. 
 
 Lemma andC e1 e2 :
   [[ e1 /\ e2 ]]_l = [[ e2 /\ e1 ]]_l.
@@ -629,7 +642,7 @@ case: l.
 - by rewrite /= addr0 addr0 (addrC (_ `^ _)).
 - by rewrite /=/minr; repeat case: ifP; lra.
 - by rewrite /= mulr1 mulr1 mulrC.
-Qed.
+Qed. *)
 
 Lemma andC_dl2 e1 e2 :
   [[ e1 /\ e2 ]]_dl2 = [[ e2 /\ e1 ]]_dl2.
@@ -943,4 +956,8 @@ case: l => /=.
   set t3 := _ e3.
   lra.
 Admitted.
+
+(* Theorem shadow_lifting es :
+   *)
+
 End translation_lemmas.
