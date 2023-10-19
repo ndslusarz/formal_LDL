@@ -2,19 +2,21 @@ Require Import Coq.Program.Equality.
 
 From mathcomp Require Import all_ssreflect all_algebra.
 From mathcomp Require Import lra.
-From mathcomp Require Import order seq.
-From mathcomp Require Import sequences reals ereal exp hoelder.
-From mathcomp Require Import functions classical_sets functions measure lebesgue_measure lebesgue_integral boolp .
-
-Import Num.Def Num.Theory GRing.Theory.
-Import Order.TTheory.
-
-
-Reserved Notation "[[ e ]]" (format "[[  e  ]]").
+From mathcomp Require Import all_classical.
+From mathcomp Require Import reals ereal.
+From mathcomp Require Import topology derive normedtype sequences
+ exp measure lebesgue_measure lebesgue_integral hoelder. 
 
 Set Implicit Arguments.
 Unset Strict Implicit.
 Unset Printing Implicit Defensive.
+
+Import Num.Def Num.Theory GRing.Theory.
+Import Order.TTheory.
+Import numFieldTopology.Exports.
+Local Open Scope classical_set_scope.
+
+Reserved Notation "[[ e ]]" (format "[[  e  ]]").
 
 Section hyperbolic_function.
 
@@ -27,6 +29,20 @@ Definition cosh (x : R) := (expR x + expR (- x)) / 2.
 Definition tanh (x : R) := sinh x / cosh x.
 
 End hyperbolic_function.
+
+Local Open Scope ring_scope.
+
+Definition err_vec {R : ringType} n (i : 'I_n) : 'rV[R]_n :=
+  \row_(j < n) (i != j)%:R.
+
+Section partial.
+Context {R : realType}.
+Variables (n : nat) (f : 'rV[R]_n -> R).
+
+Definition partial (i : 'I_n) (a : 'rV[R]_n) :=
+  lim (h^-1 * (f (a + h *: err_vec i) - f a) @[h --> (0:R)^']).
+
+End partial.
 
 Inductive simple_type : Type :=
 | Bool_T : simple_type
@@ -644,6 +660,8 @@ case: l.
 - by rewrite /= mulr1 mulr1 mulrC.
 Qed. *)
 
+
+
 Lemma andC_dl2 e1 e2 :
   [[ e1 /\ e2 ]]_dl2 = [[ e2 /\ e1 ]]_dl2.
 Proof.
@@ -671,6 +689,34 @@ case: l.
 - by rewrite /=/maxr; repeat case: ifP; lra.
 - by rewrite /= addr0 addr0 mulr0 mulr0 subr0 subr0 mulrC -(addrC (_ e2)).
 Qed.
+
+Section shadow.
+
+ (*temporary, move elsewhere*)
+Check fun Es => [[ and_E Es]]_l.
+
+About partial.
+(* forall {R : realType} [n : nat] (f : 'rV_n -> R) (i : 'I_n) (a : 'rV_n), *)
+
+Definition row_of_seq (s : seq R) : 'rV[R]_(size s) :=
+  (\row_(i < size s) tnth (in_tuple s) i).
+
+Check row_of_seq.
+About MatrixFormula.seq_of_rV.
+
+
+Definition product_and n (xs: 'rV_n) : R := 
+  foldr ( *%R ) 1 (MatrixFormula.seq_of_rV xs).
+
+Check product_and.
+
+Definition shadow_lifting (f : forall n, 'rV_n -> R) := 
+  forall Es : seq R, forall i : 'I_(size Es),
+    (forall i, nth 0 Es i != 0) ->
+    partial (f (size Es)) i (row_of_seq Es) > 0.
+
+Lemma shadow_lifting_product product_and :
+   shadow_lifting product_and.
 
 Lemma orA e1 e2 e3 :
   [[ (e1 \/ (e2 \/ e3)) ]]_l = [[ ((e1 \/ e2) \/ e3) ]]_l.
