@@ -379,19 +379,24 @@ dependent induction e => //=.
 - case l => //=.
   + rewrite /maxr. case: ifP => //=. 
     * lra.
-    * admit.
+    * unfold sumR. Search ( _ < _ = false).
+      (* rewrite -le_gtF.  *) (* rewrite ltW. *)
+      admit.
   + rewrite /maxr. case: ifP => //=.
     * lra.
-    * admit.
+    * unfold sumR. 
+      admit.
   + rewrite /minr. 
+    (* case: ifP => //=. *)
     admit.
   + admit.
 - case l.
   + rewrite /minr. case: ifP => //=.
-    * admit.
+    * unfold sumR. admit.
     * lra.
   + rewrite /minr. case: ifP => //=.
-    * admit.
+    * unfold sumR. 
+     admit.
     * lra.
   + rewrite /maxr. admit.
   + admit.
@@ -426,7 +431,8 @@ Proof.
 have {1}->: 1 = 1 `^ r^-1 by rewrite powR1.
 rewrite subr_lt0 => x0 r0.
 move/(@gt0_ltr_powR _ r0 _).
-rewrite !in_itv/= !andbT !powR_ge0 -!powRrM !mulVf ?neq_lt ?r0 ?orbT// powR1 powRr1//.
+rewrite !in_itv/= !andbT !powR_ge0 -!powRrM 
+!mulVf ?neq_lt ?r0 ?orbT// powR1 powRr1//.
 by apply.
 Qed.
 
@@ -441,6 +447,14 @@ apply.
   exact.
   by rewrite nnegrE.
 Qed.
+
+(*ALL INVERSION LEMMAS NEED TO BE SWAPPED FOR NARY VERSIONS
+- THESE ARE CORRECT BUT USLESS IN PRACTICE*)
+
+(* Lemma nary_inversion_andE1 (Es : seq (expr Bool_T) ) :
+  forall i : 'I_(size Es), [[ and_E Es ]]_ l = 1 -> 
+(forall i, [[ nth 0 Es i ]]_ l = 1). *)
+  
 
 Lemma inversion_andE1 (e1 e2 : expr Bool_T) :
     [[ and_E [:: e1; e2] ]]_ l = 1 -> [[e1]]_ l = 1 /\ [[e2]]_ l = 1. 
@@ -648,7 +662,37 @@ Proof.
       Search (`| _ | == _).
       rewrite eqr_norml.
       nra.
-Qed. 
+Qed. *)
+
+Section shadow.
+
+About partial.
+(* forall {R : realType} [n : nat] (f : 'rV_n -> R) (i : 'I_n) (a : 'rV_n), *)
+
+Definition row_of_seq (s : seq R) : 'rV[R]_(size s) :=
+  (\row_(i < size s) tnth (in_tuple s) i).
+
+Check row_of_seq.
+About MatrixFormula.seq_of_rV.
+
+
+Definition product_and n (xs: 'rV_n) : R := 
+  foldr ( *%R ) 1 (MatrixFormula.seq_of_rV xs).
+
+
+Definition shadow_lifting (f : forall n, 'rV_n -> R) := 
+  forall Es : seq R, forall i : 'I_(size Es),
+    (forall i, nth 0 Es i != 0) ->
+    partial (f (size Es)) i (row_of_seq Es) > 0.
+
+Lemma shadow_lifting_product product_and :
+   shadow_lifting product_and.
+Proof.
+  unfold shadow_lifting.
+  move => Es i H0.
+  unfold partial.
+  (* unfold lim. *)
+Admitted.
 
 Lemma andC e1 e2 :
   [[ e1 /\ e2 ]]_l = [[ e2 /\ e1 ]]_l.
@@ -658,9 +702,7 @@ case: l.
 - by rewrite /= addr0 addr0 (addrC (_ `^ _)).
 - by rewrite /=/minr; repeat case: ifP; lra.
 - by rewrite /= mulr1 mulr1 mulrC.
-Qed. *)
-
-
+Qed.
 
 Lemma andC_dl2 e1 e2 :
   [[ e1 /\ e2 ]]_dl2 = [[ e2 /\ e1 ]]_dl2.
@@ -689,34 +731,6 @@ case: l.
 - by rewrite /=/maxr; repeat case: ifP; lra.
 - by rewrite /= addr0 addr0 mulr0 mulr0 subr0 subr0 mulrC -(addrC (_ e2)).
 Qed.
-
-Section shadow.
-
- (*temporary, move elsewhere*)
-Check fun Es => [[ and_E Es]]_l.
-
-About partial.
-(* forall {R : realType} [n : nat] (f : 'rV_n -> R) (i : 'I_n) (a : 'rV_n), *)
-
-Definition row_of_seq (s : seq R) : 'rV[R]_(size s) :=
-  (\row_(i < size s) tnth (in_tuple s) i).
-
-Check row_of_seq.
-About MatrixFormula.seq_of_rV.
-
-
-Definition product_and n (xs: 'rV_n) : R := 
-  foldr ( *%R ) 1 (MatrixFormula.seq_of_rV xs).
-
-Check product_and.
-
-Definition shadow_lifting (f : forall n, 'rV_n -> R) := 
-  forall Es : seq R, forall i : 'I_(size Es),
-    (forall i, nth 0 Es i != 0) ->
-    partial (f (size Es)) i (row_of_seq Es) > 0.
-
-Lemma shadow_lifting_product product_and :
-   shadow_lifting product_and.
 
 Lemma orA e1 e2 e3 :
   [[ (e1 \/ (e2 \/ e3)) ]]_l = [[ ((e1 \/ e2) \/ e3) ]]_l.
