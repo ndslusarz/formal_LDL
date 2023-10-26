@@ -120,7 +120,8 @@ Variable (p1 : 1 <= p).
 Variable (nu : R).
 Variable (nu0 : 0 < nu).
 
-Definition sumR (Es : seq R) : R := foldr ( +%R ) 0 Es. 
+Definition sumR (Es : seq R) : R := \sum_(i <- Es) i.
+(* foldr ( +%R ) 0 Es.  *)
 
 Fixpoint translation t (e: expr t) {struct e} : type_translation t :=
     match e in expr t return type_translation t with
@@ -132,7 +133,7 @@ Fixpoint translation t (e: expr t) {struct e} : type_translation t :=
 
     | and_E Es =>
         match l with
-        | Lukasiewicz => maxr (sumR (map (@translation _) Es)- (length Es)%:R) 0
+        | Lukasiewicz => maxr (sumR (map (@translation _) Es)- (size Es)%:R) 0
         | Yager => maxr (1 - ((sumR (map (fun E => (1 - ([[ E ]]: type_translation Bool_T))`^p)%R Es))`^p^-1)) 0
         | Godel => foldr minr 1 (map (@translation _) Es)
         | product => foldr ( *%R ) 1 (map (@translation _) Es)
@@ -169,7 +170,8 @@ Fixpoint translation t (e: expr t) {struct e} : type_translation t :=
     end
 where "[[ e ]]" := (translation e).
 
-Definition sumE (Es : seq \bar R) : \bar R := foldr ( +%E ) 0%E Es. 
+Definition sumE (Es : seq \bar R) : \bar R := \sum_(i <- Es) i.
+ (* foldr ( +%E ) 0%E Es *)
 
 Definition dl2_type_translation (t: simple_type) : Type:=
   match t with
@@ -371,16 +373,51 @@ rewrite ?(IHe1 e1 erefl JMeq_refl) ?(IHe2 e2 erefl JMeq_refl) ?(IHe e erefl JMeq
 by rewrite translations_Vector_coincide translations_Index_coincide.
 Qed.
 
+Lemma expr_ind' :
+  forall P : forall s : simple_type, expr s -> Prop,
+       (forall s : R, P Real_T (Real s)) ->
+       (forall b : bool, P Bool_T (Bool b)) ->
+       (forall (n : nat) (o : 'I_n), P (Index_T n) (Index o)) ->
+       (forall (n : nat) (t : n.-tuple R), P (Vector_T n) (Vector t)) ->
+       (forall l : seq (expr Bool_T), P Bool_T (and_E l)) ->
+       (forall l : seq (expr Bool_T), P Bool_T (or_E l)) ->
+(*additional seq constraint below*)
+       (forall (l : seq (expr Bool_T)) i, P Bool_T (nth (Bool false) l i)) ->
+       (forall e : expr Bool_T,
+        P Bool_T e -> forall e0 : expr Bool_T, P Bool_T e0 -> P Bool_T (e `=> e0)) ->
+       (forall e : expr Bool_T, P Bool_T e -> P Bool_T (`~ e)) ->
+       (forall e : expr Real_T,
+        P Real_T e -> forall e0 : expr Real_T, P Real_T e0 -> P Real_T (e `+ e0)) ->
+       (forall e : expr Real_T,
+        P Real_T e -> forall e0 : expr Real_T, P Real_T e0 -> P Real_T (e `* e0)) ->
+       (forall e : expr Real_T, P Real_T e -> P Real_T (`- e)) ->
+       (forall (n m : nat) (t : n.-tuple R -> m.-tuple R), P (Network_T n m) (net t)) ->
+       (forall (n m : nat) (e : expr (Network_T n m)),
+        P (Network_T n m) e ->
+        forall e0 : expr (Vector_T n), P (Vector_T n) e0 -> P (Vector_T m) (app_net e e0)) ->
+       (forall (n : nat) (e : expr (Vector_T n)),
+        P (Vector_T n) e ->
+        forall e0 : expr (Index_T n), P (Index_T n) e0 -> P Real_T (lookup_E e e0)) ->
+       (forall (c : comparisons) (e : expr Real_T),
+        P Real_T e -> forall e0 : expr Real_T, P Real_T e0 -> P Bool_T (comparisons_E c e e0)) ->
+       forall (s : simple_type) (e : expr s), P s e.
+Proof.
+intros.
+fix P 1.
+Admitted.
+
 Lemma translate_Bool_T_01 (e : expr Bool_T) :
   0 <= [[ e ]]_ l <= 1.
 Proof.
+Check expr_ind.
 dependent induction e => //=.
 - by case: ifPn => //; lra.
 - case l => //=.
-  + rewrite /maxr. case: ifP => //=. 
+  + rewrite /maxr. case: ifPn => //=. 
     * lra.
-    * unfold sumR. Search ( _ < _ = false).
-      (* rewrite -le_gtF.  *) (* rewrite ltW. *)
+    * rewrite -leNgt. move => -> /=.
+      rewrite /sumR -sum1_size. 
+      (*look up bigop.v ssrnum.v*)
       admit.
   + rewrite /maxr. case: ifP => //=.
     * lra.
@@ -447,13 +484,6 @@ apply.
   exact.
   by rewrite nnegrE.
 Qed.
-
-(*ALL INVERSION LEMMAS NEED TO BE SWAPPED FOR NARY VERSIONS
-- THESE ARE CORRECT BUT USLESS IN PRACTICE*)
-
-(* Lemma nary_inversion_andE1 (Es : seq (expr Bool_T) ) :
-  forall i : 'I_(size Es), [[ and_E Es ]]_ l = 1 -> 
-(forall i, [[ nth 0 Es i ]]_ l = 1). *)
   
 
 Lemma inversion_andE1 (e1 e2 : expr Bool_T) :
@@ -566,6 +596,15 @@ case: l => /=; move=> He1; move=> He2.
 - rewrite /maxr; case: ifPn; lra.
 - by nra.
 Qed.
+
+(*ALL INVERSION LEMMAS NEED TO BE SWAPPED FOR NARY VERSIONS
+- THESE ARE CORRECT BUT USLESS IN PRACTICE*)
+
+Lemma nary_inversion_andE1 (Es : seq (expr Bool_T) ) :
+  [[ and_E Es ]]_ l = 1 -> 
+(forall i, [[ nth (Bool false) Es i ]]_ l = 1).
+Proof.
+Admitted.
 
 
 (*will need to rewrite inversion lemmas for n-ary, not sure
