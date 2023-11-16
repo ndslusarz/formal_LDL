@@ -120,7 +120,13 @@ Variable (p1 : 1 <= p).
 Variable (nu : R).
 Variable (nu0 : 0 < nu).
 
+Definition natalia_prod : R -> R -> R := (fun a1 a2 => a1 + a2 - a1 * a2).
+
 Definition sumR (Es : seq R) : R := \sum_(i <- Es) i.
+Definition prodR (Es : seq R) : R := \prod_(i <- Es) i.
+Definition natalia_prodR (Es : seq R) : R := \big[natalia_prod/0]_(i <- Es) i.
+Definition minR (Es : seq R) : R := \big[minr/1]_(i <- Es) i.
+Definition maxR (Es : seq R) : R := \big[maxr/0]_(i <- Es) i.
 (* foldr ( +%R ) 0 Es.  *)
 
 Fixpoint translation t (e: expr t) {struct e} : type_translation t :=
@@ -133,17 +139,17 @@ Fixpoint translation t (e: expr t) {struct e} : type_translation t :=
 
     | and_E Es =>
         match l with
-        | Lukasiewicz => maxr (sumR (map (@translation _) Es)- (size Es)%:R) 0
+        | Lukasiewicz => maxr (sumR (map (@translation _) Es)- (size Es)%:R+1) 0
         | Yager => maxr (1 - ((sumR (map (fun E => (1 - ([[ E ]]: type_translation Bool_T))`^p)%R Es))`^p^-1)) 0
-        | Godel => foldr minr 1 (map (@translation _) Es)
-        | product => foldr ( *%R ) 1 (map (@translation _) Es)
+        | Godel => minR (map (@translation _) Es)
+        | product => prodR (map (@translation _) Es)
         end
     | or_E Es =>
         match l with
         | Lukasiewicz => minr (sumR (map (@translation _) Es)) 1
         | Yager => minr ((sumR (map (fun E => ([[ E ]] : type_translation Bool_T)`^p) Es))`^p^-1) 1
-        | Godel => foldr maxr 0 (map (@translation _) Es)
-        | product => foldr (fun a1 a2 => a1 + a2 - a1 * a2) 0 (map (@translation _) Es)
+        | Godel => maxR (map (@translation _) Es)
+        | product => natalia_prodR (map (@translation _) Es)
         end
     | impl_E E1 E2 =>
         match l with
@@ -421,7 +427,7 @@ destruct e.
   * apply H3. 
     - destruct l0.
       + apply List.Forall_nil.
-      + Search List.Forall. crush. apply List.Forall_cons_iff.
+      + Search List.Forall. (*. apply List.Forall_cons_iff.
         apply H0.
 (*     - apply F1. *)
   (* Inductive Forall (A : Type) (P : A -> Prop) : seq A -> Prop :=
@@ -438,7 +444,7 @@ destruct e.
   * apply H12; eauto. 
   * apply H13; eauto. 
   * apply H14; eauto. 
-Qed.
+Qed.*)Admitted.
 
 
 Lemma translate_Bool_T_01 (e : expr Bool_T) :
@@ -551,18 +557,48 @@ case: l => /=; move=> He1; move=> He2.
 - by nra.
 Qed.  *)
 
+Lemma maxr01 (x : R) : (maxr x 0 == 1) = (x == 1).
+Proof. rewrite/maxr; case: ifP=>//; lra. Qed.
+
+
+Lemma psumr_eqsize :
+  forall [R : numDomainType] [I : eqType] (r : seq I) [P : pred I] [F : I -> R],
+  (forall i : I, P i -> (F i <= 1)%R) ->
+  (\sum_(i <- r | P i) F i == (size r)%:R) = all (fun i : I => P i ==> (F i == 1)) r.
+Admitted.
+
+Canonical expr_Bool_T_eqType := Equality.Pack (@gen_eqMixin (expr Bool_T)).
+
+Lemma bigmin_eqP:
+  forall (x : R) [I : eqType] (s : seq I) (F : I -> R),
+  reflect (forall i : I, i \in s -> (x <= F i)) (\big[minr/x]_(i <- s) F i == x).
+Admitted.
+
 Lemma nary_inversion_andE1 (Es : seq (expr Bool_T) ) :
-  [[ and_E Es ]]_ l = 1 -> 
-(forall i, [[ nth (Bool false) Es i ]]_ l = 1).
+  [[ and_E Es ]]_ l = 1 -> (forall i, i < size Es -> [[ nth (Bool false) Es i ]]_ l = 1).
 Proof.
 case: l => /=.
-- rewrite /maxr; case: ifPn.
-  * lra.
-  * admit.
-- rewrite /maxr; case: ifPn.
-  * lra.
-  * admit.
-- rewrite /minr. admit.
+- move/eqP. rewrite maxr01 /sumR eq_sym -subr_eq subrr eq_sym subr_eq0.
+  rewrite big_map psumr_eqsize; last admit.
+  move => /allP h i iEs.
+  apply/eqP.
+  move: h => /(_ (nth (Bool false) Es i)).
+  apply.
+  apply/(nthP (Bool false)).
+  by exists i.
+- move/eqP.
+  rewrite maxr01 eq_sym addrC -subr_eq subrr eq_sym oppr_eq0 powR_eq0 invr_eq0 => /andP [+ _].
+  rewrite /sumR big_map psumr_eq0; last admit.
+  move => /allP h i iEs.
+  apply/eqP.
+  move: h => /(_ (nth (Bool false) Es i)).
+  rewrite implyTb powR_eq0 subr_eq0 eq_sym (gt_eqF (lt_le_trans _ p1))// ?andbT.
+  apply.
+  apply/(nthP (Bool false)).
+  by exists i.
+- move/eqP. rewrite /minR big_map.
+  move/bigmin_eqP.
+  admit.
 - admit.
 Admitted.
 
@@ -824,14 +860,11 @@ End shadow.
 Lemma andC e1 e2 :
   [[ e1 /\ e2 ]]_l = [[ e2 /\ e1 ]]_l.
 Proof.
-case: l.
-- rewrite /=. unfold sumR. 
-Search "sum".
-(* TO REWRITE EVERYTHING BELOW 
-question - I thought part of this was done, lost commit?*)
-rewrite addr0 addr0 (addrC (_ e1)).
+case: l; rewrite /=/sumR ?big_cons ?big_nil.
+- by rewrite addr0 addr0 (addrC (_ e1)).
 - by rewrite /= addr0 addr0 (addrC (_ `^ _)).
-- by rewrite /=/minr; repeat case: ifP; lra.
+- (* TODO: PR minr_CA *)
+  by rewrite /=/minr; repeat case: ifP; lra.
 - by rewrite /= mulr1 mulr1 mulrC.
 Qed.
 
