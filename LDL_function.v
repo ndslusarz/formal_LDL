@@ -373,15 +373,21 @@ rewrite ?(IHe1 e1 erefl JMeq_refl) ?(IHe2 e2 erefl JMeq_refl) ?(IHe e erefl JMeq
 by rewrite translations_Vector_coincide translations_Index_coincide.
 Qed.
 
+Search seq "all".
+Print List.Forall.
+Print all.
+
 Lemma expr_ind' :
   forall P : forall s : simple_type, expr s -> Prop,
        (forall s : R, P Real_T (Real s)) ->
        (forall b : bool, P Bool_T (Bool b)) ->
        (forall (n : nat) (o : 'I_n), P (Index_T n) (Index o)) ->
        (forall (n : nat) (t : n.-tuple R), P (Vector_T n) (Vector t)) ->
-       (forall l : seq (expr Bool_T), P Bool_T (and_E l)) ->
+       (forall l : seq (expr Bool_T), List.Forall (fun x => P Bool_T x) l -> P Bool_T (and_E l)) ->
+       (* (forall l : seq (expr Bool_T), P Bool_T (and_E l)) -> *)
        (forall l : seq (expr Bool_T), P Bool_T (or_E l)) ->
 (*additional seq constraint below*)
+       
        (forall (l : seq (expr Bool_T)) i, P Bool_T (nth (Bool false) l i)) ->
        (forall e : expr Bool_T,
         P Bool_T e -> forall e0 : expr Bool_T, P Bool_T e0 -> P Bool_T (e `=> e0)) ->
@@ -403,14 +409,45 @@ Lemma expr_ind' :
        forall (s : simple_type) (e : expr s), P s e.
 Proof.
 intros.
-fix P 1.
-Admitted.
+revert e.
+revert s.
+fix F1 2.
+intros.
+destruct e.
+  * apply H.
+  * apply H0.
+  * apply H1.
+  * apply H2.
+  * apply H3. 
+    - destruct l0.
+      + apply List.Forall_nil.
+      + Search List.Forall. crush. apply List.Forall_cons_iff.
+        apply H0.
+(*     - apply F1. *)
+  (* Inductive Forall (A : Type) (P : A -> Prop) : seq A -> Prop :=
+    Forall_nil : List.Forall P [::]
+  | Forall_cons : forall (x : A) (l : seq A),
+                  P x -> List.Forall P l -> List.Forall P (x :: l). *)
+  *  apply H4.
+  * apply H6; eauto.
+  * apply H7; eauto.
+  * apply H8; eauto.
+  * apply H9; eauto.
+  * apply H10; eauto.
+  * apply H11.
+  * apply H12; eauto. 
+  * apply H13; eauto. 
+  * apply H14; eauto. 
+Qed.
+
 
 Lemma translate_Bool_T_01 (e : expr Bool_T) :
   0 <= [[ e ]]_ l <= 1.
 Proof.
 Check expr_ind.
-dependent induction e => //=.
+(* induction e using expr_ind. *)
+
+(* dependent induction e => //=.
 - by case: ifPn => //; lra.
 - case l => //=.
   + rewrite /maxr. case: ifPn => //=. 
@@ -450,7 +487,7 @@ dependent induction e => //=.
   + have [] := eqVneq (- [[e2]]_l) ([[ e2 ]]_l); lra.
   + case: ifP; first lra.
     have := normr_ge0 ((([[ e1 ]]_l) - ([[ e2 ]]_l)) / (([[ e1 ]]_l) + ([[ e2 ]]_l))).
-    lra.
+    lra. *)
 Admitted.
 
 Lemma gt0_ltr_powR (r : R) : 0 < r ->
@@ -486,7 +523,10 @@ apply.
 Qed.
   
 
-Lemma inversion_andE1 (e1 e2 : expr Bool_T) :
+(*TO DELETE OR MOVE BINARY INVERSION LEMMAS ELSEWHERE AFTER
+PROVING NARY VERSIONS*)
+
+(* Lemma inversion_andE1 (e1 e2 : expr Bool_T) :
     [[ and_E [:: e1; e2] ]]_ l = 1 -> [[e1]]_ l = 1 /\ [[e2]]_ l = 1. 
 Proof.
 have He1 := translate_Bool_T_01 e1.
@@ -494,7 +534,7 @@ have He2 := translate_Bool_T_01 e2.
 move: He1 He2.
 have p0 := lt_le_trans ltr01 p1.
 case: l => /=; move=> He1; move=> He2.
-- rewrite /maxr; case: ifPn; lra.
+- rewrite /maxr; case: ifPn. lra.  admit.
 - rewrite /maxr; case: ifPn. lra.
   move=> _.
   have [->|e11 /eqP] := eqVneq ([[e1]]_Yager) 1.
@@ -509,9 +549,24 @@ case: l => /=; move=> He1; move=> He2.
     lra.
 - rewrite /minr; case: ifPn; case: ifPn; lra.
 - by nra.
-Qed. 
+Qed.  *)
 
-Lemma inversion_andE0 e1 e2 :
+Lemma nary_inversion_andE1 (Es : seq (expr Bool_T) ) :
+  [[ and_E Es ]]_ l = 1 -> 
+(forall i, [[ nth (Bool false) Es i ]]_ l = 1).
+Proof.
+case: l => /=.
+- rewrite /maxr; case: ifPn.
+  * lra.
+  * admit.
+- rewrite /maxr; case: ifPn.
+  * lra.
+  * admit.
+- rewrite /minr. admit.
+- admit.
+Admitted.
+
+(* Lemma inversion_andE0 e1 e2 :
   l <> Lukasiewicz -> l <> Yager ->
     [[ and_E [:: e1; e2] ]]_ l = 0 -> [[e1]]_ l = 0 \/ [[e2]]_ l = 0.
 Proof.
@@ -523,9 +578,19 @@ move=> he1 he2.
 case: l => //=.
 - rewrite /minr; case: ifPn; case: ifPn; lra.
 - nra.
-Qed.
+Qed. *)
 
-Lemma inversion_orE1 e1 e2 :
+Lemma nary_inversion_andE0 (Es : seq (expr Bool_T) ) :
+  l <> Lukasiewicz -> l <> Yager ->
+    [[ and_E Es ]]_ l = 0 -> (exists i, [[ nth (Bool false) Es i ]]_ l = 1).
+Proof.
+have p0 := lt_le_trans ltr01 p1.
+case: l => //=.
+- rewrite /maxr; admit.
+- admit.
+Admitted.
+
+(* Lemma inversion_orE1 e1 e2 :
   l <> Lukasiewicz -> l <> Yager ->
     [[ or_E [:: e1; e2] ]]_ l = 1 -> [[e1]]_ l = 1 \/ [[e2]]_ l = 1.
 Proof.
@@ -537,9 +602,19 @@ move=> he1 he2.
 case: l => //=.
 - rewrite /maxr; case: ifPn; case: ifPn; lra.
 - nra.
-Qed.
+Qed. *)
 
-Lemma inversion_orE0 e1 e2 :
+Lemma nary_inversion_orE1 Es :
+  l <> Lukasiewicz -> l <> Yager ->
+    [[ or_E Es ]]_ l = 1 -> (exists i, [[ nth (Bool false) Es i ]]_ l = 1).
+Proof.
+have p0 := lt_le_trans ltr01 p1.
+case: l => //=.
+- rewrite /maxr; admit.
+- admit.
+Admitted.
+
+(* Lemma inversion_orE0 e1 e2 :
     [[ or_E [:: e1; e2] ]]_ l = 0 -> [[e1]]_ l = 0 /\ [[e2]]_ l = 0.
 Proof.
 have He1 := translate_Bool_T_01 e1.
@@ -547,19 +622,34 @@ have He2 := translate_Bool_T_01 e2.
 move: He1 He2.
 have p0 := lt_le_trans ltr01 p1.
 case: l => /= ; move=> He1; move=> He2.
-- rewrite /minr; case: ifPn; rewrite addr0; lra.
+- rewrite /minr; case: ifPn. admit. admit. (* rewrite addr0; lra. *)
 - rewrite /minr; case: ifPn => _; last lra.
   have [->|e11 /eqP] := eqVneq ([[e1]]_Yager) 0.
   have [->//|e21 /eqP] := eqVneq ([[e2]]_Yager) 0.
-  + rewrite powR0 ?(gt_eqF p0)// add0r.
-    rewrite addr0 -powRrM divff ?(gt_eqF p0)// powRr1.
-    lra. lra.
-  + rewrite addr0 powR_eq0 (paddr_eq0 (powR_ge0 _ _) (powR_ge0 _ _)) => /andP [].
-    rewrite powR_eq0.
-    lra.
+  + rewrite powR0 ?(gt_eqF p0)//. admit. (* add0r. *)
+    (* rewrite addr0 -powRrM divff ?(gt_eqF p0)// powRr1.
+    lra. lra. *)
+  + admit. (* rewrite addr0 powR_eq0 (paddr_eq0 (powR_ge0 _ _) (powR_ge0 _ _)) => /andP [].
+    rewrite powR_eq0. *)
+    (* lra. *)
 - rewrite /maxr; case: ifPn; case: ifPn; lra.
 - by nra.
-Qed.
+Admitted. *)
+
+Lemma nary_inversion_orE0 Es :
+    [[ or_E Es ]]_ l  = 0 -> (forall i, [[ nth (Bool false) Es i ]]_ l = 0).
+Proof.
+have p0 := lt_le_trans ltr01 p1.
+case: l => //=.
+- rewrite /minr; case: ifPn.
+  admit.
+  admit.
+- rewrite /minr; case: ifPn.
+  admit.
+  admit.
+- rewrite /maxr. admit.
+- admit.
+Admitted.
 
 Lemma inversion_implE1 e1 e2 :
   l <> Lukasiewicz -> l <> Yager ->
@@ -597,30 +687,23 @@ case: l => /=; move=> He1; move=> He2.
 - by nra.
 Qed.
 
-(*ALL INVERSION LEMMAS NEED TO BE SWAPPED FOR NARY VERSIONS
-- THESE ARE CORRECT BUT USLESS IN PRACTICE*)
-
-Lemma nary_inversion_andE1 (Es : seq (expr Bool_T) ) :
-  [[ and_E Es ]]_ l = 1 -> 
-(forall i, [[ nth (Bool false) Es i ]]_ l = 1).
-Proof.
-Admitted.
-
 
 (*will need to rewrite inversion lemmas for n-ary, not sure
 why I decided to go with binary*)
-(* Lemma soundness e b :
+Lemma soundness e b :
   l <> Lukasiewicz -> l <> Yager ->
     [[ e ]]_ l = [[ Bool b ]]_ l -> << e >>_ l = b.
 Proof.
 - case: l => //=.
   + dependent induction e.
     * move: b b0 => [] [] //=; lra.
-    * move: inversion_andE1.
-      case.
+    * move: nary_inversion_andE1.
+      
+
+Admitted.
 
 (*old version*)
-  dependent induction e(* ll ly //= *).
+(*  dependent induction e(* ll ly //= *).
 - move: b b0 => [] [] //; lra.
 - case: l => /=.
   + move/(inversion_andE1 (translate_Bool_T_01 _) (translate_Bool_T_01 _)).
@@ -730,14 +813,23 @@ Proof.
   unfold shadow_lifting.
   move => Es i H0.
   unfold partial.
-  (* unfold lim. *)
+  Search (lim _).
+  Search (lim (_ @[_ --> _])).
+  
+
 Admitted.
+
+End shadow.
 
 Lemma andC e1 e2 :
   [[ e1 /\ e2 ]]_l = [[ e2 /\ e1 ]]_l.
 Proof.
 case: l.
-- by rewrite /= addr0 addr0 (addrC (_ e1)).
+- rewrite /=. unfold sumR. 
+Search "sum".
+(* TO REWRITE EVERYTHING BELOW 
+question - I thought part of this was done, lost commit?*)
+rewrite addr0 addr0 (addrC (_ e1)).
 - by rewrite /= addr0 addr0 (addrC (_ `^ _)).
 - by rewrite /=/minr; repeat case: ifP; lra.
 - by rewrite /= mulr1 mulr1 mulrC.
@@ -884,7 +976,7 @@ case: l => /=.
   lra.
 Admitted.
 
-(*TO DO ENTIRELY*)
+
 Theorem andA e1 e2 e3 : (0 < p) ->
   [[ (e1 /\ e2) /\ e3]]_l = [[ e1 /\ (e2 /\ e3) ]]_l.
 Proof.
@@ -977,10 +1069,7 @@ case: l => /=.
     case: ifPn; rewrite addr0.
     move/(help (se_ge0 _ _ _) p0).
     rewrite -/a3 opprD opprK addrA. 
-(*     rewrite addr0 subrr.
-    About subrr.
-    rewrite subrr add0r -powRrM mulVf// /a1 /a2 (powRr1 (addr_ge0 (powR_ge0 _ _) (powR_ge0 _ _))) -/a1 -/a2 => h2. *)
-    {
+   {
       rewrite {2}/maxr.
       case: ifPn.
       move/(help (se_ge0 _ _ _) p0).
@@ -1012,7 +1101,6 @@ case: l => /=.
     }
     move/(help' (se_ge0 _ _ _) p0).
     rewrite -/a3 opprD opprK addrA addr0.
-    (* rewrite subrr add0r -powRrM mulVf ?powRr1 ?(addr_ge0 (powR_ge0 _ _) (powR_ge0 _ _)) => //h2. *)
     {
       rewrite {2}/maxr.
       case: ifPn.
@@ -1038,8 +1126,6 @@ case: l => /=.
         rewrite -/a1 opprD opprK addrA subrr add0r -powRrM mulVf// ?powRr1 ?(addr_ge0 (powR_ge0 _ _) (powR_ge0 _ _))// => h4.
         admit. (* lra. *)
         move => _.
-        (* by rewrite -/a1 opprD opprK addrA subrr add0r -powRrM mulVf ?pneq0 ?powRr1 ?(addr_ge0 (powR_ge0 _ _) (powR_ge0 _ _)) ?addrA.
-      *)
       admit. }
     }
   }
@@ -1055,8 +1141,5 @@ case: l => /=.
   set t3 := _ e3.
   lra.
 Admitted.
-
-(* Theorem shadow_lifting es :
-   *)
 
 End translation_lemmas.
