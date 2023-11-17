@@ -391,10 +391,8 @@ Lemma expr_ind' :
        (forall (n : nat) (t : n.-tuple R), P (Vector_T n) (Vector t)) ->
        (forall l : seq (expr Bool_T), List.Forall (fun x => P Bool_T x) l -> P Bool_T (and_E l)) ->
        (* (forall l : seq (expr Bool_T), P Bool_T (and_E l)) -> *)
-       (forall l : seq (expr Bool_T), P Bool_T (or_E l)) ->
-(*additional seq constraint below*)
-       
-       (forall (l : seq (expr Bool_T)) i, P Bool_T (nth (Bool false) l i)) ->
+       (forall l : seq (expr Bool_T), List.Forall (fun x => P Bool_T x) l -> P Bool_T (or_E l)) ->
+       (forall (l : seq (expr Bool_T)) i, List.Forall (fun x => P Bool_T x) l -> P Bool_T (nth (Bool false) l i)) ->
        (forall e : expr Bool_T,
         P Bool_T e -> forall e0 : expr Bool_T, P Bool_T e0 -> P Bool_T (e `=> e0)) ->
        (forall e : expr Bool_T, P Bool_T e -> P Bool_T (`~ e)) ->
@@ -425,17 +423,20 @@ destruct e.
   * apply H1.
   * apply H2.
   * apply H3. 
-    - destruct l0.
-      + apply List.Forall_nil.
-      + Search List.Forall. (*. apply List.Forall_cons_iff.
-        apply H0.
-(*     - apply F1. *)
-  (* Inductive Forall (A : Type) (P : A -> Prop) : seq A -> Prop :=
-    Forall_nil : List.Forall P [::]
-  | Forall_cons : forall (x : A) (l : seq A),
-                  P x -> List.Forall P l -> List.Forall P (x :: l). *)
-  *  apply H4.
-  * apply H6; eauto.
+    induction l0.
+    + apply List.Forall_nil.
+    + apply List.Forall_cons_iff. 
+      split. 
+      - apply F1.
+      - apply IHl0.
+  * apply H4.
+    induction l0.
+    + apply List.Forall_nil.
+    + apply List.Forall_cons_iff. 
+      split. 
+      - apply F1.
+      - apply IHl0.
+  * apply H6; apply F1.
   * apply H7; eauto.
   * apply H8; eauto.
   * apply H9; eauto.
@@ -444,7 +445,7 @@ destruct e.
   * apply H12; eauto. 
   * apply H13; eauto. 
   * apply H14; eauto. 
-Qed.*)Admitted.
+Qed.
 
 
 Lemma translate_Bool_T_01 (e : expr Bool_T) :
@@ -565,6 +566,7 @@ Lemma psumr_eqsize :
   forall [R : numDomainType] [I : eqType] (r : seq I) [P : pred I] [F : I -> R],
   (forall i : I, P i -> (F i <= 1)%R) ->
   (\sum_(i <- r | P i) F i == (size r)%:R) = all (fun i : I => P i ==> (F i == 1)) r.
+Proof.
 Admitted.
 
 Canonical expr_Bool_T_eqType := Equality.Pack (@gen_eqMixin (expr Bool_T)).
@@ -574,18 +576,22 @@ Lemma bigmin_eqP:
   reflect (forall i : I, i \in s -> (x <= F i)) (\big[minr/x]_(i <- s) F i == x).
 Admitted.
 
+(*\prod_(j <- Es) [[j]]_product == 1*)
+
+
 Lemma nary_inversion_andE1 (Es : seq (expr Bool_T) ) :
   [[ and_E Es ]]_ l = 1 -> (forall i, i < size Es -> [[ nth (Bool false) Es i ]]_ l = 1).
 Proof.
 case: l => /=.
 - move/eqP. rewrite maxr01 /sumR eq_sym -subr_eq subrr eq_sym subr_eq0.
-  rewrite big_map psumr_eqsize; last admit.
-  move => /allP h i iEs.
-  apply/eqP.
-  move: h => /(_ (nth (Bool false) Es i)).
-  apply.
-  apply/(nthP (Bool false)).
-  by exists i.
+  rewrite big_map psumr_eqsize. (* last admit. *)
+  + move => /allP h i iEs.
+    apply/eqP.
+    move: h => /(_ (nth (Bool false) Es i)).
+    apply.
+    apply/(nthP (Bool false)).
+    by exists i.
+  + have H := translate_Bool_T_01. rewrite /=. admit.
 - move/eqP.
   rewrite maxr01 eq_sym addrC -subr_eq subrr eq_sym oppr_eq0 powR_eq0 invr_eq0 => /andP [+ _].
   rewrite /sumR big_map psumr_eq0; last admit.
@@ -599,7 +605,8 @@ case: l => /=.
 - move/eqP. rewrite /minR big_map.
   move/bigmin_eqP.
   admit.
-- admit.
+- move/eqP. rewrite /prodR big_map. Search prod.
+  move 
 Admitted.
 
 (* Lemma inversion_andE0 e1 e2 :
@@ -889,10 +896,10 @@ Admitted.
 Lemma orC e1 e2 :
   [[ e1 \/ e2 ]]_l = [[ e2 \/ e1 ]]_l.
 Proof.
-case: l.
+case: l; rewrite /=/sumR ?big_cons ?big_nil.
 - by rewrite /= addr0 addr0 (addrC (_ e1)).
 - by rewrite /= addr0 addr0 (addrC (_ `^ _)).
-- by rewrite /=/maxr; repeat case: ifP; lra.
+- rewrite /=/maxR; repeat case: ifP. lra.
 - by rewrite /= addr0 addr0 mulr0 mulr0 subr0 subr0 mulrC -(addrC (_ e2)).
 Qed.
 
@@ -905,7 +912,7 @@ have := translate_Bool_T_01 e1.
 have := translate_Bool_T_01 e2.
 have := translate_Bool_T_01 e3.
 (*Łukasiewicz*)
-case: l => /=.
+case: l => /= ; rewrite /=/sumR ?big_cons ?big_nil.
 - set t1 := _ e1.
   set t2 := _ e2.
   set t3 := _ e3.
@@ -1006,7 +1013,7 @@ case: l => /=.
 - set t1 := _ e1.
   set t2 := _ e2.
   set t3 := _ e3.
-  lra.
+  admit.
 Admitted.
 
 
@@ -1018,7 +1025,7 @@ have pneq0 : p != 0 by exact: lt0r_neq0.
 have := translate_Bool_T_01 e1.
 have := translate_Bool_T_01 e2.
 have := translate_Bool_T_01 e3.
-case: l => /=.
+case: l => /=; rewrite /=/sumR ?big_cons ?big_nil.
 + set t1 := _ e1.
   set t2 := _ e2.
   set t3 := _ e3.
