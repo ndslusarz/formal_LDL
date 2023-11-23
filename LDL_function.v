@@ -1044,7 +1044,8 @@ case: l => /= ; rewrite /=/sumR/maxR/minR/natalia_prodR ?big_cons ?big_nil.
         + by rewrite nnegrE !addr_ge0// powR_ge0.
         by rewrite lerD// lerDr powR_ge0.
         move: h4. rewrite !addr0. 
-        rewrite lt_neqAle. 
+        (* rewrite lt_neqAle.  *)
+        set a := (t1 `^ p + t2 `^ p + t3 `^ p) `^ p^-1. 
         admit. (* lra. *)
         by rewrite addr_ge0 ?powR_ge0 ?addr0 ?powR_ge0. (* by rewrite addr_ge0 ?powR_ge0. *)
       - rewrite {1}/minr.
@@ -1186,10 +1187,9 @@ case: l => /=; rewrite /=/sumR/maxR/minR/natalia_prodR ?big_cons ?big_nil.
         case: ifPn => //.
         rewrite addr0.
         move/(help' (se_ge0 _ _ _) p0).
-        rewrite opprD opprK. rewrite addrA. (*question - this takes extremely long time.
-        perhaps fix this to refer to a specific addrA *)
+        rewrite opprD opprK. rewrite -> addrA. 
         rewrite subrr add0r -/a1 -powRrM mulVf// ?powRr1.
-        
+        move => ? ?. exfalso. 
         (* lra. *) admit.
         by rewrite addr_ge0 ?powR_ge0.
       }
