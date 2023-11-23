@@ -42,6 +42,8 @@ Variables (n : nat) (f : 'rV[R]_n -> R).
 Definition partial (i : 'I_n) (a : 'rV[R]_n) :=
   lim (h^-1 * (f (a + h *: err_vec i) - f a) @[h --> (0:R)^']).
 
+Search ( (_ <= lim _)%R ). Search ( _ --> _).
+
 End partial.
 
 Inductive simple_type : Type :=
@@ -448,11 +450,22 @@ destruct e.
 Qed.
 
 
+About expr_ind'.
 Lemma translate_Bool_T_01 (e : expr Bool_T) :
   0 <= [[ e ]]_ l <= 1.
 Proof.
-Check expr_ind.
-(* induction e using expr_ind'. *)
+Check expr_ind. 
+(* set P : forall s : simple_type, expr s -> Prop  := fun (s : simple_type) =>
+  match s as s return (expr s -> Prop) with
+  | Bool_T => fun (e : expr Bool_T) => (0 <= [[ e ]]_ l <= 1)%R
+  | _ => fun _ => True
+  end.
+(* apply (@expr_ind' P). *)
+apply: (@expr_ind'  P _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _  Bool_T).  *)
+dependent induction e using expr_ind'.
+- case l => //=; case b; lra.
+- case l => //=. move/List.Forall_forall in H. 
+ 
 
 (* dependent induction e => //=.
 - by case: ifPn => //; lra.
@@ -894,8 +907,11 @@ Check row_of_seq.
 About MatrixFormula.seq_of_rV.
 
 
-Definition product_and n (xs: 'rV_n) : R := 
-  foldr ( *%R ) 1 (MatrixFormula.seq_of_rV xs).
+Definition product_and n (xs: 'rV[R]_n) : R := 
+  \prod_(x <- (MatrixFormula.seq_of_rV xs)) x.
+(*foldr ( *%R ) 1 (MatrixFormula.seq_of_rV xs). *)
+Print MatrixFormula.seq_of_rV.
+Print fgraph.
 
 
 Definition shadow_lifting (f : forall n, 'rV_n -> R) := 
@@ -1190,6 +1206,7 @@ case: l => /=; rewrite /=/sumR/maxR/minR/natalia_prodR ?big_cons ?big_nil.
         rewrite opprD opprK. rewrite -> addrA. 
         rewrite subrr add0r -/a1 -powRrM mulVf// ?powRr1.
         move => ? ?. exfalso. 
+        have: a1 + a2 + a3 = 1. lra.
         (* lra. *) admit.
         by rewrite addr_ge0 ?powR_ge0.
       }
