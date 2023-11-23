@@ -619,15 +619,17 @@ case: l => /=; move => H.
     apply/(nthP (Bool false)).
     by exists i.
   + move => i //=.
-    move: (H i). rewrite  le_pow_01. lra. 
+    move: (H i). rewrite  le_pow_01. 
+    * lra. 
+    * move: (H i). lra.
 - move/eqP. rewrite /minR big_map.
   move/bigmin_eqP.
   rewrite //=.
   move => h i iEs.
   apply/eqP.
-  have e := nth (Bool false) Es i.
-  move: (H (nth (Bool false) Es i)).
-  move: h => /(_ (nth (Bool false) Es i)).
+  set e := nth (Bool false) Es i.
+  move: (H e).
+  move: h => /(_ e). 
   (* apply/(nthP (Bool false)). *)
   admit.
 - move/eqP. rewrite /prodR big_map.
