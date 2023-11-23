@@ -564,11 +564,11 @@ Proof. rewrite/maxr; case: ifP=>//; lra. Qed.
 Lemma minr10 (x : R) : (minr x 1 == 0) = (x == 0).
 Proof. rewrite /minr; case: ifP=>//; lra. Qed.
 
-Lemma prod1_01 (s : seq R) :
+(* Lemma prod1_01 (s : seq R) :
   forall e : R, (e \in s -> 0 <= e <= 1) -> \prod_(j <- s) j == 1
           -> e \in s = 1.
 Proof. 
-Admitted.
+Admitted. *)
 
 
 Lemma psumr_eqsize :
@@ -587,8 +587,11 @@ Lemma bigmin_eqP:
   reflect (forall i : I, i \in s -> (x <= F i)) (\big[minr/x]_(i <- s) F i == x).
 Admitted.
 
-(*\prod_(j <- Es) [[j]]_product == 1*)
+Lemma le_pow_01 (x p0 : R ):
+  0 <= x <= 1 -> (0 <= (1 - x) `^ p0).
+Proof.
 
+Admitted.
 
 Lemma nary_inversion_andE1 (Es : seq (expr Bool_T) ) :
   [[ and_E Es ]]_ l = 1 -> (forall i, i < size Es -> [[ nth (Bool false) Es i ]]_ l = 1).
@@ -616,7 +619,7 @@ case: l => /=; move => H.
     apply/(nthP (Bool false)).
     by exists i.
   + move => i //=.
-    move: (H i). admit.
+    move: (H i). rewrite  le_pow_01. lra. 
 - move/eqP. rewrite /minR big_map.
   move/bigmin_eqP.
   rewrite //=.
