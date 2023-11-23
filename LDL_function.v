@@ -590,8 +590,8 @@ Admitted.
 Lemma le_pow_01 (x p0 : R ):
   0 <= x <= 1 -> (0 <= (1 - x) `^ p0).
 Proof.
-
-Admitted.
+by rewrite powR_ge0.
+Qed.
 
 Lemma nary_inversion_andE1 (Es : seq (expr Bool_T) ) :
   [[ and_E Es ]]_ l = 1 -> (forall i, i < size Es -> [[ nth (Bool false) Es i ]]_ l = 1).
