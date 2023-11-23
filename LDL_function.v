@@ -786,7 +786,9 @@ Proof.
 - case: l => //=.
   + dependent induction e.
     * move: b b0 => [] [] //=; lra.
-    * move: nary_inversion_andE1.
+    * move => l1 l2. 
+    rewrite //=/minR. admit. (* move: nary_inversion_andE1. *)
+  +
       
 
 Admitted.
