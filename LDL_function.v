@@ -449,6 +449,14 @@ destruct e.
   * apply H14; eauto. 
 Qed.
 
+(* \sum_(i <- [seq [[i]]_Lukasiewicz | i <- l0]) i - (\sum_(j <- l0) 1)%:R + 1 < 0)%R = false *)
+Lemma sum_01 (s : seq R) :
+  (forall e, e \in s -> 0 <= e <= 1) -> 
+  ((\sum_(i <- s) i) - (size s)%:R + 1 < 0 ) = false.
+Proof.
+intros. rewrite -sum1_size. Search (_ = False).
+Admitted.
+
 
 About expr_ind'.
 Lemma translate_Bool_T_01 (e : expr Bool_T) :
@@ -464,39 +472,42 @@ Check expr_ind.
 apply: (@expr_ind'  P _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _  Bool_T).  *)
 dependent induction e using expr_ind'.
 - case l => //=; case b; lra.
-- case l => //=. move/List.Forall_forall in H. 
- 
-
-(* dependent induction e => //=.
-- by case: ifPn => //; lra.
-- case l => //=.
-  + rewrite /maxr. case: ifPn => //=. 
-    * lra.
-    * rewrite -leNgt. move => -> /=.
-      rewrite /sumR -sum1_size. 
-      (*look up bigop.v ssrnum.v*)
-      admit.
-  + rewrite /maxr. case: ifP => //=.
-    * lra.
-    * unfold sumR. 
-      admit.
-  + rewrite /minr. 
-    (* case: ifP => //=. *)
-    admit.
-  + admit.
-- case l.
-  + rewrite /minr. case: ifP => //=.
-    * unfold sumR. admit.
-    * lra.
-  + rewrite /minr. case: ifP => //=.
-    * unfold sumR. 
-     admit.
-    * lra.
-  + rewrite /maxr. admit.
-  + admit.
+- move: H. case l => //=; move=> /List.Forall_forall H. 
+  + rewrite /sumR/maxr. case: ifP.
+    * by lra.
+    * rewrite -sum1_size. admit. 
+  + rewrite /maxr. case: ifP.
+    * by lra.
+    * rewrite /sumR. admit.
+  + rewrite /minR. admit.
+  + rewrite /prodR. move: H. admit.
+- move: H. case l => //=; move=> /List.Forall_forall H. 
+  + rewrite /sumR/minr. case: ifP.
+    * admit.
+    * by lra.
+  + rewrite /sumR/minr. case: ifP.
+    * admit.
+    * by lra.
+  + rewrite /maxR. admit.
+  + rewrite /natalia_prodR. admit.
+- move: H.  move=> /List.Forall_forall H.  
+  + rewrite (H (nth (Bool false) l0 i)).
+    * exact.
+    * admit.
+    * exact.
+    * exact.
 - have := IHe1 e1 erefl JMeq_refl.
   have := IHe2 e2 erefl JMeq_refl.
-  case l; rewrite /minr/maxr; try case: ifP; rewrite ?cprD ?oppr_le0 ?powR_ge0; nra. 
+  case l => //=; rewrite /minr/maxr; try case: ifP; rewrite ?cprD ?oppr_le0 ?powR_ge0; nra.
+- have := IHe e erefl JMeq_refl.
+  case l => //=; by lra.
+- case: c.
+  + case l => //=; case: ifP. (* ifP => [/eqP ->|?]. *)
+
+(*SOMETHING WRONG IN DEFINITION OF THIS CASE, WRONG TYPES IN JMEQ I THINK*)
+
+
+(* 
 - have := IHe e erefl JMeq_refl.
   by lra.
 - case: c; rewrite /maxr; case: ifP => [/eqP ->|?].
@@ -804,9 +815,9 @@ Proof.
 - case: l => //=.
   + dependent induction e.
     * move: b b0 => [] [] //=; lra.
-    * move => l1 l2. 
-    rewrite //=/minR. admit. (* move: nary_inversion_andE1. *)
-  +
+    * admit.
+    (* rewrite //=/minR. admit. *) (* move: nary_inversion_andE1. *)
+    * move: l0 b.
       
 
 Admitted.
@@ -925,8 +936,10 @@ Proof.
   unfold shadow_lifting.
   move => Es i H0.
   unfold partial.
-  Search (lim _).
-  Search (lim (_ @[_ --> _])).
+Search ( _ --> _). 
+  (* unfold product_and . *)
+  (* Search (lim _).
+  Search (lim (_ @[_ --> _])). *)
   
 
 Admitted.
