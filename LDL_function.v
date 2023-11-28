@@ -930,12 +930,13 @@ Definition shadow_lifting (f : forall n, 'rV_n -> R) :=
     (forall i, nth 0 Es i != 0) ->
     partial (f (size Es)) i (row_of_seq Es) > 0.
 
-Lemma shadow_lifting_product product_and :
+Lemma shadow_lifting_product_and :
    shadow_lifting product_and.
 Proof.
   unfold shadow_lifting.
   move => Es i H0.
-  unfold partial.
+  rewrite /partial.
+  rewrite /product_and.
 Search ( _ --> _). 
   (* unfold product_and . *)
   (* Search (lim _).
