@@ -757,7 +757,7 @@ have H := translate_Bool_T_01. move: H.
 have p0 := lt_le_trans ltr01 p1.
 case: l => //=; move => H.
 - move/eqP. rewrite minr10 /sumR.
-  rewrite psumr_eq0.
+  rewrite psumr_eq0. About psumr_eq0.
   + move => /allP h i. 
     apply/eqP.
     move: h => /(_ ([[nth (Bool false) Es i]]_Lukasiewicz)).
@@ -816,9 +816,12 @@ Lemma soundness e b :
   l <> Lukasiewicz -> l <> Yager ->
     [[ e ]]_ l = [[ Bool b ]]_ l -> << e >>_ l = b.
 Proof.
-- case: l => //=.
-  + dependent induction e.
-    * move: b b0 => [] [] //=; lra.
+dependent induction e.
+  - move: b b0 => [] [] //=; lra.
+  - move => l1 l2. 
+    (* move /(nary_inversion_andE1 _ l0). *)
+(* - case: l => //=.
+
     * admit.
     (* rewrite //=/minR. admit. *) (* move: nary_inversion_andE1. *)
     * move: l0 b => [] //=.
@@ -828,7 +831,10 @@ Proof.
     * move: b => [].
       - admit.
       (*move/(inversion_implE1 _ _ _). *)
-      - move => l1 l2.
+      - move => l1 l2. 
+        move/(inversion_implE1 l1 e1 e2). (* rewrite /=/maxr.
+        case: ifP. move => h1. *) *)
+        
         (* apply inversion_implE0 . *)
 
       
