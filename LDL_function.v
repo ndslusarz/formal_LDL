@@ -463,19 +463,15 @@ Lemma translate_Bool_T_01 (e : expr Bool_T) :
   0 <= [[ e ]]_ l <= 1.
 Proof.
 Check expr_ind. 
-(* set P : forall s : simple_type, expr s -> Prop  := fun (s : simple_type) =>
-  match s as s return (expr s -> Prop) with
-  | Bool_T => fun (e : expr Bool_T) => (0 <= [[ e ]]_ l <= 1)%R
-  | _ => fun _ => True
-  end.
-(* apply (@expr_ind' P). *)
-apply: (@expr_ind'  P _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _  Bool_T).  *)
 dependent induction e using expr_ind'.
 - case l => //=; case b; lra.
 - move: H. case l => //=; move=> /List.Forall_forall H. 
   + rewrite /sumR/maxr. case: ifP.
     * by lra.
-    * rewrite -sum1_size. admit. 
+    * rewrite -sum1_size //=.
+      Search ( _ < _ = false).
+      (* rewrite (-le_gtF (\sum_(i <- [seq [[i]]_Lukasiewicz | i <- l0]) i - (\sum_(j <- l0) 1)%:R + 1) 0). *)
+     admit.
   + rewrite /maxr. case: ifP.
     * by lra.
     * rewrite /sumR. admit.
@@ -588,11 +584,11 @@ Proof. rewrite/maxr; case: ifP=>//; lra. Qed.
 Lemma minr10 (x : R) : (minr x 1 == 0) = (x == 0).
 Proof. rewrite /minr; case: ifP=>//; lra. Qed.
 
-(* Lemma prod1_01 (s : seq R) :
-  forall e : R, (e \in s -> 0 <= e <= 1) -> \prod_(j <- s) j == 1
+Lemma prod1_01  :
+  forall [e : R] [s : seq R], e \in s -> 0 <= e <= 1 -> \prod_(j <- s) j == 1
           -> e \in s = 1.
 Proof. 
-Admitted. *)
+Admitted. 
 
 
 Lemma psumr_eqsize :
@@ -611,6 +607,7 @@ Lemma bigmin_eqP:
   reflect (forall i : I, i \in s -> (x <= F i)) (\big[minr/x]_(i <- s) F i == x).
 Admitted.
 
+
 Lemma le_pow_01 (x p0 : R ):
   0 <= x <= 1 -> (0 <= (1 - x) `^ p0).
 Proof.
@@ -623,7 +620,7 @@ Proof.
 have H := translate_Bool_T_01. move: H.
 case: l => /=; move => H.
 - move/eqP. rewrite maxr01 /sumR eq_sym -subr_eq subrr eq_sym subr_eq0.
-  rewrite big_map psumr_eqsize. (* last admit. *)
+  rewrite big_map psumr_eqsize.
   + move => /allP h i iEs.
     apply/eqP.
     move: h => /(_ (nth (Bool false) Es i)).
@@ -651,16 +648,17 @@ case: l => /=; move => H.
   rewrite //=.
   move => h i iEs.
   apply/eqP.
+  move: (H (nth (Bool false) Es i)).
+  move: h => /(_ (nth (Bool false) Es i)).
   set e := nth (Bool false) Es i.
-  move: (H e).
-  move: h => /(_ e). 
+ (*  Search (_ \in _).  *)
   (* apply/(nthP (Bool false)). *)
   admit.
 - move/eqP. rewrite /prodR big_map.
   move => h i iEs.
    move: h.
   move: (H (nth (Bool false) Es i)).
- (*  apply prod1_01. *)
+  (* apply prod1_01. *)
   admit. 
 Admitted.
 
@@ -680,7 +678,7 @@ Qed. *)
 Lemma prod0 (s : seq R) :
   forall i : R, i \in s -> \prod_(i <- s) i = 0 -> i = 0.
 Proof.
-move => i h1.
+move => i h1. (* rewrite prod0v. *)
  Admitted.
 
 Lemma nary_inversion_andE0 (Es : seq (expr Bool_T) ) :
@@ -697,7 +695,8 @@ case: l => //=; move => H.
   (* move/bigmin_eqP. *)
   admit.
 - move => l1 l2.
-  rewrite /prodR. (* rewrite prod0. Search "big_const". *)
+  rewrite /prodR.
+  About prod0. (* rewrite prod0. *) Search "big_const". 
 
 Admitted.
 
@@ -758,8 +757,13 @@ have H := translate_Bool_T_01. move: H.
 have p0 := lt_le_trans ltr01 p1.
 case: l => //=; move => H.
 - move/eqP. rewrite minr10 /sumR.
-(*   rewrite psumr_eq0. *)
-  (* move => /allP . *) admit.
+  rewrite psumr_eq0.
+  + move => /allP h i. 
+    apply/eqP.
+    move: h => /(_ ([[nth (Bool false) Es i]]_Lukasiewicz)).
+    rewrite implyTb. admit.
+  + (*is this true?no, go back to psumr_eq0 probably*)
+   admit.
 
 - move/eqP. rewrite minr10 /sumR. 
   rewrite powR_eq0 (* psumr_eq0 *).
@@ -817,7 +821,16 @@ Proof.
     * move: b b0 => [] [] //=; lra.
     * admit.
     (* rewrite //=/minR. admit. *) (* move: nary_inversion_andE1. *)
-    * move: l0 b.
+    * move: l0 b => [] //=.
+      - case; rewrite //=/maxR big_nil; lra.  
+      - move => a l0 b l1 l2.
+      admit.
+    * move: b => [].
+      - admit.
+      (*move/(inversion_implE1 _ _ _). *)
+      - move => l1 l2.
+        (* apply inversion_implE0 . *)
+
       
 
 Admitted.
@@ -909,7 +922,6 @@ Qed. *)
 Section shadow.
 
 About partial.
-(* forall {R : realType} [n : nat] (f : 'rV_n -> R) (i : 'I_n) (a : 'rV_n), *)
 
 Definition row_of_seq (s : seq R) : 'rV[R]_(size s) :=
   (\row_(i < size s) tnth (in_tuple s) i).
@@ -920,15 +932,26 @@ About MatrixFormula.seq_of_rV.
 
 Definition product_and n (xs: 'rV[R]_n) : R := 
   \prod_(x <- (MatrixFormula.seq_of_rV xs)) x.
-(*foldr ( *%R ) 1 (MatrixFormula.seq_of_rV xs). *)
+
 Print MatrixFormula.seq_of_rV.
 Print fgraph.
 
 
 Definition shadow_lifting (f : forall n, 'rV_n -> R) := 
   forall Es : seq R, forall i : 'I_(size Es),
-    (forall i, nth 0 Es i != 0) ->
+    (* (forall i, nth 0 Es i != 0) -> *)
+    (* I've had to add that in because since we're not using
+    the translation I can't use the 01 range lemma
+    this should let me prove its bounded -> cvg *)
+    (forall i, 0 < nth 0 Es i <= 1) ->
     partial (f (size Es)) i (row_of_seq Es) > 0.
+
+Lemma all_zero_product : 
+    forall Es : seq R, forall i : 'I_(size Es),
+    (0 = lim (h^-1 *
+    (\prod_(x <- MatrixFormula.seq_of_rV (row_of_seq Es + h *: err_vec i)) 0 -
+     \prod_(x <- MatrixFormula.seq_of_rV (row_of_seq Es)) 0) @[h --> 0^']))%R.
+Admitted.  
 
 Lemma shadow_lifting_product_and :
    shadow_lifting product_and.
@@ -937,13 +960,21 @@ Proof.
   move => Es i H0.
   rewrite /partial.
   rewrite /product_and.
-Search ( _ --> _). 
+
+Search ( _ --> _ ).
+  rewrite ler_lim.
+(* will probably need:
+- theorem about prod of +
+- theorem abt convergence of prod*) 
+
   (* unfold product_and . *)
   (* Search (lim _).
   Search (lim (_ @[_ --> _])). *)
+
   
 
 Admitted.
+
 
 End shadow.
 
@@ -953,8 +984,7 @@ Proof.
 case: l; rewrite /=/sumR /prodR /minR ?big_cons ?big_nil.
 - by rewrite addr0 addr0 (addrC (_ e1)).
 - by rewrite /= addr0 addr0 (addrC (_ `^ _)).
-- (* TODO: PR minr_CA *)
-   by rewrite /=/minr; repeat case: ifP; lra. 
+- by rewrite /=/minr; repeat case: ifP; lra. 
 - by rewrite /= mulr1 mulr1 mulrC. 
 Qed.
 
