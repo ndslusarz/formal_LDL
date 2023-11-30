@@ -40,7 +40,7 @@ Context {R : realType}.
 Variables (n : nat) (f : 'rV[R]_n -> R).
 
 Definition partial (i : 'I_n) (a : 'rV[R]_n) :=
-  lim (h^-1 * (f (a + h *: err_vec i) - f a) @[h --> (0:R)^']).
+  lim (h^-1 * (f (a + h *: err_vec i) - f a) @[h --> (0:R)^'+]).
 
 Search ( (_ <= lim _)%R ). Search ( _ --> _).
 
@@ -952,35 +952,42 @@ Definition shadow_lifting (f : forall n, 'rV_n -> R) :=
     (forall i, 0 < nth 0 Es i <= 1) ->
     partial (f (size Es)) i (row_of_seq Es) > 0.
 
-Lemma all_zero_product : 
-    forall Es : seq R, forall i : 'I_(size Es),
-    (0 = lim (h^-1 *
-    (\prod_(x <- MatrixFormula.seq_of_rV (row_of_seq Es + h *: err_vec i)) 0 -
-     \prod_(x <- MatrixFormula.seq_of_rV (row_of_seq Es)) 0) @[h --> 0^']))%R.
-Admitted.  
-
-Lemma shadow_lifting_product_and :
-   shadow_lifting product_and.
+Lemma all_zero_product (Es : seq R) (i : 'I_(size Es)) :
+  h^-1 *
+  (\prod_(x <- MatrixFormula.seq_of_rV (row_of_seq Es + h *: err_vec i)) 0 -
+   \prod_(x <- MatrixFormula.seq_of_rV (row_of_seq Es)) 0) @[h --> (0:R)^'+] --> (0:R).
+(* either we don't need it or it should be written with partial *)
 Proof.
-  unfold shadow_lifting.
-  move => Es i H0.
-  rewrite /partial.
-  rewrite /product_and.
-
-Search ( _ --> _ ).
-  rewrite ler_lim.
-(* will probably need:
-- theorem about prod of +
-- theorem abt convergence of prod*) 
-
-  (* unfold product_and . *)
-  (* Search (lim _).
-  Search (lim (_ @[_ --> _])). *)
-
-  
-
+(* to be used with cvg_lim *)
 Admitted.
 
+Lemma monotonous_bounded_is_cvg (f : R -> R) :
+  monotonous setT f ->
+  has_ubound (f @` setT) -> has_lbound (f @` setT (*isn't this too restrictive?*) ) ->
+  cvg (f x @[x --> (0:R)^'+]).
+Proof.
+Admitted.
+
+Lemma shadow_lifting_product_and : shadow_lifting product_and.
+Proof.
+move=> Es i Es01.
+rewrite lt_neqAle; apply/andP; split; last first.
+  apply: limr_ge.
+    apply: monotonous_bounded_is_cvg.
+    admit.
+    admit.
+    admit.
+  near=> x.
+  rewrite mulr_ge0//.
+    by rewrite invr_ge0.
+  rewrite subr_ge0 /product_and !big_map/= ler_prod// => j _.
+  rewrite !ffunE !mxE; apply/andP; split.
+    rewrite /tnth (set_nth_default (0:R))//.
+    by have /andP[/ltW] := Es01 j.
+  by rewrite ler_addl// mulr_ge0.
+rewrite /partial.
+admit.
+Admitted.
 
 End shadow.
 
