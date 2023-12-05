@@ -298,12 +298,6 @@ Definition bool_type_translation (t: simple_type) : Type:=
   | Network_T n m => n.-tuple R -> m.-tuple R
   end.
 
-(*Definition bool_translation_binop op xs :=
-  match op with
-  | and_E xs => map && xs (* x && y *)
-  | or_E xs => map || xs
-  | impl_E => x ==> y
-  end.*)
 
 Local Open Scope ring_scope.
 
@@ -449,7 +443,6 @@ destruct e.
   * apply H14; eauto. 
 Qed.
 
-(* \sum_(i <- [seq [[i]]_Lukasiewicz | i <- l0]) i - (\sum_(j <- l0) 1)%:R + 1 < 0)%R = false *)
 Lemma sum_01 (s : seq R) :
   (forall e, e \in s -> 0 <= e <= 1) -> 
   ((\sum_(i <- s) i) - (size s)%:R + 1 < 0 ) = false.
@@ -588,6 +581,7 @@ Lemma prod1_01  :
   forall [e : R] [s : seq R], e \in s -> 0 <= e <= 1 -> \prod_(j <- s) j == 1
           -> e \in s = 1.
 Proof. 
+move => e s h1 h2. Search "prod" (1). 
 Admitted. 
 
 
@@ -818,7 +812,10 @@ Lemma soundness e b :
 Proof.
 dependent induction e.
   - move: b b0 => [] [] //=; lra.
-  - move => l1 l2. 
+  - move => l1 l2. rewrite [ [[Bool b]]_l ]/=.  
+    move: b => [].
+    + move/ nary_inversion_andE1. rewrite [bool_translation (and_E l0)]/=. admit.
+    + admit.
     (* move /(nary_inversion_andE1 _ l0). *)
 (* - case: l => //=.
 
@@ -946,9 +943,6 @@ Print fgraph.
 Definition shadow_lifting (f : forall n, 'rV_n -> R) := 
   forall Es : seq R, forall i : 'I_(size Es),
     (* (forall i, nth 0 Es i != 0) -> *)
-    (* I've had to add that in because since we're not using
-    the translation I can't use the 01 range lemma
-    this should let me prove its bounded -> cvg *)
     (forall i, 0 < nth 0 Es i <= 1) ->
     partial (f (size Es)) i (row_of_seq Es) > 0.
 
@@ -991,6 +985,31 @@ Admitted.
 
 End shadow.
 
+(* Lemma Lukasiewicz_andC e1 e2 :
+  [[ e1 /\ e2 ]]_Lukasiewicz = [[ e2 /\ e1 ]]_Lukasiewicz.
+Proof.
+rewrite /=/sumR ?big_cons ?big_nil.
+by rewrite addr0 addr0 (addrC (_ e1)).
+Qed.
+
+Lemma Yager_andC e1 e2 :
+  [[ e1 /\ e2 ]]_Yager = [[ e2 /\ e1 ]]_Yager.
+Proof.
+rewrite /=/sumR ?big_cons ?big_nil.
+by rewrite /= addr0 addr0 (addrC (_ `^ _)).
+Qed.
+
+Lemma Godel_andC e1 e2 :
+  [[ e1 /\ e2 ]]_Godel = [[ e2 /\ e1 ]]_Godel.
+Proof.
+rewrite /=/minR ?big_cons ?big_nil.
+by rewrite /=/minr; repeat case: ifP; lra. 
+Qed.
+
+Lemma product_andC e1 e2 :
+  [[ e1 /\ e2 ]]_product = [[ e2 /\ e1 ]]_product.
+Proof. *)
+
 Lemma andC e1 e2 :
   [[ e1 /\ e2 ]]_l = [[ e2 /\ e1 ]]_l.
 Proof.
@@ -1030,7 +1049,148 @@ case: l; rewrite /=/sumR/maxR/natalia_prodR ?big_cons ?big_nil.
 - by rewrite /=/natalia_prod addr0 addr0 mulr0 mulr0 subr0 subr0 mulrC -(addrC (_ e2)).
 Qed.
 
-Lemma orA e1 e2 e3 :
+Lemma Lukasiewicz_orA e1 e2 e3 :
+  (*there needs to be a smarter way for this
+or change translate_Bool_T_01 to take l*)
+  l <> Yager -> l <> Godel -> l <> product ->
+  [[ (e1 \/ (e2 \/ e3)) ]]_Lukasiewicz = [[ ((e1 \/ e2) \/ e3) ]]_Lukasiewicz.
+Proof.
+
+have := translate_Bool_T_01 e1.
+have := translate_Bool_T_01 e2.
+have := translate_Bool_T_01 e3.
+case: l => //=.
+rewrite /=/sumR/minR?big_cons ?big_nil.
+rewrite /minr.
+by repeat case: ifP; lra.
+Qed.
+
+(* Lemma Yager_orA e1 e2 e3 :
+  (*there needs to be a smarter way for this
+or change translate_Bool_T_01 to take l*)
+  l <> Lukasiewicz -> l <> Godel -> l <> product ->
+  [[ (e1 \/ (e2 \/ e3)) ]]_Yager = [[ ((e1 \/ e2) \/ e3) ]]_Yager.
+Proof.
+have p0 : 0 < p by rewrite (lt_le_trans ltr01).
+have ? : p != 0 by exact: lt0r_neq0.
+have := translate_Bool_T_01 e1.
+have := translate_Bool_T_01 e2.
+have := translate_Bool_T_01 e3.
+case: l => /=.
+rewrite //=.
+rewrite /=/sumR/maxR/minR/natalia_prodR ?big_cons ?big_nil.
+rewrite ![in _ `^ p + _]addr0.
+set t1 := _ e1.
+set t2 := _ e2.
+set t3 := _ e3.
+move => ht3 ht2 ht1.
+rewrite {2}/minr. 
+case: ifPn => h1.
++ rewrite -powRrM mulVf ?p0 ?powRr1 ?addr_ge0 ?powR_ge0//.
+  rewrite {1}/minr.
+  case: ifPn => h2.
+  * rewrite {2}/minr.
+    case: ifPn => h3.
+    - rewrite {1}/minr.
+      case: ifPn => h4. 
+      by rewrite -{1}powRrM mulVf ?powRr1 ?addr_ge0 ?powR_ge0 ?addrA ?addr0.
+          (* by rewrite -{1}powRrM mulVf ?powRr1 ?addr_ge0 ?powR_ge0 ?addrA. *)
+      rewrite addrA; move: h2; rewrite addrA; move: h4;
+      rewrite -{1}powRrM mulVf ?powRr1 ?addr_ge0 ?powR_ge0//. 
+      rewrite !addr0. 
+      (* lra. *) admit.
+    - rewrite {1}/minr.
+      suff: (t1 `^ p + (t2 `^ p + t3 `^ p)) `^ p^-1 >=
+            (t1 `^ p + t2 `^ p) `^ p^-1. admit. (* by lra. *)
+      rewrite gt0_ler_powR//.
+      + by rewrite invr_ge0 ltW.
+      + by rewrite nnegrE addr_ge0// powR_ge0. 
+      + by rewrite nnegrE !addr_ge0// powR_ge0.
+      + by rewrite lerD// lerDl powR_ge0.
+  * rewrite {2}/minr.
+    case: ifPn => h3.
+    - rewrite -{1}powRrM mulVf// powRr1 ?addr_ge0 ?powR_ge0//.
+      rewrite {1}/minr.
+      case: ifPn => //.
+      move: h2 => /[swap]. by rewrite !addr0 !addrA => ->.
+    - rewrite {1}/minr.
+      case: ifPn => //.
+      have: (1 `^ p + t3 `^ p) `^ p^-1 >= 1.
+        have {1}->: 1 = 1 `^ p^-1 by rewrite powR1.
+        rewrite gt0_ler_powR//.
+        + by rewrite invr_ge0 ltW.
+        + by rewrite nnegrE .
+        + by rewrite nnegrE addr_ge0// powR_ge0. 
+        by rewrite powR1 lerDl powR_ge0.
+      rewrite addr0.
+      set a := (1 `^ p + t3 `^ p) `^ p^-1.
+      move => /le_lt_trans /[apply]. 
+      by rewrite ltxx.
+  + rewrite {1}/minr.
+    case: ifPn => // h2.
+    - have: (t1 `^ p + 1 `^ p) `^ p^-1 >= 1.
+        have {1}->: 1 = 1`^p^-1 by rewrite powR1.
+        rewrite gt0_ler_powR//.
+        + by rewrite invr_ge0 ltW.
+        + by rewrite nnegrE .
+        + by rewrite nnegrE addr_ge0// powR_ge0.
+        by rewrite powR1 lerDr powR_ge0.
+      move: h2.
+      set a := (t1 `^ p + 1 `^ p) `^ p^-1. lra.
+    * rewrite {2}/minr.
+      case: ifPn => h3.
+      - rewrite {1}/minr.
+        case: ifPn => //.
+        rewrite -powRrM mulVf// powRr1.
+        move=> h4.
+        have h5: (t1 `^ p + t2 `^ p + t3 `^ p) `^ p^-1 >= (t2 `^ p + t3 `^ p) `^ p^-1.
+        rewrite gt0_ler_powR//.
+        + by rewrite invr_ge0 ltW.
+        + by rewrite nnegrE addr_ge0// powR_ge0. 
+        + by rewrite nnegrE !addr_ge0// powR_ge0.
+        by rewrite lerD// lerDr powR_ge0.
+        move: h4. rewrite !addr0. 
+        (* rewrite lt_neqAle.  *)
+        set a := (t1 `^ p + t2 `^ p + t3 `^ p) `^ p^-1. 
+        admit. (* lra. *)
+        by rewrite addr_ge0 ?powR_ge0 ?addr0 ?powR_ge0. (* by rewrite addr_ge0 ?powR_ge0. *)
+      - rewrite {1}/minr.
+        case: ifPn => //.
+        have: (1 `^ p + t3 `^ p) `^ p^-1 >= 1.
+        - have {1}->: 1 = 1`^p^-1 by rewrite powR1.
+          rewrite gt0_ler_powR//.
+          + by rewrite invr_ge0 ltW.
+          + by rewrite nnegrE .
+          + by rewrite nnegrE addr_ge0// powR_ge0.
+          by rewrite powR1 lerDl powR_ge0. 
+          + rewrite powR1 addr0. 
+          move => h4 h5. admit.
+Admitted.
+ *)
+Lemma Godel_orA e1 e2 e3 :
+  [[ (e1 \/ (e2 \/ e3)) ]]_Godel = [[ ((e1 \/ e2) \/ e3) ]]_Godel.
+Proof.
+(* set t1 := _ e1.
+set t2 := _ e2.
+set t3 := _ e3. *)
+rewrite /=/sumR/maxR ?big_cons ?big_nil.
+  rewrite /maxr.
+  admit. (* by repeat case: ifP; lra.  *)(*currently times out, but no error*)
+(*product*)
+Admitted.
+
+Lemma product_orA e1 e2 e3 :
+  [[ (e1 \/ (e2 \/ e3)) ]]_product = [[ ((e1 \/ e2) \/ e3) ]]_product.
+Proof.
+(* set t1 := _ e1.
+set t2 := _ e2.
+set t3 := _ e3. *)
+rewrite /=/sumR/natalia_prodR ?big_cons ?big_nil.
+rewrite /natalia_prod !addr0 !mulr0 !subr0.
+lra.
+Qed.
+
+(* Lemma orA e1 e2 e3 :
   [[ (e1 \/ (e2 \/ e3)) ]]_l = [[ ((e1 \/ e2) \/ e3) ]]_l.
 Proof.
 have p0 : 0 < p by rewrite (lt_le_trans ltr01).
@@ -1143,7 +1303,7 @@ case: l => /= ; rewrite /=/sumR/maxR/minR/natalia_prodR ?big_cons ?big_nil.
   set t2 := _ e2.
   set t3 := _ e3.
   admit.
-Admitted.
+Admitted. *)
 
 
 Theorem andA e1 e2 e3 : (0 < p) ->
@@ -1242,13 +1402,13 @@ case: l => /=; rewrite /=/sumR/maxR/minR/natalia_prodR ?big_cons ?big_nil.
         move/(help' (se_ge0 _ _ _) p0).
         rewrite opprD opprK. rewrite -> addrA.
         rewrite subrr add0r -/a1 -powRrM mulVf// ?powRr1.
-        rewrite !addrA subrr add0r.
-        rewrite -powRrM mulVf// powRr1.
-          move => ? ?.
+        + rewrite !addrA subrr add0r.
+          rewrite -powRrM mulVf// powRr1.
+          * move => ? ?.
           exfalso.
           lra.
-        by rewrite addr_ge0 ?powR_ge0.
-      by rewrite addr_ge0 ?powR_ge0.
+          * by rewrite addr_ge0 ?powR_ge0.
+        + by rewrite addr_ge0 ?powR_ge0.
     * move/(help' (se_ge0 _ _ _) p0).
       rewrite -/a3 opprD opprK addrA addr0.
       rewrite {2}/maxr.
@@ -1259,10 +1419,23 @@ case: l => /=; rewrite /=/sumR/maxR/minR/natalia_prodR ?big_cons ?big_nil.
         case: ifPn.
         + move/(help (addr_ge0 (powR_ge0 _ _) (ltW ltr01)) p0).
           rewrite -/a1 ltrDr => h4.
+          rewrite addrA subrr. 
+          rewrite ( addrC 0 ((a1 + a2) `^ p^-1)) addr0.
+          move => h5.
+          Print subr0_eq. Search (_ + _ = 0).
+          (* rewrite -(subr0_eq (1 - (((1 + (-1 + (a1 + a2) `^ p^-1)) `^ p + a3) `^ p^-1) = 0)). *)
           admit. (* lra. *)
         + move/(help' (addr_ge0 (powR_ge0 _ _) (ltW ltr01)) p0).
           rewrite -/a1 gerDr => h4.
           have : a1 = 0 by have := powR_ge0 _ _ : 0 <= a1; lra.
+          move => h5.
+          rewrite addrA subrr.
+          rewrite ( addrC 0 ((a1 + a2) `^ p^-1)) addr0.
+          move => h6. rewrite h5.
+          rewrite (addrC 0 a2) addr0 (addrC 0 1) addr0.
+          rewrite powR1 subrr.
+          (* rewrite subr0_eq. *)
+          (* lra. *)
           admit. (* lra. *)
       - move/(help' (se_ge0 _ _ _) p0).
         rewrite -/a2 -/a3 => h3.
@@ -1273,6 +1446,8 @@ case: l => /=; rewrite /=/sumR/maxR/minR/natalia_prodR ?big_cons ?big_nil.
           rewrite opprK.
           rewrite [in X in X -> _ -> _]addrA.
           rewrite subrr add0r -powRrM mulVf// ?powRr1 ?(addr_ge0 (powR_ge0 _ _) (powR_ge0 _ _))// => h4.
+          rewrite addrA subrr.
+        
           admit. (* lra. *)
         move => _.
        admit.
