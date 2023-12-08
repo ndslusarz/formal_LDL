@@ -477,12 +477,11 @@ dependent induction e using expr_ind'.
     rewrite andbT big_map big_seq sumr_ge0// => e.
     by move=> /In_in/H /(_ e erefl) /(_ _)/andP[|].
   * by lra.
-- move: H.  move=> /List.Forall_forall H.
-  + rewrite (H (nth (Bool false) l0 i)).
-    * exact.
-    * admit.
-    * exact.
-    * exact.
+- move/List.Forall_forall in H.
+  have [il0|il0] := ltP i (size l0).
+    rewrite (H (nth (Bool false) l0 i))//.
+    by apply/In_in; rewrite mem_nth.
+  by rewrite nth_default//= lexx ler01.
 - have := IHe1 e1 erefl JMeq_refl.
   have := IHe2 e2 erefl JMeq_refl.
   rewrite /=; rewrite /minr/maxr; try case: ifP; rewrite ?cprD ?oppr_le0 ?powR_ge0; nra.
