@@ -665,7 +665,7 @@ Proof. rewrite /minr; case: ifP=>//; lra. Qed.
 
 Lemma prod1_01  :
   forall [e : R] [s : seq R], e \in s -> 0 <= e <= 1 -> \prod_(j <- s) j == 1
-          -> e \in s = 1.
+          -> e = 1.
 Proof. 
 move => e s h1 h2. Search "prod" (1). 
 Admitted. 
@@ -725,21 +725,15 @@ case: l => /=; move => H.
     move: (H i). rewrite  le_pow_01. 
     * lra. 
     * move: (H i). lra.
-- move/eqP. rewrite /minR big_map.
-  move/bigmin_eqP.
-  rewrite //=.
-  move => h i iEs.
+- move/eqP.
+  rewrite /minR big_map=>/bigmin_eqP/= => h i iEs.
   apply/eqP.
-  move: (H (nth (Bool false) Es i)).
-  move: h => /(_ (nth (Bool false) Es i)).
-  set e := nth (Bool false) Es i.
- (*  Search (_ \in _).  *)
-  (* apply/(nthP (Bool false)). *)
-  have := (mem_nth (Bool false) iEs) => ->.
-  admit.
+  rewrite eq_sym eq_le.
+  rewrite ((andP (H _)).2) h//.
+  exact: mem_nth.
 - move/eqP. rewrite /prodR big_map.
   move => h i iEs.
-   move: h.
+  move: h.
   move: (H (nth (Bool false) Es i)).
   (* apply prod1_01. *)
   admit. 
