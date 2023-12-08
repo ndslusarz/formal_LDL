@@ -550,16 +550,21 @@ Admitted.
 Lemma translate_Bool_T_01 (e : expr Bool_T) :
   0 <= [[ e ]]_ l <= 1.
 Proof.
+(*case: l.
+- exact: Lukasiewicz_translate_Bool_T_01.
+- exact: Yager_translate_Bool_T_01.
+- exact: Godel_translate_Bool_T_01.*)
 Check expr_ind. 
 dependent induction e using expr_ind'.
 - case l => //=; case b; lra.
 - move: H. case l => //=; move=> /List.Forall_forall H. 
   + rewrite /sumR/maxr. case: ifP.
     * by lra.
-    * rewrite -sum1_size //=.
-      Search ( _ < _ = false).
-      (* rewrite (-le_gtF (\sum_(i <- [seq [[i]]_Lukasiewicz | i <- l0]) i - (\sum_(j <- l0) 1)%:R + 1) 0). *)
-     admit.
+    * (* NB(rei): *)
+      move=> /negbT; rewrite -leNgt => -> /=.
+      rewrite big_map -lerBrDr subrr subr_le0 sum_01// => e el0.
+      by rewrite (H e) //; exact/In_in.
+
   + rewrite /maxr. case: ifP.
     * by lra.
     * rewrite /sumR. admit.
@@ -605,6 +610,9 @@ dependent induction e using expr_ind'.
     lra. *)
 Admitted.
 
+(* NB(rei): this lemma exists in MathComp-Analysis but maybe in a slightly
+   different form depending on your version, might be removed at to some point
+   but no hurry *)
 Lemma gt0_ltr_powR (r : R) : 0 < r ->
   {in `[0, +oo[ &, {homo (@powR R) ^~ r : x y / x < y >-> x < y}}.
 Proof.
@@ -747,12 +755,6 @@ case: l => /=; move => H.
   admit. 
 Admitted.
 
-Lemma prod0 (s : seq R) :
-  forall i : R, i \in s -> \prod_(i <- s) i = 0 -> i = 0.
-Proof.
-move => i h1. (* rewrite prod0v. *)
- Admitted.
-
 Lemma nary_inversion_andE0 (Es : seq (expr Bool_T) ) :
   l <> Lukasiewicz -> l <> Yager ->
     [[ and_E Es ]]_ l = 0 -> (exists i, [[ nth (Bool false) Es i ]]_ l = 0).
@@ -766,10 +768,10 @@ case: l => //=; move => H.
   move => h1.
   (* move/bigmin_eqP. *)
   admit.
-- move => l1 l2.
-  rewrite /prodR.
-  About prod0. (* rewrite prod0. *) Search "big_const". 
-
+- move=> l1 l2 /eqP.
+  rewrite /prodR big_map prodf_seq_eq0 => /hasP[e eEs/= /eqP e0].
+  move/(nthP (Bool false)) : eEs => [i iEs ie].
+  by exists i; rewrite ie.
 Admitted.
 
 Lemma nary_inversion_orE1 Es :
