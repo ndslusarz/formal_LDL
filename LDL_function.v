@@ -458,8 +458,9 @@ dependent induction e using expr_ind'.
 - move: H. rewrite /=; move=> /List.Forall_forall H. 
   rewrite /sumR/maxr. case: ifP.
   * by lra.
-  * rewrite -sum1_size //=.
-    Search ( _ < _ = false).
+  * rewrite -sum1_size //= ltNge.
+    move/negbFE => -> /=. (* rewrite as a lemma \sum...-\sum < 0*)
+
  (* rewrite (-le_gtF (\sum_(i <- [seq [[i]]_Lukasiewicz | i <- l0]) i - (\sum_(j <- l0) 1)%:R + 1) 0). *)
     admit.
 - move: H. rewrite /=; move=> /List.Forall_forall H. 
@@ -478,6 +479,9 @@ dependent induction e using expr_ind'.
 - have := IHe e erefl JMeq_refl.
   case l => //=; by lra.
 - case: c.
+  rewrite /=.
+  case: ifP.
+  by case: (leP ([[e1]]_Lukasiewicz) ([[e2]]_Lukasiewicz)) => //= _ _; rewrite ler01 lexx.
 Admitted.
 
 Lemma Yager_translate_Bool_T_01 (e : expr Bool_T) :
@@ -731,6 +735,7 @@ case: l => /=; move => H.
   set e := nth (Bool false) Es i.
  (*  Search (_ \in _).  *)
   (* apply/(nthP (Bool false)). *)
+  have := (mem_nth (Bool false) iEs) => ->.
   admit.
 - move/eqP. rewrite /prodR big_map.
   move => h i iEs.
