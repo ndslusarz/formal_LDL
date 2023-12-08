@@ -487,11 +487,12 @@ dependent induction e using expr_ind'.
   rewrite /=; rewrite /minr/maxr; try case: ifP; rewrite ?cprD ?oppr_le0 ?powR_ge0; nra.
 - have := IHe e erefl JMeq_refl.
   case l => //=; by lra.
-- case: c.
-  rewrite /=.
-  case: ifP.
-  by case: (leP ([[e1]]_Lukasiewicz) ([[e2]]_Lukasiewicz)) => //= _ _; rewrite ler01 lexx.
-Admitted.
+- case: c => /=; case: ifP => ?.
+  - by case: ([[e1]]_Lukasiewicz <= [[e2]]_Lukasiewicz)%R; rewrite lexx ler01.
+  - by rewrite le_maxr lexx orbT/= le_maxl ler01 gerBl// le_maxr lexx orbT.
+  - by case: ([[e1]]_Lukasiewicz == [[e2]]_Lukasiewicz); rewrite lexx ler01.
+  - by rewrite le_maxr lexx orbT/= le_maxl ler01 gerBl// le_maxr lexx orbT.
+Qed.
 
 Lemma Yager_translate_Bool_T_01 (e : expr Bool_T) :
   0 <= [[ e ]]_ Yager <= 1.
@@ -749,11 +750,10 @@ case: l => /=; move => H.
   exact: mem_nth.
 - move/eqP. rewrite /prodR big_map.
   move => h i iEs.
-  move: h.
-  move: (H (nth (Bool false) Es i)).
-  (* apply prod1_01. *)
-  admit. 
-Admitted.
+  apply (@prod1_01 ([[nth (Bool false) Es i]]_product) (map (@translation product p (Bool_T)) Es)) => //.
+  - rewrite In_in; apply: List.in_map; rewrite -In_in mem_nth//.
+  - by rewrite big_map.
+Qed.
 
 Lemma nary_inversion_andE0 (Es : seq (expr Bool_T) ) :
   l <> Lukasiewicz -> l <> Yager ->
