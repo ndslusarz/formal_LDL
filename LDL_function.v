@@ -443,12 +443,22 @@ destruct e.
   * apply H14; eauto. 
 Qed.
 
-Lemma sum_01 (s : seq R) :
-  (forall e, e \in s -> 0 <= e <= 1) -> 
-  ((\sum_(i <- s) i) - (size s)%:R + 1 < 0 ) = false.
+Canonical expr_Bool_T_eqType := Equality.Pack (@gen_eqMixin (expr Bool_T)).
+
+Lemma sum_01 (I : eqType) (s : seq I) (f : I -> R) : (forall i, i \in s -> 0 <= f i <= 1) ->
+  \sum_(i <- s) f i <= (size s)%:R.
 Proof.
-intros. rewrite -sum1_size. Search (_ = False).
-Admitted.
+move=> s01; rewrite -sum1_size natr_sum big_seq [leRHS]big_seq.
+by rewrite ler_sum// => r /s01 /andP[].
+Qed.
+
+Lemma In_in (I : eqType) (s : seq I) e : e \in s <-> List.In e s.
+Proof.
+elim: s => //= h t ih; split=> [|[<-|/ih] ].
+- by rewrite inE => /predU1P[->|/ih]; [left|right].
+- by rewrite mem_head.
+- by rewrite inE => ->; rewrite orbT.
+Qed.
 
 Lemma Lukasiewicz_translate_Bool_T_01 (e : expr Bool_T) :
   0 <= [[ e ]]_ Lukasiewicz <= 1.
@@ -458,11 +468,9 @@ dependent induction e using expr_ind'.
 - move: H. rewrite /=; move=> /List.Forall_forall H. 
   rewrite /sumR/maxr. case: ifP.
   * by lra.
-  * rewrite -sum1_size //= ltNge.
-    move/negbFE => -> /=. (* rewrite as a lemma \sum...-\sum < 0*)
-
- (* rewrite (-le_gtF (\sum_(i <- [seq [[i]]_Lukasiewicz | i <- l0]) i - (\sum_(j <- l0) 1)%:R + 1) 0). *)
-    admit.
+  * move=> /negbT; rewrite -leNgt => -> /=.
+    rewrite big_map -lerBrDr subrr subr_le0 sum_01// => e el0.
+    by rewrite (H e) //; exact/In_in.
 - move: H. rewrite /=; move=> /List.Forall_forall H. 
   rewrite /sumR/minr. case: ifP.
   * admit.
@@ -680,7 +688,6 @@ move => R0 I r P F h1.
 
 Admitted.
 
-Canonical expr_Bool_T_eqType := Equality.Pack (@gen_eqMixin (expr Bool_T)).
 
 Lemma bigmin_eqP:
   forall (x : R) [I : eqType] (s : seq I) (F : I -> R),
