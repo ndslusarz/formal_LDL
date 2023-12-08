@@ -445,8 +445,8 @@ Qed.
 
 Canonical expr_Bool_T_eqType := Equality.Pack (@gen_eqMixin (expr Bool_T)).
 
-Lemma sum_01 (I : eqType) (s : seq I) (f : I -> R) : (forall i, i \in s -> 0 <= f i <= 1) ->
-  \sum_(i <- s) f i <= (size s)%:R.
+Lemma sum_01 (I : eqType) (s : seq I) (f : I -> R) :
+  (forall i, i \in s -> 0 <= f i <= 1) -> \sum_(i <- s) f i <= (size s)%:R.
 Proof.
 move=> s01; rewrite -sum1_size natr_sum big_seq [leRHS]big_seq.
 by rewrite ler_sum// => r /s01 /andP[].
@@ -465,17 +465,19 @@ Lemma Lukasiewicz_translate_Bool_T_01 (e : expr Bool_T) :
 Proof.
 dependent induction e using expr_ind'.
 - rewrite /=; case b; lra.
-- move: H. rewrite /=; move=> /List.Forall_forall H. 
+- move: H. rewrite /=; move=> /List.Forall_forall H.
   rewrite /sumR/maxr. case: ifP.
   * by lra.
   * move=> /negbT; rewrite -leNgt => -> /=.
     rewrite big_map -lerBrDr subrr subr_le0 sum_01// => e el0.
     by rewrite (H e) //; exact/In_in.
-- move: H. rewrite /=; move=> /List.Forall_forall H. 
+- move: H. rewrite /=; move=> /List.Forall_forall H.
   rewrite /sumR/minr. case: ifP.
-  * admit.
+  * move=> /ltW ->.
+    rewrite andbT big_map big_seq sumr_ge0// => e.
+    by move=> /In_in/H /(_ e erefl) /(_ _)/andP[|].
   * by lra.
-- move: H.  move=> /List.Forall_forall H.  
+- move: H.  move=> /List.Forall_forall H.
   + rewrite (H (nth (Bool false) l0 i)).
     * exact.
     * admit.
