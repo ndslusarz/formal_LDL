@@ -494,14 +494,6 @@ dependent induction e using expr_ind'.
   - by rewrite le_maxr lexx orbT/= le_maxl ler01 gerBl// normr_ge0 andTb.
 Qed.
 
-(0 <=
- maxr
-   (1 -
-    maxr
-      (([[e1]]_Lukasiewicz - [[e2]]_Lukasiewicz) / `|[[e1]]_Lukasiewicz + [[e2]]_Lukasiewicz|)
-      0) 0 <= 1)%R
-Lemma Yager_translate_Bool_T_01 (e : expr Bool_T) :
-  0 <= [[ e ]]_ Yager <= 1.
 Proof.
 Check expr_ind. 
 dependent induction e using expr_ind'.
