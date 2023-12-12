@@ -681,6 +681,24 @@ Proof. rewrite/maxr; case: ifP=>//; lra. Qed.
 Lemma minr10 (x : R) : (minr x 1 == 0) = (x == 0).
 Proof. rewrite /minr; case: ifP=>//; lra. Qed.
 
+Lemma prod1 (e1 e2 : R) : 0 <= e1 <= 1 -> 0 <= e2 <= 1 -> (e1 * e2 == 1) = ((e1 == 1) && (e2 == 1)).
+Proof.
+nra.
+Qed.
+
+Lemma prod01 [s : seq R] : (forall e, e \in s -> 0 <= e <= 1) -> (0 <= \prod_(j <- s) j <= 1).
+Proof.
+elim: s => [_|e0].
+- by rewrite big_nil ler01 lexx.
+- move=> s IH es01.
+  rewrite big_cons.
+  have h0 : (0 <= \prod_(j <- s) j <= 1)%R.
+    by apply: IH => e es; apply: es01; rewrite in_cons es orbT.
+  have : (0 <= e0 <= 1)%R.
+    by apply: es01; rewrite in_cons eq_refl.
+  nra.
+Qed.
+
 Lemma prod1_01  :
   forall [s : seq R], (forall e, e \in s -> 0 <= e <= 1) ->
     (\prod_(j <- s) j = 1 <-> (forall e, e \in s -> e = (1:R))).
@@ -688,29 +706,29 @@ Proof.
 elim.
 - by rewrite big_nil.
 - move=> e s IH h.
+  rewrite big_cons.
   split.
-  + rewrite big_cons.
-    case: (eqVneq e 1) => [->| ].
-    * rewrite mul1r => h' e'.
-      rewrite in_cons => /orP [/eqP->//|h''].
-      apply: ((IH _).1 h') => // e'' h'''.
-      apply: h.
-      by rewrite in_cons h''' orbT.
-    * move: (h e (mem_head _ _)) => /andP [_] /[swap].
-      rewrite neq_lt => /orP [/[swap] ? h'| /lt_geF ->//].
-      move/mulr1_eq.
-      rewrite ((IH _).2 _) => [/eqP||].
-      - by rewrite invr_eq1; lra.
-      - by move => e' h''; apply: h; rewrite in_cons h'' orbT.
-      - admit.
-  + rewrite big_cons.
-    rewrite ((IH _).2 _) ?mulr1.
-    - by apply; rewrite mem_head.
-    - by move => e' h'; apply h; rewrite in_cons h' orbT.
-    move => e' h''.
-      admit.
-Admitted. 
-
+  + move/eqP.
+    rewrite prod1; last 2 first.
+      by apply: h; rewrite in_cons eq_refl.
+      by apply: prod01 => e0 e0s; apply: h; rewrite in_cons e0s orbT.
+    move/andP => [/eqP e1] /eqP.
+    rewrite IH; last first.
+      by move=> e0 e0s; apply: h; rewrite in_cons e0s orbT.
+    move=> h' e0.
+    rewrite in_cons => /orP [/eqP -> //|].
+    apply: h'.
+  + move=> es1. 
+    apply /eqP. 
+    rewrite prod1; last 2 first.
+    - by apply: h; rewrite in_cons eq_refl.
+    - by apply: prod01 => e0 e0s; apply: h; rewrite in_cons e0s orbT.
+    apply/andP; split. 
+    - by apply/eqP; apply: es1; rewrite in_cons eq_refl.
+    - apply/eqP; rewrite IH => e0 e0s.
+        by apply es1; rewrite in_cons e0s orbT.
+      by apply: h; rewrite in_cons e0s orbT.
+Qed.
 
 Lemma psumr_eqsize :
   forall [R : numDomainType] [I : eqType] (r : seq I) [P : pred I] [F : I -> R],
