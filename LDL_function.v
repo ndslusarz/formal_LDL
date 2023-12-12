@@ -534,88 +534,73 @@ Proof.
 dependent induction e using expr_ind'.
 - rewrite /=; case b; lra.
 - move: H. rewrite /=; move=> /List.Forall_forall H. 
-  + rewrite /minR /minr ?big_cons ?big_nil.
+  + rewrite /minR. Search "big" "minr". 
     admit.
 - move: H. rewrite /=; move=> /List.Forall_forall H. 
   + rewrite /maxR. admit.
-- move: H.  move=> /List.Forall_forall H.  
-  + rewrite (H (nth (Bool false) l0 i)).
-    * exact.
-    * admit.
-    * exact.
-    * exact.
+- move/List.Forall_forall in H.
+  have [il0|il0] := ltP i (size l0).
+    rewrite (H (nth (Bool false) l0 i))//.
+    by apply/In_in; rewrite mem_nth.
+  by rewrite nth_default//= lexx ler01.
 - have := IHe1 e1 erefl JMeq_refl.
   have := IHe2 e2 erefl JMeq_refl.
   case l => //=; rewrite /minr/maxr; try case: ifP; rewrite ?cprD ?oppr_le0 ?powR_ge0; nra.
 - have := IHe e erefl JMeq_refl.
   rewrite /=; by lra.
-- case: c.
-  + rewrite /=; case: ifP. 
+- case: c => /=; case: ifP => ?.
+  - by case: ([[e1]]_Godel <= [[e2]]_Godel)%R; rewrite lexx ler01.
+  - by rewrite le_maxr lexx orbT/= le_maxl ler01 gerBl// le_maxr lexx orbT.
+  - by case: ([[e1]]_Godel == [[e2]]_Godel); rewrite lexx ler01.
+  - by rewrite le_maxr lexx orbT/= le_maxl ler01 gerBl// normr_ge0 andTb.
 Admitted.
 
-Lemma translate_Bool_T_01 (e : expr Bool_T) :
-  0 <= [[ e ]]_ l <= 1.
+Lemma product_translate_Bool_T_01 (e : expr Bool_T) :
+  0 <= [[ e ]]_ product <= 1.
 Proof.
-(*case: l.
-- exact: Lukasiewicz_translate_Bool_T_01.
-- exact: Yager_translate_Bool_T_01.
-- exact: Godel_translate_Bool_T_01.*)
-Check expr_ind. 
 dependent induction e using expr_ind'.
-- case l => //=; case b; lra.
-- move: H. case l => //=; move=> /List.Forall_forall H. 
-  + rewrite /sumR/maxr. case: ifP.
-    * by lra.
-    * (* NB(rei): *)
-      move=> /negbT; rewrite -leNgt => -> /=.
-      rewrite big_map -lerBrDr subrr subr_le0 sum_01// => e el0.
-      by rewrite (H e) //; exact/In_in.
-
-  + rewrite /maxr. case: ifP.
-    * by lra.
-    * rewrite /sumR. admit.
-  + rewrite /minR. admit.
-  + rewrite /prodR. move: H. admit.
-- move: H. case l => //=; move=> /List.Forall_forall H. 
-  + rewrite /sumR/minr. case: ifP.
-    * admit.
-    * by lra.
-  + rewrite /sumR/minr. case: ifP.
-    * admit.
-    * by lra.
+- rewrite /=; case b; lra.
+- move: H. rewrite /=; move=> /List.Forall_forall H. 
+  + rewrite /prodR. Search "prod" (0 <= _). 
+    admit.
+- move: H. rewrite /=; move=> /List.Forall_forall H. 
   + rewrite /maxR. admit.
-  + rewrite /natalia_prodR. admit.
-- move: H.  move=> /List.Forall_forall H.  
-  + rewrite (H (nth (Bool false) l0 i)).
-    * exact.
-    * admit.
-    * exact.
-    * exact.
+- move/List.Forall_forall in H.
+  have [il0|il0] := ltP i (size l0).
+    rewrite (H (nth (Bool false) l0 i))//.
+    by apply/In_in; rewrite mem_nth.
+  by rewrite nth_default//= lexx ler01.
 - have := IHe1 e1 erefl JMeq_refl.
   have := IHe2 e2 erefl JMeq_refl.
   case l => //=; rewrite /minr/maxr; try case: ifP; rewrite ?cprD ?oppr_le0 ?powR_ge0; nra.
 - have := IHe e erefl JMeq_refl.
-  case l => //=; by lra.
-- case: c.
-  + case l => //=; case: ifP.
-    *  (* ifP => [/eqP ->|?]. *)
-
-(*SOMETHING WRONG IN DEFINITION OF THIS CASE, WRONG TYPES IN JMEQ I THINK*)
-
-
-(* 
-- have := IHe e erefl JMeq_refl.
-  by lra.
-- case: c; rewrite /maxr; case: ifP => [/eqP ->|?].
-  +  have [] := leP (- [[e2]]_l) ([[ e2 ]]_l); lra.
-  + case: ifP; first lra.
-    case: ifP; first lra.
-    lra.
-  + have [] := eqVneq (- [[e2]]_l) ([[ e2 ]]_l); lra.
-  + case: ifP; first lra.
-    have := normr_ge0 ((([[ e1 ]]_l) - ([[ e2 ]]_l)) / (([[ e1 ]]_l) + ([[ e2 ]]_l))).
-    lra. *)
+  rewrite /=; by lra.
+- case: c => /=; case: ifP => ?.
+  - by case: ([[e1]]_product <= [[e2]]_product)%R; rewrite lexx ler01.
+  - by rewrite le_maxr lexx orbT/= le_maxl ler01 gerBl// le_maxr lexx orbT.
+  - by case: ([[e1]]_product == [[e2]]_product); rewrite lexx ler01.
+  - by rewrite le_maxr lexx orbT/= le_maxl ler01 gerBl// normr_ge0 andTb.
 Admitted.
+
+(*
+- if I have this lemma as getting one argument in - that causes problems later when I 
+case split on dl in theorems, can't pass this argument
+- if it's completely general as before it complicates lemmas about individual dls
+requiring to add l <> Lukasiewicz -> l <> Yager ...->
+in front of it with every dl so that I can case split on l to get the right version
+- but translate_Bool_T_01 is similiar between logics so having different proofs
+has a lot of repetitions
+*)
+
+Lemma translate_Bool_T_01 (e : expr Bool_T) :
+  0 <= [[ e ]]_ l <= 1.
+Proof.
+case: l.
+- exact: Lukasiewicz_translate_Bool_T_01.
+- exact: Yager_translate_Bool_T_01.
+- exact: Godel_translate_Bool_T_01.
+- exact: product_translate_Bool_T_01.
+Qed.
 
 (* NB(rei): this lemma exists in MathComp-Analysis but maybe in a slightly
    different form depending on your version, might be removed at to some point
