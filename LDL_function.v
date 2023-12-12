@@ -491,10 +491,15 @@ dependent induction e using expr_ind'.
   - by case: ([[e1]]_Lukasiewicz <= [[e2]]_Lukasiewicz)%R; rewrite lexx ler01.
   - by rewrite le_maxr lexx orbT/= le_maxl ler01 gerBl// le_maxr lexx orbT.
   - by case: ([[e1]]_Lukasiewicz == [[e2]]_Lukasiewicz); rewrite lexx ler01.
-  - by rewrite le_maxr lexx orbT/= le_maxl ler01 gerBl// le_maxr lexx orbT.
+  - by rewrite le_maxr lexx orbT/= le_maxl ler01 gerBl// normr_ge0 andTb.
 Qed.
 
-
+(0 <=
+ maxr
+   (1 -
+    maxr
+      (([[e1]]_Lukasiewicz - [[e2]]_Lukasiewicz) / `|[[e1]]_Lukasiewicz + [[e2]]_Lukasiewicz|)
+      0) 0 <= 1)%R
 Lemma Yager_translate_Bool_T_01 (e : expr Bool_T) :
   0 <= [[ e ]]_ Yager <= 1.
 Proof.
