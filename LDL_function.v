@@ -682,10 +682,33 @@ Lemma minr10 (x : R) : (minr x 1 == 0) = (x == 0).
 Proof. rewrite /minr; case: ifP=>//; lra. Qed.
 
 Lemma prod1_01  :
-  forall [e : R] [s : seq R], e \in s -> 0 <= e <= 1 -> \prod_(j <- s) j == 1
-          -> e = 1.
-Proof. 
-move => e s h1 h2. Search "prod" (1). 
+  forall [s : seq R], (forall e, e \in s -> 0 <= e <= 1) ->
+    (\prod_(j <- s) j = 1 <-> (forall e, e \in s -> e = (1:R))).
+Proof.
+elim.
+- by rewrite big_nil.
+- move=> e s IH h.
+  split.
+  + rewrite big_cons.
+    case: (eqVneq e 1) => [->| ].
+    * rewrite mul1r => h' e'.
+      rewrite in_cons => /orP [/eqP->//|h''].
+      apply: ((IH _).1 h') => // e'' h'''.
+      apply: h.
+      by rewrite in_cons h''' orbT.
+    * move: (h e (mem_head _ _)) => /andP [_] /[swap].
+      rewrite neq_lt => /orP [/[swap] ? h'| /lt_geF ->//].
+      move/mulr1_eq.
+      rewrite ((IH _).2 _) => [/eqP||].
+      - by rewrite invr_eq1; lra.
+      - by move => e' h''; apply: h; rewrite in_cons h'' orbT.
+      - admit.
+  + rewrite big_cons.
+    rewrite ((IH _).2 _) ?mulr1.
+    - by apply; rewrite mem_head.
+    - by move => e' h'; apply h; rewrite in_cons h' orbT.
+    move => e' h''.
+      admit.
 Admitted. 
 
 
@@ -750,8 +773,8 @@ case: l => /=; move => H.
   exact: mem_nth.
 - move/eqP. rewrite /prodR big_map.
   move => h i iEs.
-  apply (@prod1_01 ([[nth (Bool false) Es i]]_product) (map (@translation product p (Bool_T)) Es)) => //.
-  - rewrite In_in; apply: List.in_map; rewrite -In_in mem_nth//.
+  apply (@prod1_01 (map (@translation product p (Bool_T)) Es)) => // [e||].
+  - rewrite In_in. apply: List.in_map. rewrite -In_in mem_nth//.
   - by rewrite big_map.
 Qed.
 
