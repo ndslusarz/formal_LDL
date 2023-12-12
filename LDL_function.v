@@ -494,31 +494,38 @@ dependent induction e using expr_ind'.
   - by rewrite le_maxr lexx orbT/= le_maxl ler01 gerBl// normr_ge0 andTb.
 Qed.
 
+Lemma Yager_translate_Bool_T_01 (e : expr Bool_T) :
+  0 <= [[ e ]]_ Yager <= 1.
 Proof.
 Check expr_ind. 
 dependent induction e using expr_ind'.
 - rewrite /=; case b; lra.
 - move: H. rewrite /=; move=> /List.Forall_forall H. 
-  rewrite /maxr. case: ifP.
+  rewrite /sumR/maxr. case: ifP.
   * by lra.
-  * rewrite /sumR. admit.
+  * move=> /negbT; rewrite -leNgt => -> /=.
+    by rewrite big_map gerBl powR_ge0.
 - move: H. rewrite /=; move=> /List.Forall_forall H. 
   rewrite /sumR/minr. case: ifP.
-  * admit.
+  * move=> /ltW ->.
+    by rewrite andbT big_map big_seq powR_ge0.
   * by lra.
-- move: H.  move=> /List.Forall_forall H.  
-  + rewrite (H (nth (Bool false) l0 i)).
-    * exact.
-    * admit.
-    * exact.
-    * exact.
+- move/List.Forall_forall in H.
+  have [il0|il0] := ltP i (size l0).
+    rewrite (H (nth (Bool false) l0 i))//.
+    by apply/In_in; rewrite mem_nth.
+  by rewrite nth_default//= lexx ler01.
 - have := IHe1 e1 erefl JMeq_refl.
   have := IHe2 e2 erefl JMeq_refl.
   rewrite /=; rewrite /minr/maxr; try case: ifP; rewrite ?cprD ?oppr_le0 ?powR_ge0; nra.
 - have := IHe e erefl JMeq_refl.
   rewrite /=; by lra.
-- case: c.
-Admitted.
+- case: c => /=; case: ifP => ?.
+  - by case: ([[e1]]_Yager <= [[e2]]_Yager)%R; rewrite lexx ler01.
+  - by rewrite le_maxr lexx orbT/= le_maxl ler01 gerBl// le_maxr lexx orbT.
+  - by case: ([[e1]]_Yager == [[e2]]_Yager); rewrite lexx ler01.
+  - by rewrite le_maxr lexx orbT/= le_maxl ler01 gerBl// normr_ge0 andTb.
+Qed.
 
 
 Lemma Godel_translate_Bool_T_01 (e : expr Bool_T) :
