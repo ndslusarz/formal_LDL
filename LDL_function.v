@@ -792,8 +792,9 @@ case: l => /=; move => H.
 - move/eqP. rewrite /prodR big_map.
   move => h i iEs.
   apply (@prod1_01 (map (@translation product p (Bool_T)) Es)) => // [e||].
-  - rewrite In_in. apply: List.in_map. rewrite -In_in mem_nth//.
-  - by rewrite big_map.
+  - by rewrite In_in; rewrite List.in_map_iff; elim => x [<- _]//.
+  - by apply/eqP; rewrite big_map.
+  - by rewrite In_in; rewrite List.in_map_iff; exists (nth (Bool false) Es i); split; rewrite// -In_in; exact: mem_nth.
 Qed.
 
 Lemma nary_inversion_andE0 (Es : seq (expr Bool_T) ) :
