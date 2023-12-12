@@ -487,16 +487,13 @@ dependent induction e using expr_ind'.
   rewrite /=; rewrite /minr/maxr; try case: ifP; rewrite ?cprD ?oppr_le0 ?powR_ge0; nra.
 - have := IHe e erefl JMeq_refl.
   case l => //=; by lra.
-- case: c.
-  + rewrite /=.
-    case: ifP.
-    * by case: (leP ([[e1]]_Lukasiewicz) ([[e2]]_Lukasiewicz)) => //= _ _; rewrite ler01 lexx.
-    *  admit.
-  + rewrite /=.
-    case: ifP.
-    * (* case: (eqP ([[e1]]_Lukasiewicz == [[e2]]_Lukasiewicz)) => //= _ _. About leP. rewrite ler01 lexx. *)
-    *
-Admitted.
+- case: c => /=; case: ifP => ?.
+  - by case: ([[e1]]_Lukasiewicz <= [[e2]]_Lukasiewicz)%R; rewrite lexx ler01.
+  - by rewrite le_maxr lexx orbT/= le_maxl ler01 gerBl// le_maxr lexx orbT.
+  - by case: ([[e1]]_Lukasiewicz == [[e2]]_Lukasiewicz); rewrite lexx ler01.
+  - by rewrite le_maxr lexx orbT/= le_maxl ler01 gerBl// le_maxr lexx orbT.
+Qed.
+
 
 Lemma Yager_translate_Bool_T_01 (e : expr Bool_T) :
   0 <= [[ e ]]_ Yager <= 1.
@@ -658,13 +655,54 @@ Proof. rewrite/maxr; case: ifP=>//; lra. Qed.
 Lemma minr10 (x : R) : (minr x 1 == 0) = (x == 0).
 Proof. rewrite /minr; case: ifP=>//; lra. Qed.
 
-Lemma prod1_01  :
-  forall [e : R] [s : seq R], e \in s -> 0 <= e <= 1 -> \prod_(j <- s) j == 1
-          -> e = 1.
-Proof. 
-move => e s h1 h2. Search "prod" (1). 
-Admitted. 
+Lemma prod1 (e1 e2 : R) : 0 <= e1 <= 1 -> 0 <= e2 <= 1 -> (e1 * e2 == 1) = ((e1 == 1) && (e2 == 1)).
+Proof.
+nra.
+Qed.
 
+Lemma prod01 [s : seq R] : (forall e, e \in s -> 0 <= e <= 1) -> (0 <= \prod_(j <- s) j <= 1).
+Proof.
+elim: s => [_|e0].
+- by rewrite big_nil ler01 lexx.
+- move=> s IH es01.
+  rewrite big_cons.
+  have h0 : (0 <= \prod_(j <- s) j <= 1)%R.
+    by apply: IH => e es; apply: es01; rewrite in_cons es orbT.
+  have : (0 <= e0 <= 1)%R.
+    by apply: es01; rewrite in_cons eq_refl.
+  nra.
+Qed.
+
+Lemma prod1_01  :
+  forall [s : seq R], (forall e, e \in s -> 0 <= e <= 1) ->
+    (\prod_(j <- s) j = 1 <-> (forall e, e \in s -> e = (1:R))).
+Proof.
+elim.
+- by rewrite big_nil.
+- move=> e s IH h.
+  rewrite big_cons.
+  split.
+  + move/eqP.
+    rewrite prod1; last 2 first.
+      by apply: h; rewrite in_cons eq_refl.
+      by apply: prod01 => e0 e0s; apply: h; rewrite in_cons e0s orbT.
+    move/andP => [/eqP e1] /eqP.
+    rewrite IH; last first.
+      by move=> e0 e0s; apply: h; rewrite in_cons e0s orbT.
+    move=> h' e0.
+    rewrite in_cons => /orP [/eqP -> //|].
+    apply: h'.
+  + move=> es1. 
+    apply /eqP. 
+    rewrite prod1; last 2 first.
+    - by apply: h; rewrite in_cons eq_refl.
+    - by apply: prod01 => e0 e0s; apply: h; rewrite in_cons e0s orbT.
+    apply/andP; split. 
+    - by apply/eqP; apply: es1; rewrite in_cons eq_refl.
+    - apply/eqP; rewrite IH => e0 e0s.
+        by apply es1; rewrite in_cons e0s orbT.
+      by apply: h; rewrite in_cons e0s orbT.
+Qed.
 
 Lemma psumr_eqsize :
   forall [R : numDomainType] [I : eqType] (r : seq I) [P : pred I] [F : I -> R],
@@ -727,11 +765,11 @@ case: l => /=; move => H.
   exact: mem_nth.
 - move/eqP. rewrite /prodR big_map.
   move => h i iEs.
-  move: h.
-  move: (H (nth (Bool false) Es i)).
-  (* apply prod1_01. *)
-  admit. 
-Admitted.
+  apply (@prod1_01 (map (@translation product p (Bool_T)) Es)) => // [e||].
+  - by rewrite In_in; rewrite List.in_map_iff; elim => x [<- _]//.
+  - by apply/eqP; rewrite big_map.
+  - by rewrite In_in; rewrite List.in_map_iff; exists (nth (Bool false) Es i); split; rewrite// -In_in; exact: mem_nth.
+Qed.
 
 Lemma nary_inversion_andE0 (Es : seq (expr Bool_T) ) :
   l <> Lukasiewicz -> l <> Yager ->
