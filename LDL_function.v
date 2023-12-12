@@ -488,9 +488,14 @@ dependent induction e using expr_ind'.
 - have := IHe e erefl JMeq_refl.
   case l => //=; by lra.
 - case: c.
-  rewrite /=.
-  case: ifP.
-  by case: (leP ([[e1]]_Lukasiewicz) ([[e2]]_Lukasiewicz)) => //= _ _; rewrite ler01 lexx.
+  + rewrite /=.
+    case: ifP.
+    * by case: (leP ([[e1]]_Lukasiewicz) ([[e2]]_Lukasiewicz)) => //= _ _; rewrite ler01 lexx.
+    *  admit.
+  + rewrite /=.
+    case: ifP.
+    * (* case: (eqP ([[e1]]_Lukasiewicz == [[e2]]_Lukasiewicz)) => //= _ _. About leP. rewrite ler01 lexx. *)
+    *
 Admitted.
 
 Lemma Yager_translate_Bool_T_01 (e : expr Bool_T) :
@@ -591,7 +596,8 @@ dependent induction e using expr_ind'.
 - have := IHe e erefl JMeq_refl.
   case l => //=; by lra.
 - case: c.
-  + case l => //=; case: ifP. (* ifP => [/eqP ->|?]. *)
+  + case l => //=; case: ifP.
+    *  (* ifP => [/eqP ->|?]. *)
 
 (*SOMETHING WRONG IN DEFINITION OF THIS CASE, WRONG TYPES IN JMEQ I THINK*)
 
@@ -644,35 +650,7 @@ apply.
   exact.
   by rewrite nnegrE.
 Qed.
-  
-
-(*TO DELETE OR MOVE BINARY INVERSION LEMMAS ELSEWHERE AFTER
-PROVING NARY VERSIONS*)
-
-(* Lemma inversion_andE1 (e1 e2 : expr Bool_T) :
-    [[ and_E [:: e1; e2] ]]_ l = 1 -> [[e1]]_ l = 1 /\ [[e2]]_ l = 1. 
-Proof.
-have He1 := translate_Bool_T_01 e1.
-have He2 := translate_Bool_T_01 e2.
-move: He1 He2.
-have p0 := lt_le_trans ltr01 p1.
-case: l => /=; move=> He1; move=> He2.
-- rewrite /maxr; case: ifPn. lra.  admit.
-- rewrite /maxr; case: ifPn. lra.
-  move=> _.
-  have [->|e11 /eqP] := eqVneq ([[e1]]_Yager) 1.
-  have [->//|e21 /eqP] := eqVneq ([[e2]]_Yager) 1. 
-  + rewrite subrr powR0 ?(gt_eqF p0)// add0r.
-    rewrite eq_sym addrC -subr_eq subrr eq_sym oppr_eq0. (* FIXME *)
-    rewrite addr0 -powRrM divff ?(gt_eqF p0)// powRr1.
-    lra. lra.
-  + rewrite eq_sym addrC -subr_eq subrr eq_sym oppr_eq0. (* FIXME *)
-    rewrite addr0 powR_eq0 (paddr_eq0 (powR_ge0 _ _) (powR_ge0 _ _)) => /andP [].
-    rewrite powR_eq0.
-    lra.
-- rewrite /minr; case: ifPn; case: ifPn; lra.
-- by nra.
-Qed.  *)
+ 
 
 Lemma maxr01 (x : R) : (maxr x 0 == 1) = (x == 1).
 Proof. rewrite/maxr; case: ifP=>//; lra. Qed.
