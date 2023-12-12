@@ -446,7 +446,7 @@ Qed.
 Canonical expr_Bool_T_eqType := Equality.Pack (@gen_eqMixin (expr Bool_T)).
 
 Lemma sum_01 (I : eqType) (s : seq I) (f : I -> R) :
-  (forall i, i \in s -> 0 <= f i <= 1) -> \sum_(i <- s) f i <= (size s)%:R.
+  (forall i, i \in s -> f i <= 1) -> \sum_(i <- s) f i <= (size s)%:R.
 Proof.
 move=> s01; rewrite -sum1_size natr_sum big_seq [leRHS]big_seq.
 by rewrite ler_sum// => r /s01 /andP[].
@@ -470,7 +470,7 @@ dependent induction e using expr_ind'.
   * by lra.
   * move=> /negbT; rewrite -leNgt => -> /=.
     rewrite big_map -lerBrDr subrr subr_le0 sum_01// => e el0.
-    by rewrite (H e) //; exact/In_in.
+    by rewrite (andP (H e _ _ _ _)).2 //; exact/In_in.
 - move: H. rewrite /=; move=> /List.Forall_forall H.
   rewrite /sumR/minr. case: ifP.
   * move=> /ltW ->.
@@ -504,7 +504,7 @@ dependent induction e using expr_ind'.
   rewrite /sumR/maxr. case: ifP.
   * by lra.
   * move=> /negbT; rewrite -leNgt => -> /=.
-    by rewrite big_map gerBl powR_ge0.
+    by rewrite big_map gerBl ?powR_ge0.
 - move: H. rewrite /=; move=> /List.Forall_forall H. 
   rewrite /sumR/minr. case: ifP.
   * move=> /ltW ->.
@@ -694,13 +694,37 @@ elim.
 Qed.
 
 Lemma psumr_eqsize :
-  forall [R : numDomainType] [I : eqType] (r : seq I) [P : pred I] [F : I -> R],
-  (forall i : I, P i -> (F i <= 1)%R) ->
-  (\sum_(i <- r | P i) F i == (size r)%:R) = all (fun i : I => P i ==> (F i == 1)) r.
+  forall (I : eqType) (r : seq I) [F : I -> R],
+  (forall i : I, F i <= 1)%R ->
+  (\sum_(i <- r) F i = (size r)%:R) <-> forall i, i \in r -> (F i = 1).
 Proof.
-move => R0 I r P F h1.
-
-Admitted.
+move => I r F h1.
+elim: r.
+- by rewrite big_nil.
+- move => a s IH.
+  split.
+  + have : (\sum_(i <- s) F i <= (size s)%:R)%R.  
+      by apply: sum_01 => i _.
+    rewrite /= le_eqVlt big_cons => /orP[/eqP h|h].
+      rewrite -natr1 addrC h.
+      move/addrI => h' i.
+      rewrite in_cons => /orP[/eqP ->|ils]; first by rewrite h'.
+      exact: IH.1.
+    have: F a + \sum_(j <- s) F j < (size (a :: s))%:R.
+      rewrite /= -nat1r.
+      move: h.
+      set x := \sum_(i <- s) F i.
+      set y := size s.
+      have := h1 a.
+      lra.
+    set x := F a + \sum_(j <- s) F j.
+    set y := ((size (a :: s)))%:R.
+    lra.
+  + move=> h.
+    rewrite /= -nat1r big_cons h.
+      by apply: congr1; apply: IH.2 => i ias; apply: h; rewrite in_cons ias orbT.
+    by rewrite in_cons eq_refl//.
+Qed.
 
 
 Lemma bigmin_eqP:
@@ -723,9 +747,8 @@ Proof.
 have H := translate_Bool_T_01. move: H.
 case: l => /=; move => H.
 - move/eqP. rewrite maxr01 /sumR eq_sym -subr_eq subrr eq_sym subr_eq0.
-  rewrite big_map psumr_eqsize.
-  + move => /allP h i iEs.
-    apply/eqP.
+  move/eqP; rewrite big_map psumr_eqsize.
+  + move => h i iEs.
     move: h => /(_ (nth (Bool false) Es i)).
     apply.
     apply/(nthP (Bool false)). 
