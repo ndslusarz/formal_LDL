@@ -129,7 +129,7 @@ Definition prodR (Es : seq R) : R := \prod_(i <- Es) i.
 Definition natalia_prodR (Es : seq R) : R := \big[natalia_prod/0]_(i <- Es) i.
 Definition minR (Es : seq R) : R := \big[minr/1]_(i <- Es) i.
 Definition maxR (Es : seq R) : R := \big[maxr/0]_(i <- Es) i.
-(* foldr ( +%R ) 0 Es.  *)
+
 
 Fixpoint translation t (e: expr t) {struct e} : type_translation t :=
     match e in expr t return type_translation t with
@@ -534,7 +534,7 @@ Proof.
 dependent induction e using expr_ind'.
 - rewrite /=; case b; lra.
 - move: H. rewrite /=; move=> /List.Forall_forall H. 
-  + rewrite /minR. Search "big" "minr". 
+  + rewrite /minR. Search "big" "min" . 
     admit.
 - move: H. rewrite /=; move=> /List.Forall_forall H. 
   + rewrite /maxR. admit.
@@ -717,6 +717,7 @@ Proof.
 by rewrite powR_ge0.
 Qed.
 
+
 Lemma nary_inversion_andE1 (Es : seq (expr Bool_T) ) :
   [[ and_E Es ]]_ l = 1 -> (forall i, i < size Es -> [[ nth (Bool false) Es i ]]_ l = 1).
 Proof.
@@ -760,6 +761,7 @@ case: l => /=; move => H.
   - by rewrite In_in; rewrite List.in_map_iff; exists (nth (Bool false) Es i); split; rewrite// -In_in; exact: mem_nth.
 Qed.
 
+
 Lemma nary_inversion_andE0 (Es : seq (expr Bool_T) ) :
   l <> Lukasiewicz -> l <> Yager ->
     [[ and_E Es ]]_ l = 0 -> (exists i, [[ nth (Bool false) Es i ]]_ l = 0).
@@ -767,9 +769,12 @@ Proof.
 have H := translate_Bool_T_01. move: H.
 have p0 := lt_le_trans ltr01 p1.
 case: l => //=; move => H.
-- move => l1 l2. move/eqP. rewrite /minR big_map. 
-  rewrite big_tnth.
-  (* rewrite minr10. *)
+- move => l1 l2. move/eqP.
+  rewrite /minR big_map.
+  Search "big" "min".
+  
+  (* rewrite big_tnth. *)
+  
   move => h1.
   (* move/bigmin_eqP. *)
   admit.
@@ -778,6 +783,7 @@ case: l => //=; move => H.
   move/(nthP (Bool false)) : eEs => [i iEs ie].
   by exists i; rewrite ie.
 Admitted.
+
 
 Lemma nary_inversion_orE1 Es :
   l <> Lukasiewicz -> l <> Yager ->
@@ -793,27 +799,19 @@ case: l => //=; move => H.
   rewrite /natalia_prodR. admit.
 Admitted.
 
-(* Lemma inversion_orE0 e1 e2 :
-    [[ or_E [:: e1; e2] ]]_ l = 0 -> [[e1]]_ l = 0 /\ [[e2]]_ l = 0.
+Lemma bigsum_0x  :
+  forall [s : seq R], (forall e, e \in s -> 0 <= e (* <= 1 *)) ->
+    (\sum_(j <- s) j == 0 <-> (forall e, e \in s -> e = (0:R))).
 Proof.
-have He1 := translate_Bool_T_01 e1.
-have He2 := translate_Bool_T_01 e2.
-move: He1 He2.
-have p0 := lt_le_trans ltr01 p1.
-case: l => /= ; move=> He1; move=> He2.
-- rewrite /minr; case: ifPn. admit. admit. (* rewrite addr0; lra. *)
-- rewrite /minr; case: ifPn => _; last lra.
-  have [->|e11 /eqP] := eqVneq ([[e1]]_Yager) 0.
-  have [->//|e21 /eqP] := eqVneq ([[e2]]_Yager) 0.
-  + rewrite powR0 ?(gt_eqF p0)//. admit. (* add0r. *)
-    (* rewrite addr0 -powRrM divff ?(gt_eqF p0)// powRr1.
-    lra. lra. *)
-  + admit. (* rewrite addr0 powR_eq0 (paddr_eq0 (powR_ge0 _ _) (powR_ge0 _ _)) => /andP [].
-    rewrite powR_eq0. *)
-    (* lra. *)
-- rewrite /maxr; case: ifPn; case: ifPn; lra.
-- by nra.
-Admitted. *)
+elim.
+- by rewrite big_nil.
+- move => a l0 h1 h2 .
+  rewrite big_cons.
+  split.
+  + move/eqP.
+    
+  + admit.
+Admitted.
 
 Lemma nary_inversion_orE0 Es :
     [[ or_E Es ]]_ l  = 0 -> (forall i, [[ nth (Bool false) Es i ]]_ l = 0).
@@ -821,20 +819,18 @@ Proof.
 have H := translate_Bool_T_01. move: H.
 have p0 := lt_le_trans ltr01 p1.
 case: l => //=; move => H.
-- move/eqP. rewrite minr10 /sumR.
-  rewrite psumr_eq0. About psumr_eq0.
-  + move => /allP h i. 
-    apply/eqP.
-    move: h => /(_ ([[nth (Bool false) Es i]]_Lukasiewicz)).
-    rewrite implyTb. admit.
-  + (*is this true?no, go back to psumr_eq0 probably*)
-   admit.
-
+- move/eqP. rewrite minr10 /sumR. 
+  rewrite bigsum_0x.
+  admit.
+  move => e.
+  
+  admit.
 - move/eqP. rewrite minr10 /sumR. 
   rewrite powR_eq0 (* psumr_eq0 *).
 
   admit.
-- rewrite /maxR. admit.
+- rewrite /maxR/natalia_prodR.
+  Search "big" "maxr" (0). admit.
 - rewrite /natalia_prodR. admit.
 Admitted.
 
@@ -885,6 +881,7 @@ dependent induction e.
     move: b => [].
     + move/ nary_inversion_andE1. 
       rewrite [bool_translation (and_E l0)]/=.
+      
       admit.
     + admit.
     (* move /(nary_inversion_andE1 _ l0). *)
@@ -933,13 +930,11 @@ Definition shadow_lifting (f : forall n, 'rV_n -> R) :=
     (forall i, 0 < nth 0 Es i <= 1) ->
     partial (f (size Es)) i (row_of_seq Es) > 0.
 
-Lemma all_zero_product (Es : seq R) (i : 'I_(size Es)) :
-  h^-1 *
-  (\prod_(x <- MatrixFormula.seq_of_rV (row_of_seq Es + h *: err_vec i)) 0 -
-   \prod_(x <- MatrixFormula.seq_of_rV (row_of_seq Es)) 0) @[h --> (0:R)^'+] --> (0:R).
-(* either we don't need it or it should be written with partial *)
+Lemma all_0_product_partial (Es : seq R) (i : 'I_(size Es)) :
+  partial 0 i (row_of_seq Es) = 0. 
+(*I'm not sure if I don't need an additional assumption here*)
 Proof.
-(* to be used with cvg_lim *)
+rewrite /partial.
 Admitted.
 
 Print BSide.
@@ -956,8 +951,6 @@ rewrite /monotonous/has_lbound.
 Search "lbound" "cvg".
 Admitted. 
 
-
-
 Notation "'nondecreasing_fun' f" := ({homo f : n m / (n <= m)%O >-> (n <= m)%O})
   (at level 10).
 Notation "'nonincreasing_fun' f" := ({homo f : n m / (n <= m)%O >-> (n >= m)%O})
@@ -967,6 +960,7 @@ Notation "'increasing_fun' f" := ({mono f : n m / (n <= m)%O >-> (n <= m)%O})
 Notation "'decreasing_fun' f" := ({mono f : n m / (n <= m)%O >-> (n >= m)%O})
   (at level 10).
 
+
 Lemma shadow_lifting_product_and : shadow_lifting product_and.
 Proof.
 move=> Es i Es01.
@@ -974,9 +968,8 @@ rewrite lt_neqAle; apply/andP; split; last first.
 + apply: limr_ge.
   - apply: (monotonous_bounded_is_cvg _ _ ).
     * rewrite /monotonous. admit.
-    * rewrite /has_lbound. 
-      (* apply /int_lbound_has_minimum. *) 
-      Search "lbound".
+    * rewrite /has_lbound.  Search "lbound".
+      (* rewrite -int_lbound_has_minimum.  *)
       admit.
   - near=> x.
     rewrite mulr_ge0//.
@@ -987,6 +980,7 @@ rewrite lt_neqAle; apply/andP; split; last first.
         by have /andP[/ltW] := Es01 j.
       - by rewrite ler_addl// mulr_ge0.
 + rewrite /partial.
+  rewrite /(-all_0_product_partial _). 
   admit. 
 Admitted.
 
@@ -1109,6 +1103,7 @@ case: ifPn => h1.
     - rewrite {1}/minr.
       suff: (t1 `^ p + (t2 `^ p + t3 `^ p)) `^ p^-1 >=
             (t1 `^ p + t2 `^ p) `^ p^-1.
+      
       admit.
       (* + case: ifP.
         * rewrite addr0. 
