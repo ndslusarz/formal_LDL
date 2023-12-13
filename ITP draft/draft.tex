@@ -1,0 +1,100 @@
+\documentclass[]{article}
+\usepackage{amsfonts}
+\usepackage{amsthm}
+\usepackage[english]{babel}
+\usepackage{amsmath}
+\usepackage{adjustbox}
+
+\newcommand{\tempty}[1]{\llbracket #1 \rrbracket}
+\newcommand{\conjM}{\bigwedge\nolimits_M}
+\newcommand{\Real}{\mathbb{R}}
+
+%opening
+\title{Placeholder title: Formal methods in constraint-based learning}
+\author{}
+
+\begin{document}
+
+\maketitle
+
+\begin{abstract}
+
+\end{abstract}
+
+\section{Introduction}
+
+\begin{itemize}
+	\item formal methods in combination with machine learning as approach
+	\item normally for verification
+	\item use it to deepen understanding/inform ML research itself
+\end{itemize}
+
+\section{Background}
+\begin{itemize}
+	\item A good explanation of DL and similiar methods in machine learning. Including syntax, semantics in tables.
+	\item Possibly properties here, not later.
+	\item Other work on similiar/related topics (pointing out most formalise finalised trained models, not methods of training itself so can't find a good comparison)
+\end{itemize}
+
+\textbf{Some of other work (more or less related depending on the specific case:}
+
+ Formalization of an embedding of linear temporal logic and an associated evaluation function to prove its soundness in Isabelle and producing OCaml versions of the aforementioned functions that can be integrated with Python and PyTorch \cite{chevallier2022constrained}.  Formalisation of other types of algorithms~\cite{daukantas2021trimming} or formalisation of neural networks using Haskell~\cite{xie2023haskell}
+ 
+ Reviews of works in formal methods in machine learning (not only neural networks) \cite{urban2021review,9842406}. These are however mostly verification work.
+ 
+ Generally most work is done on trained models - not on the method itself - with very few exceptions. Need to find more of the exceptions, put in related work with caveat that they are not always very directly related to this.
+
+
+\section{Temporary Name: Formalisation}
+
+
+Different functions, lemmas, and things that peraphs stand out.
+
+\subsection{Syntax and semantics}
+
+Implementation of the syntax: $expr$ with it's custom dependant type $simple\_type$. Since the type system prevents non-termination of the lambda expressions they, together with let statements, have been omitted in the Coq formalisation (argumentation why it's okay goes here).
+
+
+
+Implementation of the semantics: 
+\begin{itemize}
+	\item $type\_translation$ semantics of types
+	\item a word on translation of indices and vectors using tuples
+	\item mention Real library from Mathcomp to handle reals
+	\item $translation$ - a semantics for all fuzzy DLs. Here there needs to be explanation maybe of how DL2 and STL are separate from the fuzzy logics as they are different enough to warrant a separate definition and lemmas, not enough overlap
+	translation itself is dependently typed, handles 4 different fuzzy logics through use of global variable (for now it's global variable, up for discussion)
+	
+\end{itemize}
+
+No quantifiers in the semantics. That does not impact the formalisation of most properties aside from soundness as the other properties do not concern quantifiers.
+
+\subsection{Soundness (and associated lemmas)}
+
+\begin{itemize}
+	\item $expr\_ind'$ custom induction principle was needed due to use of sequences. Explain sequences in MathComp (hidden tuples)? Explain that this is needed due to possibility of non-associative binary operations in the language.
+	\item $[name of DL]\_translate\_Bool\_T\_01$ - lemmas that prove that the fuzzy DL semantics fall within the range [0,1]
+\end{itemize}
+
+Inversion lemmas also mentioned here possibly.
+
+\subsection{Logical properties}
+
+On associativity and commutativity for the DLs that have them (and that associativity is much more tricky then commutativity to prove). Not entirely sure if antyhing more interesting is here specifically so likely not its own subsection.
+
+\subsection{Shadow-lifting}
+
+Using limit definition of partial differentiation.
+
+It does work out of the box using MathComp )in that limits exist but does require more lemmas as it is a new library.
+Just a lot more detail on this proof when finished.
+
+
+\section{Other notes}
+
+Complexity increase depending on DL is. While "complexity" is not easy to measure for a DL on paper it is obvious in its impact in formalisation. Associativity of conjunction for Łukawsiewic, Godel and product all have around 10 lines (get exact after cleanup) - but Yager takes 38 (again, correct after cleanup). If I prove STL mention that (if case split in analogous ways to other proofs we get 38 cases)
+
+A lot of difficulty is added due to using nary operations for the sake of generality (bigops, etc.). Will need to have good reasoning for that (primarily htat it's following the very general idea behind LDL).
+
+\bibliographystyle{plainnat}
+\bibliography{bibliography}
+\end{document}

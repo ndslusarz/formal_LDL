@@ -1,0 +1,42 @@
+\begin{thebibliography}{5}
+\providecommand{\natexlab}[1]{#1}
+\providecommand{\url}[1]{\texttt{#1}}
+\expandafter\ifx\csname urlstyle\endcsname\relax
+  \providecommand{\doi}[1]{doi: #1}\else
+  \providecommand{\doi}{doi: \begingroup \urlstyle{rm}\Url}\fi
+
+\bibitem[Chevallier et~al.(2022)Chevallier, Whyte, and
+  Fleuriot]{chevallier2022constrained}
+Mark Chevallier, Matthew Whyte, and Jacques~D Fleuriot.
+\newblock Constrained training of neural networks via theorem proving.
+\newblock \emph{arXiv preprint arXiv:2207.03880}, 2022.
+
+\bibitem[Daukantas et~al.(2021)Daukantas, Bruni, and
+  Sch{\"u}rmann]{daukantas2021trimming}
+Ieva Daukantas, Alessandro Bruni, and Carsten Sch{\"u}rmann.
+\newblock Trimming data sets: a verified algorithm for robust mean estimation.
+\newblock In \emph{23rd International Symposium on Principles and Practice of
+  Declarative Programming}, pages 1--9, 2021.
+
+\bibitem[Krichen et~al.(2022)Krichen, Mihoub, Alzahrani, Adoni, and
+  Nahhal]{9842406}
+Moez Krichen, Alaeddine Mihoub, Mohammed~Y. Alzahrani, Wilfried Yves~Hamilton
+  Adoni, and Tarik Nahhal.
+\newblock Are formal methods applicable to machine learning and artificial
+  intelligence?
+\newblock In \emph{2022 2nd International Conference of Smart Systems and
+  Emerging Technologies (SMARTTECH)}, pages 48--53, 2022.
+\newblock \doi{10.1109/SMARTTECH54121.2022.00025}.
+
+\bibitem[Urban and Min{\'e}(2021)]{urban2021review}
+Caterina Urban and Antoine Min{\'e}.
+\newblock A review of formal methods applied to machine learning.
+\newblock \emph{arXiv preprint arXiv:2104.02466}, 2021.
+
+\bibitem[Xie(2023)]{xie2023haskell}
+Ningning Xie.
+\newblock Haskell for choice-based learning (keynote).
+\newblock In \emph{Proceedings of the 16th ACM SIGPLAN International Haskell
+  Symposium}, pages 1--1, 2023.
+
+\end{thebibliography}
