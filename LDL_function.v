@@ -48,12 +48,88 @@ elim: s => //= h t ih; split=> [|[<-|/ih] ].
 - by rewrite inE => ->; rewrite orbT.
 Qed.
 
-Definition err_vec {R : ringType} n (i : 'I_n) : 'rV[R]_n :=
-  \row_(j < n) (i != j)%:R.
+Lemma maxr01 {R : realType} (x : R) : (maxr x 0 == 1) = (x == 1).
+Proof. rewrite/maxr; case: ifP=>//; lra. Qed.
+
+Lemma minr10 {R : realType} (x : R) : (minr x 1 == 0) = (x == 0).
+Proof. rewrite /minr; case: ifP=>//; lra. Qed.
+
+Lemma prod1 {R : realType} (e1 e2 : R) :
+  0 <= e1 <= 1 -> 0 <= e2 <= 1 -> (e1 * e2 == 1) = ((e1 == 1) && (e2 == 1)).
+Proof.
+nra.
+Qed.
+
+Lemma prod01 {R : realType} [s : seq R] : 
+  (forall e, e \in s -> 0 <= e <= 1) -> (0 <= \prod_(j <- s) j <= 1).
+Proof.
+elim: s => [_|e0].
+- by rewrite big_nil ler01 lexx.
+- move=> s IH es01.
+  rewrite big_cons.
+  have h0 : (0 <= \prod_(j <- s) j <= 1)%R.
+    by apply: IH => e es; apply: es01; rewrite in_cons es orbT.
+  have : (0 <= e0 <= 1)%R.
+    by apply: es01; rewrite in_cons eq_refl.
+  nra.
+Qed.
+
+
+Lemma psumr_eqsize {R : realType} :
+  forall (I : eqType) (r : seq I) [F : I -> R],
+  (forall i : I, F i <= 1)%R ->
+  (\sum_(i <- r) F i = (size r)%:R) <-> forall i, i \in r -> (F i = 1).
+Proof.
+move => I r F h1.
+elim: r.
+- by rewrite big_nil.
+- move => a s IH.
+  split.
+  + have : (\sum_(i <- s) F i <= (size s)%:R)%R.  
+      by apply: sum_01 => i _.
+    rewrite /= le_eqVlt big_cons => /orP[/eqP h|h].
+      rewrite -natr1 addrC h.
+      move/addrI => h' i.
+      rewrite in_cons => /orP[/eqP ->|ils]; first by rewrite h'.
+      exact: IH.1.
+    have: F a + \sum_(j <- s) F j < (size (a :: s))%:R.
+      rewrite /= -nat1r.
+      move: h.
+      set x := \sum_(i <- s) F i.
+      set y := size s.
+      have := h1 a.
+      lra.
+    set x := F a + \sum_(j <- s) F j.
+    set y := ((size (a :: s)))%:R.
+    lra.
+  + move=> h.
+    rewrite /= -nat1r big_cons h.
+      by apply: congr1; apply: IH.2 => i ias; apply: h; rewrite in_cons ias orbT.
+    by rewrite in_cons eq_refl//.
+Qed.
+
+
+Lemma bigmin_eqP {R : realType}:
+  forall (x : R) [I : eqType] (s : seq I) (F : I -> R),
+  reflect (forall i : I, i \in s -> (x <= F i)) (\big[minr/x]_(i <- s) F i == x).
+Proof.
+move => x I s F.
+Admitted.
+
+
+Lemma le_pow_01 {R : realType} (x p0 : R ):
+  0 <= x <= 1 -> (0 <= (1 - x) `^ p0).
+Proof.
+by rewrite powR_ge0.
+Qed.
+(*end the move to new document*)
 
 Section partial.
 Context {R : realType}.
 Variables (n : nat) (f : 'rV[R]_n -> R).
+
+Definition err_vec {R : ringType} n (i : 'I_n) : 'rV[R]_n :=
+  \row_(j < n) (i != j)%:R.
 
 Definition partial (i : 'I_n) (a : 'rV[R]_n) :=
   lim (h^-1 * (f (a + h *: err_vec i) - f a) @[h --> (0:R)^'+]).
@@ -150,7 +226,7 @@ Lemma expr_ind' :
         P Real_T e -> forall e0 : expr Real_T, P Real_T e0 -> P Bool_T (comparisons_E c e e0)) ->
        forall (s : simple_type) (e : expr s), P s e.
 Proof.
-intros. (* not intors*)
+move => P H H0 H1 H2 H3 H4 H5 H6 H7 H8 H9 H10 H11 H12 H13 H14 s e.
 revert e.
 revert s.
 fix F1 2.
@@ -454,6 +530,51 @@ rewrite ?(IHe1 e1 erefl JMeq_refl) ?(IHe2 e2 erefl JMeq_refl) ?(IHe e erefl JMeq
 by rewrite translations_Vector_coincide translations_Index_coincide.
 Qed.
 
+(* NB(rei): this lemma exists in MathComp-Analysis but maybe in a slightly
+   different form depending on your version, might be removed at to some point
+   but no hurry *)
+Lemma gt0_ltr_powR (r : R) : 0 < r ->
+  {in `[0, +oo[ &, {homo (@powR R) ^~ r : x y / x < y >-> x < y}}.
+Proof.
+move=> r0 x y; rewrite !in_itv/= !andbT !le_eqVlt => /predU1P[<-|x0].
+  move=> /predU1P[<-|y0 _]; first by rewrite ltxx//.
+  by rewrite powR0 ?(gt_eqF r0)// powR_gt0.
+move=> /predU1P[<-|y0]; first rewrite ltNge ltW//.
+by rewrite /powR !gt_eqF// ltr_expR ltr_pmul2l// ltr_ln.
+Qed.
+
+
+Lemma prod1_01 :
+  forall [s : seq R], (forall e, e \in s -> 0 <= e <= 1) ->
+    (\prod_(j <- s) j = 1 <-> (forall e, e \in s -> e = (1:R))).
+Proof.
+elim.
+- by rewrite big_nil.
+- move=> e s IH h.
+  rewrite big_cons.
+  split.
+  + move/eqP.
+    rewrite prod1; last 2 first.
+      by apply: h; rewrite in_cons eq_refl.
+      by apply: prod01 => e0 e0s; apply: h; rewrite in_cons e0s orbT.
+    move/andP => [/eqP e1] /eqP.
+    rewrite IH; last first.
+      by move=> e0 e0s; apply: h; rewrite in_cons e0s orbT.
+    move=> h' e0.
+    rewrite in_cons => /orP [/eqP -> //|].
+    apply: h'.
+  + move=> es1. 
+    apply /eqP. 
+    rewrite prod1; last 2 first.
+    - by apply: h; rewrite in_cons eq_refl.
+    - by apply: prod01 => e0 e0s; apply: h; rewrite in_cons e0s orbT.
+    apply/andP; split. 
+    - by apply/eqP; apply: es1; rewrite in_cons eq_refl.
+    - apply/eqP; rewrite IH => e0 e0s.
+        by apply es1; rewrite in_cons e0s orbT.
+      by apply: h; rewrite in_cons e0s orbT.
+Qed.
+
 
 Lemma Lukasiewicz_translate_Bool_T_01 (e : expr Bool_T) :
   0 <= [[ e ]]_ Lukasiewicz <= 1.
@@ -530,11 +651,23 @@ dependent induction e using expr_ind'.
 - rewrite /=; case b; lra.
 - move: H => /=/List.Forall_forall H.
   apply/andP; split.
-  + rewrite /minR big_seq le_bigmin// => i /mapP[x xl0 ->].
+  + rewrite /minR big_seq.
+    rewrite le_bigmin// => i /mapP[x xl0 ->].
     by apply: (andP (@H _ _ _ _ _)).1 => //; rewrite -In_in.
   + eapply (le_trans _ ((andP (@H _ _ _ _ _)).2)) => //.
-- move: H. rewrite /=; move=> /List.Forall_forall H. 
-  + rewrite /maxR. admit.
+- move: H => /=/List.Forall_forall H. 
+  apply/andP; split.
+  + rewrite /maxR big_seq.
+(*     About le_bigmin. 
+  Search "le" "big" "min".
+  About bigmin_le. *)
+    (*le_bigmin :
+forall {disp : unit} {T : porderType disp} [I : Type] (r : seq I) 
+  [f : I -> T] [x0 x : T] [P : pred I],
+x <= x0 -> (forall i : I, P i -> x <= f i) -> x <= \big[Order.min/x0]_(i <- r | P i) f i*)
+    (* rewrite le_bigmax //. => i /mapP[x xl0 ->]. *)
+    admit.
+  + eapply (le_trans _ ((andP (@H _ _ _ _ _)).2)) => //.
 - move/List.Forall_forall in H.
   have [il0|il0] := ltP i (size l0).
     rewrite (H (nth (Bool false) l0 i))//.
@@ -561,7 +694,7 @@ dependent induction e using expr_ind'.
   + rewrite /prodR. Search "prod" (0 <= _). 
     admit.
 - move: H. rewrite /=; move=> /List.Forall_forall H. 
-  + rewrite /maxR. admit.
+  + rewrite /natalia_prodR/natalia_prod. admit.
 - move/List.Forall_forall in H.
   have [il0|il0] := ltP i (size l0).
     rewrite (H (nth (Bool false) l0 i))//.
@@ -589,20 +722,6 @@ case: l.
 - exact: product_translate_Bool_T_01.
 Qed.
 
-
-(* NB(rei): this lemma exists in MathComp-Analysis but maybe in a slightly
-   different form depending on your version, might be removed at to some point
-   but no hurry *)
-Lemma gt0_ltr_powR (r : R) : 0 < r ->
-  {in `[0, +oo[ &, {homo (@powR R) ^~ r : x y / x < y >-> x < y}}.
-Proof.
-move=> r0 x y; rewrite !in_itv/= !andbT !le_eqVlt => /predU1P[<-|x0].
-  move=> /predU1P[<-|y0 _]; first by rewrite ltxx//.
-  by rewrite powR0 ?(gt_eqF r0)// powR_gt0.
-move=> /predU1P[<-|y0]; first rewrite ltNge ltW//.
-by rewrite /powR !gt_eqF// ltr_expR ltr_pmul2l// ltr_ln.
-Qed.
-
 Lemma help (x r : R) : 0 <= x -> 0 < r -> (1 - x `^ r^-1 < 0) -> (1 < x).
 Proof.
 have {1}->: 1 = 1 `^ r^-1 by rewrite powR1.
@@ -623,110 +742,6 @@ rewrite !powR_ge0 -!powRrM !mulVf ?neq_lt ?r0 ?orbT// powR1 powRr1//.
 apply. 
   exact.
   by rewrite nnegrE.
-Qed.
- 
-
-Lemma maxr01 (x : R) : (maxr x 0 == 1) = (x == 1).
-Proof. rewrite/maxr; case: ifP=>//; lra. Qed.
-
-Lemma minr10 (x : R) : (minr x 1 == 0) = (x == 0).
-Proof. rewrite /minr; case: ifP=>//; lra. Qed.
-
-Lemma prod1 (e1 e2 : R) : 0 <= e1 <= 1 -> 0 <= e2 <= 1 -> (e1 * e2 == 1) = ((e1 == 1) && (e2 == 1)).
-Proof.
-nra.
-Qed.
-
-Lemma prod01 [s : seq R] : (forall e, e \in s -> 0 <= e <= 1) -> (0 <= \prod_(j <- s) j <= 1).
-Proof.
-elim: s => [_|e0].
-- by rewrite big_nil ler01 lexx.
-- move=> s IH es01.
-  rewrite big_cons.
-  have h0 : (0 <= \prod_(j <- s) j <= 1)%R.
-    by apply: IH => e es; apply: es01; rewrite in_cons es orbT.
-  have : (0 <= e0 <= 1)%R.
-    by apply: es01; rewrite in_cons eq_refl.
-  nra.
-Qed.
-
-Lemma prod1_01  :
-  forall [s : seq R], (forall e, e \in s -> 0 <= e <= 1) ->
-    (\prod_(j <- s) j = 1 <-> (forall e, e \in s -> e = (1:R))).
-Proof.
-elim.
-- by rewrite big_nil.
-- move=> e s IH h.
-  rewrite big_cons.
-  split.
-  + move/eqP.
-    rewrite prod1; last 2 first.
-      by apply: h; rewrite in_cons eq_refl.
-      by apply: prod01 => e0 e0s; apply: h; rewrite in_cons e0s orbT.
-    move/andP => [/eqP e1] /eqP.
-    rewrite IH; last first.
-      by move=> e0 e0s; apply: h; rewrite in_cons e0s orbT.
-    move=> h' e0.
-    rewrite in_cons => /orP [/eqP -> //|].
-    apply: h'.
-  + move=> es1. 
-    apply /eqP. 
-    rewrite prod1; last 2 first.
-    - by apply: h; rewrite in_cons eq_refl.
-    - by apply: prod01 => e0 e0s; apply: h; rewrite in_cons e0s orbT.
-    apply/andP; split. 
-    - by apply/eqP; apply: es1; rewrite in_cons eq_refl.
-    - apply/eqP; rewrite IH => e0 e0s.
-        by apply es1; rewrite in_cons e0s orbT.
-      by apply: h; rewrite in_cons e0s orbT.
-Qed.
-
-Lemma psumr_eqsize :
-  forall (I : eqType) (r : seq I) [F : I -> R],
-  (forall i : I, F i <= 1)%R ->
-  (\sum_(i <- r) F i = (size r)%:R) <-> forall i, i \in r -> (F i = 1).
-Proof.
-move => I r F h1.
-elim: r.
-- by rewrite big_nil.
-- move => a s IH.
-  split.
-  + have : (\sum_(i <- s) F i <= (size s)%:R)%R.  
-      by apply: sum_01 => i _.
-    rewrite /= le_eqVlt big_cons => /orP[/eqP h|h].
-      rewrite -natr1 addrC h.
-      move/addrI => h' i.
-      rewrite in_cons => /orP[/eqP ->|ils]; first by rewrite h'.
-      exact: IH.1.
-    have: F a + \sum_(j <- s) F j < (size (a :: s))%:R.
-      rewrite /= -nat1r.
-      move: h.
-      set x := \sum_(i <- s) F i.
-      set y := size s.
-      have := h1 a.
-      lra.
-    set x := F a + \sum_(j <- s) F j.
-    set y := ((size (a :: s)))%:R.
-    lra.
-  + move=> h.
-    rewrite /= -nat1r big_cons h.
-      by apply: congr1; apply: IH.2 => i ias; apply: h; rewrite in_cons ias orbT.
-    by rewrite in_cons eq_refl//.
-Qed.
-
-
-Lemma bigmin_eqP:
-  forall (x : R) [I : eqType] (s : seq I) (F : I -> R),
-  reflect (forall i : I, i \in s -> (x <= F i)) (\big[minr/x]_(i <- s) F i == x).
-Proof.
-move => x I s F.
-Admitted.
-
-
-Lemma le_pow_01 (x p0 : R ):
-  0 <= x <= 1 -> (0 <= (1 - x) `^ p0).
-Proof.
-by rewrite powR_ge0.
 Qed.
 
 
