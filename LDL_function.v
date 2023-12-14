@@ -532,9 +532,11 @@ Lemma Godel_translate_Bool_T_01 (e : expr Bool_T) :
 Proof.
 dependent induction e using expr_ind'.
 - rewrite /=; case b; lra.
-- move: H. rewrite /=; move=> /List.Forall_forall H. 
-  + rewrite /minR. Search "big" "min" . 
-    admit.
+- move: H => /=/List.Forall_forall H.
+  apply/andP; split.
+  + rewrite /minR big_seq le_bigmin// => i /mapP[x xl0 ->].
+    by apply: (andP (@H _ _ _ _ _)).1 => //; rewrite -In_in.
+  + eapply (le_trans _ ((andP (@H _ _ _ _ _)).2)) => //.
 - move: H. rewrite /=; move=> /List.Forall_forall H. 
   + rewrite /maxR. admit.
 - move/List.Forall_forall in H.
