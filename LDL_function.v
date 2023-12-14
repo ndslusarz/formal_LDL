@@ -778,9 +778,9 @@ case: l => /=; move => H.
 - move/eqP. rewrite /prodR big_map.
   move => h i iEs.
   apply (@prod1_01 (map (@translation product p (Bool_T)) Es)) => // [e||].
-  - by rewrite In_in; rewrite List.in_map_iff; elim => x [<- _]//.
+  - by move=> /mapP[x _ ->].
   - by apply/eqP; rewrite big_map.
-  - by rewrite In_in; rewrite List.in_map_iff; exists (nth (Bool false) Es i); split; rewrite// -In_in; exact: mem_nth.
+  - by apply/mapP; eexists; last reflexivity; exact: mem_nth.
 Qed.
 
 
