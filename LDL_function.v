@@ -953,11 +953,13 @@ Definition shadow_lifting (f : forall n, 'rV_n -> R) :=
     partial (f (size Es)) i (row_of_seq Es) > 0.
 
 Lemma all_0_product_partial (Es : seq R) (i : 'I_(size Es)) :
-  partial 0 i (row_of_seq Es) = 0. 
+  partial 0 i (row_of_seq Es) = 0.
 (*I'm not sure if I don't need an additional assumption here*)
 Proof.
-rewrite /partial.
-Admitted.
+apply/cvg_lim; first exact: Rhausdorff.
+rewrite [X in X @ _ --> _](_ : _ = 0); first exact: (@cvg_cst R).
+by apply/funext => r/=; rewrite /GRing.zero/=(*NB: I shouldn't do that*) subrr mulr0.
+Qed.
 
 Print BSide.
 Print itv_bound.
