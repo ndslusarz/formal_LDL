@@ -32,6 +32,22 @@ End hyperbolic_function.
 
 Local Open Scope ring_scope.
 
+(*move to a separate file*)
+Lemma sum_01{R : numDomainType} (I : eqType) (s : seq I) (f : I -> R) :
+  (forall i, i \in s -> f i <= 1) -> \sum_(i <- s) f i <= (size s)%:R.
+Proof.
+move=> s01; rewrite -sum1_size natr_sum big_seq [leRHS]big_seq.
+by rewrite ler_sum// => r /s01 /andP[].
+Qed. 
+
+Lemma In_in (I : eqType) (s : seq I) e : e \in s <-> List.In e s.
+Proof.
+elim: s => //= h t ih; split=> [|[<-|/ih] ].
+- by rewrite inE => /predU1P[->|/ih]; [left|right].
+- by rewrite mem_head.
+- by rewrite inE => ->; rewrite orbT.
+Qed.
+
 Definition err_vec {R : ringType} n (i : 'I_n) : 'rV[R]_n :=
   \row_(j < n) (i != j)%:R.
 
@@ -88,6 +104,8 @@ Inductive expr : simple_type -> Type :=
 .
 End expr.
 
+Canonical expr_Bool_T_eqType := Equality.Pack (@gen_eqMixin (expr Bool_T)).
+
 Notation "a /\ b" := (and_E [:: a; b]).
 Notation "a \/ b" := (or_E [:: a; b]).
 Notation "a `=> b" := (impl_E a b) (at level 55).
@@ -102,6 +120,70 @@ Notation "a `!= b" := (`~ (a == b)) (at level 70).
 Notation "a `< b" := (a `<= b /\ a `!= b) (at level 70).
 Notation "a `>= b" := (b `<= a) (at level 70).
 Notation "a `> b" := (b `< a) (at level 70).
+
+Lemma expr_ind' :
+  forall P : forall s : simple_type, expr s -> Prop,
+       (forall s : R, P Real_T (Real s)) ->
+       (forall b : bool, P Bool_T (Bool b)) ->
+       (forall (n : nat) (o : 'I_n), P (Index_T n) (Index o)) ->
+       (forall (n : nat) (t : n.-tuple R), P (Vector_T n) (Vector t)) ->
+       (forall l : seq (expr Bool_T), List.Forall (fun x => P Bool_T x) l -> P Bool_T (and_E l)) ->
+       (* (forall l : seq (expr Bool_T), P Bool_T (and_E l)) -> *)
+       (forall l : seq (expr Bool_T), List.Forall (fun x => P Bool_T x) l -> P Bool_T (or_E l)) ->
+       (forall (l : seq (expr Bool_T)) i, List.Forall (fun x => P Bool_T x) l -> P Bool_T (nth (Bool false) l i)) ->
+       (forall e : expr Bool_T,
+        P Bool_T e -> forall e0 : expr Bool_T, P Bool_T e0 -> P Bool_T (e `=> e0)) ->
+       (forall e : expr Bool_T, P Bool_T e -> P Bool_T (`~ e)) ->
+       (forall e : expr Real_T,
+        P Real_T e -> forall e0 : expr Real_T, P Real_T e0 -> P Real_T (e `+ e0)) ->
+       (forall e : expr Real_T,
+        P Real_T e -> forall e0 : expr Real_T, P Real_T e0 -> P Real_T (e `* e0)) ->
+       (forall e : expr Real_T, P Real_T e -> P Real_T (`- e)) ->
+       (forall (n m : nat) (t : n.-tuple R -> m.-tuple R), P (Network_T n m) (net t)) ->
+       (forall (n m : nat) (e : expr (Network_T n m)),
+        P (Network_T n m) e ->
+        forall e0 : expr (Vector_T n), P (Vector_T n) e0 -> P (Vector_T m) (app_net e e0)) ->
+       (forall (n : nat) (e : expr (Vector_T n)),
+        P (Vector_T n) e ->
+        forall e0 : expr (Index_T n), P (Index_T n) e0 -> P Real_T (lookup_E e e0)) ->
+       (forall (c : comparisons) (e : expr Real_T),
+        P Real_T e -> forall e0 : expr Real_T, P Real_T e0 -> P Bool_T (comparisons_E c e e0)) ->
+       forall (s : simple_type) (e : expr s), P s e.
+Proof.
+intros. (* not intors*)
+revert e.
+revert s.
+fix F1 2.
+intros.
+destruct e.
+  * apply H.
+  * apply H0.
+  * apply H1.
+  * apply H2.
+  * apply H3. 
+    induction l.
+    + apply List.Forall_nil.
+    + apply List.Forall_cons_iff. 
+      split. 
+      - apply F1.
+      - apply IHl.
+  * apply H4.
+    induction l.
+    + apply List.Forall_nil.
+    + apply List.Forall_cons_iff. 
+      split. 
+      - apply F1.
+      - apply IHl.
+  * apply H6; apply F1.
+  * apply H7; eauto.
+  * apply H8; eauto.
+  * apply H9; eauto.
+  * apply H10; eauto.
+  * apply H11.
+  * apply H12; eauto. 
+  * apply H13; eauto. 
+  * apply H14; eauto. 
+Qed.
 
 Section translation_def.
 Local Open Scope ring_scope.
@@ -331,6 +413,10 @@ where "<< e >>" := (bool_translation e).
 
 End translation_def.
 
+Reserved Notation "[[ e ]]_ l" (at level 10, format "[[ e ]]_ l").
+Reserved Notation "nu .-[[ e ]]_stl" (at level 10, format "nu .-[[ e ]]_stl").
+Reserved Notation "[[ e ]]_dl2" (at level 10, format "[[ e ]]_dl2").
+
 Section translation_lemmas.
 Local Open Scope ring_scope.
 Local Open Scope order_scope.
@@ -339,12 +425,9 @@ Variable (l : DL).
 Variable (p : R).
 Variable (p1 : 1 <= p).
 
-Reserved Notation "[[ e ]]_ l" (at level 10, format "[[ e ]]_ l").
 Local Notation "[[ e ]]_ l" := (translation l p e).
 Local Notation "<< e >>_ l" := (bool_translation e) (at level 10, format "<< e >>_ l").
-Reserved Notation "nu .-[[ e ]]_stl" (at level 10, format "nu .-[[ e ]]_stl").
 Local Notation "nu .-[[ e ]]_stl" := (stl_translation nu e) (at level 10).
-Reserved Notation "[[ e ]]_dl2" (at level 10, format "[[ e ]]_dl2").
 Local Notation "[[ e ]]_dl2" := (dl2_translation e) (at level 10, format "[[ e ]]_dl2").
 
 Lemma translations_Network_coincide:
@@ -375,90 +458,6 @@ rewrite ?(IHe1 e1 erefl JMeq_refl) ?(IHe2 e2 erefl JMeq_refl) ?(IHe e erefl JMeq
 by rewrite translations_Vector_coincide translations_Index_coincide.
 Qed.
 
-Search seq "all".
-Print List.Forall.
-Print all.
-
-Lemma expr_ind' :
-  forall P : forall s : simple_type, expr s -> Prop,
-       (forall s : R, P Real_T (Real s)) ->
-       (forall b : bool, P Bool_T (Bool b)) ->
-       (forall (n : nat) (o : 'I_n), P (Index_T n) (Index o)) ->
-       (forall (n : nat) (t : n.-tuple R), P (Vector_T n) (Vector t)) ->
-       (forall l : seq (expr Bool_T), List.Forall (fun x => P Bool_T x) l -> P Bool_T (and_E l)) ->
-       (* (forall l : seq (expr Bool_T), P Bool_T (and_E l)) -> *)
-       (forall l : seq (expr Bool_T), List.Forall (fun x => P Bool_T x) l -> P Bool_T (or_E l)) ->
-       (forall (l : seq (expr Bool_T)) i, List.Forall (fun x => P Bool_T x) l -> P Bool_T (nth (Bool false) l i)) ->
-       (forall e : expr Bool_T,
-        P Bool_T e -> forall e0 : expr Bool_T, P Bool_T e0 -> P Bool_T (e `=> e0)) ->
-       (forall e : expr Bool_T, P Bool_T e -> P Bool_T (`~ e)) ->
-       (forall e : expr Real_T,
-        P Real_T e -> forall e0 : expr Real_T, P Real_T e0 -> P Real_T (e `+ e0)) ->
-       (forall e : expr Real_T,
-        P Real_T e -> forall e0 : expr Real_T, P Real_T e0 -> P Real_T (e `* e0)) ->
-       (forall e : expr Real_T, P Real_T e -> P Real_T (`- e)) ->
-       (forall (n m : nat) (t : n.-tuple R -> m.-tuple R), P (Network_T n m) (net t)) ->
-       (forall (n m : nat) (e : expr (Network_T n m)),
-        P (Network_T n m) e ->
-        forall e0 : expr (Vector_T n), P (Vector_T n) e0 -> P (Vector_T m) (app_net e e0)) ->
-       (forall (n : nat) (e : expr (Vector_T n)),
-        P (Vector_T n) e ->
-        forall e0 : expr (Index_T n), P (Index_T n) e0 -> P Real_T (lookup_E e e0)) ->
-       (forall (c : comparisons) (e : expr Real_T),
-        P Real_T e -> forall e0 : expr Real_T, P Real_T e0 -> P Bool_T (comparisons_E c e e0)) ->
-       forall (s : simple_type) (e : expr s), P s e.
-Proof.
-intros.
-revert e.
-revert s.
-fix F1 2.
-intros.
-destruct e.
-  * apply H.
-  * apply H0.
-  * apply H1.
-  * apply H2.
-  * apply H3. 
-    induction l0.
-    + apply List.Forall_nil.
-    + apply List.Forall_cons_iff. 
-      split. 
-      - apply F1.
-      - apply IHl0.
-  * apply H4.
-    induction l0.
-    + apply List.Forall_nil.
-    + apply List.Forall_cons_iff. 
-      split. 
-      - apply F1.
-      - apply IHl0.
-  * apply H6; apply F1.
-  * apply H7; eauto.
-  * apply H8; eauto.
-  * apply H9; eauto.
-  * apply H10; eauto.
-  * apply H11.
-  * apply H12; eauto. 
-  * apply H13; eauto. 
-  * apply H14; eauto. 
-Qed.
-
-Canonical expr_Bool_T_eqType := Equality.Pack (@gen_eqMixin (expr Bool_T)).
-
-Lemma sum_01 (I : eqType) (s : seq I) (f : I -> R) :
-  (forall i, i \in s -> f i <= 1) -> \sum_(i <- s) f i <= (size s)%:R.
-Proof.
-move=> s01; rewrite -sum1_size natr_sum big_seq [leRHS]big_seq.
-by rewrite ler_sum// => r /s01 /andP[].
-Qed.
-
-Lemma In_in (I : eqType) (s : seq I) e : e \in s <-> List.In e s.
-Proof.
-elim: s => //= h t ih; split=> [|[<-|/ih] ].
-- by rewrite inE => /predU1P[->|/ih]; [left|right].
-- by rewrite mem_head.
-- by rewrite inE => ->; rewrite orbT.
-Qed.
 
 Lemma Lukasiewicz_translate_Bool_T_01 (e : expr Bool_T) :
   0 <= [[ e ]]_ Lukasiewicz <= 1.
@@ -1003,7 +1002,7 @@ rewrite lt_neqAle; apply/andP; split; last first.
         by have /andP[/ltW] := Es01 j.
       - by rewrite ler_addl// mulr_ge0.
 + rewrite /partial.
-  rewrite /(-all_0_product_partial _). 
+(*   rewrite /(-all_0_product_partial _).  *)
   admit. 
 Admitted.
 
@@ -1220,11 +1219,16 @@ lra.
 Qed.
 
 Theorem Lukasiewicz_andA e1 e2 e3 : (0 < p) ->
+  (* l <> Yager -> l <> Godel -> l <> product ->  *) 
   [[ (e1 /\ e2) /\ e3]]_Lukasiewicz = [[ e1 /\ (e2 /\ e3) ]]_Lukasiewicz.
 Proof.
 have := Lukasiewicz_translate_Bool_T_01 e1.
 have := Lukasiewicz_translate_Bool_T_01 e2.
-have := Lukasiewicz_translate_Bool_T_01 e3.
+have := Lukasiewicz_translate_Bool_T_01 e3. 
+(* have := translate_Bool_T_01 e1.
+have := translate_Bool_T_01 e2.
+have := translate_Bool_T_01 e3. *)
+(* case: l => //=.  *)
 rewrite /=/sumR/maxR/minR/natalia_prodR ?big_cons ?big_nil.
 set t1 := _ e1.
 set t2 := _ e2.
