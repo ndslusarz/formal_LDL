@@ -261,7 +261,6 @@ Fixpoint translation t (e: expr t) {struct e} : type_translation t :=
 where "[[ e ]]" := (translation e).
 
 Definition sumE (Es : seq \bar R) : \bar R := \sum_(i <- Es) i.
- (* foldr ( +%E ) 0%E Es *)
 
 Definition dl2_type_translation (t: simple_type) : Type:=
   match t with
@@ -318,8 +317,6 @@ Definition expeR (x : \bar R) :=
   | +oo => +oo
   | -oo => 0
   end.
-
-About sumE.
 
 Reserved Notation "[[ e ]]".
 Fixpoint stl_translation t (e: expr t) : stl_type_translation t :=
@@ -391,7 +388,6 @@ Fixpoint bool_translation t (e: expr t) : bool_type_translation t :=
   | Index n i => i
   | Vector n t => t
 
-  (* | binary_logical_E op E1 E2 => bool_translation_binop op << E1 >> << E2 >> *)
   | and_E Es => foldr ( andb ) true (map (@bool_translation Bool_T) Es)
   | or_E Es => foldr orb false (map (@bool_translation Bool_T) Es)
   | impl_E e1 e2 => << e1 >> ==> << e2 >>
@@ -581,16 +577,6 @@ dependent induction e using expr_ind'.
   - by rewrite le_maxr lexx orbT/= le_maxl ler01 gerBl// normr_ge0 andTb.
 Admitted.
 
-(*
-- if I have this lemma as getting one argument in - that causes problems later when I 
-case split on dl in theorems, can't pass this argument
-- if it's completely general as before it complicates lemmas about individual dls
-requiring to add l <> Lukasiewicz -> l <> Yager ...->
-in front of it with every dl so that I can case split on l to get the right version
-- but translate_Bool_T_01 is similiar between logics so having different proofs
-has a lot of repetitions
-*)
-
 Lemma translate_Bool_T_01 (e : expr Bool_T) :
   0 <= [[ e ]]_ l <= 1.
 Proof.
@@ -600,6 +586,7 @@ case: l.
 - exact: Godel_translate_Bool_T_01.
 - exact: product_translate_Bool_T_01.
 Qed.
+
 
 (* NB(rei): this lemma exists in MathComp-Analysis but maybe in a slightly
    different form depending on your version, might be removed at to some point
