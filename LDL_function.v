@@ -712,10 +712,10 @@ dependent induction e using expr_ind'.
   - by rewrite le_maxr lexx orbT/= le_maxl ler01 gerBl// normr_ge0 andTb.
 Admitted.
 
-Lemma translate_Bool_T_01 (e : expr Bool_T) :
-  0 <= [[ e ]]_ l <= 1.
+Lemma translate_Bool_T_01 dl (e : expr Bool_T) :
+  0 <= [[ e ]]_ dl <= 1.
 Proof.
-case: l.
+case: dl.
 - exact: Lukasiewicz_translate_Bool_T_01.
 - exact: Yager_translate_Bool_T_01.
 - exact: Godel_translate_Bool_T_01.
@@ -748,7 +748,7 @@ Qed.
 Lemma nary_inversion_andE1 (Es : seq (expr Bool_T) ) :
   [[ and_E Es ]]_ l = 1 -> (forall i, i < size Es -> [[ nth (Bool false) Es i ]]_ l = 1).
 Proof.
-have H := translate_Bool_T_01. move: H.
+have H := translate_Bool_T_01 l. move: H.
 case: l => /=; move => H.
 - move/eqP. rewrite maxr01 /sumR eq_sym -subr_eq subrr eq_sym subr_eq0.
   move/eqP; rewrite big_map psumr_eqsize.
@@ -815,7 +815,7 @@ Lemma nary_inversion_orE1 Es :
   l <> Lukasiewicz -> l <> Yager ->
     [[ or_E Es ]]_ l = 1 -> (exists i, [[ nth (Bool false) Es i ]]_ l = 1).
 Proof.
-have H := translate_Bool_T_01. move: H.
+have H := translate_Bool_T_01 l. move: H.
 have p0 := lt_le_trans ltr01 p1.
 case: l => //=; move => H.
 - move => l1 l2. 
@@ -842,7 +842,7 @@ Admitted.
 Lemma nary_inversion_orE0 Es :
     [[ or_E Es ]]_ l  = 0 -> (forall i, [[ nth (Bool false) Es i ]]_ l = 0).
 Proof.
-have H := translate_Bool_T_01. move: H.
+have H := translate_Bool_T_01 l. move: H.
 have p0 := lt_le_trans ltr01 p1.
 case: l => //=; move => H.
 - move/eqP. rewrite minr10 /sumR. 
@@ -864,8 +864,8 @@ Lemma inversion_implE1 e1 e2 :
   l <> Lukasiewicz -> l <> Yager ->
     [[ impl_E e1 e2 ]]_ l = 1 -> [[e1]]_ l = 0 \/ [[e2]]_ l = 1.
 Proof.
-have He1 := translate_Bool_T_01 e1.
-have He2 := translate_Bool_T_01 e2.
+have He1 := translate_Bool_T_01 l e1.
+have He2 := translate_Bool_T_01 l e2.
 move: He1 He2.
 have p0 := lt_le_trans ltr01 p1.
 case: l => //=; move=> He1; move=> He2.
@@ -876,8 +876,8 @@ Qed.
 Lemma inversion_implE0 e1 e2 :
   [[ impl_E e1 e2 ]]_ l = 0 -> [[e1]]_ l  = 1 /\ [[e2]]_ l = 0.
 Proof.
-have He1 := translate_Bool_T_01 e1.
-have He2 := translate_Bool_T_01 e2.
+have He1 := translate_Bool_T_01 l e1.
+have He2 := translate_Bool_T_01 l e2.
 move: He1 He2.
 have p0 := lt_le_trans ltr01 p1.
 case: l => /=; move=> He1; move=> He2.
@@ -932,9 +932,10 @@ dependent induction e.
 
 Admitted.
 
+(* End translation_lemmas. *)
+
 Section shadow.
 
-About partial.
 
 Definition row_of_seq (s : seq R) : 'rV[R]_(size s) :=
   (\row_(i < size s) tnth (in_tuple s) i).
@@ -1012,7 +1013,11 @@ rewrite lt_neqAle; apply/andP; split; last first.
   admit. 
 Admitted.
 
+
 End shadow.
+
+Section Lukasiewicz_lemmas.
+
 
 Lemma Lukasiewicz_andC e1 e2 :
   [[ e1 /\ e2 ]]_Lukasiewicz = [[ e2 /\ e1 ]]_Lukasiewicz.
@@ -1021,50 +1026,47 @@ rewrite /=/sumR ?big_cons ?big_nil.
 by rewrite addr0 addr0 (addrC (_ e1)).
 Qed.
 
-Lemma Yager_andC e1 e2 :
-  [[ e1 /\ e2 ]]_Yager = [[ e2 /\ e1 ]]_Yager.
-Proof.
-rewrite /=/sumR ?big_cons ?big_nil.
-by rewrite /= addr0 addr0 (addrC (_ `^ _)).
-Qed.
-
-Lemma Godel_andC e1 e2 :
-  [[ e1 /\ e2 ]]_Godel = [[ e2 /\ e1 ]]_Godel.
-Proof.
-rewrite /=/minR ?big_cons ?big_nil.
-by rewrite /=/minr; repeat case: ifP; lra. 
-Qed.
-
-Lemma product_andC e1 e2 :
-  [[ e1 /\ e2 ]]_product = [[ e2 /\ e1 ]]_product.
-Proof. 
-rewrite /=/prodR ?big_cons ?big_nil.
-by rewrite /= mulr1 mulr1 mulrC. 
-Qed.
-
-Lemma dl2_andC e1 e2 :
-  [[ e1 /\ e2 ]]_dl2 = [[ e2 /\ e1 ]]_dl2.
-Proof.
-  rewrite /=/sumE ?big_cons ?big_nil.
-  by rewrite /= adde0 adde0 addeC. 
-Qed.
-
-
-(* Lemma andC_stl nu e1 e2 :
-  nu.-[[e1 /\ e2]]_stl = nu.-[[e2 /\ e1]]_stl.
-Proof.
-rewrite /=. case: ifPn.
-- rewrite /mine; repeat case: ifPn; intros . 
-(*TO DO IN ONE LINE PREFERABLY BECAUSE THIS IS 48 CASES*)
-
-Admitted.  *)
-  
-
 Lemma Lukasiewicz_orC e1 e2 :
   [[ e1 \/ e2 ]]_Lukasiewicz = [[ e2 \/ e1 ]]_Lukasiewicz.
 Proof.
 rewrite /=/sumR/maxR ?big_cons ?big_nil.
 by rewrite /= addr0 addr0 (addrC (_ e1)).
+Qed.
+
+Lemma Lukasiewicz_orA e1 e2 e3 :
+  [[ (e1 \/ (e2 \/ e3)) ]]_Lukasiewicz = [[ ((e1 \/ e2) \/ e3) ]]_Lukasiewicz.
+Proof.
+have := translate_Bool_T_01 Lukasiewicz e1.
+have := translate_Bool_T_01 Lukasiewicz e2.
+have := translate_Bool_T_01 Lukasiewicz e3.
+rewrite /=/sumR/minR?big_cons ?big_nil.
+rewrite /minr.
+by repeat case: ifP; lra.
+Qed. 
+
+Theorem Lukasiewicz_andA e1 e2 e3 : (0 < p) ->
+  [[ (e1 /\ e2) /\ e3]]_Lukasiewicz = [[ e1 /\ (e2 /\ e3) ]]_Lukasiewicz.
+Proof.
+have := translate_Bool_T_01 Lukasiewicz e1.
+have := translate_Bool_T_01 Lukasiewicz e2.
+have := translate_Bool_T_01 Lukasiewicz e3. 
+rewrite /=/sumR/maxR/minR/natalia_prodR ?big_cons ?big_nil.
+set t1 := _ e1.
+set t2 := _ e2.
+set t3 := _ e3.
+rewrite /maxr.
+by repeat case: ifP; lra.
+Qed.
+
+End Lukasiewicz_lemmas.
+
+Section Yager_lemmas.
+
+Lemma Yager_andC e1 e2 :
+  [[ e1 /\ e2 ]]_Yager = [[ e2 /\ e1 ]]_Yager.
+Proof.
+rewrite /=/sumR ?big_cons ?big_nil.
+by rewrite /= addr0 addr0 (addrC (_ `^ _)).
 Qed.
 
 Lemma Yager_orC e1 e2 :
@@ -1074,39 +1076,14 @@ rewrite /=/sumR/maxR ?big_cons ?big_nil.
 by rewrite /= addr0 addr0 (addrC (_ `^ _)).
 Qed.
 
-Lemma Godel_orC e1 e2 :
-  [[ e1 \/ e2 ]]_Godel = [[ e2 \/ e1 ]]_Godel.
-Proof.
-rewrite /=/sumR/maxR ?big_cons ?big_nil.
-rewrite /=/maxr; repeat case: ifP; lra.
-Qed.
-
-Lemma product_orC e1 e2 :
-  [[ e1 \/ e2 ]]_product = [[ e2 \/ e1 ]]_product.
-Proof.
-rewrite /=/sumR/maxR/natalia_prodR ?big_cons ?big_nil.
-by rewrite /=/natalia_prod addr0 addr0 mulr0 mulr0 subr0 subr0 mulrC -(addrC (_ e2)).
-Qed.
-
-Lemma Lukasiewicz_orA e1 e2 e3 :
-  [[ (e1 \/ (e2 \/ e3)) ]]_Lukasiewicz = [[ ((e1 \/ e2) \/ e3) ]]_Lukasiewicz.
-Proof.
-have := Lukasiewicz_translate_Bool_T_01 e1.
-have := Lukasiewicz_translate_Bool_T_01 e2.
-have := Lukasiewicz_translate_Bool_T_01 e3.
-rewrite /=/sumR/minR?big_cons ?big_nil.
-rewrite /minr.
-by repeat case: ifP; lra.
-Qed.
-
 Lemma Yager_orA e1 e2 e3 :
   [[ (e1 \/ (e2 \/ e3)) ]]_Yager = [[ ((e1 \/ e2) \/ e3) ]]_Yager.
 Proof.
 have p0 : 0 < p by rewrite (lt_le_trans ltr01).
 have ? : p != 0 by exact: lt0r_neq0.
-have := Yager_translate_Bool_T_01 e1.
-have := Yager_translate_Bool_T_01 e2.
-have := Yager_translate_Bool_T_01 e3.
+have := translate_Bool_T_01 Yager e1.
+have := translate_Bool_T_01 Yager e2.
+have := translate_Bool_T_01 Yager e3.
 rewrite /=/sumR/maxR/minR/natalia_prodR ?big_cons ?big_nil.
 rewrite ![in _ `^ p + _]addr0.
 set t1 := _ e1.
@@ -1207,50 +1184,14 @@ case: ifPn => h1.
           move => h4 h5. admit.
 Admitted.
 
-Lemma Godel_orA e1 e2 e3 :
-  [[ (e1 \/ (e2 \/ e3)) ]]_Godel = [[ ((e1 \/ e2) \/ e3) ]]_Godel.
-Proof.
-rewrite /=/sumR/maxR ?big_cons ?big_nil. 
-rewrite /maxr.
-  admit. (* by repeat case: ifP; lra.  *)(*currently times out, but no error*)
-(*product*)
-Admitted.
-
-Lemma product_orA e1 e2 e3 :
-  [[ (e1 \/ (e2 \/ e3)) ]]_product = [[ ((e1 \/ e2) \/ e3) ]]_product.
-Proof.
-rewrite /=/sumR/natalia_prodR ?big_cons ?big_nil.
-rewrite /natalia_prod !addr0 !mulr0 !subr0.
-lra.
-Qed.
-
-Theorem Lukasiewicz_andA e1 e2 e3 : (0 < p) ->
-  (* l <> Yager -> l <> Godel -> l <> product ->  *) 
-  [[ (e1 /\ e2) /\ e3]]_Lukasiewicz = [[ e1 /\ (e2 /\ e3) ]]_Lukasiewicz.
-Proof.
-have := Lukasiewicz_translate_Bool_T_01 e1.
-have := Lukasiewicz_translate_Bool_T_01 e2.
-have := Lukasiewicz_translate_Bool_T_01 e3. 
-(* have := translate_Bool_T_01 e1.
-have := translate_Bool_T_01 e2.
-have := translate_Bool_T_01 e3. *)
-(* case: l => //=.  *)
-rewrite /=/sumR/maxR/minR/natalia_prodR ?big_cons ?big_nil.
-set t1 := _ e1.
-set t2 := _ e2.
-set t3 := _ e3.
-rewrite /maxr.
-by repeat case: ifP; lra.
-Qed.
-
 Theorem Yager_andA e1 e2 e3 : (0 < p) ->
   [[ (e1 /\ e2) /\ e3]]_Yager = [[ e1 /\ (e2 /\ e3) ]]_Yager.
 Proof.
 move=> p0.
 have pneq0 : p != 0 by exact: lt0r_neq0.
-have := Yager_translate_Bool_T_01 e1.
-have := Yager_translate_Bool_T_01 e2.
-have := Yager_translate_Bool_T_01 e3.
+have := translate_Bool_T_01 Yager e1.
+have := translate_Bool_T_01 Yager e2.
+have := translate_Bool_T_01 Yager e3.
 rewrite /=/sumR/maxR/minR/natalia_prodR ?big_cons ?big_nil.
 set t1 := _ e1.
   set t2 := _ e2.
@@ -1384,13 +1325,40 @@ set t1 := _ e1.
        admit.
 Admitted.
 
+End Yager_lemmas.
+
+Section Godel_lemmas.
+
+Lemma Godel_andC e1 e2 :
+  [[ e1 /\ e2 ]]_Godel = [[ e2 /\ e1 ]]_Godel.
+Proof.
+rewrite /=/minR ?big_cons ?big_nil.
+by rewrite /=/minr; repeat case: ifP; lra. 
+Qed.
+
+Lemma Godel_orC e1 e2 :
+  [[ e1 \/ e2 ]]_Godel = [[ e2 \/ e1 ]]_Godel.
+Proof.
+rewrite /=/sumR/maxR ?big_cons ?big_nil.
+rewrite /=/maxr; repeat case: ifP; lra.
+Qed.
+
+Lemma Godel_orA e1 e2 e3 :
+  [[ (e1 \/ (e2 \/ e3)) ]]_Godel = [[ ((e1 \/ e2) \/ e3) ]]_Godel.
+Proof.
+rewrite /=/sumR/maxR ?big_cons ?big_nil. 
+rewrite /maxr.
+  admit. (* by repeat case: ifP; lra.  *)(*currently times out, but no error*)
+(*product*)
+Admitted.
+
 Theorem Godel_andA e1 e2 e3 : (0 < p) ->
   [[ (e1 /\ e2) /\ e3]]_Godel = [[ e1 /\ (e2 /\ e3) ]]_Godel.
 Proof.
 rewrite /=/sumR/minR !big_cons !big_nil.
-have := Godel_translate_Bool_T_01 e1.
-have := Godel_translate_Bool_T_01 e2.
-have := Godel_translate_Bool_T_01 e3.
+have := translate_Bool_T_01 Godel e1.
+have := translate_Bool_T_01 Godel e2.
+have := translate_Bool_T_01 Godel e3.
 set t1 := _ e1.
   set t2 := _ e2.
   set t3 := _ e3.
@@ -1400,6 +1368,32 @@ rewrite /minr.
 (* by repeat case: ifP; lra. *) (*gets stuck*)
   admit.
 Admitted.
+
+End Godel_lemmas.
+
+Section product_lemmas.
+
+Lemma product_andC e1 e2 :
+  [[ e1 /\ e2 ]]_product = [[ e2 /\ e1 ]]_product.
+Proof. 
+rewrite /=/prodR ?big_cons ?big_nil.
+by rewrite /= mulr1 mulr1 mulrC. 
+Qed.
+
+Lemma product_orC e1 e2 :
+  [[ e1 \/ e2 ]]_product = [[ e2 \/ e1 ]]_product.
+Proof.
+rewrite /=/sumR/maxR/natalia_prodR ?big_cons ?big_nil.
+by rewrite /=/natalia_prod addr0 addr0 mulr0 mulr0 subr0 subr0 mulrC -(addrC (_ e2)).
+Qed.
+
+Lemma product_orA e1 e2 e3 :
+  [[ (e1 \/ (e2 \/ e3)) ]]_product = [[ ((e1 \/ e2) \/ e3) ]]_product.
+Proof.
+rewrite /=/sumR/natalia_prodR ?big_cons ?big_nil.
+rewrite /natalia_prod !addr0 !mulr0 !subr0.
+lra.
+Qed.
 
 Theorem product_andA e1 e2 e3 : (0 < p) ->
   [[ (e1 /\ e2) /\ e3]]_product = [[ e1 /\ (e2 /\ e3) ]]_product.
@@ -1412,6 +1406,36 @@ set t3 := _ e3.
 rewrite /prodR/= !big_cons !big_nil.
 lra.
 Qed.
+
+End product_lemmas.
+
+Section dl2_lemmas.
+
+Lemma dl2_andC e1 e2 :
+  [[ e1 /\ e2 ]]_dl2 = [[ e2 /\ e1 ]]_dl2.
+Proof.
+  rewrite /=/sumE ?big_cons ?big_nil.
+  by rewrite /= adde0 adde0 addeC. 
+Qed. 
+
+End dl2_lemmas.
+
+
+
+(* 
+Section stl_lemmas.
+
+Lemma andC_stl nu e1 e2 :
+  nu.-[[e1 /\ e2]]_stl = nu.-[[e2 /\ e1]]_stl.
+Proof.
+rewrite /=. case: ifPn.
+- rewrite /mine; repeat case: ifPn; intros . 
+(*TO DO IN ONE LINE PREFERABLY BECAUSE THIS IS 48 CASES*)
+
+Admitted.  
+
+End stl_lemmas.*)
+  
 
 End translation_lemmas.
 
