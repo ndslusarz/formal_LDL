@@ -575,99 +575,53 @@ elim.
       by apply: h; rewrite in_cons e0s orbT.
 Qed.
 
-
-Lemma Lukasiewicz_translate_Bool_T_01 (e : expr Bool_T) :
-  0 <= [[ e ]]_ Lukasiewicz <= 1.
+Lemma translate_Bool_T_01 dl (e : expr Bool_T) :
+  0 <= [[ e ]]_ dl <= 1.
 Proof.
+
 dependent induction e using expr_ind'.
 - rewrite /=; case b; lra.
-- move: H. rewrite /=; move=> /List.Forall_forall H.
-  rewrite /sumR/maxr. case: ifP.
-  * by lra.
-  * move=> /negbT; rewrite -leNgt => -> /=.
-    rewrite big_map -lerBrDr subrr subr_le0 sum_01// => e el0.
-    by rewrite (andP (H e _ _ _ _)).2 //; exact/In_in.
-- move: H. rewrite /=; move=> /List.Forall_forall H.
-  rewrite /sumR/minr. case: ifP.
-  * move=> /ltW ->.
-    rewrite andbT big_map big_seq sumr_ge0// => e.
-    by move=> /In_in/H /(_ e erefl) /(_ _)/andP[|].
-  * by lra.
-- move/List.Forall_forall in H.
-  have [il0|il0] := ltP i (size l0).
-    rewrite (H (nth (Bool false) l0 i))//.
-    by apply/In_in; rewrite mem_nth.
-  by rewrite nth_default//= lexx ler01.
-- have := IHe1 e1 erefl JMeq_refl.
-  have := IHe2 e2 erefl JMeq_refl.
-  rewrite /=; rewrite /minr/maxr; try case: ifP; rewrite ?cprD ?oppr_le0 ?powR_ge0; nra.
-- have := IHe e erefl JMeq_refl.
-  case l => //=; by lra.
-- case: c => /=; case: ifP => ?.
-  - by case: ([[e1]]_Lukasiewicz <= [[e2]]_Lukasiewicz)%R; rewrite lexx ler01.
-  - by rewrite le_maxr lexx orbT/= le_maxl ler01 gerBl// le_maxr lexx orbT.
-  - by case: ([[e1]]_Lukasiewicz == [[e2]]_Lukasiewicz); rewrite lexx ler01.
-  - by rewrite le_maxr lexx orbT/= le_maxl ler01 gerBl// normr_ge0 andTb.
-Qed.
-
-Lemma Yager_translate_Bool_T_01 (e : expr Bool_T) :
-  0 <= [[ e ]]_ Yager <= 1.
-Proof.
-Check expr_ind. 
-dependent induction e using expr_ind'.
-- rewrite /=; case b; lra.
-- move: H. rewrite /=; move=> /List.Forall_forall H. 
-  rewrite /sumR/maxr. case: ifP.
-  * by lra.
-  * move=> /negbT; rewrite -leNgt => -> /=.
-    by rewrite big_map gerBl ?powR_ge0.
-- move: H. rewrite /=; move=> /List.Forall_forall H. 
-  rewrite /sumR/minr. case: ifP.
-  * move=> /ltW ->.
-    by rewrite andbT big_map big_seq powR_ge0.
-  * by lra.
-- move/List.Forall_forall in H.
-  have [il0|il0] := ltP i (size l0).
-    rewrite (H (nth (Bool false) l0 i))//.
-    by apply/In_in; rewrite mem_nth.
-  by rewrite nth_default//= lexx ler01.
-- have := IHe1 e1 erefl JMeq_refl.
-  have := IHe2 e2 erefl JMeq_refl.
-  rewrite /=; rewrite /minr/maxr; try case: ifP; rewrite ?cprD ?oppr_le0 ?powR_ge0; nra.
-- have := IHe e erefl JMeq_refl.
-  rewrite /=; by lra.
-- case: c => /=; case: ifP => ?.
-  - by case: ([[e1]]_Yager <= [[e2]]_Yager)%R; rewrite lexx ler01.
-  - by rewrite le_maxr lexx orbT/= le_maxl ler01 gerBl// le_maxr lexx orbT.
-  - by case: ([[e1]]_Yager == [[e2]]_Yager); rewrite lexx ler01.
-  - by rewrite le_maxr lexx orbT/= le_maxl ler01 gerBl// normr_ge0 andTb.
-Qed.
-
-
-Lemma Godel_translate_Bool_T_01 (e : expr Bool_T) :
-  0 <= [[ e ]]_ Godel <= 1.
-Proof.
-dependent induction e using expr_ind'.
-- rewrite /=; case b; lra.
-- move: H => /=/List.Forall_forall H.
-  apply/andP; split.
-  + rewrite /minR big_seq.
-    rewrite le_bigmin// => i /mapP[x xl0 ->].
-    by apply: (andP (@H _ _ _ _ _)).1 => //; rewrite -In_in.
-  + eapply (le_trans _ ((andP (@H _ _ _ _ _)).2)) => //.
-- move: H => /=/List.Forall_forall H. 
-  apply/andP; split.
-  + rewrite /maxR big_seq.
-(*     About le_bigmin. 
-  Search "le" "big" "min".
-  About bigmin_le. *)
+- move: H. case: dl; rewrite /=; move=> /List.Forall_forall H.
+  + rewrite /sumR/maxr. case: ifP.
+    * by lra.
+    * move=> /negbT; rewrite -leNgt => -> /=.
+      rewrite big_map -lerBrDr subrr subr_le0 sum_01// => e el0.
+      by rewrite (andP (H e _ _ _ _)).2 //; exact/In_in.
+  + rewrite /sumR/maxr. case: ifP.
+    * by lra.
+    * move=> /negbT; rewrite -leNgt => -> /=.
+      by rewrite big_map gerBl ?powR_ge0.
+  + apply/andP; split.
+    * rewrite /minR big_seq.
+      rewrite le_bigmin// => i /mapP[x xl0 ->].
+      by apply: (andP (@H _ _ _ _ _)).1 => //; rewrite -In_in.
+    * eapply (le_trans _ ((andP (@H _ _ _ _ _)).2)) => //.
+  + rewrite /prodR. Search "prod" "le". 
+    (* rewrite prodr_ge0. *)
+    admit.
+- move: H. case: dl; rewrite /=; move=> /List.Forall_forall H.
+  + rewrite /sumR/minr. case: ifP.
+    * move=> /ltW ->.
+      rewrite andbT big_map big_seq sumr_ge0// => e.
+      by move=> /In_in/H /(_ e erefl) /(_ _)/andP[|].
+    * by lra.
+  + rewrite /sumR/minr. case: ifP.
+    * move=> /ltW ->.
+      by rewrite andbT big_map big_seq powR_ge0.
+    * by lra.
+  + apply/andP; split.
+    * rewrite /maxR. Search (_ <= _) "max" "big". 
+     (* big_seq. *)
+      Search "le" "big" "max".
     (*le_bigmin :
 forall {disp : unit} {T : porderType disp} [I : Type] (r : seq I) 
   [f : I -> T] [x0 x : T] [P : pred I],
 x <= x0 -> (forall i : I, P i -> x <= f i) -> x <= \big[Order.min/x0]_(i <- r | P i) f i*)
     (* rewrite le_bigmax //. => i /mapP[x xl0 ->]. *)
+       admit.
+    * eapply (le_trans _ ((andP (@H _ _ _ _ _)).2)) => //.
+  + rewrite /natalia_prodR/natalia_prod.
     admit.
-  + eapply (le_trans _ ((andP (@H _ _ _ _ _)).2)) => //.
 - move/List.Forall_forall in H.
   have [il0|il0] := ltP i (size l0).
     rewrite (H (nth (Bool false) l0 i))//.
@@ -675,52 +629,17 @@ x <= x0 -> (forall i : I, P i -> x <= f i) -> x <= \big[Order.min/x0]_(i <- r | 
   by rewrite nth_default//= lexx ler01.
 - have := IHe1 e1 erefl JMeq_refl.
   have := IHe2 e2 erefl JMeq_refl.
-  case l => //=; rewrite /minr/maxr; try case: ifP; rewrite ?cprD ?oppr_le0 ?powR_ge0; nra.
+  move: IHe1 IHe2.
+  case: dl; rewrite /=; rewrite /minr/maxr; try case: ifP; rewrite ?cprD ?oppr_le0 ?powR_ge0; nra.
 - have := IHe e erefl JMeq_refl.
-  rewrite /=; by lra.
+  move: IHe.
+  case dl => //=; by lra.
 - case: c => /=; case: ifP => ?.
-  - by case: ([[e1]]_Godel <= [[e2]]_Godel)%R; rewrite lexx ler01.
+  - by case: ([[e1]]_dl <= [[e2]]_dl)%R; rewrite lexx ler01.
   - by rewrite le_maxr lexx orbT/= le_maxl ler01 gerBl// le_maxr lexx orbT.
-  - by case: ([[e1]]_Godel == [[e2]]_Godel); rewrite lexx ler01.
+  - by case: ([[e1]]_dl == [[e2]]_dl); rewrite lexx ler01.
   - by rewrite le_maxr lexx orbT/= le_maxl ler01 gerBl// normr_ge0 andTb.
 Admitted.
-
-Lemma product_translate_Bool_T_01 (e : expr Bool_T) :
-  0 <= [[ e ]]_ product <= 1.
-Proof.
-dependent induction e using expr_ind'.
-- rewrite /=; case b; lra.
-- move: H. rewrite /=; move=> /List.Forall_forall H. 
-  + rewrite /prodR. Search "prod" (0 <= _). 
-    admit.
-- move: H. rewrite /=; move=> /List.Forall_forall H. 
-  + rewrite /natalia_prodR/natalia_prod. admit.
-- move/List.Forall_forall in H.
-  have [il0|il0] := ltP i (size l0).
-    rewrite (H (nth (Bool false) l0 i))//.
-    by apply/In_in; rewrite mem_nth.
-  by rewrite nth_default//= lexx ler01.
-- have := IHe1 e1 erefl JMeq_refl.
-  have := IHe2 e2 erefl JMeq_refl.
-  case l => //=; rewrite /minr/maxr; try case: ifP; rewrite ?cprD ?oppr_le0 ?powR_ge0; nra.
-- have := IHe e erefl JMeq_refl.
-  rewrite /=; by lra.
-- case: c => /=; case: ifP => ?.
-  - by case: ([[e1]]_product <= [[e2]]_product)%R; rewrite lexx ler01.
-  - by rewrite le_maxr lexx orbT/= le_maxl ler01 gerBl// le_maxr lexx orbT.
-  - by case: ([[e1]]_product == [[e2]]_product); rewrite lexx ler01.
-  - by rewrite le_maxr lexx orbT/= le_maxl ler01 gerBl// normr_ge0 andTb.
-Admitted.
-
-Lemma translate_Bool_T_01 dl (e : expr Bool_T) :
-  0 <= [[ e ]]_ dl <= 1.
-Proof.
-case: dl.
-- exact: Lukasiewicz_translate_Bool_T_01.
-- exact: Yager_translate_Bool_T_01.
-- exact: Godel_translate_Bool_T_01.
-- exact: product_translate_Bool_T_01.
-Qed.
 
 Lemma help (x r : R) : 0 <= x -> 0 < r -> (1 - x `^ r^-1 < 0) -> (1 < x).
 Proof.
@@ -1184,6 +1103,7 @@ case: ifPn => h1.
           move => h4 h5. admit.
 Admitted.
 
+
 Theorem Yager_andA e1 e2 e3 : (0 < p) ->
   [[ (e1 /\ e2) /\ e3]]_Yager = [[ e1 /\ (e2 /\ e3) ]]_Yager.
 Proof.
@@ -1293,9 +1213,10 @@ set t1 := _ e1.
           rewrite -/a1 ltrDr => h4.
           rewrite addrA subrr. 
           rewrite ( addrC 0 ((a1 + a2) `^ p^-1)) addr0.
-          move => h5.
-          Print subr0_eq. Search (_ + _ = 0).
-          (* rewrite -(subr0_eq (1 - (((1 + (-1 + (a1 + a2) `^ p^-1)) `^ p + a3) `^ p^-1) = 0)). *)
+          move => h5. 
+          apply /eqP. 
+          rewrite subr_eq addrC addr0.
+          (* rewrite -(subr0_eq (1 - (((1 + (-1 + (a1 + a2) `^ p^-1)) `^ p + a3) `^ p^-1) = 0)).  *)
           admit. (* lra. *)
         + move/(help' (addr_ge0 (powR_ge0 _ _) (ltW ltr01)) p0).
           rewrite -/a1 gerDr => h4.
@@ -1305,8 +1226,11 @@ set t1 := _ e1.
           rewrite ( addrC 0 ((a1 + a2) `^ p^-1)) addr0.
           move => h6. rewrite h5.
           rewrite (addrC 0 a2) addr0 (addrC 0 1) addr0.
-          rewrite powR1 subrr.
-          (* rewrite subr0_eq. *)
+          rewrite powR1 subrr. apply /eqP. 
+          rewrite subr_eq addrC addr0.
+          move: h6. rewrite h5 (addrC 0 a2) addr0.
+          move => h6.
+        
           (* lra. *)
           admit. (* lra. *)
       - move/(help' (se_ge0 _ _ _) p0).
