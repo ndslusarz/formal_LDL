@@ -108,14 +108,23 @@ elim: r.
     by rewrite in_cons eq_refl//.
 Qed.
 
-
 Lemma bigmin_eqP {R : realType}:
   forall (x : R) [I : eqType] (s : seq I) (F : I -> R),
   reflect (forall i : I, i \in s -> (x <= F i)) (\big[minr/x]_(i <- s) F i == x).
 Proof.
 move => x I s F.
-Admitted.
-
+have minrl : forall (x y : R), minr x y <= x => //. (* TODO: this should exist *)
+  by move => v w; rewrite /minr; case: ifPn; rewrite ?le_refl -?leNgt.
+apply: (iffP eqP) => [<- i|].
+- elim: s => // a s IH.
+  rewrite in_cons => /orP[/eqP<-|si].
+  + by rewrite big_seq big_cons mem_head minrl.
+  + by rewrite big_cons minC; apply: le_trans (IH si); exact: minrl.
+- elim: s => [h|i l IH h].
+  + by rewrite big_nil.
+  + rewrite big_cons IH ?min_r ?h ?mem_head// => a al.
+    by rewrite h// in_cons al orbT.
+Qed.
 
 Lemma le_pow_01 {R : realType} (x p0 : R ):
   0 <= x <= 1 -> (0 <= (1 - x) `^ p0).
