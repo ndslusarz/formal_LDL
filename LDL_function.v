@@ -838,33 +838,108 @@ Lemma soundness e b :
     [[ e ]]_ l = [[ Bool b ]]_ l -> << e >>_ l = b.
 Proof.
 dependent induction e.
-  - move: b b0 => [] [] //=; lra.
-  - move => l1 l2. rewrite [ [[Bool b]]_l ]/=.  
-    move: b => [].
-    + move/ nary_inversion_andE1. 
-      rewrite [bool_translation (and_E l0)]/=.
-      
-      admit.
-    + admit.
-    (* move /(nary_inversion_andE1 _ l0). *)
-(* - case: l => //=.
-
-    * admit.
-    (* rewrite //=/minR. admit. *) (* move: nary_inversion_andE1. *)
-    * move: l0 b => [] //=.
-      - case; rewrite //=/maxR big_nil; lra.  
-      - move => a l0 b l1 l2.
-      admit.
-    * move: b => [].
-      - admit.
-      (*move/(inversion_implE1 _ _ _). *)
-      - move => l1 l2. 
-        move/(inversion_implE1 l1 e1 e2). (* rewrite /=/maxr.
-        case: ifP. move => h1. *) *)
-        
-        (* apply inversion_implE0 . *)
-
-      
+- move: b b0 => [] [] //=; lra.
+- move => l1 l2. rewrite [ [[Bool b]]_l ]/=.  
+  move: b => [].
+  + move/ nary_inversion_andE1. 
+    rewrite [bool_translation (and_E l0)]/=.
+    rewrite foldrE. Search "big" (_ = true).
+    admit.
+  + admit.
+- move => l1 l2. rewrite [ [[Bool b]]_l ]/=.  
+  move: b => [].
+  + admit.
+  + admit.
+- move => l1 l2. rewrite [ [[Bool b]]_l ]/=.  
+  move: b => [].
+  + admit.
+  + admit.
+- move => l1 l2. rewrite [ [[Bool b]]_l ]/=.  
+  move: b => [].
+  + admit.
+  + admit.
+- move => l1 l2. rewrite [ [[Bool b]]_l ]/=.  
+  move: b => [].
+  + 
+(* dependent induction e => ll ly //=.
+- move: b b0 => [] [] //; lra.
+- have {} IHe1 := IHe1 e1 erefl JMeq_refl.
+  have {} IHe2 := IHe2 e2 erefl JMeq_refl.
+  move: b b0 => [] [] //=.
+  + move/(inversion_andE1 (translate_Bool_T_01 _) (translate_Bool_T_01 _)).
+    case.
+    move/(IHe1 true ll ly) => ->.
+    by move/(IHe2 true) => ->.
+  + move/(inversion_andE0 (translate_Bool_T_01 _) (translate_Bool_T_01 _) ll ly).
+    case.
+    by move/(IHe1 false ll ly) => ->.
+    by move/(IHe2 false ll ly) => ->; rewrite andbF.
+  + move/(inversion_orE1 (translate_Bool_T_01 _) (translate_Bool_T_01 _) ll ly).
+    case.
+    by move/(IHe1 true ll ly) => ->.
+    by move/(IHe2 true ll ly) => ->; rewrite orbT.
+  + move/(inversion_orE0 (translate_Bool_T_01 _) (translate_Bool_T_01 _)).
+    case.
+    move/(IHe1 false ll ly) => ->.
+    by move/(IHe2 false) => ->.
+  + move/(inversion_implE1 (translate_Bool_T_01 _) (translate_Bool_T_01 _) ll ly).
+    case.
+    by move/(IHe1 false ll ly) => ->.
+    by move/(IHe2 true ll ly) => ->; rewrite implybT.
+  + move/(inversion_implE0 (translate_Bool_T_01 _) (translate_Bool_T_01 _)).
+    case.
+    move/(IHe1 true ll ly) => ->.
+    by move/(IHe2 false) => ->.
+- have {} IHe := IHe e erefl JMeq_refl.
+  case: b => ?.
+  have: [[ e ]]_l = 0 by lra.
+  by move/(IHe false) => ->.
+  have: [[ e ]]_l = 1 by lra.
+  by move/(IHe true) => ->.
+- case: c; rewrite -!translations_Real_coincide;
+  set t1 := _ e1; set t2 := _ e2.
+  + case: ifPn => [/eqP ->|e12eq].
+    have [] := leP (-t2) t2 => /=; case: b; lra.
+    rewrite /maxr.
+    have ? : 0 < `|t1 + t2| by rewrite normr_gt0 addr_eq0.
+    have ? : 0 < `|t1 + t2|^-1 by rewrite invr_gt0.
+    case: b; repeat case: ifPn; try lra; rewrite -?leNgt.
+    * rewrite pmulr_llt0; lra.
+    * rewrite pmulr_lge0// subr_ge0 => t120 _ ?.
+      have : (t1 - t2) / `|t1 + t2| = 0 by lra.
+      nra.
+    * rewrite pmulr_lge0// subr_ge0 => t120.
+      rewrite subr_lt0.
+      rewrite ltr_pdivlMr ?normr_gt0 ?addr_eq0// mul1r.
+      rewrite lter_norml opprD opprK.
+      lra.
+    * rewrite pmulr_lge0// => t120.
+      rewrite subr_ge0 ler_pdivrMr ?normr_gt0 ?addr_eq0// mul1r.
+      rewrite lter_normr => ? ?.
+      have : (t1 - t2) / `|t1 + t2| = 1 by lra.
+      move/divr1_eq => /eqP.
+      rewrite eq_sym eqr_norml; lra.
+  + case: ifP => [/eqP ->|e12eq].
+    have [] := eqVneq (-t2) t2 => /=; case: b; lra.
+    rewrite /maxr.
+    case: b; case: ifPn; try lra; rewrite -?leNgt.
+    * move=> _ ?.
+      have : `|(t1 - t2) / (t1 + t2)| == 0 by lra.
+      rewrite normr_eq0 mulf_eq0 invr_eq0; lra.
+    * rewrite subr_lt0 lter_normr.
+      have [|t120] := leP (t1+t2) 0.
+      rewrite le_eqVlt => /orP [|t120]; first lra.
+      rewrite -mulNr !ltr_ndivlMr// !mul1r opprD opprK.
+      lra.
+      rewrite -mulNr.
+      rewrite !ltr_pdivlMr// !mul1r opprD opprK.
+      lra.
+    * move=> _ ?.
+      have : `|(t1 - t2) / (t1 + t2)| == 1 by lra.
+      Search (`| _ | == _).
+      rewrite eqr_norml.
+      nra.
+Qed. *)
 
 Admitted.
 
