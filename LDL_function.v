@@ -871,66 +871,28 @@ Lemma soundness e b :
   l <> Lukasiewicz -> l <> Yager ->
     [[ e ]]_ l = [[ Bool b ]]_ l -> << e >>_ l = b.
 Proof.
-dependent induction e.
+dependent induction e => ll ly.
 - move: b b0 => [] [] //=; lra.
-- move => l1 l2. rewrite [ [[Bool b]]_l ]/=.  
+- rewrite [ [[Bool b]]_l ]/=.  
   move: b => [].
   + move/ nary_inversion_andE1. 
     rewrite [bool_translation (and_E l0)]/=.
     rewrite foldrE. Search "big" (_ = true).
     admit.
   + admit.
-- move => l1 l2. rewrite [ [[Bool b]]_l ]/=.  
+- rewrite [ [[Bool b]]_l ]/=.  
   move: b => [].
   + admit.
   + admit.
-- move => l1 l2. rewrite [ [[Bool b]]_l ]/=.  
+- rewrite [ [[Bool b]]_l ]/=.  
   move: b => [].
   + admit.
   + admit.
-- move => l1 l2. rewrite [ [[Bool b]]_l ]/=.  
+- rewrite [ [[Bool b]]_l ]/=.  
   move: b => [].
   + admit.
   + admit.
-- move => l1 l2. rewrite [ [[Bool b]]_l ]/=.  
-  move: b => [].
-  + 
-(* dependent induction e => ll ly //=.
-- move: b b0 => [] [] //; lra.
-- have {} IHe1 := IHe1 e1 erefl JMeq_refl.
-  have {} IHe2 := IHe2 e2 erefl JMeq_refl.
-  move: b b0 => [] [] //=.
-  + move/(inversion_andE1 (translate_Bool_T_01 _) (translate_Bool_T_01 _)).
-    case.
-    move/(IHe1 true ll ly) => ->.
-    by move/(IHe2 true) => ->.
-  + move/(inversion_andE0 (translate_Bool_T_01 _) (translate_Bool_T_01 _) ll ly).
-    case.
-    by move/(IHe1 false ll ly) => ->.
-    by move/(IHe2 false ll ly) => ->; rewrite andbF.
-  + move/(inversion_orE1 (translate_Bool_T_01 _) (translate_Bool_T_01 _) ll ly).
-    case.
-    by move/(IHe1 true ll ly) => ->.
-    by move/(IHe2 true ll ly) => ->; rewrite orbT.
-  + move/(inversion_orE0 (translate_Bool_T_01 _) (translate_Bool_T_01 _)).
-    case.
-    move/(IHe1 false ll ly) => ->.
-    by move/(IHe2 false) => ->.
-  + move/(inversion_implE1 (translate_Bool_T_01 _) (translate_Bool_T_01 _) ll ly).
-    case.
-    by move/(IHe1 false ll ly) => ->.
-    by move/(IHe2 true ll ly) => ->; rewrite implybT.
-  + move/(inversion_implE0 (translate_Bool_T_01 _) (translate_Bool_T_01 _)).
-    case.
-    move/(IHe1 true ll ly) => ->.
-    by move/(IHe2 false) => ->.
-- have {} IHe := IHe e erefl JMeq_refl.
-  case: b => ?.
-  have: [[ e ]]_l = 0 by lra.
-  by move/(IHe false) => ->.
-  have: [[ e ]]_l = 1 by lra.
-  by move/(IHe true) => ->.
-- case: c; rewrite -!translations_Real_coincide;
+- case: c; rewrite //=; rewrite -!translations_Real_coincide;
   set t1 := _ e1; set t2 := _ e2.
   + case: ifPn => [/eqP ->|e12eq].
     have [] := leP (-t2) t2 => /=; case: b; lra.
@@ -973,7 +935,6 @@ dependent induction e.
       Search (`| _ | == _).
       rewrite eqr_norml.
       nra.
-Qed. *)
 
 Admitted.
 
