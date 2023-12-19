@@ -552,7 +552,6 @@ move=> /predU1P[<-|y0]; first rewrite ltNge ltW//.
 by rewrite /powR !gt_eqF// ltr_expR ltr_pmul2l// ltr_ln.
 Qed.
 
-
 Lemma prod1_01 :
   forall [s : seq R], (forall e, e \in s -> 0 <= e <= 1) ->
     (\prod_(j <- s) j = 1 <-> (forall e, e \in s -> e = (1:R))).
@@ -587,7 +586,6 @@ Qed.
 Lemma translate_Bool_T_01 dl (e : expr Bool_T) :
   0 <= [[ e ]]_ dl <= 1.
 Proof.
-
 dependent induction e using expr_ind'.
 - rewrite /=; case b; lra.
 - move: H. case: dl; rewrite /=; move=> /List.Forall_forall H.
@@ -605,9 +603,10 @@ dependent induction e using expr_ind'.
       rewrite le_bigmin// => i /mapP[x xl0 ->].
       by apply: (andP (@H _ _ _ _ _)).1 => //; rewrite -In_in.
     * eapply (le_trans _ ((andP (@H _ _ _ _ _)).2)) => //.
-  + rewrite /prodR. Search "prod" "le". 
-    (* rewrite prodr_ge0. *)
-    admit.
+  + rewrite /prodR.
+    apply: prod01 => e.
+    move/mapP => [x xl0 ->].
+    by apply: H _ _ _ _ _ => //; rewrite -In_in.
 - move: H. case: dl; rewrite /=; move=> /List.Forall_forall H.
   + rewrite /sumR/minr. case: ifP.
     * move=> /ltW ->.
@@ -618,16 +617,13 @@ dependent induction e using expr_ind'.
     * move=> /ltW ->.
       by rewrite andbT big_map big_seq powR_ge0.
     * by lra.
-  + apply/andP; split.
-    * rewrite /maxR. Search (_ <= _) "max" "big". 
-     (* big_seq. *)
-      Search "le" "big" "max".
-    (*le_bigmin :
-forall {disp : unit} {T : porderType disp} [I : Type] (r : seq I) 
-  [f : I -> T] [x0 x : T] [P : pred I],
-x <= x0 -> (forall i : I, P i -> x <= f i) -> x <= \big[Order.min/x0]_(i <- r | P i) f i*)
-    (* rewrite le_bigmax //. => i /mapP[x xl0 ->]. *)
-       admit.
+  + rewrite /maxR big_map big_seq.
+    apply/andP; split.
+    * rewrite bigmax_idl.
+      suff : forall (x y : R), x <= maxr x y => // x y.
+      rewrite /maxr.
+      case: ifPn => // xy.
+      by rewrite ltW.
     * eapply (le_trans _ ((andP (@H _ _ _ _ _)).2)) => //.
   + rewrite /natalia_prodR/natalia_prod.
     admit.
