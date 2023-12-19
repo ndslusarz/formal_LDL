@@ -723,7 +723,6 @@ case: l => /=; move => H.
   - by apply/mapP; eexists; last reflexivity; exact: mem_nth.
 Qed.
 
-
 Lemma nary_inversion_andE0 (Es : seq (expr Bool_T) ) :
   l <> Lukasiewicz -> l <> Yager ->
     [[ and_E Es ]]_ l = 0 -> (exists i, [[ nth (Bool false) Es i ]]_ l = 0).
@@ -733,18 +732,18 @@ have p0 := lt_le_trans ltr01 p1.
 case: l => //=; move => H.
 - move => l1 l2. move/eqP.
   rewrite /minR big_map.
-  Search "big" "min".
-  
-  (* rewrite big_tnth. *)
-  
-  move => h1.
-  (* move/bigmin_eqP. *)
-  admit.
+  elim: Es.
+  + by rewrite big_nil oner_eq0.
+  + move=> a l0 IH.
+    rewrite big_cons {1}/minr.
+    case: {2}ifPn => [_|_]; first by exists 0%nat => /=; apply/eqP.
+    move/IH => [i i0].
+    by exists i.+1.
 - move=> l1 l2 /eqP.
   rewrite /prodR big_map prodf_seq_eq0 => /hasP[e eEs/= /eqP e0].
   move/(nthP (Bool false)) : eEs => [i iEs ie].
   by exists i; rewrite ie.
-Admitted.
+Qed.
 
 
 Lemma nary_inversion_orE1 Es :
