@@ -583,6 +583,20 @@ elim.
       by apply: h; rewrite in_cons e0s orbT.
 Qed.
 
+Lemma natalia_prod_01 : forall (x y : R), 0 <= x <= 1 -> 0 <= y <= 1 -> 0 <= natalia_prod x y <= 1.
+Proof. by move => x y; rewrite /natalia_prod; nra. Qed.
+
+Lemma natalia_prod_seq_01 (T : eqType) (f : T -> R) (l0 : seq T) :
+  (forall i, i \in l0 -> 0 <= f i <= 1) -> (0 <= \big[natalia_prod/0]_(i <- l0) f i <= 1).
+Proof.
+elim: l0.
+- by rewrite big_nil lexx ler01.
+- move=> a l0 IH h.
+  rewrite big_cons natalia_prod_01 ?h ?mem_head//.
+  apply: IH => i il0; apply: h.
+  by rewrite in_cons il0 orbT.
+Qed.
+
 Lemma translate_Bool_T_01 dl (e : expr Bool_T) :
   0 <= [[ e ]]_ dl <= 1.
 Proof.
@@ -627,18 +641,8 @@ dependent induction e using expr_ind'.
       by rewrite /maxr; case: ifPn; lra.
     * rewrite bigmax_le ?ler01// => i il0.
       by apply: (andP (H _ _ _ _ _)).2 => //; rewrite -In_in.
-  + rewrite /natalia_prodR/natalia_prod big_map.
-    have inv : forall (x y : R), 0 <= x <= 1 -> 0 <= y <= 1 -> 0 <= x + y - x * y <= 1.
-      by move => x y; nra.
-    move: H.
-    elim: l0 => [H|e l0 IH H].
-    * by rewrite big_nil ler01 le_refl.
-    * rewrite big_cons.
-      apply: inv; first by apply: H => //; rewrite -In_in mem_head.
-      apply: IH => x xl0 e0 _ xe0.
-      apply: H => //.
-      apply: List.in_cons.
-      by rewrite -(JMeq_eq xe0).
+  + rewrite /natalia_prodR big_map natalia_prod_seq_01=> //i il0.
+    by apply: H => //; rewrite -In_in.
 - move/List.Forall_forall in H.
   have [il0|il0] := ltP i (size l0).
     rewrite (H (nth (Bool false) l0 i))//.
@@ -730,13 +734,13 @@ Proof.
 have H := translate_Bool_T_01. move: H.
 have p0 := lt_le_trans ltr01 p1.
 case: l => //=; move => H.
-- move => l1 l2. move/eqP.
+- move => l1 l2; move/eqP.
   rewrite /minR big_map.
   elim: Es.
   + by rewrite big_nil oner_eq0.
   + move=> a l0 IH.
     rewrite big_cons {1}/minr.
-    case: {2}ifPn => [_|_]; first by exists 0%nat => /=; apply/eqP.
+    case: ifPn => _; first by exists 0%nat => /=; apply/eqP.
     move/IH => [i i0].
     by exists i.+1.
 - move=> l1 l2 /eqP.
@@ -745,6 +749,12 @@ case: l => //=; move => H.
   by exists i; rewrite ie.
 Qed.
 
+Lemma natalia_prod_inv (x y : R) :
+  (0 <= x <= 1) -> (0 <= y <= 1) ->
+    reflect (x = 1 \/ y = 1) (natalia_prod x y == 1).
+Proof.
+move=> x01 y01; apply: (iffP eqP); rewrite /natalia_prod; nra.
+Qed.
 
 Lemma nary_inversion_orE1 Es :
   l <> Lukasiewicz -> l <> Yager ->
@@ -753,12 +763,27 @@ Proof.
 have H := translate_Bool_T_01 l. move: H.
 have p0 := lt_le_trans ltr01 p1.
 case: l => //=; move => H.
-- move => l1 l2. 
-  rewrite /maxR. 
-  admit.
-- move => l1 l2. 
-  rewrite /natalia_prodR. admit.
-Admitted.
+- move => l1 l2; move/eqP.
+  rewrite /maxR big_map.
+  elim: Es.
+  + by rewrite big_nil eq_sym oner_eq0.
+  + move=> a l0 IH.
+    rewrite big_cons {1}/maxr.
+    case: ifPn => _; last by exists 0%nat => /=; apply/eqP.
+    move/IH => [i i1].
+    by exists i.+1.
+- move => l1 l2 /eqP.
+  rewrite /natalia_prodR big_map.
+  elim: Es.
+  + by rewrite big_nil eq_sym oner_eq0.
+  + move=> a l0 IH.
+    rewrite big_cons {1}/natalia_prod.
+    move/natalia_prod_inv => [|||/eqP].
+    * exact: H.
+    * exact: natalia_prod_seq_01.
+    * by exists 0%nat.
+    * by move/IH => [x ?]; exists x.+1.
+Qed.
 
 Lemma bigsum_0x  :
   forall [s : seq R], (forall e, e \in s -> 0 <= e (* <= 1 *)) ->
