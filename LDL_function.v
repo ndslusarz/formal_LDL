@@ -810,7 +810,7 @@ elim.
 Qed.
 
 Lemma nary_inversion_orE0 Es :
-    [[ or_E Es ]]_ l  = 0 -> (forall i, i < size Es -> [[ nth (Bool false) Es i ]]_ l = 0).
+    [[ or_E Es ]]_ l  = 0 -> (forall i, (i < size Es)%nat -> [[ nth (Bool false) Es i ]]_ l = 0).
 Proof.
 have H := translate_Bool_T_01 l. move: H.
 have p0 := lt_le_trans ltr01 p1.
@@ -820,22 +820,34 @@ case: l => //=; move => H.
   rewrite (@bigsum_0x _ _ Es) => h i.
     by move=> iEs; apply: h; rewrite mem_nth.
   exact: (andP (translate_Bool_T_01 _ _)).1.
-- move/eqP. rewrite minr10 /sumR. 
-  rewrite powR_eq0 (* psumr_eq0 *).
+- move/eqP; rewrite minr10 /sumR powR_eq0.
   move/andP => [].
   rewrite (@gt_eqF _ _ (p^-1)) ?invr_gt0//.
-  rewrite big_seq big_map psumr_eq0.
+  rewrite big_seq big_map psumr_eq0=>[|i]; last by rewrite powR_ge0.
   move/allP => h _ i iEs.
   apply/eqP.
   suff: ([[nth (Bool false) Es i]]_Yager == 0) && (p != 0).
     by move/andP=>[].
   rewrite -powR_eq0.
   apply: (implyP (h (nth (Bool false) Es i) _)).
-  by rewrite mem_nth.
+    by rewrite mem_nth.
   apply/mapP; exists (nth (Bool false) Es i) => //.
-  by rewrite mem_nth.
+    by rewrite mem_nth.
 - rewrite /maxR/natalia_prodR.
-  Search "big" "maxr" (0). admit.
+  elim: Es => [h i|a l0 IH h]; first by rewrite nth_nil.
+  elim => /=[_|].
+  + move: h.
+    rewrite big_cons big_map {1}/maxr.
+    case: ifPn => // /[swap] ->.
+    have := H a.
+    lra.
+  + move=> n h' nl0.
+    apply: IH => //.
+    move: h.
+    rewrite !big_map big_cons {1}/maxr.
+    case: ifPn => // /[swap] ->.
+    rewrite -leNgt.
+    admit.
 - rewrite /natalia_prodR. admit.
 Admitted.
 
