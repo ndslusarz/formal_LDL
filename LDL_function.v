@@ -822,8 +822,18 @@ case: l => //=; move => H.
   exact: (andP (translate_Bool_T_01 _ _)).1.
 - move/eqP. rewrite minr10 /sumR. 
   rewrite powR_eq0 (* psumr_eq0 *).
-
-  admit.
+  move/andP => [].
+  rewrite (@gt_eqF _ _ (p^-1)) ?invr_gt0//.
+  rewrite big_seq big_map psumr_eq0.
+  move/allP => h _ i iEs.
+  apply/eqP.
+  suff: ([[nth (Bool false) Es i]]_Yager == 0) && (p != 0).
+    by move/andP=>[].
+  rewrite -powR_eq0.
+  apply: (implyP (h (nth (Bool false) Es i) _)).
+  by rewrite mem_nth.
+  apply/mapP; exists (nth (Bool false) Es i) => //.
+  by rewrite mem_nth.
 - rewrite /maxR/natalia_prodR.
   Search "big" "maxr" (0). admit.
 - rewrite /natalia_prodR. admit.
