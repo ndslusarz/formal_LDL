@@ -786,18 +786,28 @@ case: l => //=; move => H.
 Qed.
 
 Lemma bigsum_0x  :
-  forall [s : seq R], (forall e, e \in s -> 0 <= e (* <= 1 *)) ->
+  forall [s : seq R], (forall e, e \in s -> 0 <= e) ->
     (\sum_(j <- s) j == 0 <-> (forall e, e \in s -> e = (0:R))).
 Proof.
 elim.
 - by rewrite big_nil.
 - move => a l0 h1 h2 .
-  rewrite big_cons.
+  rewrite big_cons big_seq.
+  rewrite paddr_eq0; last 2 first.
+  + by apply: h2; rewrite mem_head.
+  + by apply: sumr_ge0 => i il0; apply: h2; rewrite in_cons il0 orbT.
   split.
-  + move/eqP.
-    
-  + admit.
-Admitted.
+  + move/andP => [/eqP a0].
+    rewrite -big_seq h1 => h3 e.
+      by rewrite in_cons => /orP[/eqP->//|el0]; exact: h3.
+    by apply: h2; rewrite in_cons e orbT.
+  + move=> h3.
+    apply/andP; split.
+      by apply/eqP; apply: h3; rewrite mem_head.
+    rewrite psumr_eq0.
+      by apply/allP => x xl0; apply/implyP => _; apply/eqP; apply: h3; rewrite in_cons xl0 orbT.
+    by move=> i xl0; apply: h2; rewrite in_cons xl0 orbT.
+Qed.
 
 Lemma nary_inversion_orE0 Es :
     [[ or_E Es ]]_ l  = 0 -> (forall i, [[ nth (Bool false) Es i ]]_ l = 0).
