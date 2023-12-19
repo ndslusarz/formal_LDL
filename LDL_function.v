@@ -785,9 +785,9 @@ case: l => //=; move => H.
     * by move/IH => [x ?]; exists x.+1.
 Qed.
 
-Lemma bigsum_0x  :
-  forall [s : seq R], (forall e, e \in s -> 0 <= e) ->
-    (\sum_(j <- s) j == 0 <-> (forall e, e \in s -> e = (0:R))).
+Lemma bigsum_0x (T : eqType) f :
+  forall [s : seq T], (forall e, e \in s -> 0 <= f e) ->
+    (\sum_(j <- s) f j == 0 <-> (forall e, e \in s -> f e = (0:R))).
 Proof.
 elim.
 - by rewrite big_nil.
@@ -810,21 +810,30 @@ elim.
 Qed.
 
 Lemma nary_inversion_orE0 Es :
-    [[ or_E Es ]]_ l  = 0 -> (forall i, [[ nth (Bool false) Es i ]]_ l = 0).
+    [[ or_E Es ]]_ l  = 0 -> (forall i, i < size Es -> [[ nth (Bool false) Es i ]]_ l = 0).
 Proof.
 have H := translate_Bool_T_01 l. move: H.
 have p0 := lt_le_trans ltr01 p1.
 case: l => //=; move => H.
-- move/eqP. rewrite minr10 /sumR. 
-  rewrite bigsum_0x.
-  admit.
-  move => e.
-  
-  admit.
+- move/eqP. rewrite minr10 /sumR.
+  rewrite big_map.
+  rewrite (@bigsum_0x _ _ Es) => h i.
+    by move=> iEs; apply: h; rewrite mem_nth.
+  exact: (andP (translate_Bool_T_01 _ _)).1.
 - move/eqP. rewrite minr10 /sumR. 
   rewrite powR_eq0 (* psumr_eq0 *).
-
-  admit.
+  move/andP => [].
+  rewrite (@gt_eqF _ _ (p^-1)) ?invr_gt0//.
+  rewrite big_seq big_map psumr_eq0.
+  move/allP => h _ i iEs.
+  apply/eqP.
+  suff: ([[nth (Bool false) Es i]]_Yager == 0) && (p != 0).
+    by move/andP=>[].
+  rewrite -powR_eq0.
+  apply: (implyP (h (nth (Bool false) Es i) _)).
+  by rewrite mem_nth.
+  apply/mapP; exists (nth (Bool false) Es i) => //.
+  by rewrite mem_nth.
 - rewrite /maxR/natalia_prodR.
   Search "big" "maxr" (0). admit.
 - rewrite /natalia_prodR. admit.
