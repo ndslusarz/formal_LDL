@@ -602,7 +602,10 @@ dependent induction e using expr_ind'.
     * rewrite /minR big_seq.
       rewrite le_bigmin// => i /mapP[x xl0 ->].
       by apply: (andP (@H _ _ _ _ _)).1 => //; rewrite -In_in.
-    * eapply (le_trans _ ((andP (@H _ _ _ _ _)).2)) => //.
+    * rewrite /minR big_map big_seq.
+      rewrite bigmin_idl.
+      suff : forall (x y : R), minr x y <= x => // x y.
+      by rewrite /minr; case: ifPn; lra.
   + rewrite /prodR.
     apply: prod01 => e.
     move/mapP => [x xl0 ->].
@@ -621,12 +624,21 @@ dependent induction e using expr_ind'.
     apply/andP; split.
     * rewrite bigmax_idl.
       suff : forall (x y : R), x <= maxr x y => // x y.
-      rewrite /maxr.
-      case: ifPn => // xy.
-      by rewrite ltW.
-    * eapply (le_trans _ ((andP (@H _ _ _ _ _)).2)) => //.
-  + rewrite /natalia_prodR/natalia_prod.
-    admit.
+      by rewrite /maxr; case: ifPn; lra.
+    * rewrite bigmax_le ?ler01// => i il0.
+      by apply: (andP (H _ _ _ _ _)).2 => //; rewrite -In_in.
+  + rewrite /natalia_prodR/natalia_prod big_map.
+    have inv : forall (x y : R), 0 <= x <= 1 -> 0 <= y <= 1 -> 0 <= x + y - x * y <= 1.
+      by move => x y; nra.
+    move: H.
+    elim: l0 => [H|e l0 IH H].
+    * by rewrite big_nil ler01 le_refl.
+    * rewrite big_cons.
+      apply: inv; first by apply: H => //; rewrite -In_in mem_head.
+      apply: IH => x xl0 e0 _ xe0.
+      apply: H => //.
+      apply: List.in_cons.
+      by rewrite -(JMeq_eq xe0).
 - move/List.Forall_forall in H.
   have [il0|il0] := ltP i (size l0).
     rewrite (H (nth (Bool false) l0 i))//.
@@ -644,7 +656,7 @@ dependent induction e using expr_ind'.
   - by rewrite le_maxr lexx orbT/= le_maxl ler01 gerBl// le_maxr lexx orbT.
   - by case: ([[e1]]_dl == [[e2]]_dl); rewrite lexx ler01.
   - by rewrite le_maxr lexx orbT/= le_maxl ler01 gerBl// normr_ge0 andTb.
-Admitted.
+Qed.
 
 Lemma help (x r : R) : 0 <= x -> 0 < r -> (1 - x `^ r^-1 < 0) -> (1 < x).
 Proof.
