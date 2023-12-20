@@ -1,9 +1,11 @@
-\documentclass[]{article}
+\documentclass[a4paper,10pt]{article}
 \usepackage{amsfonts}
 \usepackage{amsthm}
 \usepackage[english]{babel}
 \usepackage{amsmath}
 \usepackage{adjustbox}
+
+\usepackage[numbers]{natbib}
 
 \newcommand{\tempty}[1]{\llbracket #1 \rrbracket}
 \newcommand{\conjM}{\bigwedge\nolimits_M}
@@ -18,35 +20,59 @@
 \maketitle
 
 \begin{abstract}
-
 \end{abstract}
 
 \section{Introduction}
 
-\begin{itemize}
-	\item formal methods in combination with machine learning as approach
-	\item normally for verification
-	\item use it to deepen understanding/inform ML research itself
-\end{itemize}
+Using formal methods, such as using proof assistants or abstract interpretation, in combination with machine learning (ML) is a relatively new approach that has been gaining popularity in recent years \cite{urban2021review,9842406}. 
+This can be connected primarily to the rising importance of machine learning verification and an increased awareness of the fragility of machine learning models, both of which value the guarantees that formal methods can provide CITATION.
+Traditionally confined to the realm of software and hardware verification, formal methods are increasingly being repurposed to scrutinize the inherently probabilistic nature of ML models.
 
-\section{Background}
+The integration of formal methods with machine learning poses many challenges, stemming from the inherent differences between the two domains, from the black-box nature of many ML models, through scalability issues especially in the case of neural networks (NNs) to the lack of well-defined specifications required in formal methods. It is the last of those that is of most interest to this work. While there has been a move toward increasingly rigorous approaches in specification, both for verification and training, such specification are often mathematically complex. 
+
+This complexity is inherent especially to neural networks but is widely known to pose a challenge to formalisation tools. The most prominent reasons behind this issue come from the necessity to reason about continuous real space, vectors and vector operations as well as the ability to express mathematical concepts such as partial differentiation. This is unavoidable when reasoning about certain methods, as due to common usage of gradient descent algorithm in neural network training CITE.
+
+However we believe that there exist current state of the art formalisation tools which are expressive enough to reason about mathematical concepts needed for expressing properties and methods for machine learning.
+
+Mathematical Components (MathComp)~\cite{mathcomp} in Coq CITE stands as a testament to the expressive power of formal proof systems in addressing advanced mathematical concepts. At its core, MathComp leverages the Calculus of Inductive Constructions (CIC), the underlying type theory of Coq, to encode mathematical abstractions in a way that allows bridging the gap between mathematics and the formalization of machine learning concepts. 
+
+One of such concepts is Logic of Differentiable Logics (LDL), a rigorously defined meta-language used for property based training of neural networks. ADD A MORE IN DEPTH EXPLANATION OF LDL ITSELF
+
+The goal of this paper is two-fold. Firstly, we would like to offer it as demonstration that current state of the art already allows for application of formal approaches to well-defined problems in machine learning and is expressive enough to handle the needed underlying mathematical theory. To demonstrate this we formalise the meta-language LDL, a method used to train neural networks, together with its properties and proofs, with emphasis on properties desirable in machine learning.
+
+Furthermore we believe that using formal methods approaches can be beneficial not only in verification, but also in helping to deepen the understanding of machine learning as well as enforcing a more formal approach to more mathematical areas of machine learning. 
+For future programming languages created for AI verification  proofs may, in the future, become compulsory, enforcing an additional level of rigour~\cite{FoMLAS2023:Vehicle_Tutorial_Neural_Network,seshia2022toward}. 
+
+\section{Related work}
+
+To the best of our knowledge there is very little work that is closely related to our approach and involves applying formal methods to the training approaches itself instead of an already trained machine learning model or its properties.
+
+The primary area where formal methods and machine learning combine is verification. This field has been rapidly gaining traction in the last few years and there are many different approaches present in neural network verification\cite{urban2021review,9842406}. One of them is abstract interpretation, used by many state of the art verifiers CITE PARTICULAR VERIFIER . These methods are partial formal verification techniques and are sound but not complete~\cite{easterbrook1998formal}. There are however also approaches that are both sound and complete based on different techniques including use of SMTs (Satisfiability Modulo Theory) \cite{katz2019marabou} solvers or MILP (Mixed Integer Linear Programming). There has also been similar work done for other machine learning approaches than neural networks such as for support vector machines (SVMs)~\cite{ranzato2019robustness} or Decision Tree Ensembles~\cite{einziger2019verifying} though we do not focus on such models in our work. 
+
+However majority of approaches involving formal methods and machine learning  apply to already trained machine learning models, and not approaches such as constraint-based training itself and thus are not very closely related to this work. This area of research is much less explored as of yet, primarily due the difficulty of expressing the mathematical theory underlying neural networks. There have however been attempts at it such as \cite{chevallier2022constrained} who formalise an embedding of linear temporal logic and an associated evaluation function in Isabelle to prove its soundness - and furthermore are able to produce OCaml versions of the aforementioned functions that can be integrated with Python and PyTorch eliminating many risks associated with ad-hoc implementations. 
+While another related example are formalisation of other types of algorithms~\cite{daukantas2021trimming} or formalisation of neural networks using Haskell~\cite{xie2023haskell}. They, while not directly related to the subject matter, utilise similar approaches and also have to contend with similar issues related to mathematical complexity.
+
+POSSIBLY AN ADDITIONAL PARAGRAPH ON NON-ML MATH FORMALISATION THAT IS TANGENTIALLY SIMILIAR.
+
+
+
+\section{Background - notes}
+Notes on what probably needs to make its way into background (non-exhaustive)
 \begin{itemize}
-	\item A good explanation of DL and similiar methods in machine learning. Including syntax, semantics in tables.
+	\item A good explanation of DL and similar methods in machine learning. Including syntax, semantics in tables. Also explanation of loss functions and their role in training.
 	\item Possibly properties here, not later.
-	\item Other work on similiar/related topics (pointing out most formalise finalised trained models, not methods of training itself so can't find a good comparison)
+	\item Other work on similar/related topics (pointing out most formalise finalised trained models, not methods of training itself so can't find a good comparison)
 \end{itemize}
 
 \textbf{Some of other work (more or less related depending on the specific case:}
-
- Formalization of an embedding of linear temporal logic and an associated evaluation function to prove its soundness in Isabelle and producing OCaml versions of the aforementioned functions that can be integrated with Python and PyTorch \cite{chevallier2022constrained}.  Formalisation of other types of algorithms~\cite{daukantas2021trimming} or formalisation of neural networks using Haskell~\cite{xie2023haskell}
  
- Reviews of works in formal methods in machine learning (not only neural networks) \cite{urban2021review,9842406}. These are however mostly verification work.
- 
- Generally most work is done on trained models - not on the method itself - with very few exceptions. Need to find more of the exceptions, put in related work with caveat that they are not always very directly related to this.
 
 
-\section{Temporary Name: Formalisation}
 
+
+\section{Temporary Name: Formalisation - notes}
+
+General notes to self on formalisation.
 
 Different functions, lemmas, and things that peraphs stand out.
 

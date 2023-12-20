@@ -1,4 +1,4 @@
-This is pdfTeX, Version 3.141592653-2.6-1.40.25 (MiKTeX 23.10.12) (preloaded format=pdflatex 2023.11.8)  13 DEC 2023 17:46
+This is pdfTeX, Version 3.141592653-2.6-1.40.25 (MiKTeX 23.10.12) (preloaded format=pdflatex 2023.11.8)  21 DEC 2023 00:26
 entering extended mode
  restricted \write18 enabled.
  %&-line parsing enabled.
@@ -217,108 +217,142 @@ Package: varwidth 2009/03/30 ver 0.92;  Variable-width minipages
 \@vwid@loff=\dimen165
 \@vwid@roff=\dimen166
 ))
+(C:\Program Files\MiKTeX\tex/latex/natbib\natbib.sty
+Package: natbib 2010/09/13 8.31b (PWD, AO)
+\bibhang=\skip56
+\bibsep=\skip57
+LaTeX Info: Redefining \cite on input line 694.
+\c@NAT@ctr=\count277
+)
 (C:\Program Files\MiKTeX\tex/latex/l3backend\l3backend-pdftex.def
 File: l3backend-pdftex.def 2023-10-23 L3 backend support: PDF output (pdfTeX)
-\l__color_backend_stack_int=\count277
+\l__color_backend_stack_int=\count278
 \l__pdf_internal_box=\box55
 ) (draft.aux)
 \openout1 = `draft.aux'.
 
-LaTeX Font Info:    Checking defaults for OML/cmm/m/it on input line 16.
-LaTeX Font Info:    ... okay on input line 16.
-LaTeX Font Info:    Checking defaults for OMS/cmsy/m/n on input line 16.
-LaTeX Font Info:    ... okay on input line 16.
-LaTeX Font Info:    Checking defaults for OT1/cmr/m/n on input line 16.
-LaTeX Font Info:    ... okay on input line 16.
-LaTeX Font Info:    Checking defaults for T1/cmr/m/n on input line 16.
-LaTeX Font Info:    ... okay on input line 16.
-LaTeX Font Info:    Checking defaults for TS1/cmr/m/n on input line 16.
-LaTeX Font Info:    ... okay on input line 16.
-LaTeX Font Info:    Checking defaults for OMX/cmex/m/n on input line 16.
-LaTeX Font Info:    ... okay on input line 16.
-LaTeX Font Info:    Checking defaults for U/cmr/m/n on input line 16.
-LaTeX Font Info:    ... okay on input line 16.
+LaTeX Font Info:    Checking defaults for OML/cmm/m/it on input line 18.
+LaTeX Font Info:    ... okay on input line 18.
+LaTeX Font Info:    Checking defaults for OMS/cmsy/m/n on input line 18.
+LaTeX Font Info:    ... okay on input line 18.
+LaTeX Font Info:    Checking defaults for OT1/cmr/m/n on input line 18.
+LaTeX Font Info:    ... okay on input line 18.
+LaTeX Font Info:    Checking defaults for T1/cmr/m/n on input line 18.
+LaTeX Font Info:    ... okay on input line 18.
+LaTeX Font Info:    Checking defaults for TS1/cmr/m/n on input line 18.
+LaTeX Font Info:    ... okay on input line 18.
+LaTeX Font Info:    Checking defaults for OMX/cmex/m/n on input line 18.
+LaTeX Font Info:    ... okay on input line 18.
+LaTeX Font Info:    Checking defaults for U/cmr/m/n on input line 18.
+LaTeX Font Info:    ... okay on input line 18.
 
 (C:\Program Files\MiKTeX\tex/context/base/mkii\supp-pdf.mkii
 [Loading MPS to PDF converter (version 2006.09.02).]
-\scratchcounter=\count278
+\scratchcounter=\count279
 \scratchdimen=\dimen167
 \scratchbox=\box56
-\nofMPsegments=\count279
-\nofMParguments=\count280
+\nofMPsegments=\count280
+\nofMParguments=\count281
 \everyMPshowfont=\toks31
-\MPscratchCnt=\count281
+\MPscratchCnt=\count282
 \MPscratchDim=\dimen168
-\MPnumerator=\count282
-\makeMPintoPDFobject=\count283
+\MPnumerator=\count283
+\makeMPintoPDFobject=\count284
 \everyMPtoPDFconversion=\toks32
 ) (C:\Program Files\MiKTeX\tex/latex/epstopdf-pkg\epstopdf-base.sty
 Package: epstopdf-base 2020-01-24 v2.11 Base part for package epstopdf
+
+(C:\Program Files\MiKTeX\tex/generic/infwarerr\infwarerr.sty
+Package: infwarerr 2019/12/03 v1.5 Providing info/warning/error messages (HO)
+)
+(C:\Program Files\MiKTeX\tex/latex/grfext\grfext.sty
+Package: grfext 2019/12/03 v1.3 Manage graphics extensions (HO)
+
+(C:\Program Files\MiKTeX\tex/generic/kvdefinekeys\kvdefinekeys.sty
+Package: kvdefinekeys 2019-12-19 v1.6 Define keys (HO)
+))
+(C:\Program Files\MiKTeX\tex/latex/kvoptions\kvoptions.sty
+Package: kvoptions 2022-06-15 v3.15 Key value format for package options (HO)
+
+(C:\Program Files\MiKTeX\tex/generic/ltxcmds\ltxcmds.sty
+Package: ltxcmds 2020-05-10 v1.25 LaTeX kernel commands for general use (HO)
+)
+(C:\Program Files\MiKTeX\tex/latex/kvsetkeys\kvsetkeys.sty
+Package: kvsetkeys 2022-10-05 v1.19 Key value parser (HO)
+))
+(C:\Program Files\MiKTeX\tex/generic/pdftexcmds\pdftexcmds.sty
+Package: pdftexcmds 2020-06-27 v0.33 Utility functions of pdfTeX for LuaTeX (HO
+)
+
+(C:\Program Files\MiKTeX\tex/generic/iftex\iftex.sty
+Package: iftex 2022/02/03 v1.0f TeX engine tests
+)
+Package pdftexcmds Info: \pdf@primitive is available.
+Package pdftexcmds Info: \pdf@ifprimitive is available.
+Package pdftexcmds Info: \pdfdraftmode found.
+)
 Package epstopdf-base Info: Redefining graphics rule for `.eps' on input line 4
 85.
+Package grfext Info: Graphics extension search list:
+(grfext)             [.pdf,.png,.jpg,.mps,.jpeg,.jbig2,.jb2,.PDF,.PNG,.JPG,.JPE
+G,.JBIG2,.JB2,.eps]
+(grfext)             \AppendGraphicsExtensions on input line 504.
 
 (C:\Program Files\MiKTeX\tex/latex/00miktex\epstopdf-sys.cfg
 File: epstopdf-sys.cfg 2021/03/18 v2.0 Configuration of epstopdf for MiKTeX
 ))
-LaTeX Font Info:    Trying to load font information for U+msa on input line 18.
+LaTeX Font Info:    Trying to load font information for U+msa on input line 20.
 
 
 (C:\Program Files\MiKTeX\tex/latex/amsfonts\umsa.fd
 File: umsa.fd 2013/01/14 v3.01 AMS symbols A
 )
-LaTeX Font Info:    Trying to load font information for U+msb on input line 18.
+LaTeX Font Info:    Trying to load font information for U+msb on input line 20.
 
 
 (C:\Program Files\MiKTeX\tex/latex/amsfonts\umsb.fd
 File: umsb.fd 2013/01/14 v3.01 AMS symbols B
 )
-Overfull \hbox (59.41757pt too wide) in paragraph at lines 41--42
-\OT1/cmr/m/n/10 sa-tion of other types of al-go-rithms [[]]
- []
-
-
-Overfull \hbox (99.08429pt too wide) in paragraph at lines 43--44
-\OT1/cmr/m/n/10 works) [[], []].
+Overfull \hbox (0.3617pt too wide) in paragraph at lines 35--36
+\OT1/cmr/m/n/10 tools which are ex-pres-sive enough to rea-son about math-e-mat
+-i-cal con-cepts needed
  []
 
 [1
 
-{C:/Users/wielk/AppData/Local/MiKTeX/fonts/map/pdftex/pdftex.map}]
-Overfull \hbox (4.80045pt too wide) in paragraph at lines 55--56
+{C:/Users/wielk/AppData/Local/MiKTeX/fonts/map/pdftex/pdftex.map}] [2]
+Overfull \hbox (4.80045pt too wide) in paragraph at lines 81--82
 \OT1/cmr/m/n/10 Implementation of the syn-tax: $\OML/cmm/m/it/10 expr$ \OT1/cmr
 /m/n/10 with it's cus-tom de-pen-dant type $\OML/cmm/m/it/10 simple[]type$\OT1/
 cmr/m/n/10 .
  []
 
-[2] (draft.bbl
-Underfull \hbox (badness 10000) in paragraph at lines 10--13
-[]\OT1/cmr/m/n/10 Mark Cheval-lier,
+[3] (draft.bbl
+Underfull \hbox (badness 1147) in paragraph at lines 10--13
+[]\OT1/cmr/m/n/10 Mark Cheval-lier, Matthew Whyte, and Jacques D Fleu-riot.  Co
+n-
  []
 
 
-Underfull \hbox (badness 10000) in paragraph at lines 16--20
-[]\OT1/cmr/m/n/10 Ieva Daukan-tas,
+Underfull \hbox (badness 1895) in paragraph at lines 16--25
+[]\OT1/cmr/m/n/10 Matthew Dag-gitt, Wen Kokke, Eka-te-rina Komen-dantskaya, Rob
+ert
  []
 
-
-Underfull \hbox (badness 10000) in paragraph at lines 23--30
-[]\OT1/cmr/m/n/10 Moez
- []
-
-[3]) [4] (draft.aux)
+[4]) [5] (draft.aux)
  ***********
 LaTeX2e <2023-11-01>
 L3 programming layer <2023-11-01>
  ***********
  ) 
 Here is how much of TeX's memory you used:
- 4370 strings out of 474592
- 71708 string characters out of 5755614
- 1931533 words of memory out of 5000000
- 26488 multiletter control sequences out of 15000+600000
- 567220 words of font info for 71 fonts, out of 8000000 for 9000
+ 5328 strings out of 474592
+ 87602 string characters out of 5755614
+ 1933533 words of memory out of 5000000
+ 27409 multiletter control sequences out of 15000+600000
+ 567388 words of font info for 72 fonts, out of 8000000 for 9000
  1141 hyphenation exceptions out of 8191
- 86i,6n,93p,457b,223s stack positions out of 10000i,1000n,20000p,200000b,200000s
+ 86i,6n,93p,1024b,229s stack positions out of 10000i,1000n,20000p,200000b,200000s
  <C:\Users\wielk\AppData\Local\MiKTeX\fonts/pk/ljfour/jknappen/ec/dpi600\tcrm
 1000.pk><C:/Program Files/MiKTeX/fonts/type1/public/amsfonts/cm/cmbx10.pfb><C:/
 Program Files/MiKTeX/fonts/type1/public/amsfonts/cm/cmbx12.pfb><C:/Program File
@@ -327,10 +361,11 @@ s/type1/public/amsfonts/cm/cmmi10.pfb><C:/Program Files/MiKTeX/fonts/type1/publ
 ic/amsfonts/cm/cmr10.pfb><C:/Program Files/MiKTeX/fonts/type1/public/amsfonts/c
 m/cmr12.pfb><C:/Program Files/MiKTeX/fonts/type1/public/amsfonts/cm/cmr17.pfb><
 C:/Program Files/MiKTeX/fonts/type1/public/amsfonts/cm/cmsy7.pfb><C:/Program Fi
-les/MiKTeX/fonts/type1/public/amsfonts/cm/cmti10.pfb>
-Output written on draft.pdf (4 pages, 138513 bytes).
+les/MiKTeX/fonts/type1/public/amsfonts/cm/cmti10.pfb><C:/Program Files/MiKTeX/f
+onts/type1/public/amsfonts/cm/cmtt10.pfb>
+Output written on draft.pdf (5 pages, 163353 bytes).
 PDF statistics:
- 65 PDF objects out of 1000 (max. 8388607)
+ 73 PDF objects out of 1000 (max. 8388607)
  0 named destinations out of 1000 (max. 500000)
  1 words of extra memory for PDF output out of 10000 (max. 10000000)
 

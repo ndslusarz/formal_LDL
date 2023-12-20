@@ -5,44 +5,46 @@ Reallocating 'name_of_file' (item size: 1) to 9 items.
 The style file: plainnat.bst
 Reallocating 'name_of_file' (item size: 1) to 13 items.
 Database file #1: bibliography.bib
-You've used 5 entries,
+Warning--can't use both volume and number fields in einziger2019verifying
+You've used 12 entries,
             2773 wiz_defined-function locations,
-            619 strings with 5861 characters,
-and the built_in function-call counts, 2474 in all, are:
-= -- 213
-> -- 139
-< -- 5
-+ -- 47
-- -- 42
-* -- 181
-:= -- 371
-add.period$ -- 16
-call.type$ -- 5
-change.case$ -- 29
-chr.to.int$ -- 5
-cite$ -- 10
-duplicate$ -- 127
-empty$ -- 208
-format.name$ -- 49
-if$ -- 533
+            672 strings with 7780 characters,
+and the built_in function-call counts, 7036 in all, are:
+= -- 622
+> -- 459
+< -- 14
++ -- 154
+- -- 142
+* -- 568
+:= -- 1049
+add.period$ -- 43
+call.type$ -- 12
+change.case$ -- 81
+chr.to.int$ -- 12
+cite$ -- 25
+duplicate$ -- 313
+empty$ -- 533
+format.name$ -- 160
+if$ -- 1511
 int.to.chr$ -- 1
 int.to.str$ -- 1
-missing$ -- 5
-newline$ -- 34
-num.names$ -- 20
-pop$ -- 67
+missing$ -- 11
+newline$ -- 72
+num.names$ -- 50
+pop$ -- 177
 preamble$ -- 1
-purify$ -- 24
+purify$ -- 69
 quote$ -- 0
-skip$ -- 101
+skip$ -- 266
 stack$ -- 0
-substring$ -- 62
-swap$ -- 25
-text.length$ -- 3
+substring$ -- 240
+swap$ -- 74
+text.length$ -- 9
 text.prefix$ -- 0
 top$ -- 0
-type$ -- 55
-warning$ -- 0
-while$ -- 23
+type$ -- 132
+warning$ -- 1
+while$ -- 61
 width$ -- 0
-write$ -- 72
+write$ -- 173
+(There was 1 warning)
