@@ -907,8 +907,24 @@ dependent induction e using expr_ind' => ll ly.
   + admit.
 - admit.
 - admit.
-- admit.
-- admit.
+- have {} IHe1 := IHe1 e1 erefl JMeq_refl.
+  have {} IHe2 := IHe2 e2 erefl JMeq_refl.
+  rewrite [ [[Bool b]]_l ]/=. move: b => [].
+  + move/(inversion_implE1 ll ly ).
+    case; rewrite [bool_translation (e1 `=> e2)]/=.
+    by move/(IHe1 false ll ly) => ->.
+    by move/(IHe2 true ll ly) => ->; rewrite implybT.
+  + move/(inversion_implE0 ).
+    case; rewrite [bool_translation (e1 `=> e2)]/=.
+    move/(IHe1 true ll ly) => ->.
+    by move/(IHe2 false ll ly) => ->.
+- rewrite //=.
+  have {} IHe := IHe e erefl JMeq_refl.
+  case: b => ?.
+  have: [[ e ]]_l = 0 by lra.
+  by move/(IHe false) => ->.
+  have: [[ e ]]_l = 1 by lra.
+  by move/(IHe true) => ->.
 - case: c; rewrite //=; rewrite -!translations_Real_coincide;
   set t1 := _ e1; set t2 := _ e2.
   + case: ifPn => [/eqP ->|e12eq].
