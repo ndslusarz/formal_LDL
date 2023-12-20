@@ -809,6 +809,52 @@ elim.
     by move=> i xl0; apply: h2; rewrite in_cons xl0 orbT.
 Qed.
 
+Lemma bigmax_le': (* ab: not needed, but maybe worth having instead of bigmax_le? *)
+  forall [I : eqType] (r : seq I) (f : I -> R) (P : pred I) (x0 x : R),
+    reflect (x0 <= x /\ forall i, i \in r -> P i -> f i <= x)
+      (\big[Order.max/x0]_(i <- r | P i) f i <= x).
+Proof.
+move=> I r f P x0.
+elim: r => [x|]; first by rewrite big_nil; apply: (iffP idP);move=>//[->//].
+move=> a l0 IH x.
+apply: (iffP idP).
+- rewrite big_cons {1}/maxr.
+  case: ifPn => Pa.
+  + case: ifPn => [fabig h|].
+    * have /IH[-> h'] := h; split=>//i.
+      rewrite in_cons => /orP[/eqP -> _|il0 Pi].
+        by apply: le_trans (ltW fabig) h.
+      exact: h'.
+    rewrite -leNgt => fabig fax.
+    have /IH[x0fa h] := fabig.
+    split; first apply: (le_trans x0fa fax).
+    move=> i.
+    rewrite in_cons => /orP[/eqP ->//|il0 Pi].
+    apply: le_trans.
+    apply: h => //.
+    apply: fax.
+  + move=> /IH[-> h]; split=>// i.
+    rewrite in_cons => /orP[/eqP ->|]; first by move: Pa=> /[swap]->.
+    exact: h.
+- move=>[x0x h].
+  have h' : forall i, i \in l0 -> P i -> f i <= x.
+    by move=> i il0 Pi; rewrite h ?in_cons ?il0 ?orbT.
+  have /IH h'' := conj x0x h'.
+  rewrite big_cons {1}/maxr.
+  case: ifPn => Pa//.
+  case: ifPn => //_.
+  apply: h => //.
+  exact: mem_head.
+Qed.
+
+Lemma natalia_prod_inv0 (x y : R) :
+  (0 <= x <= 1) -> (0 <= y <= 1) ->
+    reflect (x = 0 /\ y = 0) (natalia_prod x y == 0).
+Proof.
+move=> x01 y01; apply: (iffP eqP); rewrite /natalia_prod; nra.
+Qed.
+
+
 Lemma nary_inversion_orE0 Es :
     [[ or_E Es ]]_ l  = 0 -> (forall i, (i < size Es)%nat -> [[ nth (Bool false) Es i ]]_ l = 0).
 Proof.
@@ -843,14 +889,21 @@ case: l => //=; move => H.
     lra.
   + move=> n h' nl0.
     apply: IH => //.
-    move: h.
-    rewrite !big_map big_cons {1}/maxr.
-    case: ifPn => // /[swap] ->.
-    rewrite -leNgt.
-    admit.
-- rewrite /natalia_prodR. admit.
-Admitted.
-
+    move: h; rewrite !big_map big_cons {1}/maxr.
+    case: ifPn => // /[swap] ->; rewrite -leNgt => bigle0.
+    by apply/eqP; rewrite eq_le bigle0 bigmax_idl le_maxr lexx.
+- rewrite /natalia_prodR.
+  rewrite big_map.
+  elim: Es => // a l0 IH.
+  rewrite big_cons => /eqP /natalia_prod_inv0 h.
+  case => /=[_|i].
+  + apply: (h _ _).1 => //.
+    exact: natalia_prod_seq_01.
+  + rewrite ltnS => isize.
+    apply: IH =>//.
+    apply: (h _ _).2 => //.
+    exact: natalia_prod_seq_01.
+Qed.
 
 Lemma inversion_implE1 e1 e2 :
   l <> Lukasiewicz -> l <> Yager ->
