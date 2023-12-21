@@ -53,8 +53,10 @@ Inductive comparisons : Type :=
 | le_E : comparisons
 | eq_E : comparisons.
 
+Axiom R : realType.
+
 Section expr.
-Context {R : realType}.
+(*Context {R : realType}.*)
 
 Inductive expr : simple_type -> Type :=
   | Real : R -> expr Real_T
@@ -83,8 +85,8 @@ Inductive expr : simple_type -> Type :=
 
 End expr.
 
-Canonical expr_Bool_T_eqType (R : realType) :=
-  Equality.Pack (@gen_eqMixin (@expr R Bool_T)).
+Canonical expr_Bool_T_eqType (*(R : realType)*) :=
+  Equality.Pack (@gen_eqMixin (@expr (*R*) Bool_T)).
 
 Notation "a /\ b" := (and_E [:: a; b]).
 Notation "a \/ b" := (or_E [:: a; b]).
@@ -101,7 +103,7 @@ Notation "a `< b" := (a `<= b /\ a `!= b) (at level 70).
 Notation "a `>= b" := (b `<= a) (at level 70).
 Notation "a `> b" := (b `< a) (at level 70).
 
-Lemma expr_ind' (R : realType) :
+Lemma expr_ind' (*(R : realType)*) :
   forall P : forall s : simple_type, expr s -> Prop,
        (forall s : R, P Real_T (Real s)) ->
        (forall b : bool, P Bool_T (Bool b)) ->
@@ -166,7 +168,7 @@ destruct e.
 Qed.
 
 Section natalia_prod.
-Context {R : realType}.
+(*Context {R : realType}.*)
 
 Lemma natalia_prod_01 : forall (x y : R), 0 <= x <= 1 -> 0 <= y <= 1 -> 0 <= natalia_prod x y <= 1.
 Proof. by move => x y; rewrite /natalia_prod; nra. Qed.
@@ -286,7 +288,7 @@ End natalia_prod.
 Inductive DL := Lukasiewicz | Yager | Godel | product.
 
 Section type_translation.
-Context {R : realType}.
+(*Context {R : realType}.*)
 
 Definition type_translation (t:  simple_type) : Type:=
   match t with
@@ -327,10 +329,10 @@ end.
 End type_translation.
 
 Section bool_translation.
-Context {R : realType}.
+(*Context {R : realType}.*)
 Local Open Scope ring_scope.
 
-Fixpoint bool_translation t (e : @expr R t) : bool_type_translation t :=
+Fixpoint bool_translation t (e : @expr t) : bool_type_translation t :=
   match e in expr t return bool_type_translation t with
   | Bool x => x
   | Real r => r%R
@@ -365,13 +367,13 @@ End bool_translation.
 Notation "[[ e ]]b" := (bool_translation e).
 
 Section goedel_translation.
-Context {R : realType}.
+(*Context {R : realType}.*)
 Local Open Scope ring_scope.
 Variables (l : DL) (p : R).
 
 Locate "[".
 
-Fixpoint translation t (e: @expr R t) {struct e} : type_translation t :=
+Fixpoint translation t (e: @expr t) {struct e} : type_translation t :=
     match e in expr t return type_translation t with
     | Bool true => (1%R : type_translation Bool_T)
     | Bool false => (0%R : type_translation Bool_T)
@@ -421,11 +423,11 @@ where "{[ e ]}" := (translation e).
 End goedel_translation.
 
 Section dl2_translation.
-Context {R : realType}.
+(*Context {R : realType}.*)
 
 Local Open Scope ereal_scope.
 
-Fixpoint dl2_translation t (e : @expr R t) {struct e} : dl2_type_translation t :=
+Fixpoint dl2_translation t (e : @expr t) {struct e} : dl2_type_translation t :=
     match e in expr t return dl2_type_translation t with
     | Bool true => 0
     | Bool false => -oo
@@ -456,7 +458,7 @@ where "{[ e ]}" := (dl2_translation e).
 End dl2_translation.
 
 Section stl_translation.
-Context {R : realType}.
+(*Context {R : realType}.*)
 Variables (p : R) (nu : R).
 Hypothesis p1 : 1 <= p.
 Hypothesis nu0 : 0 < nu.
@@ -518,13 +520,13 @@ Notation "nu .-[[ e ]]_stl" := (stl_translation nu e).
 Notation "[[ e ]]_dl2" := (dl2_translation e).
 
 Section translation_lemmas.
-Context {R : realType}.
+(*Context {R : realType}.*)
 Local Open Scope ring_scope.
 Local Open Scope order_scope.
 Variables (l : DL) (p : R).
 Hypothesis p1 : 1 <= p.
 
-Local Notation "[[ e ]]_ l" := (@translation R l p _ e).
+Local Notation "[[ e ]]_ l" := (@translation l p _ e).
 
 Lemma translations_Network_coincide:
   forall n m (e : expr (Network_T n m)), [[ e ]]_l = [[ e ]]b.
@@ -536,8 +538,8 @@ Lemma translations_Vector_coincide: forall n (e : expr (Vector_T n)),
   [[ e ]]_l = [[ e ]]b.
 Proof.
 dependent induction e => //=.
-by rewrite translations_Network_coincide (IHe2 _ p1 _ e2 erefl JMeq_refl).
-(*Qed.*) Admitted. (* NB(rei): this used to go through when we had R : realType as an axiom *)
+by rewrite translations_Network_coincide (IHe2 p1 _ e2 erefl JMeq_refl).
+Qed.
 
 Lemma translations_Index_coincide: forall n (e : expr (Index_T n)),
   [[ e ]]_l = [[ e ]]b.
@@ -654,7 +656,7 @@ case: l => /=; move => H.
   exact: mem_nth.
 - move/eqP. rewrite /prodR big_map.
   move => h i iEs.
-  apply (@prod1_01 _ (map (@translation R product p (Bool_T)) Es)) => // [e||].
+  apply (@prod1_01 _ (map (@translation product p (Bool_T)) Es)) => // [e||].
   - by move=> /mapP[x _ ->].
   - by apply/eqP; rewrite big_map.
   - by apply/mapP; eexists; last reflexivity; exact: mem_nth.
@@ -719,7 +721,7 @@ have p0 := lt_le_trans ltr01 p1.
 case: l => //=; move => H.
 - move/eqP. rewrite minr10 /sumR.
   rewrite big_map.
-  rewrite (@bigsum_0x _ _ _ Es) => h i.
+  rewrite (@bigsum_0x _ _ Es) => h i.
     by move=> iEs; apply: h; rewrite mem_nth.
   exact: (andP (translate_Bool_T_01 _ _)).1.
 - move/eqP; rewrite minr10 /sumR powR_eq0.
@@ -951,7 +953,7 @@ Admitted.
 End shadow.
 
 Section Lukasiewicz_lemmas.
-Context {R : realType}.
+(*Context {R : realType}.*)
 Variables (p : R).
 
 Local Notation "[[ e ]]_ l" := (translation l p e).
@@ -998,7 +1000,7 @@ Qed.
 End Lukasiewicz_lemmas.
 
 Section Yager_lemmas.
-Context {R : realType}.
+(*Context {R : realType}.*)
 Variables (p : R).
 Hypothesis p1 : 1 <= p.
 
@@ -1274,7 +1276,7 @@ Admitted.
 End Yager_lemmas.
 
 Section Godel_lemmas.
-Context {R : realType}.
+(*Context {R : realType}.*)
 Variables (p : R).
 
 Local Notation "[[ e ]]_ l" := (translation l p e).
@@ -1322,7 +1324,7 @@ Admitted.
 End Godel_lemmas.
 
 Section product_lemmas.
-Context {R : realType}.
+(*Context {R : realType}.*)
 Variables (p : R).
 
 Local Notation "[[ e ]]_ l" := (translation l p e).
@@ -1364,10 +1366,10 @@ Qed.
 End product_lemmas.
 
 Section dl2_lemmas.
-Context {R : realType}.
+(*Context {R : realType}.*)
 Variables (p : R).
 
-Local Notation "[[ e ]]_dl2" := (@dl2_translation R _ e).
+Local Notation "[[ e ]]_dl2" := (@dl2_translation _ e).
 
 Lemma dl2_andC e1 e2 :
  [[ e1 /\ e2 ]]_dl2 = [[ e2 /\ e1 ]]_dl2.
