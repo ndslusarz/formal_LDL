@@ -1,11 +1,15 @@
 Require Import Coq.Program.Equality.
-
 From mathcomp Require Import all_ssreflect all_algebra.
 From mathcomp Require Import lra.
 From mathcomp Require Import all_classical.
 From mathcomp Require Import reals ereal.
 From mathcomp Require Import topology derive normedtype sequences
- exp measure lebesgue_measure lebesgue_integral hoelder. 
+ exp measure lebesgue_measure lebesgue_integral hoelder.
+Require Import LDL_util.
+
+(******************************************************************************)
+(*                                 Logics                                     *)
+(******************************************************************************)
 
 Set Implicit Arguments.
 Unset Strict Implicit.
@@ -16,122 +20,13 @@ Import Order.TTheory.
 Import numFieldTopology.Exports.
 Local Open Scope classical_set_scope.
 
-Reserved Notation "[[ e ]]" (format "[[  e  ]]").
-
-Section hyperbolic_function.
-
-Variable R : realType.
-Local Open Scope ring_scope.
-
-
-Definition sinh (x : R) := (expR x - expR (- x)) / 2.
-Definition cosh (x : R) := (expR x + expR (- x)) / 2.
-Definition tanh (x : R) := sinh x / cosh x.
-
-End hyperbolic_function.
+Reserved Notation "{[ e ]}" (format "{[  e  ]}").
+Reserved Notation "[[ e ]]b" (at level 10, format "[[  e  ]]b").
+Reserved Notation "[[ e ]]_ l" (at level 10, format "[[ e ]]_ l").
+Reserved Notation "nu .-[[ e ]]_stl" (at level 10, format "nu .-[[ e ]]_stl").
+Reserved Notation "[[ e ]]_dl2" (at level 10, format "[[ e ]]_dl2").
 
 Local Open Scope ring_scope.
-
-(*move to a separate file*)
-Lemma sum_01{R : numDomainType} (I : eqType) (s : seq I) (f : I -> R) :
-  (forall i, i \in s -> f i <= 1) -> \sum_(i <- s) f i <= (size s)%:R.
-Proof.
-move=> s01; rewrite -sum1_size natr_sum big_seq [leRHS]big_seq.
-by rewrite ler_sum// => r /s01 /andP[].
-Qed. 
-
-Lemma In_in (I : eqType) (s : seq I) e : e \in s <-> List.In e s.
-Proof.
-elim: s => //= h t ih; split=> [|[<-|/ih] ].
-- by rewrite inE => /predU1P[->|/ih]; [left|right].
-- by rewrite mem_head.
-- by rewrite inE => ->; rewrite orbT.
-Qed.
-
-Lemma maxr01 {R : realType} (x : R) : (maxr x 0 == 1) = (x == 1).
-Proof. rewrite/maxr; case: ifP=>//; lra. Qed.
-
-Lemma minr10 {R : realType} (x : R) : (minr x 1 == 0) = (x == 0).
-Proof. rewrite /minr; case: ifP=>//; lra. Qed.
-
-Lemma prod1 {R : realType} (e1 e2 : R) :
-  0 <= e1 <= 1 -> 0 <= e2 <= 1 -> (e1 * e2 == 1) = ((e1 == 1) && (e2 == 1)).
-Proof.
-nra.
-Qed.
-
-Lemma prod01 {R : realType} [s : seq R] : 
-  (forall e, e \in s -> 0 <= e <= 1) -> (0 <= \prod_(j <- s) j <= 1).
-Proof.
-elim: s => [_|e0].
-- by rewrite big_nil ler01 lexx.
-- move=> s IH es01.
-  rewrite big_cons.
-  have h0 : (0 <= \prod_(j <- s) j <= 1)%R.
-    by apply: IH => e es; apply: es01; rewrite in_cons es orbT.
-  have : (0 <= e0 <= 1)%R.
-    by apply: es01; rewrite in_cons eq_refl.
-  nra.
-Qed.
-
-
-Lemma psumr_eqsize {R : realType} :
-  forall (I : eqType) (r : seq I) [F : I -> R],
-  (forall i : I, F i <= 1)%R ->
-  (\sum_(i <- r) F i = (size r)%:R) <-> forall i, i \in r -> (F i = 1).
-Proof.
-move => I r F h1.
-elim: r.
-- by rewrite big_nil.
-- move => a s IH.
-  split.
-  + have : (\sum_(i <- s) F i <= (size s)%:R)%R.  
-      by apply: sum_01 => i _.
-    rewrite /= le_eqVlt big_cons => /orP[/eqP h|h].
-      rewrite -natr1 addrC h.
-      move/addrI => h' i.
-      rewrite in_cons => /orP[/eqP ->|ils]; first by rewrite h'.
-      exact: IH.1.
-    have: F a + \sum_(j <- s) F j < (size (a :: s))%:R.
-      rewrite /= -nat1r.
-      move: h.
-      set x := \sum_(i <- s) F i.
-      set y := size s.
-      have := h1 a.
-      lra.
-    set x := F a + \sum_(j <- s) F j.
-    set y := ((size (a :: s)))%:R.
-    lra.
-  + move=> h.
-    rewrite /= -nat1r big_cons h.
-      by apply: congr1; apply: IH.2 => i ias; apply: h; rewrite in_cons ias orbT.
-    by rewrite in_cons eq_refl//.
-Qed.
-
-Lemma bigmin_eqP {R : realType}:
-  forall (x : R) [I : eqType] (s : seq I) (F : I -> R),
-  reflect (forall i : I, i \in s -> (x <= F i)) (\big[minr/x]_(i <- s) F i == x).
-Proof.
-move => x I s F.
-have minrl : forall (x y : R), minr x y <= x => //. (* TODO: this should exist *)
-  by move => v w; rewrite /minr; case: ifPn; rewrite ?le_refl -?leNgt.
-apply: (iffP eqP) => [<- i|].
-- elim: s => // a s IH.
-  rewrite in_cons => /orP[/eqP<-|si].
-  + by rewrite big_seq big_cons mem_head minrl.
-  + by rewrite big_cons minC; apply: le_trans (IH si); exact: minrl.
-- elim: s => [h|i l IH h].
-  + by rewrite big_nil.
-  + rewrite big_cons IH ?min_r ?h ?mem_head// => a al.
-    by rewrite h// in_cons al orbT.
-Qed.
-
-Lemma le_pow_01 {R : realType} (x p0 : R ):
-  0 <= x <= 1 -> (0 <= (1 - x) `^ p0).
-Proof.
-by rewrite powR_ge0.
-Qed.
-(*end the move to new document*)
 
 Section partial.
 Context {R : realType}.
@@ -143,7 +38,7 @@ Definition err_vec {R : ringType} n (i : 'I_n) : 'rV[R]_n :=
 Definition partial (i : 'I_n) (a : 'rV[R]_n) :=
   lim (h^-1 * (f (a + h *: err_vec i) - f a) @[h --> (0:R)^'+]).
 
-Search ( (_ <= lim _)%R ). Search ( _ --> _).
+(*Search ( (_ <= lim _)%R ). Search ( _ --> _).*)
 
 End partial.
 
@@ -158,9 +53,8 @@ Inductive comparisons : Type :=
 | le_E : comparisons
 | eq_E : comparisons.
 
-Variable R : realType.
 Section expr.
-
+Context {R : realType}.
 
 Inductive expr : simple_type -> Type :=
   | Real : R -> expr Real_T
@@ -185,11 +79,12 @@ Inductive expr : simple_type -> Type :=
   | lookup_E n: expr (Vector_T n) -> expr (Index_T n) -> expr Real_T
 
   (*comparisons*)
-  | comparisons_E : comparisons -> expr Real_T -> expr Real_T -> expr Bool_T
-.
+  | comparisons_E : comparisons -> expr Real_T -> expr Real_T -> expr Bool_T.
+
 End expr.
 
-Canonical expr_Bool_T_eqType := Equality.Pack (@gen_eqMixin (expr Bool_T)).
+Canonical expr_Bool_T_eqType (R : realType) :=
+  Equality.Pack (@gen_eqMixin (@expr R Bool_T)).
 
 Notation "a /\ b" := (and_E [:: a; b]).
 Notation "a \/ b" := (or_E [:: a; b]).
@@ -206,7 +101,7 @@ Notation "a `< b" := (a `<= b /\ a `!= b) (at level 70).
 Notation "a `>= b" := (b `<= a) (at level 70).
 Notation "a `> b" := (b `< a) (at level 70).
 
-Lemma expr_ind' :
+Lemma expr_ind' (R : realType) :
   forall P : forall s : simple_type, expr s -> Prop,
        (forall s : R, P Real_T (Real s)) ->
        (forall b : bool, P Bool_T (Bool b)) ->
@@ -270,10 +165,130 @@ destruct e.
   * apply H14; eauto. 
 Qed.
 
-Section translation_def.
-Local Open Scope ring_scope.
+Section natalia_prod.
+Context {R : realType}.
 
-Definition type_translation (t: simple_type) : Type:=
+Lemma natalia_prod_01 : forall (x y : R), 0 <= x <= 1 -> 0 <= y <= 1 -> 0 <= natalia_prod x y <= 1.
+Proof. by move => x y; rewrite /natalia_prod; nra. Qed.
+
+Lemma natalia_prod_seq_01 (T : eqType) (f : T -> R) (l0 : seq T) :
+  (forall i, i \in l0 -> 0 <= f i <= 1) -> (0 <= \big[natalia_prod/0]_(i <- l0) f i <= 1).
+Proof.
+elim: l0.
+- by rewrite big_nil lexx ler01.
+- move=> a l0 IH h.
+  rewrite big_cons natalia_prod_01 ?h ?mem_head//.
+  apply: IH => i il0; apply: h.
+  by rewrite in_cons il0 orbT.
+Qed.
+
+Lemma natalia_prod_inv (x y : R) :
+  (0 <= x <= 1) -> (0 <= y <= 1) ->
+    reflect (x = 1 \/ y = 1) (natalia_prod x y == 1).
+Proof.
+move=> x01 y01; apply: (iffP eqP); rewrite /natalia_prod; nra.
+Qed.
+
+Lemma natalia_prod_inv0 (x y : R) :
+  (0 <= x <= 1) -> (0 <= y <= 1) ->
+    reflect (x = 0 /\ y = 0) (natalia_prod x y == 0).
+Proof.
+move=> x01 y01; apply: (iffP eqP); rewrite /natalia_prod; nra.
+Qed.
+
+Lemma help (x r : R) : 0 <= x -> 0 < r -> (1 - x `^ r^-1 < 0) -> (1 < x).
+Proof.
+have {1}->: 1 = 1 `^ r^-1 by rewrite powR1.
+rewrite subr_lt0 => x0 r0.
+move/(@gt0_ltr_powR _ _ r0 _).
+rewrite !in_itv/= !andbT !powR_ge0 -!powRrM 
+!mulVf ?neq_lt ?r0 ?orbT// powR1 powRr1//.
+by apply.
+Qed.
+
+Lemma help' (x r : R) : 0 <= x -> 0 < r -> ~~ (1 - x `^ r^-1 < 0) -> x <= 1.
+Proof.
+have {1}->: 1 = 1 `^ r^-1 by rewrite powR1.
+rewrite subr_lt0 -leNgt => x0 r0.
+move/(@gt0_ler_powR _ r (ltW r0)). 
+rewrite nnegrE. 
+rewrite !powR_ge0 -!powRrM !mulVf ?neq_lt ?r0 ?orbT// powR1 powRr1//.
+apply. 
+  exact.
+  by rewrite nnegrE.
+Qed.
+
+Lemma bigsum_0x (T : eqType) f :
+  forall [s : seq T], (forall e, e \in s -> 0 <= f e) ->
+    (\sum_(j <- s) f j == 0 <-> (forall e, e \in s -> f e = (0:R))).
+Proof.
+elim.
+- by rewrite big_nil.
+- move => a l0 h1 h2 .
+  rewrite big_cons big_seq.
+  rewrite paddr_eq0; last 2 first.
+  + by apply: h2; rewrite mem_head.
+  + by apply: sumr_ge0 => i il0; apply: h2; rewrite in_cons il0 orbT.
+  split.
+  + move/andP => [/eqP a0].
+    rewrite -big_seq h1 => h3 e.
+      by rewrite in_cons => /orP[/eqP->//|el0]; exact: h3.
+    by apply: h2; rewrite in_cons e orbT.
+  + move=> h3.
+    apply/andP; split.
+      by apply/eqP; apply: h3; rewrite mem_head.
+    rewrite psumr_eq0.
+      by apply/allP => x xl0; apply/implyP => _; apply/eqP; apply: h3; rewrite in_cons xl0 orbT.
+    by move=> i xl0; apply: h2; rewrite in_cons xl0 orbT.
+Qed.
+
+(* NB: not used *)
+Lemma bigmax_le' : (* ab: not needed, but maybe worth having instead of bigmax_le? *)
+  forall [I : eqType] (r : seq I) (f : I -> R) (P : pred I) (x0 x : R),
+    reflect (x0 <= x /\ forall i, i \in r -> P i -> f i <= x)
+      (\big[Order.max/x0]_(i <- r | P i) f i <= x).
+Proof.
+move=> I r f P x0.
+elim: r => [x|]; first by rewrite big_nil; apply: (iffP idP);move=>//[->//].
+move=> a l0 IH x.
+apply: (iffP idP).
+- rewrite big_cons {1}/maxr.
+  case: ifPn => Pa.
+  + case: ifPn => [fabig h|].
+    * have /IH[-> h'] := h; split=>//i.
+      rewrite in_cons => /orP[/eqP -> _|il0 Pi].
+        by apply: le_trans (ltW fabig) h.
+      exact: h'.
+    rewrite -leNgt => fabig fax.
+    have /IH[x0fa h] := fabig.
+    split; first apply: (le_trans x0fa fax).
+    move=> i.
+    rewrite in_cons => /orP[/eqP ->//|il0 Pi].
+    apply: le_trans.
+    apply: h => //.
+    apply: fax.
+  + move=> /IH[-> h]; split=>// i.
+    rewrite in_cons => /orP[/eqP ->|]; first by move: Pa=> /[swap]->.
+    exact: h.
+- move=>[x0x h].
+  have h' : forall i, i \in l0 -> P i -> f i <= x.
+    by move=> i il0 Pi; rewrite h ?in_cons ?il0 ?orbT.
+  have /IH h'' := conj x0x h'.
+  rewrite big_cons {1}/maxr.
+  case: ifPn => Pa//.
+  case: ifPn => //_.
+  apply: h => //.
+  exact: mem_head.
+Qed.
+
+End natalia_prod.
+
+Inductive DL := Lukasiewicz | Yager | Godel | product.
+
+Section type_translation.
+Context {R : realType}.
+
+Definition type_translation (t:  simple_type) : Type:=
   match t with
   | Bool_T => R
   | Real_T => R
@@ -282,178 +297,7 @@ Definition type_translation (t: simple_type) : Type:=
   | Network_T n m => n.-tuple R -> m.-tuple R
 end.
 
-Inductive DL := Lukasiewicz | Yager | Godel | product.
-Variable (l : DL).
-Variable (p : R).
-Variable (p1 : 1 <= p).
-Variable (nu : R).
-Variable (nu0 : 0 < nu).
-
-Definition natalia_prod : R -> R -> R := (fun a1 a2 => a1 + a2 - a1 * a2).
-
-Definition sumR (Es : seq R) : R := \sum_(i <- Es) i.
-Definition prodR (Es : seq R) : R := \prod_(i <- Es) i.
-Definition natalia_prodR (Es : seq R) : R := \big[natalia_prod/0]_(i <- Es) i.
-Definition minR (Es : seq R) : R := \big[minr/1]_(i <- Es) i.
-Definition maxR (Es : seq R) : R := \big[maxr/0]_(i <- Es) i.
-
-
-Fixpoint translation t (e: expr t) {struct e} : type_translation t :=
-    match e in expr t return type_translation t with
-    | Bool true => (1%R : type_translation Bool_T)
-    | Bool false => (0%R : type_translation Bool_T)
-    | Real r => r%R
-    | Index n i => i
-    | Vector n t => t
-
-    | and_E Es =>
-        match l with
-        | Lukasiewicz => maxr (sumR (map (@translation _) Es)- (size Es)%:R+1) 0
-        | Yager => maxr (1 - ((sumR (map (fun E => (1 - ([[ E ]]: type_translation Bool_T))`^p)%R Es))`^p^-1)) 0
-        | Godel => minR (map (@translation _) Es)
-        | product => prodR (map (@translation _) Es)
-        end
-    | or_E Es =>
-        match l with
-        | Lukasiewicz => minr (sumR (map (@translation _) Es)) 1
-        | Yager => minr ((sumR (map (fun E => ([[ E ]] : type_translation Bool_T)`^p) Es))`^p^-1) 1
-        | Godel => maxR (map (@translation _) Es)
-        | product => natalia_prodR (map (@translation _) Es)
-        end
-    | impl_E E1 E2 =>
-        match l with
-        | Lukasiewicz => minr (1 - [[ E1 ]] + [[ E2 ]]) 1
-        | Yager => minr (((1 - [[ E1 ]]) `^ p + [[ E2 ]] `^ p) `^ (p^-1)) 1
-        | Godel => maxr (1 - [[ E1 ]]) [[ E2 ]]
-        | product => 1 - [[ E1 ]] + [[ E1 ]] * [[ E2 ]]
-        end
-
-    | `~ E1 => 1 - [[ E1 ]]
-
-    (*simple arithmetic*)
-    | E1 `+ E2 => [[ E1 ]] + [[ E2 ]]
-    | E1 `* E2 => [[ E1 ]] * [[ E2 ]]
-    | `- E1 => - [[ E1 ]]
-
-    (*comparisons*)
-    | E1 `== E2 => if [[ E1 ]] == -[[ E2 ]] then ([[ E1 ]] == [[ E2 ]])%:R else maxr (1 - `|([[ E1 ]] - [[ E2 ]]) / ([[ E1 ]] + [[ E2 ]])|) 0
-    | E1 `<= E2 => if [[ E1 ]] == -[[ E2 ]] then ([[ E1 ]] <= [[ E2 ]])%R%:R else maxr (1 - maxr (([[ E1 ]] - [[ E2 ]]) / `|[[ E1 ]] + [[ E2 ]]|) 0) 0
-
-    | net n m f => f
-    | app_net n m f v => (translation f) (translation v)
-    | lookup_E n v i => tnth (translation v) (translation i)
-    end
-where "[[ e ]]" := (translation e).
-
-Definition sumE (Es : seq \bar R) : \bar R := \sum_(i <- Es) i.
-
-Definition dl2_type_translation (t: simple_type) : Type:=
-  match t with
-  | Bool_T => \bar R
-  | Real_T => R
-  | Vector_T n => n.-tuple R
-  | Index_T n => 'I_n
-  | Network_T n m => n.-tuple R -> m.-tuple R
-end.
-
-Open Scope ereal_scope.
-
-Reserved Notation "[[ e ]]".
-Fixpoint dl2_translation t (e: expr t) {struct e} : dl2_type_translation t :=
-    match e in expr t return dl2_type_translation t with
-    | Bool true => 0
-    | Bool false => -oo
-    | Real r => r
-    | Index n i => i
-    | Vector n t => t
-
-    | and_E Es => sumE (map (@dl2_translation _) Es)  
-    | or_E Es => (-1^+(1+length Es)%nat * (sumE (map (@dl2_translation _) Es)))
-    | impl_E E1 E2 => (+oo)%E (* FIX: this case is not covered by DL2 *)
-    | `~ E1 => (+oo)%E (* FIX: this case is not covered by DL2 *)
-
-    (*simple arithmetic*)
-    | E1 `+ E2 => ([[ E1 ]] + [[ E2 ]])%R
-    | E1 `* E2 => ([[ E1 ]] * [[ E2 ]])%R
-    | `- E1 => (- [[ E1 ]])%R
-
-    (*comparisons*)
-    | E1 `== E2 => (- `| [[ E1 ]] - [[ E2 ]]|)%:E
-    | E1 `<= E2 => (- maxr ([[ E1 ]] - [[ E2 ]]) 0)%:E
-
-    | net n m f => f
-    | app_net n m f v => [[ f ]] [[ v ]]
-    | lookup_E n v i => tnth [[ v ]] [[ i ]]
-    end
-where "[[ e ]]" := (dl2_translation e). 
-
-Definition stl_type_translation (t: simple_type) : Type:=
-  match t with
-  | Bool_T => \bar R
-  | Real_T => R
-  | Vector_T n => n.-tuple R
-  | Index_T n => 'I_n
-  | Network_T n m => n.-tuple R -> m.-tuple R
-end.
-
-Definition expeR (x : \bar R) := 
-  match x with 
-  | EFin r => (expR r)%:E
-  | +oo => +oo
-  | -oo => 0
-  end.
-
-Reserved Notation "[[ e ]]".
-Fixpoint stl_translation t (e: expr t) : stl_type_translation t :=
-    match e in expr t return stl_type_translation t with
-    | Bool true => +oo
-    | Bool false => -oo 
-    | Real r => r
-    | Index n i => i
-    | Vector n t => t
-
-    | and_E Es => 
-        let A := map (@stl_translation _) Es in
-        let a_min: \bar R := foldr mine (+oo) A in
-        let a'_i (a_i: \bar R) := (a_i - a_min) * (fine a_min)^-1%:E in
-        if a_min < 0 then  
-          sumE (map (fun a => a_min * expeR (a'_i a) * expeR (nu%:E * a'_i a)) A) *
-          (fine (sumE (map (fun a => expeR (nu%:E * a'_i a)) A)))^-1%:E
-        else if a_min > 0 then 
-          sumE (map (fun a => a * expeR (-nu%:E * a'_i a)) A) *
-          (fine (sumE (map (fun a => expeR (nu%:E * (a'_i a))) A)))^-1%:E
-             else 0
-    | or_E Es => (* TODO: double check *)
-        let A := map (@stl_translation _) Es in
-        let a_max: \bar R := - (foldr maxe (+oo)%E A) in
-        let a'_i (a_i: \bar R) := (- a_i - a_max) * (fine a_max)^-1%:E  in
-        if a_max < 0 then 
-          sumE (map (fun a => a_max * expeR (a'_i a) * expeR (nu%:E * a'_i a)) A) *
-          (fine (sumE (map (fun a => expeR (nu%:E * (a'_i a))) A)))^-1%:E
-        else if a_max > 0 then 
-          sumE (map (fun a => a * expeR (-nu%:E * (a'_i a))) A) *
-          (fine (sumE (map (fun a => expeR (nu%:E * (a'_i a))) A)))^-1%:E
-             else 0
-    | impl_E E1 E2 => [[ E1 ]] - [[ E2 ]] (*placeholder for now*)
-
-    | `~ E1 => (- [[ E1 ]])%E
-
-    (*simple arithmetic*)
-    | E1 `+ E2 => ([[ E1 ]] + [[ E2 ]])%R
-    | E1 `* E2 => ([[ E1 ]] * [[ E2 ]])%R
-    | `- E1 => (- [[ E1 ]])%R
-
-    (*comparisons*)
-    | E1 `== E2 => (- `| [[ E1 ]] - [[ E2 ]]|)%:E
-    | E1 `<= E2 => (- maxr ([[ E1 ]] - [[ E2 ]]) 0)%:E
-
-    | net n m f => f
-    | app_net n m f v => [[ f ]] [[ v ]]
-    | lookup_E n v i => tnth [[ v ]] [[ i ]]
-    end
-where "[[ e ]]" := (stl_translation e).
-
-Definition bool_type_translation (t: simple_type) : Type:=
+Definition bool_type_translation (t : simple_type) : Type:=
   match t with
   | Bool_T => bool
   | Real_T => R
@@ -462,18 +306,38 @@ Definition bool_type_translation (t: simple_type) : Type:=
   | Network_T n m => n.-tuple R -> m.-tuple R
   end.
 
+Definition dl2_type_translation (t : simple_type) : Type:=
+  match t with
+  | Bool_T => \bar R (* TODO: this should b [-oo,0] *)
+  | Real_T => R
+  | Vector_T n => n.-tuple R
+  | Index_T n => 'I_n
+  | Network_T n m => n.-tuple R -> m.-tuple R
+end.
 
+Definition stl_type_translation (t : simple_type) : Type:=
+  match t with
+  | Bool_T => \bar R
+  | Real_T => R
+  | Vector_T n => n.-tuple R
+  | Index_T n => 'I_n
+  | Network_T n m => n.-tuple R -> m.-tuple R
+end.
+
+End type_translation.
+
+Section bool_translation.
+Context {R : realType}.
 Local Open Scope ring_scope.
 
-Reserved Notation "<< e >>".
-Fixpoint bool_translation t (e: expr t) : bool_type_translation t :=
+Fixpoint bool_translation t (e : @expr R t) : bool_type_translation t :=
   match e in expr t return bool_type_translation t with
   | Bool x => x
   | Real r => r%R
   | Index n i => i
   | Vector n t => t
 
-  | and_E Es => foldr ( andb ) true (map (@bool_translation Bool_T) Es)
+  | and_E Es => foldr andb true (map (@bool_translation Bool_T) Es)
   | or_E Es => foldr orb false (map (@bool_translation Bool_T) Es)
   | impl_E e1 e2 => << e1 >> ==> << e2 >>
   | `~ E1 => ~~ << E1 >>
@@ -490,111 +354,203 @@ Fixpoint bool_translation t (e: expr t) : bool_type_translation t :=
   | app_net n m f v => << f >> << v >>
   | lookup_E n v i => tnth << v >> << i >>
   end
-where "<< e >>" := (bool_translation e). 
+where "<< e >>" := (bool_translation e).
 
-End translation_def.
+Lemma bool_translation_andE (Es : seq (expr Bool_T)) :
+  bool_translation (and_E Es) = \big[andb/true]_(x <- Es) bool_translation x.
+Proof. by rewrite /= foldrE big_map. Qed.
 
-Reserved Notation "[[ e ]]_ l" (at level 10, format "[[ e ]]_ l").
-Reserved Notation "nu .-[[ e ]]_stl" (at level 10, format "nu .-[[ e ]]_stl").
-Reserved Notation "[[ e ]]_dl2" (at level 10, format "[[ e ]]_dl2").
+End bool_translation.
+
+Notation "[[ e ]]b" := (bool_translation e).
+
+Section goedel_translation.
+Context {R : realType}.
+Local Open Scope ring_scope.
+Variables (l : DL) (p : R).
+
+Locate "[".
+
+Fixpoint translation t (e: @expr R t) {struct e} : type_translation t :=
+    match e in expr t return type_translation t with
+    | Bool true => (1%R : type_translation Bool_T)
+    | Bool false => (0%R : type_translation Bool_T)
+    | Real r => r%R
+    | Index n i => i
+    | Vector n t => t
+
+    | and_E Es =>
+        match l with
+        | Lukasiewicz => maxr (sumR (map (@translation _) Es)- (size Es)%:R+1) 0
+        | Yager => maxr (1 - ((sumR (map (fun E => (1 - ({[ E ]}: type_translation Bool_T))`^p)%R Es))`^p^-1)) 0
+        | Godel => minR (map (@translation _) Es)
+        | product => prodR (map (@translation _) Es)
+        end
+    | or_E Es =>
+        match l with
+        | Lukasiewicz => minr (sumR (map (@translation _) Es)) 1
+        | Yager => minr ((sumR (map (fun E => ({[ E ]} : type_translation Bool_T)`^p) Es))`^p^-1) 1
+        | Godel => maxR (map (@translation _) Es)
+        | product => natalia_prodR (map (@translation _) Es)
+        end
+    | impl_E E1 E2 =>
+        match l with
+        | Lukasiewicz => minr (1 - {[ E1 ]} + {[ E2 ]}) 1
+        | Yager => minr (((1 - {[ E1 ]}) `^ p + {[ E2 ]} `^ p) `^ (p^-1)) 1
+        | Godel => maxr (1 - {[ E1 ]}) {[ E2 ]}
+        | product => 1 - {[ E1 ]} + {[ E1 ]} * {[ E2 ]}
+        end
+
+    | `~ E1 => 1 - {[ E1 ]}
+
+    (*simple arithmetic*)
+    | E1 `+ E2 => {[ E1 ]} + {[ E2 ]}
+    | E1 `* E2 => {[ E1 ]} * {[ E2 ]}
+    | `- E1 => - {[ E1 ]}
+
+    (*comparisons*)
+    | E1 `== E2 => if {[ E1 ]} == -{[ E2 ]} then ({[ E1 ]} == {[ E2 ]})%:R else maxr (1 - `|({[ E1 ]} - {[ E2 ]}) / ({[ E1 ]} + {[ E2 ]})|) 0
+    | E1 `<= E2 => if {[ E1 ]} == -{[ E2 ]} then ({[ E1 ]} <= {[ E2 ]})%R%:R else maxr (1 - maxr (({[ E1 ]} - {[ E2 ]}) / `|{[ E1 ]} + {[ E2 ]}|) 0) 0
+
+    | net n m f => f
+    | app_net n m f v => (translation f) (translation v)
+    | lookup_E n v i => tnth (translation v) (translation i)
+    end
+where "{[ e ]}" := (translation e).
+
+End goedel_translation.
+
+Section dl2_translation.
+Context {R : realType}.
+
+Local Open Scope ereal_scope.
+
+Fixpoint dl2_translation t (e : @expr R t) {struct e} : dl2_type_translation t :=
+    match e in expr t return dl2_type_translation t with
+    | Bool true => 0
+    | Bool false => -oo
+    | Real r => r
+    | Index n i => i
+    | Vector n t => t
+
+    | and_E Es => sumE (map (@dl2_translation _) Es)
+    | or_E Es => (-1^+(1+length Es)%nat * (sumE (map (@dl2_translation _) Es)))
+    | impl_E E1 E2 => (+oo)%E (* FIX: this case is not covered by DL2 *)
+    | `~ E1 => (+oo)%E (* FIX: this case is not covered by DL2 *)
+
+    (*simple arithmetic*)
+    | E1 `+ E2 => ({[ E1 ]} + {[ E2 ]})%R
+    | E1 `* E2 => ({[ E1 ]} * {[ E2 ]})%R
+    | `- E1 => (- {[ E1 ]})%R
+
+    (*comparisons*)
+    | E1 `== E2 => (- `| {[ E1 ]} - {[ E2 ]}|)%:E
+    | E1 `<= E2 => (- maxr ({[ E1 ]} - {[ E2 ]}) 0)%:E
+
+    | net n m f => f
+    | app_net n m f v => {[ f ]} {[ v ]}
+    | lookup_E n v i => tnth {[ v ]} {[ i ]}
+    end
+where "{[ e ]}" := (dl2_translation e).
+
+End dl2_translation.
+
+Section stl_translation.
+Context {R : realType}.
+Variables (p : R) (nu : R).
+Hypothesis p1 : 1 <= p.
+Hypothesis nu0 : 0 < nu.
+
+Local Open Scope ereal_scope.
+
+Fixpoint stl_translation t (e: expr t) : stl_type_translation t :=
+    match e in expr t return stl_type_translation t with
+    | Bool true => +oo
+    | Bool false => -oo
+    | Real r => r
+    | Index n i => i
+    | Vector n t => t
+
+    | and_E Es =>
+        let A := map (@stl_translation _) Es in
+        let a_min: \bar R := foldr mine (+oo) A in
+        let a'_i (a_i: \bar R) := (a_i - a_min) * (fine a_min)^-1%:E in
+        if a_min < 0 then
+          sumE (map (fun a => a_min * expeR (a'_i a) * expeR (nu%:E * a'_i a)) A) *
+          (fine (sumE (map (fun a => expeR (nu%:E * a'_i a)) A)))^-1%:E
+        else if a_min > 0 then
+          sumE (map (fun a => a * expeR (-nu%:E * a'_i a)) A) *
+          (fine (sumE (map (fun a => expeR (nu%:E * (a'_i a))) A)))^-1%:E
+             else 0
+    | or_E Es => (* TODO: double check *)
+        let A := map (@stl_translation _) Es in
+        let a_max: \bar R := - (foldr maxe (+oo)%E A) in
+        let a'_i (a_i: \bar R) := (- a_i - a_max) * (fine a_max)^-1%:E  in
+        if a_max < 0 then
+          sumE (map (fun a => a_max * expeR (a'_i a) * expeR (nu%:E * a'_i a)) A) *
+          (fine (sumE (map (fun a => expeR (nu%:E * (a'_i a))) A)))^-1%:E
+        else if a_max > 0 then
+          sumE (map (fun a => a * expeR (-nu%:E * (a'_i a))) A) *
+          (fine (sumE (map (fun a => expeR (nu%:E * (a'_i a))) A)))^-1%:E
+             else 0
+    | impl_E E1 E2 => {[ E1 ]} - {[ E2 ]} (*placeholder for now*)
+
+    | `~ E1 => (- {[ E1 ]})%E
+
+    (*simple arithmetic*)
+    | E1 `+ E2 => ({[ E1 ]} + {[ E2 ]})%R
+    | E1 `* E2 => ({[ E1 ]} * {[ E2 ]})%R
+    | `- E1 => (- {[ E1 ]})%R
+
+    (*comparisons*)
+    | E1 `== E2 => (- `| {[ E1 ]} - {[ E2 ]}|)%:E
+    | E1 `<= E2 => (- maxr ({[ E1 ]} - {[ E2 ]}) 0)%:E
+
+    | net n m f => f
+    | app_net n m f v => {[ f ]} {[ v ]}
+    | lookup_E n v i => tnth {[ v ]} {[ i ]}
+    end
+where "{[ e ]}" := (stl_translation e).
+
+End stl_translation.
+
+Notation "nu .-[[ e ]]_stl" := (stl_translation nu e).
+Notation "[[ e ]]_dl2" := (dl2_translation e).
 
 Section translation_lemmas.
+Context {R : realType}.
 Local Open Scope ring_scope.
 Local Open Scope order_scope.
+Variables (l : DL) (p : R).
+Hypothesis p1 : 1 <= p.
 
-Variable (l : DL).
-Variable (p : R).
-Variable (p1 : 1 <= p).
-
-Local Notation "[[ e ]]_ l" := (translation l p e).
-Local Notation "<< e >>_ l" := (bool_translation e) (at level 10, format "<< e >>_ l").
-Local Notation "nu .-[[ e ]]_stl" := (stl_translation nu e) (at level 10).
-Local Notation "[[ e ]]_dl2" := (dl2_translation e) (at level 10, format "[[ e ]]_dl2").
+Local Notation "[[ e ]]_ l" := (@translation R l p _ e).
 
 Lemma translations_Network_coincide:
-  forall n m (e : expr (Network_T n m)),
-    [[ e ]]_l = << e >>_l.
+  forall n m (e : expr (Network_T n m)), [[ e ]]_l = [[ e ]]b.
 Proof.
 dependent induction e => //=.
 Qed.
 
 Lemma translations_Vector_coincide: forall n (e : expr (Vector_T n)),
-  [[ e ]]_l = << e >>_l.
+  [[ e ]]_l = [[ e ]]b.
 Proof.
 dependent induction e => //=.
-by rewrite translations_Network_coincide (IHe2 p1 _ e2 erefl JMeq_refl).
-Qed.
+by rewrite translations_Network_coincide (IHe2 _ p1 _ e2 erefl JMeq_refl).
+(*Qed.*) Admitted. (* NB(rei): this used to go through when we had R : realType as an axiom *)
 
 Lemma translations_Index_coincide: forall n (e : expr (Index_T n)),
-  [[ e ]]_l = << e >>_l.
+  [[ e ]]_l = [[ e ]]b.
 Proof.
 dependent induction e => //=.
 Qed.
 
 Lemma translations_Real_coincide (e : expr Real_T):
-  [[ e ]]_l = << e >>_l.
+  [[ e ]]_l = [[ e ]]b.
 Proof.
 dependent induction e => //=;
 rewrite ?(IHe1 e1 erefl JMeq_refl) ?(IHe2 e2 erefl JMeq_refl) ?(IHe e erefl JMeq_refl) //=.
 by rewrite translations_Vector_coincide translations_Index_coincide.
-Qed.
-
-(* NB(rei): this lemma exists in MathComp-Analysis but maybe in a slightly
-   different form depending on your version, might be removed at to some point
-   but no hurry *)
-Lemma gt0_ltr_powR (r : R) : 0 < r ->
-  {in `[0, +oo[ &, {homo (@powR R) ^~ r : x y / x < y >-> x < y}}.
-Proof.
-move=> r0 x y; rewrite !in_itv/= !andbT !le_eqVlt => /predU1P[<-|x0].
-  move=> /predU1P[<-|y0 _]; first by rewrite ltxx//.
-  by rewrite powR0 ?(gt_eqF r0)// powR_gt0.
-move=> /predU1P[<-|y0]; first rewrite ltNge ltW//.
-by rewrite /powR !gt_eqF// ltr_expR ltr_pmul2l// ltr_ln.
-Qed.
-
-Lemma prod1_01 :
-  forall [s : seq R], (forall e, e \in s -> 0 <= e <= 1) ->
-    (\prod_(j <- s) j = 1 <-> (forall e, e \in s -> e = (1:R))).
-Proof.
-elim.
-- by rewrite big_nil.
-- move=> e s IH h.
-  rewrite big_cons.
-  split.
-  + move/eqP.
-    rewrite prod1; last 2 first.
-      by apply: h; rewrite in_cons eq_refl.
-      by apply: prod01 => e0 e0s; apply: h; rewrite in_cons e0s orbT.
-    move/andP => [/eqP e1] /eqP.
-    rewrite IH; last first.
-      by move=> e0 e0s; apply: h; rewrite in_cons e0s orbT.
-    move=> h' e0.
-    rewrite in_cons => /orP [/eqP -> //|].
-    apply: h'.
-  + move=> es1. 
-    apply /eqP. 
-    rewrite prod1; last 2 first.
-    - by apply: h; rewrite in_cons eq_refl.
-    - by apply: prod01 => e0 e0s; apply: h; rewrite in_cons e0s orbT.
-    apply/andP; split. 
-    - by apply/eqP; apply: es1; rewrite in_cons eq_refl.
-    - apply/eqP; rewrite IH => e0 e0s.
-        by apply es1; rewrite in_cons e0s orbT.
-      by apply: h; rewrite in_cons e0s orbT.
-Qed.
-
-Lemma natalia_prod_01 : forall (x y : R), 0 <= x <= 1 -> 0 <= y <= 1 -> 0 <= natalia_prod x y <= 1.
-Proof. by move => x y; rewrite /natalia_prod; nra. Qed.
-
-Lemma natalia_prod_seq_01 (T : eqType) (f : T -> R) (l0 : seq T) :
-  (forall i, i \in l0 -> 0 <= f i <= 1) -> (0 <= \big[natalia_prod/0]_(i <- l0) f i <= 1).
-Proof.
-elim: l0.
-- by rewrite big_nil lexx ler01.
-- move=> a l0 IH h.
-  rewrite big_cons natalia_prod_01 ?h ?mem_head//.
-  apply: IH => i il0; apply: h.
-  by rewrite in_cons il0 orbT.
 Qed.
 
 Lemma translate_Bool_T_01 dl (e : expr Bool_T) :
@@ -662,29 +618,6 @@ dependent induction e using expr_ind'.
   - by rewrite le_maxr lexx orbT/= le_maxl ler01 gerBl// normr_ge0 andTb.
 Qed.
 
-Lemma help (x r : R) : 0 <= x -> 0 < r -> (1 - x `^ r^-1 < 0) -> (1 < x).
-Proof.
-have {1}->: 1 = 1 `^ r^-1 by rewrite powR1.
-rewrite subr_lt0 => x0 r0.
-move/(@gt0_ltr_powR _ r0 _).
-rewrite !in_itv/= !andbT !powR_ge0 -!powRrM 
-!mulVf ?neq_lt ?r0 ?orbT// powR1 powRr1//.
-by apply.
-Qed.
-
-Lemma help' (x r : R) : 0 <= x -> 0 < r -> ~~ (1 - x `^ r^-1 < 0) -> x <= 1.
-Proof.
-have {1}->: 1 = 1 `^ r^-1 by rewrite powR1.
-rewrite subr_lt0 -leNgt => x0 r0.
-move/(@gt0_ler_powR _ r (ltW r0)). 
-rewrite nnegrE. 
-rewrite !powR_ge0 -!powRrM !mulVf ?neq_lt ?r0 ?orbT// powR1 powRr1//.
-apply. 
-  exact.
-  by rewrite nnegrE.
-Qed.
-
-
 Lemma nary_inversion_andE1 (Es : seq (expr Bool_T) ) :
   [[ and_E Es ]]_ l = 1 -> (forall i, i < size Es -> [[ nth (Bool false) Es i ]]_ l = 1).
 Proof.
@@ -721,7 +654,7 @@ case: l => /=; move => H.
   exact: mem_nth.
 - move/eqP. rewrite /prodR big_map.
   move => h i iEs.
-  apply (@prod1_01 (map (@translation product p (Bool_T)) Es)) => // [e||].
+  apply (@prod1_01 _ (map (@translation R product p (Bool_T)) Es)) => // [e||].
   - by move=> /mapP[x _ ->].
   - by apply/eqP; rewrite big_map.
   - by apply/mapP; eexists; last reflexivity; exact: mem_nth.
@@ -747,13 +680,6 @@ case: l => //=; move => H.
   rewrite /prodR big_map prodf_seq_eq0 => /hasP[e eEs/= /eqP e0].
   move/(nthP (Bool false)) : eEs => [i iEs ie].
   by exists i; rewrite ie.
-Qed.
-
-Lemma natalia_prod_inv (x y : R) :
-  (0 <= x <= 1) -> (0 <= y <= 1) ->
-    reflect (x = 1 \/ y = 1) (natalia_prod x y == 1).
-Proof.
-move=> x01 y01; apply: (iffP eqP); rewrite /natalia_prod; nra.
 Qed.
 
 Lemma nary_inversion_orE1 Es :
@@ -785,76 +711,6 @@ case: l => //=; move => H.
     * by move/IH => [x ?]; exists x.+1.
 Qed.
 
-Lemma bigsum_0x (T : eqType) f :
-  forall [s : seq T], (forall e, e \in s -> 0 <= f e) ->
-    (\sum_(j <- s) f j == 0 <-> (forall e, e \in s -> f e = (0:R))).
-Proof.
-elim.
-- by rewrite big_nil.
-- move => a l0 h1 h2 .
-  rewrite big_cons big_seq.
-  rewrite paddr_eq0; last 2 first.
-  + by apply: h2; rewrite mem_head.
-  + by apply: sumr_ge0 => i il0; apply: h2; rewrite in_cons il0 orbT.
-  split.
-  + move/andP => [/eqP a0].
-    rewrite -big_seq h1 => h3 e.
-      by rewrite in_cons => /orP[/eqP->//|el0]; exact: h3.
-    by apply: h2; rewrite in_cons e orbT.
-  + move=> h3.
-    apply/andP; split.
-      by apply/eqP; apply: h3; rewrite mem_head.
-    rewrite psumr_eq0.
-      by apply/allP => x xl0; apply/implyP => _; apply/eqP; apply: h3; rewrite in_cons xl0 orbT.
-    by move=> i xl0; apply: h2; rewrite in_cons xl0 orbT.
-Qed.
-
-Lemma bigmax_le': (* ab: not needed, but maybe worth having instead of bigmax_le? *)
-  forall [I : eqType] (r : seq I) (f : I -> R) (P : pred I) (x0 x : R),
-    reflect (x0 <= x /\ forall i, i \in r -> P i -> f i <= x)
-      (\big[Order.max/x0]_(i <- r | P i) f i <= x).
-Proof.
-move=> I r f P x0.
-elim: r => [x|]; first by rewrite big_nil; apply: (iffP idP);move=>//[->//].
-move=> a l0 IH x.
-apply: (iffP idP).
-- rewrite big_cons {1}/maxr.
-  case: ifPn => Pa.
-  + case: ifPn => [fabig h|].
-    * have /IH[-> h'] := h; split=>//i.
-      rewrite in_cons => /orP[/eqP -> _|il0 Pi].
-        by apply: le_trans (ltW fabig) h.
-      exact: h'.
-    rewrite -leNgt => fabig fax.
-    have /IH[x0fa h] := fabig.
-    split; first apply: (le_trans x0fa fax).
-    move=> i.
-    rewrite in_cons => /orP[/eqP ->//|il0 Pi].
-    apply: le_trans.
-    apply: h => //.
-    apply: fax.
-  + move=> /IH[-> h]; split=>// i.
-    rewrite in_cons => /orP[/eqP ->|]; first by move: Pa=> /[swap]->.
-    exact: h.
-- move=>[x0x h].
-  have h' : forall i, i \in l0 -> P i -> f i <= x.
-    by move=> i il0 Pi; rewrite h ?in_cons ?il0 ?orbT.
-  have /IH h'' := conj x0x h'.
-  rewrite big_cons {1}/maxr.
-  case: ifPn => Pa//.
-  case: ifPn => //_.
-  apply: h => //.
-  exact: mem_head.
-Qed.
-
-Lemma natalia_prod_inv0 (x y : R) :
-  (0 <= x <= 1) -> (0 <= y <= 1) ->
-    reflect (x = 0 /\ y = 0) (natalia_prod x y == 0).
-Proof.
-move=> x01 y01; apply: (iffP eqP); rewrite /natalia_prod; nra.
-Qed.
-
-
 Lemma nary_inversion_orE0 Es :
     [[ or_E Es ]]_ l  = 0 -> (forall i, (i < size Es)%nat -> [[ nth (Bool false) Es i ]]_ l = 0).
 Proof.
@@ -863,7 +719,7 @@ have p0 := lt_le_trans ltr01 p1.
 case: l => //=; move => H.
 - move/eqP. rewrite minr10 /sumR.
   rewrite big_map.
-  rewrite (@bigsum_0x _ _ Es) => h i.
+  rewrite (@bigsum_0x _ _ _ Es) => h i.
     by move=> iEs; apply: h; rewrite mem_nth.
   exact: (andP (translate_Bool_T_01 _ _)).1.
 - move/eqP; rewrite minr10 /sumR powR_eq0.
@@ -944,7 +800,7 @@ Qed.
 
 Lemma soundness e b :
   l <> Lukasiewicz -> l <> Yager ->
-    [[ e ]]_ l = [[ Bool b ]]_ l -> << e >>_ l = b.
+    [[ e ]]_ l = [[ Bool b ]]_ l -> [[ e ]]b = b.
 Proof.
 dependent induction e using expr_ind' => ll ly.
 - move: b b0 => [] [] //=; lra.
@@ -1023,32 +879,30 @@ dependent induction e using expr_ind' => ll ly.
 
 Admitted.
 
-(* End translation_lemmas. *)
+End translation_lemmas.
 
 Section shadow.
 
-
-Definition row_of_seq (s : seq R) : 'rV[R]_(size s) :=
+Definition row_of_seq {R : numDomainType} (s : seq R) : 'rV[R]_(size s) :=
   (\row_(i < size s) tnth (in_tuple s) i).
 
 Check row_of_seq.
 About MatrixFormula.seq_of_rV.
 
-
-Definition product_and n (xs: 'rV[R]_n) : R := 
+Definition product_and {R : fieldType} n (xs: 'rV[R]_n) : R := 
   \prod_(x <- (MatrixFormula.seq_of_rV xs)) x.
 
 Print MatrixFormula.seq_of_rV.
 Print fgraph.
 
 
-Definition shadow_lifting (f : forall n, 'rV_n -> R) := 
+Definition shadow_lifting {R : realType} (f : forall n, 'rV_n -> R) := 
   forall Es : seq R, forall i : 'I_(size Es),
     (* (forall i, nth 0 Es i != 0) -> *)
     (forall i, 0 < nth 0 Es i <= 1) ->
     partial (f (size Es)) i (row_of_seq Es) > 0.
 
-Lemma all_0_product_partial (Es : seq R) (i : 'I_(size Es)) :
+Lemma all_0_product_partial {R : realType} (Es : seq R) (i : 'I_(size Es)) :
   partial 0 i (row_of_seq Es) = 0.
 (*I'm not sure if I don't need an additional assumption here*)
 Proof.
@@ -1060,8 +914,7 @@ Qed.
 Print BSide.
 Print itv_bound.
 
-
-Lemma monotonous_bounded_is_cvg (f : R -> R) x a b:
+Lemma monotonous_bounded_is_cvg {R : realType} (f : R -> R) x a b:
   monotonous ([set` Interval (BSide b x) a]) f ->
   (* has_ubound (f @` setT) ->  *)
   has_lbound (f @` setT (*isn't this too restrictive?*) ) ->
@@ -1071,17 +924,7 @@ rewrite /monotonous/has_lbound.
 Search "lbound" "cvg".
 Admitted. 
 
-Notation "'nondecreasing_fun' f" := ({homo f : n m / (n <= m)%O >-> (n <= m)%O})
-  (at level 10).
-Notation "'nonincreasing_fun' f" := ({homo f : n m / (n <= m)%O >-> (n >= m)%O})
-  (at level 10).
-Notation "'increasing_fun' f" := ({mono f : n m / (n <= m)%O >-> (n <= m)%O})
-  (at level 10).
-Notation "'decreasing_fun' f" := ({mono f : n m / (n <= m)%O >-> (n >= m)%O})
-  (at level 10).
-
-
-Lemma shadow_lifting_product_and : shadow_lifting product_and.
+Lemma shadow_lifting_product_and {R : realType} : @shadow_lifting R product_and.
 Proof.
 move=> Es i Es01.
 rewrite lt_neqAle; apply/andP; split; last first.
@@ -1108,7 +951,10 @@ Admitted.
 End shadow.
 
 Section Lukasiewicz_lemmas.
+Context {R : realType}.
+Variables (p : R).
 
+Local Notation "[[ e ]]_ l" := (translation l p e).
 
 Lemma Lukasiewicz_andC e1 e2 :
   [[ e1 /\ e2 ]]_Lukasiewicz = [[ e2 /\ e1 ]]_Lukasiewicz.
@@ -1127,9 +973,9 @@ Qed.
 Lemma Lukasiewicz_orA e1 e2 e3 :
   [[ (e1 \/ (e2 \/ e3)) ]]_Lukasiewicz = [[ ((e1 \/ e2) \/ e3) ]]_Lukasiewicz.
 Proof.
-have := translate_Bool_T_01 Lukasiewicz e1.
-have := translate_Bool_T_01 Lukasiewicz e2.
-have := translate_Bool_T_01 Lukasiewicz e3.
+have := translate_Bool_T_01 p Lukasiewicz e1.
+have := translate_Bool_T_01 p Lukasiewicz e2.
+have := translate_Bool_T_01 p Lukasiewicz e3.
 rewrite /=/sumR/minR?big_cons ?big_nil.
 rewrite /minr.
 by repeat case: ifP; lra.
@@ -1138,9 +984,9 @@ Qed.
 Theorem Lukasiewicz_andA e1 e2 e3 : (0 < p) ->
   [[ (e1 /\ e2) /\ e3]]_Lukasiewicz = [[ e1 /\ (e2 /\ e3) ]]_Lukasiewicz.
 Proof.
-have := translate_Bool_T_01 Lukasiewicz e1.
-have := translate_Bool_T_01 Lukasiewicz e2.
-have := translate_Bool_T_01 Lukasiewicz e3. 
+have := translate_Bool_T_01 p Lukasiewicz e1.
+have := translate_Bool_T_01 p Lukasiewicz e2.
+have := translate_Bool_T_01 p Lukasiewicz e3. 
 rewrite /=/sumR/maxR/minR/natalia_prodR ?big_cons ?big_nil.
 set t1 := _ e1.
 set t2 := _ e2.
@@ -1152,6 +998,11 @@ Qed.
 End Lukasiewicz_lemmas.
 
 Section Yager_lemmas.
+Context {R : realType}.
+Variables (p : R).
+Hypothesis p1 : 1 <= p.
+
+Local Notation "[[ e ]]_ l" := (translation l p e).
 
 Lemma Yager_andC e1 e2 :
   [[ e1 /\ e2 ]]_Yager = [[ e2 /\ e1 ]]_Yager.
@@ -1172,9 +1023,9 @@ Lemma Yager_orA e1 e2 e3 :
 Proof.
 have p0 : 0 < p by rewrite (lt_le_trans ltr01).
 have ? : p != 0 by exact: lt0r_neq0.
-have := translate_Bool_T_01 Yager e1.
-have := translate_Bool_T_01 Yager e2.
-have := translate_Bool_T_01 Yager e3.
+have := translate_Bool_T_01 p Yager e1.
+have := translate_Bool_T_01 p Yager e2.
+have := translate_Bool_T_01 p Yager e3.
 rewrite /=/sumR/maxR/minR/natalia_prodR ?big_cons ?big_nil.
 rewrite ![in _ `^ p + _]addr0.
 set t1 := _ e1.
@@ -1275,15 +1126,14 @@ case: ifPn => h1.
           move => h4 h5. admit.
 Admitted.
 
-
 Theorem Yager_andA e1 e2 e3 : (0 < p) ->
   [[ (e1 /\ e2) /\ e3]]_Yager = [[ e1 /\ (e2 /\ e3) ]]_Yager.
 Proof.
 move=> p0.
 have pneq0 : p != 0 by exact: lt0r_neq0.
-have := translate_Bool_T_01 Yager e1.
-have := translate_Bool_T_01 Yager e2.
-have := translate_Bool_T_01 Yager e3.
+have := translate_Bool_T_01 p Yager e1.
+have := translate_Bool_T_01 p Yager e2.
+have := translate_Bool_T_01 p Yager e3.
 rewrite /=/sumR/maxR/minR/natalia_prodR ?big_cons ?big_nil.
 set t1 := _ e1.
   set t2 := _ e2.
@@ -1424,6 +1274,10 @@ Admitted.
 End Yager_lemmas.
 
 Section Godel_lemmas.
+Context {R : realType}.
+Variables (p : R).
+
+Local Notation "[[ e ]]_ l" := (translation l p e).
 
 Lemma Godel_andC e1 e2 :
   [[ e1 /\ e2 ]]_Godel = [[ e2 /\ e1 ]]_Godel.
@@ -1452,9 +1306,9 @@ Theorem Godel_andA e1 e2 e3 : (0 < p) ->
   [[ (e1 /\ e2) /\ e3]]_Godel = [[ e1 /\ (e2 /\ e3) ]]_Godel.
 Proof.
 rewrite /=/sumR/minR !big_cons !big_nil.
-have := translate_Bool_T_01 Godel e1.
-have := translate_Bool_T_01 Godel e2.
-have := translate_Bool_T_01 Godel e3.
+have := translate_Bool_T_01 p Godel e1.
+have := translate_Bool_T_01 p Godel e2.
+have := translate_Bool_T_01 p Godel e3.
 set t1 := _ e1.
   set t2 := _ e2.
   set t3 := _ e3.
@@ -1468,6 +1322,10 @@ Admitted.
 End Godel_lemmas.
 
 Section product_lemmas.
+Context {R : realType}.
+Variables (p : R).
+
+Local Notation "[[ e ]]_ l" := (translation l p e).
 
 Lemma product_andC e1 e2 :
   [[ e1 /\ e2 ]]_product = [[ e2 /\ e1 ]]_product.
@@ -1506,9 +1364,13 @@ Qed.
 End product_lemmas.
 
 Section dl2_lemmas.
+Context {R : realType}.
+Variables (p : R).
+
+Local Notation "[[ e ]]_dl2" := (@dl2_translation R _ e).
 
 Lemma dl2_andC e1 e2 :
-  [[ e1 /\ e2 ]]_dl2 = [[ e2 /\ e1 ]]_dl2.
+ [[ e1 /\ e2 ]]_dl2 = [[ e2 /\ e1 ]]_dl2.
 Proof.
   rewrite /=/sumE ?big_cons ?big_nil.
   by rewrite /= adde0 adde0 addeC. 
@@ -1531,7 +1393,3 @@ rewrite /=. case: ifPn.
 Admitted.  
 
 End stl_lemmas.*)
-  
-
-End translation_lemmas.
-
