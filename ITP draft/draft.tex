@@ -52,7 +52,7 @@ The primary area where formal methods and machine learning combine is verificati
 However majority of approaches involving formal methods and machine learning  apply to already trained machine learning models, and not approaches such as constraint-based training itself and thus are not very closely related to this work. This area of research is much less explored as of yet, primarily due the difficulty of expressing the mathematical theory underlying neural networks. There have however been attempts at it such as \cite{chevallier2022constrained} who formalise an embedding of linear temporal logic and an associated evaluation function in Isabelle to prove its soundness - and furthermore are able to produce OCaml versions of the aforementioned functions that can be integrated with Python and PyTorch eliminating many risks associated with ad-hoc implementations. 
 While another related example are formalisation of other types of algorithms~\cite{daukantas2021trimming} or formalisation of neural networks using Haskell~\cite{xie2023haskell}. They, while not directly related to the subject matter, utilise similar approaches and also have to contend with similar issues related to mathematical complexity.
 
-POSSIBLY AN ADDITIONAL PARAGRAPH ON NON-ML MATH FORMALISATION THAT IS TANGENTIALLY SIMILIAR.
+POSSIBLY AN ADDITIONAL PARAGRAPH ON NON-ML MATH FORMALISATION THAT IS TANGENTIALLY SIMILAR.
 
 
 
@@ -74,7 +74,7 @@ Notes on what probably needs to make its way into background (non-exhaustive)
 
 General notes to self on formalisation.
 
-Different functions, lemmas, and things that peraphs stand out.
+Different functions, lemmas, and things that perhaps stand out.
 
 \subsection{Syntax and semantics}
 
@@ -86,7 +86,7 @@ Implementation of the semantics:
 \begin{itemize}
 	\item $type\_translation$ semantics of types
 	\item a word on translation of indices and vectors using tuples
-	\item mention Real library from Mathcomp to handle reals
+	\item mention Real library from MathComp to handle reals
 	\item $translation$ - a semantics for all fuzzy DLs. Here there needs to be explanation maybe of how DL2 and STL are separate from the fuzzy logics as they are different enough to warrant a separate definition and lemmas, not enough overlap
 	translation itself is dependently typed, handles 4 different fuzzy logics through use of global variable (for now it's global variable, up for discussion)
 	
