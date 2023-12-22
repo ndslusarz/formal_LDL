@@ -663,31 +663,31 @@ Qed.
 
 Lemma nary_inversion_orE1 Es :
   l <> Lukasiewicz -> l <> Yager ->
-    [[ or_E Es ]]_ l = 1 -> (exists i, [[ nth (Bool false) Es i ]]_ l = 1).
+    [[ or_E Es ]]_ l = 1 -> (exists i, ([[ nth (Bool false) Es i ]]_ l == 1) && (i < size Es)%nat).
 Proof.
 have H := translate_Bool_T_01 l. move: H.
 have p0 := lt_le_trans ltr01 p1.
 case: l => //=; move => H.
 - move => l1 l2; move/eqP.
-  rewrite /maxR big_map.
+  rewrite /maxR big_map big_seq.
   elim: Es.
   + by rewrite big_nil eq_sym oner_eq0.
   + move=> a l0 IH.
-    rewrite big_cons {1}/maxr.
-    case: ifPn => _; last by exists 0%nat => /=; apply/eqP.
-    move/IH => [i i1].
+    rewrite -big_seq big_cons {1}/maxr.
+    case: ifPn => [_|_ a1]; last by exists 0%nat; rewrite a1 ltn0Sn.
+    rewrite big_seq; move/IH => [i i1].
     by exists i.+1.
 - move => l1 l2 /eqP.
-  rewrite /natalia_prodR big_map.
+  rewrite /natalia_prodR big_map big_seq.
   elim: Es.
   + by rewrite big_nil eq_sym oner_eq0.
   + move=> a l0 IH.
-    rewrite big_cons {1}/natalia_prod.
+    rewrite -big_seq big_cons {1}/natalia_prod.
     move/natalia_prod_inv => [|||/eqP].
     * exact: H.
-    * exact: natalia_prod_seq_01.
-    * by exists 0%nat.
-    * by move/IH => [x ?]; exists x.+1.
+    * by apply: natalia_prod_seq_01.
+    * by exists 0%nat; rewrite a0 eq_refl ltn0Sn.
+    * by rewrite big_seq; move/IH => [x ?]; exists x.+1.
 Qed.
 
 Lemma nary_inversion_orE0 Es :
@@ -783,8 +783,7 @@ Lemma soundness e b :
 Proof.
 dependent induction e using expr_ind' => ll ly.
 - move: b b0 => [] [] //=; lra.
-- move: H.
-  rewrite List.Forall_forall. move => H.
+- rewrite List.Forall_forall in H.
   rewrite [ [[Bool b]]_l ]/=.  
   move: b => [].
   + move/nary_inversion_andE1.
@@ -799,7 +798,21 @@ dependent induction e using expr_ind' => ll ly.
     apply/allPn; exists (nth (Bool false) l0 i); first by rewrite mem_nth.
     apply/negPf; apply: H => //.
     by rewrite -In_in mem_nth.
-- admit.
+- rewrite List.Forall_forall in H.
+  rewrite [ [[Bool b]]_l]/=.
+  move: b => [].
+  + move/nary_inversion_orE1.
+    rewrite [bool_translation (or_E l0)]/= foldrE big_map big_has.
+    elim=>// i /andP[/eqP i0 isize].
+    apply/hasP; exists (nth (Bool false) l0 i); first by rewrite mem_nth.
+    apply: H => //.
+    by rewrite -In_in mem_nth.
+  + move/nary_inversion_orE0.
+    rewrite [bool_translation (or_E l0)]/= foldrE big_map big_has => h.
+    apply/hasPn => x.
+    move/nthP => xnth.
+    have [i il0 <-] := xnth (Bool false).
+    by apply/negPf; apply: H => //; rewrite ?h// -In_in mem_nth.
 - admit.
 - have {} IHe1 := IHe1 e1 erefl JMeq_refl.
   have {} IHe2 := IHe2 e2 erefl JMeq_refl.
