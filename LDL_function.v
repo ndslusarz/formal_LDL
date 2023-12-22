@@ -813,7 +813,10 @@ dependent induction e using expr_ind' => ll ly.
     move/nthP => xnth.
     have [i il0 <-] := xnth (Bool false).
     by apply/negPf; apply: H => //; rewrite ?h// -In_in mem_nth.
-- admit.
+- have /orP[isize|isize] := leqVgt (size l0) i.
+    by rewrite !nth_default//=; case: b => ///eqP; rewrite lt_eqF ?ltr01.
+  rewrite List.Forall_forall in H => h.
+  by apply: H => //; rewrite -In_in mem_nth.
 - have {} IHe1 := IHe1 e1 erefl JMeq_refl.
   have {} IHe2 := IHe2 e2 erefl JMeq_refl.
   rewrite [ [[Bool b]]_l ]/=. move: b => [].
@@ -874,8 +877,7 @@ dependent induction e using expr_ind' => ll ly.
       have : `|(t1 - t2) / (t1 + t2)| == 1 by lra.
       rewrite eqr_norml.
       nra.
-
-Admitted.
+Qed.
 
 End translation_lemmas.
 
