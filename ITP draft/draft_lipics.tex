@@ -1,26 +1,63 @@
-\documentclass[a4paper,10pt]{article}
-\usepackage{amsfonts}
-\usepackage{amsthm}
-\usepackage[english]{babel}
-\usepackage{amsmath}
-\usepackage{adjustbox}
 
-\usepackage[numbers]{natbib}
+\documentclass[a4paper,UKenglish,cleveref, autoref, thm-restate]{lipics-v2021}
 
-\newcommand{\tempty}[1]{\llbracket #1 \rrbracket}
-\newcommand{\conjM}{\bigwedge\nolimits_M}
-\newcommand{\Real}{\mathbb{R}}
+\bibliographystyle{plainurl}% the mandatory bibstyle
 
-%opening
-\title{Placeholder title: Formal methods in constraint-based learning}
-\author{}
+\title{Placeholder title: Formal methods in constraint-based learning} %TODO Please add
+
+%\titlerunning{Dummy short title} %TODO optional, please use if title is longer than one line
+
+\author{Jane {Open Access}}{Dummy University Computing Laboratory, [optional: Address], Country \and My second affiliation, Country \and \url{http://www.myhomepage.edu} }{johnqpublic@dummyuni.org}{https://orcid.org/0000-0002-1825-0097}{(Optional) author-specific funding acknowledgements}%TODO mandatory, please use full name; only 1 author per \author macro; first two parameters are mandatory, other parameters can be empty. Please provide at least the name of the affiliation and the country. The full address is optional. Use additional curly braces to indicate the correct name splitting when the last name consists of multiple name parts.
+
+%\author{Joan R. Public\footnote{Optional footnote, e.g. to mark corresponding author}}{Department of Informatics, Dummy College, [optional: Address], Country}{joanrpublic@dummycollege.org}{[orcid]}{[funding]}
+
+\authorrunning{running author} %TODO mandatory. First: Use abbreviated first/middle names. Second (only in severe cases): Use first author plus 'et al.'
+
+\Copyright{copyright} %TODO mandatory, please use full first names. LIPIcs license is "CC-BY";  http://creativecommons.org/licenses/by/3.0/
+
+\ccsdesc[100]{\textcolor{red}{Replace ccsdesc macro with valid one}} %TODO mandatory: Please choose ACM 2012 classifications from https://dl.acm.org/ccs/ccs_flat.cfm 
+
+\keywords{Dummy keyword} %TODO mandatory; please add comma-separated list of keywords
+
+\category{} %optional, e.g. invited paper
+
+\relatedversion{} %optional, e.g. full version hosted on arXiv, HAL, or other respository/website
+%\relatedversiondetails[linktext={opt. text shown instead of the URL}, cite=DBLP:books/mk/GrayR93]{Classification (e.g. Full Version, Extended Version, Previous Version}{URL to related version} %linktext and cite are optional
+
+%\supplement{}%optional, e.g. related research data, source code, ... hosted on a repository like zenodo, figshare, GitHub, ...
+%\supplementdetails[linktext={opt. text shown instead of the URL}, cite=DBLP:books/mk/GrayR93, subcategory={Description, Subcategory}, swhid={Software Heritage Identifier}]{General Classification (e.g. Software, Dataset, Model, ...)}{URL to related version} %linktext, cite, and subcategory are optional
+
+%\funding{(Optional) general funding statement \dots}%optional, to capture a funding statement, which applies to all authors. Please enter author specific funding statements as fifth argument of the \author macro.
+
+%\acknowledgements{I want to thank \dots}%optional
+
+%\nolinenumbers %uncomment to disable line numbering
+
+
+
+%Editor-only macros:: begin (do not touch as author)%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+\EventEditors{John Q. Open and Joan R. Access}
+\EventNoEds{2}
+\EventLongTitle{42nd Conference on Very Important Topics (CVIT 2016)}
+\EventShortTitle{CVIT 2016}
+\EventAcronym{CVIT}
+\EventYear{2016}
+\EventDate{December 24--27, 2016}
+\EventLocation{Little Whinging, United Kingdom}
+\EventLogo{}
+\SeriesVolume{42}
+\ArticleNo{23}
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 
 \begin{document}
 
 \maketitle
 
+%TODO mandatory: add short abstract of the document
 \begin{abstract}
+Abstract.
 \end{abstract}
+
 
 \section{Introduction}
 
@@ -57,15 +94,15 @@ POSSIBLY AN ADDITIONAL PARAGRAPH ON NON-ML MATH FORMALISATION THAT IS TANGENTIAL
 
 
 \section{Background - notes}
+
+
 Notes on what probably needs to make its way into background (non-exhaustive)
 \begin{itemize}
 	\item A good explanation of DL and similar methods in machine learning. Including syntax, semantics in tables. Also explanation of loss functions and their role in training.
 	\item Possibly properties here, not later.
-	\item Other work on similar/related topics (pointing out most formalise finalised trained models, not methods of training itself so can't find a good comparison)
 \end{itemize}
 
-\textbf{Some of other work (more or less related depending on the specific case:}
- 
+
 
 
 
@@ -121,6 +158,15 @@ Complexity increase depending on DL is. While "complexity" is not easy to measur
 
 A lot of difficulty is added due to using nary operations for the sake of generality (bigops, etc.). Will need to have good reasoning for that (primarily htat it's following the very general idea behind LDL).
 
-\bibliographystyle{plainnat}
+
+%%
+%% Bibliography
+%%
+
+%% Please use bibtex, 
+
 \bibliography{bibliography}
+
+\appendix
+
 \end{document}

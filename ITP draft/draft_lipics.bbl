@@ -1,0 +1,86 @@
+\begin{thebibliography}{10}
+
+\bibitem{chevallier2022constrained}
+Mark Chevallier, Matthew Whyte, and Jacques~D Fleuriot.
+\newblock Constrained training of neural networks via theorem proving.
+\newblock {\em arXiv preprint arXiv:2207.03880}, 2022.
+
+\bibitem{FoMLAS2023:Vehicle_Tutorial_Neural_Network}
+Matthew Daggitt, Wen Kokke, Ekaterina Komendantskaya, Robert Atkey, Luca
+  Arnaboldi, Natalia Slusarz, Marco Casadio, Ben Coke, and Jeonghyeon Lee.
+\newblock The vehicle tutorial: Neural network verification with vehicle.
+\newblock In Nina Narodytska, Guy Amir, Guy Katz, and Omri Isac, editors, {\em
+  Proceedings of the 6th Workshop on Formal Methods for ML-Enabled Autonomous
+  Systems}, volume~16 of {\em Kalpa Publications in Computing}, pages 1--5.
+  EasyChair, 2023.
+\newblock URL: \url{https://easychair.org/publications/paper/Rkrv}, \href
+  {https://doi.org/10.29007/5s2x} {\path{doi:10.29007/5s2x}}.
+
+\bibitem{daukantas2021trimming}
+Ieva Daukantas, Alessandro Bruni, and Carsten Sch{\"u}rmann.
+\newblock Trimming data sets: a verified algorithm for robust mean estimation.
+\newblock In {\em 23rd International Symposium on Principles and Practice of
+  Declarative Programming}, pages 1--9, 2021.
+
+\bibitem{easterbrook1998formal}
+Steve Easterbrook and John Callahan.
+\newblock Formal methods for verification and validation of partial
+  specifications: A case study.
+\newblock {\em Journal of Systems and Software}, 40(3):199--210, 1998.
+
+\bibitem{einziger2019verifying}
+Gil Einziger, Maayan Goldstein, Yaniv Sa’ar, and Itai Segall.
+\newblock Verifying robustness of gradient boosted models.
+\newblock In {\em Proceedings of the AAAI Conference on Artificial
+  Intelligence}, volume~33, pages 2446--2453, 2019.
+
+\bibitem{katz2019marabou}
+Guy Katz, Derek~A Huang, Duligur Ibeling, Kyle Julian, Christopher Lazarus,
+  Rachel Lim, Parth Shah, Shantanu Thakoor, Haoze Wu, Aleksandar Zelji{\'c},
+  et~al.
+\newblock The marabou framework for verification and analysis of deep neural
+  networks.
+\newblock In {\em Computer Aided Verification: 31st International Conference,
+  CAV 2019, New York City, NY, USA, July 15-18, 2019, Proceedings, Part I 31},
+  pages 443--452. Springer, 2019.
+
+\bibitem{9842406}
+Moez Krichen, Alaeddine Mihoub, Mohammed~Y. Alzahrani, Wilfried Yves~Hamilton
+  Adoni, and Tarik Nahhal.
+\newblock Are formal methods applicable to machine learning and artificial
+  intelligence?
+\newblock In {\em 2022 2nd International Conference of Smart Systems and
+  Emerging Technologies (SMARTTECH)}, pages 48--53, 2022.
+\newblock \href {https://doi.org/10.1109/SMARTTECH54121.2022.00025}
+  {\path{doi:10.1109/SMARTTECH54121.2022.00025}}.
+
+\bibitem{ranzato2019robustness}
+Francesco Ranzato and Marco Zanella.
+\newblock Robustness verification of support vector machines.
+\newblock In {\em Static Analysis: 26th International Symposium, SAS 2019,
+  Porto, Portugal, October 8--11, 2019, Proceedings 26}, pages 271--295.
+  Springer, 2019.
+
+\bibitem{seshia2022toward}
+Sanjit~A Seshia, Dorsa Sadigh, and S~Shankar Sastry.
+\newblock Toward verified artificial intelligence.
+\newblock {\em Communications of the ACM}, 65(7):46--55, 2022.
+
+\bibitem{mathcomp}
+Mathematical~Components Team.
+\newblock Mathematical components library, 2007.
+\newblock Last stable version: 2.1 (2023).
+\newblock URL: \url{https://github.com/math-comp/math-comp}.
+
+\bibitem{urban2021review}
+Caterina Urban and Antoine Min{\'e}.
+\newblock A review of formal methods applied to machine learning.
+\newblock {\em arXiv preprint arXiv:2104.02466}, 2021.
+
+\bibitem{xie2023haskell}
+Ningning Xie.
+\newblock Haskell for choice-based learning (keynote).
+\newblock In {\em Proceedings of the 16th ACM SIGPLAN International Haskell
+  Symposium}, pages 1--1, 2023.
+
+\end{thebibliography}
