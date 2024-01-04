@@ -49,6 +49,8 @@
 \ArticleNo{23}
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 
+\def\rei#1{{\color{red}[NB(rei):#1]}}
+
 \begin{document}
 
 \maketitle
@@ -78,7 +80,9 @@ One of such concepts is Logic of Differentiable Logics (LDL), a rigorously defin
 The goal of this paper is two-fold. Firstly, we would like to offer it as demonstration that current state of the art already allows for application of formal approaches to well-defined problems in machine learning and is expressive enough to handle the needed underlying mathematical theory. To demonstrate this we formalise the meta-language LDL, a method used to train neural networks, together with its properties and proofs, with emphasis on properties desirable in machine learning.
 
 Furthermore we believe that using formal methods approaches can be beneficial not only in verification, but also in helping to deepen the understanding of machine learning as well as enforcing a more formal approach to more mathematical areas of machine learning. 
-For future programming languages created for AI verification  proofs may, in the future, become compulsory, enforcing an additional level of rigour~\cite{FoMLAS2023:Vehicle_Tutorial_Neural_Network,seshia2022toward}. 
+For future programming languages created for AI verification  proofs may, in the future\rei{``future'' appears twice}, become compulsory, enforcing an additional level of rigour~\cite{FoMLAS2023:Vehicle_Tutorial_Neural_Network,seshia2022toward}. 
+
+\rei{I suspect that many reviewers look for a ``our contributions'' paragraph}
 
 \section{Related work}
 
@@ -86,8 +90,8 @@ To the best of our knowledge there is very little work that is closely related t
 
 The primary area where formal methods and machine learning combine is verification. This field has been rapidly gaining traction in the last few years and there are many different approaches present in neural network verification\cite{urban2021review,9842406}. One of them is abstract interpretation, used by many state of the art verifiers CITE PARTICULAR VERIFIER . These methods are partial formal verification techniques and are sound but not complete~\cite{easterbrook1998formal}. There are however also approaches that are both sound and complete based on different techniques including use of SMTs (Satisfiability Modulo Theory) \cite{katz2019marabou} solvers or MILP (Mixed Integer Linear Programming). There has also been similar work done for other machine learning approaches than neural networks such as for support vector machines (SVMs)~\cite{ranzato2019robustness} or Decision Tree Ensembles~\cite{einziger2019verifying} though we do not focus on such models in our work. 
 
-However majority of approaches involving formal methods and machine learning  apply to already trained machine learning models, and not approaches such as constraint-based training itself and thus are not very closely related to this work. This area of research is much less explored as of yet, primarily due the difficulty of expressing the mathematical theory underlying neural networks. There have however been attempts at it such as \cite{chevallier2022constrained} who formalise an embedding of linear temporal logic and an associated evaluation function in Isabelle to prove its soundness - and furthermore are able to produce OCaml versions of the aforementioned functions that can be integrated with Python and PyTorch eliminating many risks associated with ad-hoc implementations. 
-While another related example are formalisation of other types of algorithms~\cite{daukantas2021trimming} or formalisation of neural networks using Haskell~\cite{xie2023haskell}. They, while not directly related to the subject matter, utilise similar approaches and also have to contend with similar issues related to mathematical complexity.
+However majority of approaches involving formal methods and machine learning  apply to already trained machine learning models, and not approaches such as constraint-based training itself and thus are not very closely related to this work. This area of research is much less explored as of yet, primarily due the difficulty of expressing the mathematical theory underlying neural networks. There have however been attempts at it such as \cite{chevallier2022constrained} who formalise an embedding of linear temporal logic and an associated evaluation function in Isabelle to prove its soundness---and furthermore are able to produce OCaml versions of the aforementioned functions that can be integrated with Python and PyTorch eliminating many risks associated with ad-hoc implementations. 
+While another related example are\rei{singular?} formalisation of other types of algorithms~\cite{daukantas2021trimming} or formalisation of neural networks using Haskell~\cite{xie2023haskell}. They, while not directly related to the subject matter, utilise similar approaches and also have to contend with similar issues related to mathematical complexity.
 
 POSSIBLY AN ADDITIONAL PARAGRAPH ON NON-ML MATH FORMALISATION THAT IS TANGENTIALLY SIMILAR.
 
@@ -142,19 +146,19 @@ Inversion lemmas also mentioned here possibly.
 
 \subsection{Logical properties}
 
-On associativity and commutativity for the DLs that have them (and that associativity is much more tricky then commutativity to prove). Not entirely sure if antyhing more interesting is here specifically so likely not its own subsection.
+On associativity and commutativity for the DLs that have them (and that associativity is much more tricky then commutativity to prove). Not entirely sure if anything more interesting is here specifically so likely not its own subsection.
 
 \subsection{Shadow-lifting}
 
 Using limit definition of partial differentiation.
 
-It does work out of the box using MathComp )in that limits exist but does require more lemmas as it is a new library.
+It does work out of the box using MathComp in that limits exist but does require more lemmas as it is a new library.
 Just a lot more detail on this proof when finished.
 
 
 \section{Other notes}
 
-Complexity increase depending on DL is. While "complexity" is not easy to measure for a DL on paper it is obvious in its impact in formalisation. Associativity of conjunction for Łukawsiewic, Godel and product all have around 10 lines (get exact after cleanup) - but Yager takes 38 (again, correct after cleanup). If I prove STL mention that (if case split in analogous ways to other proofs we get 38 cases)
+Complexity increase depending on DL is. While ``complexity'' is not easy to measure for a DL on paper it is obvious in its impact in formalisation. Associativity of conjunction for Łukawsiewic, Godel and product all have around 10 lines (get exact after cleanup) - but Yager takes 38 (again, correct after cleanup). If I prove STL mention that (if case split in analogous ways to other proofs we get 38 cases)
 
 A lot of difficulty is added due to using nary operations for the sake of generality (bigops, etc.). Will need to have good reasoning for that (primarily htat it's following the very general idea behind LDL).
 
