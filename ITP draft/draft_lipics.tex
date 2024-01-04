@@ -163,6 +163,34 @@ Complexity increase depending on DL is. While ``complexity'' is not easy to meas
 A lot of difficulty is added due to using nary operations for the sake of generality (bigops, etc.). Will need to have good reasoning for that (primarily htat it's following the very general idea behind LDL).
 
 
+\section{Shadow lifting, idempotence and associativity}
+
+The claim that shadow lifting and associativity cannot hold together is inaccurate, we need idempotence too.
+
+To make this formal, let us assume a generic semantic interpretation of and (f), with the following properties.
+
+[[ p /\ q ]] = f [[ p ]]  [[ q ]] (it's structural)
+
+I: [[p /\ p]] = [[p]] (has idempotence)
+
+A: [[p /\ (q /\ r)]] = [[(p /\ q) /\ r]] (has associativity)
+ 
+(has shadow lifting)
+SL1: d [[p /\ q]] / d p > 0
+SL2: d [[p /\ q]] / d q > 0
+
+
+[[ 1 /\ (1 /\ 1.1) ]] =? [[ 1 /\ (1.1 /\ 1.1) ]]
+
+[[ 1 /\ (1 /\ 1.1) ]] =A [[ (1 /\ 1) /\ 1.1 ]] =I [[ 1 /\ 1.1 ]] =I [[ 1 /\ (1.1 /\ 1.1) ]]
+
+
+
+[[ 1 /\ 1.1 ]] <SL1 [[ 1.1 /\ 1.1 ]]
+->
+[[ 1 /\ (1 /\ 1.1) ]] <SL2 [[ 1 /\ (1.1 /\ 1.1) ]]
+
+
 %%
 %% Bibliography
 %%
