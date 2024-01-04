@@ -881,6 +881,13 @@ Qed.
 
 End translation_lemmas.
 
+(* this is already in MCA master *)
+#[global] Hint Extern 0 (Filter (nbhs _^'+)) =>
+  (apply: at_right_proper_filter) : typeclass_instances.
+
+#[global] Hint Extern 0 (Filter (nbhs _^'-)) =>
+  (apply: at_left_proper_filter) : typeclass_instances.
+
 Section shadow.
 
 Definition row_of_seq {R : numDomainType} (s : seq R) : 'rV[R]_(size s) :=
@@ -889,8 +896,8 @@ Definition row_of_seq {R : numDomainType} (s : seq R) : 'rV[R]_(size s) :=
 Check row_of_seq.
 About MatrixFormula.seq_of_rV.
 
-Definition product_and {R : fieldType} n (xs: 'rV[R]_n) : R := 
-  \prod_(x <- (MatrixFormula.seq_of_rV xs)) x.
+Definition product_and {R : fieldType} n (xs : 'rV[R]_n) : R :=
+  \prod_(x < n) xs ord0 x.
 
 Print MatrixFormula.seq_of_rV.
 Print fgraph.
@@ -914,37 +921,87 @@ Qed.
 Print BSide.
 Print itv_bound.
 
-Lemma monotonous_bounded_is_cvg {R : realType} (f : R -> R) x a b:
-  monotonous ([set` Interval (BSide b x) a]) f ->
-  (* has_ubound (f @` setT) ->  *)
-  has_lbound (f @` setT (*isn't this too restrictive?*) ) ->
-  cvg (f x @[x --> (x)^'+]).
+(* this lemma is in MCA master *)
+Lemma nonincreasing_at_right_cvgr {R : realType} (f : R -> R) a :
+    {in `]a, +oo[, nonincreasing_fun f} ->
+    has_ubound (f @` `]a, +oo[) ->
+  f x @[x --> a ^'+] --> sup (f @` `]a, +oo[).
+Admitted.
+
+From mathcomp Require Import signed.
+
+Lemma nonincreasing_at_right_cvgr_itv {R : realType} (f : R -> R) a b : a < b ->
+    {in `]a, +oo[, nonincreasing_fun f} ->
+    has_ubound (f @` `]a, b[) ->
+  f x @[x --> a ^'+] --> sup (f @` `]a, b[).
 Proof.
-rewrite /monotonous/has_lbound.
-Search "lbound" "cvg".
-Admitted. 
+move=> ab lef ubf; set M := sup _.
+have supf : has_sup [set f x | x in `]a, b[].
+  split => //; exists (f (a + (b - a)/2)), (a + (b - a)/2) => //=.
+  rewrite in_itv/= ltr_addl divr_gt0/= ?subr_gt0 ?ltr0n//.
+  by rewrite -ltr_subr_addl ltr_pdivrMr ?ltr0n// ltr_pMr ?subr_gt0// ltr1n.
+apply/(@cvgrPdist_le _ [pseudoMetricNormedZmodType R of R^o]) => _/posnumP[e].
+have [p ap Mefp] : exists2 p, a < p & M - e%:num <= f p.
+  have [_ -[p ap] <- /ltW efp] := sup_adherent (gt0 e) supf.
+  exists p; last by rewrite efp.
+  by move: ap; rewrite /= in_itv/= => /andP[].
+near=> n.
+rewrite ler_distl; apply/andP; split; last first.
+  rewrite -ler_subl_addr (le_trans Mefp)// lef//.
+    by rewrite in_itv/= andbT; near: n; exact: nbhs_right_gt.
+  by near: n; exact: nbhs_right_le.
+have : f n <= M.
+  apply: sup_ub => //=; exists n => //; rewrite in_itv/=; apply/andP; split.
+    by near: n; apply: nbhs_right_gt.
+  by near: n; apply: nbhs_right_lt.
+by apply: le_trans; rewrite ler_subl_addr ler_addl.
+Unshelve. all: by end_near. Qed.
+(* TODO: generalize nonincreasing_at_right_cvgr *)
+
+(* this lemma is in MCA master *)
+Lemma nondecreasing_at_right_cvgr {R : realType} (f : R -> R) a :
+    {in `]a, +oo[, nondecreasing_fun f} ->
+    has_lbound (f @` `]a, +oo[) ->
+  f x @[x --> a ^'+] --> inf (f @` `]a, +oo[).
+Admitted.
+
+(* looks doable *)
+Lemma monotonous_bounded_is_cvg {R : realType} (f : R -> R) b x y :
+  monotonous ([set` Interval (BSide b x) y]) f ->
+  has_ubound (f @` setT) ->
+  has_lbound (f @` setT) ->
+  cvg (f x @[x --> x^'+]).
+Proof.
+move=> [inc uf lf|dec uf lf].
+  apply/cvg_ex.
+  exists (sup (f @` [set` Interval (BSide b x) y])).
+  admit.
+apply/cvg_ex.
+exists (inf (f @` [set` Interval (BSide b x) y])).
+Admitted.
 
 Lemma shadow_lifting_product_and {R : realType} : @shadow_lifting R product_and.
 Proof.
 move=> Es i Es01.
 rewrite lt_neqAle; apply/andP; split; last first.
-+ apply: limr_ge.
-  - apply: (monotonous_bounded_is_cvg _ _ ).
-    * rewrite /monotonous. admit.
-    * rewrite /has_lbound.  Search "lbound".
-      (* rewrite -int_lbound_has_minimum.  *)
+  apply: limr_ge.
+  - apply: (@monotonous_bounded_is_cvg _ _ false 0 (BRight 1) (* `]0, 1] *)).
+    + rewrite {1}/row_of_seq /err_vec.
       admit.
+    + admit.
+    + admit.
+      (* rewrite -int_lbound_has_minimum.  *)
   - near=> x.
     rewrite mulr_ge0//.
     + by rewrite invr_ge0.
-    + rewrite subr_ge0 /product_and !big_map/= ler_prod// => j _.
-      rewrite !ffunE !mxE; apply/andP; split.
-      - rewrite /tnth (set_nth_default (0:R))//.
+    + rewrite subr_ge0 /product_and ler_prod// => j _.
+(*      rewrite !ffunE !mxE; apply/andP; split.
+      * rewrite /tnth (set_nth_default (0:R))//.
         by have /andP[/ltW] := Es01 j.
-      - by rewrite lerDl// mulr_ge0.
-+ rewrite /partial.
+      * by rewrite lerDl// mulr_ge0.*) admit.
+rewrite /partial.
 (*   rewrite /(-all_0_product_partial _).  *)
-  admit. 
+admit.
 Admitted.
 
 
