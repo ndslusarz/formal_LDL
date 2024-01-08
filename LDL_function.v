@@ -904,9 +904,12 @@ Print fgraph.
 
 
 Definition shadow_lifting {R : realType} (f : forall n, 'rV_n -> R) := 
-  forall Es : seq R, forall i : 'I_(size Es),
-    (* (forall i, nth 0 Es i != 0) -> *)
-    (forall i, 0 < nth 0 Es i <= 1) ->
+  (* forall Es : seq R, forall i : 'I_(size Es),
+    (* (forall i, nth 0 Es i != 0) -> *) *)
+    forall Es : seq R, forall i : 'I_(size Es), forall e : R,
+    e != 0 (* (0 < e <= 1)  *)->
+    0 < nth 0 Es i <= 1 ->
+    (forall j, j != i -> nth 0 Es j = e) ->
     partial (f (size Es)) i (row_of_seq Es) > 0.
 
 Lemma all_0_product_partial {R : realType} (Es : seq R) (i : 'I_(size Es)) :
