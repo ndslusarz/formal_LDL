@@ -10,46 +10,47 @@ Reallocating 'global_strs' (item size: 1) to 4000000 items.
 Reallocating 'singl_function' (item size: 4) to 100 items.
 Reallocating 'singl_function' (item size: 4) to 100 items.
 Database file #1: bibliography.bib
+Warning--can't use both volume and number fields in bagnall2019certifying
 Warning--can't use both volume and number fields in einziger2019verifying
-You've used 12 entries,
+You've used 16 entries,
             2943 wiz_defined-function locations,
-            712 strings with 8029 characters,
-and the built_in function-call counts, 6662 in all, are:
-= -- 681
-> -- 294
-< -- 9
-+ -- 111
-- -- 96
-* -- 382
-:= -- 954
-add.period$ -- 42
-call.type$ -- 12
-change.case$ -- 81
+            724 strings with 8549 characters,
+and the built_in function-call counts, 8794 in all, are:
+= -- 919
+> -- 326
+< -- 14
++ -- 123
+- -- 104
+* -- 448
+:= -- 1204
+add.period$ -- 54
+call.type$ -- 16
+change.case$ -- 99
 chr.to.int$ -- 0
-cite$ -- 13
-duplicate$ -- 203
-empty$ -- 588
-format.name$ -- 96
-if$ -- 1697
+cite$ -- 18
+duplicate$ -- 299
+empty$ -- 813
+format.name$ -- 104
+if$ -- 2291
 int.to.chr$ -- 0
-int.to.str$ -- 12
-missing$ -- 11
-newline$ -- 66
-num.names$ -- 26
-pop$ -- 160
+int.to.str$ -- 16
+missing$ -- 15
+newline$ -- 85
+num.names$ -- 32
+pop$ -- 211
 preamble$ -- 1
-purify$ -- 69
+purify$ -- 83
 quote$ -- 0
-skip$ -- 429
+skip$ -- 601
 stack$ -- 0
-substring$ -- 283
-swap$ -- 78
-text.length$ -- 13
+substring$ -- 437
+swap$ -- 127
+text.length$ -- 16
 text.prefix$ -- 0
 top$ -- 0
-type$ -- 48
-warning$ -- 1
-while$ -- 49
-width$ -- 14
-write$ -- 143
-(There was 1 warning)
+type$ -- 64
+warning$ -- 2
+while$ -- 69
+width$ -- 18
+write$ -- 185
+(There were 2 warnings)

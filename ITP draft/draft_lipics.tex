@@ -1,6 +1,9 @@
 
 \documentclass[a4paper,UKenglish,cleveref, autoref, thm-restate]{lipics-v2021}
 
+\usepackage{tcolorbox}
+\usepackage{local-macros}
+\usepackage{syntax}
 \bibliographystyle{plainurl}% the mandatory bibstyle
 
 \title{Placeholder title: Formal methods in constraint-based learning} %TODO Please add
@@ -49,6 +52,10 @@
 \ArticleNo{23}
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 
+%COMMENT MACROS
+\newtcolorbox{authorComment}[1]{colback=#1}
+\newcommand{\natalia}[1]{\begin{authorComment}{red!15}Natalia: #1\end{authorComment}}
+
 \begin{document}
 
 \maketitle
@@ -61,35 +68,92 @@ Abstract.
 
 \section{Introduction}
 
-Using formal methods, such as using proof assistants or abstract interpretation, in combination with machine learning (ML) is a relatively new approach that has been gaining popularity in recent years \cite{urban2021review,9842406}. 
-This can be connected primarily to the rising importance of machine learning verification and an increased awareness of the fragility of machine learning models, both of which value the guarantees that formal methods can provide CITATION.
-Traditionally confined to the realm of software and hardware verification, formal methods are increasingly being repurposed to scrutinize the inherently probabilistic nature of ML models.
+Using Interactive Theorem Provers (ITPs) in combination with machine learning (ML) is a very new approach dating only a few years back CITE. 
+The integration of formal methods with machine learning poses many challenges, stemming from the inherent differences between the two domains, from the black-box nature of many ML models, through scalability issues especially in the case of neural networks (NNs) to the lack of well-defined specifications required in formal methods. 
 
-The integration of formal methods with machine learning poses many challenges, stemming from the inherent differences between the two domains, from the black-box nature of many ML models, through scalability issues especially in the case of neural networks (NNs) to the lack of well-defined specifications required in formal methods. It is the last of those that is of most interest to this work. While there has been a move toward increasingly rigorous approaches in specification, both for verification and training, such specification are often mathematically complex. 
+However in the recent years there has been a growing interest in the intersection of these two fields. One of the first attempts to use Coq in conjunction with machine learning is MLCert~\cite{bagnall2019certifying}, a system for mechanized proofs of the generalisation bounds of an ML model in Coq, providing bounds on expected error. MLCert is compatible with deep learning frameworks such as TensorFlow but the classifier does need to be encoded by hand. Coq can be easier used for reasoning about well defined smaller machine learning algorithms, for example for proving convergence of a one-layer perceptron in specific conditions~\cite{murphy2017verified}.
 
-This complexity is inherent especially to neural networks but is widely known to pose a challenge to formalisation tools. The most prominent reasons behind this issue come from the necessity to reason about continuous real space, vectors and vector operations as well as the ability to express mathematical concepts such as partial differentiation. This is unavoidable when reasoning about certain methods, as due to common usage of gradient descent algorithm in neural network training CITE.
+The existing work is not limited to Coq. It has been demonstrated that a neural network can be encoded in a theorem prover, in this case Isabelle/HOL, in order to prove its safety \cite{brucker2023verifying}. Vehicle, a tool for enforcing specifications on neural networks, is also capable of exporting a verified specification to Agda to enable reasoning about the network when considering safety of a larger system\cite{daggitt2023compiling}.
 
-However we believe that there exist current state of the art formalisation tools which are expressive enough to reason about mathematical concepts needed for expressing properties and methods for machine learning.
+The existing attempts at combining ITPs and machine learning have encountered some of the same problems that originate form the inherent nature of machine learning as a field and are challenging for ITPs. Among the most theoretical ones are the necessity to deal with real domain as well as vectors in order to reason about data as well as need for support for linear algebra and certain areas of calculus. This mathematical complexity is inherent especially to neural networks but is widely known to pose a challenge to formalisation tools. Lastly there is also an issue of scale when formalising large models.
 
-Mathematical Components (MathComp)~\cite{mathcomp} in Coq CITE stands as a testament to the expressive power of formal proof systems in addressing advanced mathematical concepts. At its core, MathComp leverages the Calculus of Inductive Constructions (CIC), the underlying type theory of Coq, to encode mathematical abstractions in a way that allows bridging the gap between mathematics and the formalization of machine learning concepts. 
+There are many aspects of neural networks that can be formalised. \natalia{Need to find a nice transition in this paragraph}In particular one we investigate in this work is differentiable logics.
 
-One of such concepts is Logic of Differentiable Logics (LDL), a rigorously defined meta-language used for property based training of neural networks. ADD A MORE IN DEPTH EXPLANATION OF LDL ITSELF
+Differentiable logics belong to a method of property-based training of neural networks. The idea behind differentiable logic is to use a property that is desirable in a neural network and use it to generate a custom property based loss function. A standard \emph{loss function} $\losssymbol: \Real^n \times \Real^m \rightarrow \Real$ given a pair $(\x, \y)$ of input and desired output, a neural network $f$, calculates how much $f(\x)$ differs from the desired output $\y$ \cite{wang2020comprehensive}.
 
-The goal of this paper is two-fold. Firstly, we would like to offer it as demonstration that current state of the art already allows for application of formal approaches to well-defined problems in machine learning and is expressive enough to handle the needed underlying mathematical theory. To demonstrate this we formalise the meta-language LDL, a method used to train neural networks, together with its properties and proofs, with emphasis on properties desirable in machine learning.
+A property based loss will instead aim to penalise the network for deviating from said property. Training a neural network with a combination of a property based loss function and a standard data-driven one will result in a network trained to fit both the data and the property. 
 
-Furthermore we believe that using formal methods approaches can be beneficial not only in verification, but also in helping to deepen the understanding of machine learning as well as enforcing a more formal approach to more mathematical areas of machine learning. 
-For future programming languages created for AI verification  proofs may, in the future, become compulsory, enforcing an additional level of rigour~\cite{FoMLAS2023:Vehicle_Tutorial_Neural_Network,seshia2022toward}. 
+A DL itself consists of syntax - the logical language used to express properties - and semantics - the "translation" from the syntax to a loss function. A general typed syntax and semantics for expressing different popular DLs that we use as a reference point is Logic of Differentiable Logics (LDL) CITE. The syntax of LDL is a typed first order logic language with addition of lambdas however in this paper we will consider its propositional fragment which can be seen in Figure \ref{fig:syntax}. Importantly the type system includes the existance of vectors, vector indicies and real numbers.
+
+The syntax of LDL is then interpreted into a loss function. The semantics are parametric based on the choice of interpretation for comparisons and logical connectives which differ between various differentiable logics.
+
+\natalia{Let me know if I should expand on LDL here or in the background section instead. Running example might be good to illustrate it since I think this explanation alone is likely confusing but I don't know what sort of running example would be compelling for ITP audience}
+
+\begin{figure}[t]
+	\small
+	%\footnotesize
+	\centering
+	\begin{subfigure}[t]{0.45\textwidth}
+		\begin{grammar}
+			<expr> $\ni e$ ::=  
+			$\identClass$ | $\netClass$ | \elReal $\: \in \Real$ | \elNat $\: \in \Nat$ | \elBool $\: \in \Bool$
+			\alt \App{\exprClass}{\exprClass} | \Lam{\identClass}{\typeClass}{\exprClass} | \Let{\identClass}{\typeClass}{\exprClass}{\exprClass}
+			\alt \AndSymbol{} | \OrSymbol{} | \NotSymbol{} | \ImpliesSymbol{} | \AddSymbol{} | \NegSymbol{} | \MulSymbol{}
+			\alt \NeqSymbol{} | \LeqSymbol{} | \GeqSymbol{} | \LeSymbol{} | \GeSymbol{} | \EqSymbol{}
+			\alt \Seq{\exprClass}{\exprClass} | \AtSymbol{}
+%			\alt \Forall{\identClass}{\typeClass}{\exprClass} | \Exists{\identClass}{\typeClass}{\exprClass} 
+
+		\end{grammar}
+	\end{subfigure}
+	\hfill
+	\begin{subfigure}[t]{0.5\textwidth}
+		\begin{grammar}
+			<type> $\ni \tau$  ::= 
+			\FunType{s}{\typeClass} 
+			| s
+			
+			<simple type> $\ni s$ ::= 
+			\alt \BoolType
+			\alt \RealType
+			\alt \VecType{n}   |  \FinType{n}  \hspace{3em} for $n \in \Nat$
+		\end{grammar}
+	\end{subfigure}
+	\setlength{\belowcaptionskip}{-15pt} 
+	\caption{Specification Language of LDL: expressions and types. % (e.g. $x \leq y$ is syntactic sugar for $\leq x\ y$).
+	}
+	\label{fig:syntax}
+\end{figure}
+
+%Furthermore we believe that using formal methods approaches can be beneficial not only in verification, but also in helping to deepen the understanding of machine learning as well as enforcing a more formal approach to more mathematical areas of machine learning. 
+%For future programming languages created for AI verification  proofs may, in the future, become compulsory, enforcing an additional level of rigour~\cite{FoMLAS2023:Vehicle_Tutorial_Neural_Network,seshia2022toward}.
+
+The problem that we address is that DL formalisation papers are often unclear or wrong in claims about certain properties of DLs they claim CITE MYSELF, STL. The approach we use is formalisation of the the meta-language LDL in the Coq proof assistant. While as mentioned the mathematical context needed to reason about DLs is challenging for theorem provers, we believe that there exist current state of the art formalisation tools which are expressive enough and we use paper as demonstration that current state of the art already allows for application of formal approaches to well-defined problems in machine learning. 
+
+Hence we have chosen to use Mathematical Components (MathComp)~\cite{mathcomp} in Coq CITE which stands as a testament to the expressive power of formal proof systems in addressing advanced mathematical concepts. At its core, MathComp leverages the Calculus of Inductive Constructions (CIC), the underlying type theory of Coq, to encode mathematical abstractions in a way that allows bridging the gap between mathematics and the formalization of machine learning concepts. 
+
+
+Our first contribution is the formalisation of several best known DLs using Coq and MathComp. Our formalisation of the LDL framework is designed to be generic and high-level so that it allows for easy extension to other DLs. EXPAND
+
+Secondly, our implementation of the syntax is non-trivial. It utilises dependent types interestingly. We have discovered some unintended behaviours in Coq implementation of dependent types which caused standard tactics to fail in proofs. \natalia{Should I explain the problem with R as context vs variable here, or in some of the later chapters?}
+
+Another of our contributions is demonstrating the capabilities of MathComp, including latest additions to the library CITE, when applied to machine learning. This is the first successful attempt at formalisation of the LDL calculus which includes dealing with concepts known to be problematic in formalisation and yet prevalent in machine learning such as working in the real domain and dealing with vectors.
+
+Lastly we provide formal proofs of theorems that were not rigorously proven in ML literature CITE MYSELF ALSO STL. This refers to both theorems that were stated incorrectly, not listing all of the necessary assumptions as well as incorrect claims about certain DLs holding specific desirable mathematical properties. 
+We would like this work to inform design choices in DLs and help fix preexisting issues. We believe that using formal methods approaches can be beneficial not only in verification, but also in helping to deepen the understanding of machine learning as well as enforcing a more formal approach to more mathematical areas of machine learning. \natalia{Should I go into detail here what the actual issue was or should that be left for later? Currently plan to discuss the STL paper shadow-lifting/assoc/idempotence example in later chapter as per plan}
+
 
 \section{Related work}
 
-To the best of our knowledge there is very little work that is closely related to our approach and involves applying formal methods to the training approaches itself instead of an already trained machine learning model or its properties.
+To the best of our knowledge there is very little work that is closely related to our approach and involves applying formal methods and ITPs to the training approaches itself instead of an already trained machine learning model or its properties. Furthermore majority of approaches involving formal methods and machine learning  apply to already trained machine learning models, and not approaches such as constraint-based training itself and thus are not very closely related to this work. This area of research is much less explored as of yet, primarily due the difficulty of expressing the mathematical theory underlying neural networks. 
 
-The primary area where formal methods and machine learning combine is verification. This field has been rapidly gaining traction in the last few years and there are many different approaches present in neural network verification\cite{urban2021review,9842406}. One of them is abstract interpretation, used by many state of the art verifiers CITE PARTICULAR VERIFIER . These methods are partial formal verification techniques and are sound but not complete~\cite{easterbrook1998formal}. There are however also approaches that are both sound and complete based on different techniques including use of SMTs (Satisfiability Modulo Theory) \cite{katz2019marabou} solvers or MILP (Mixed Integer Linear Programming). There has also been similar work done for other machine learning approaches than neural networks such as for support vector machines (SVMs)~\cite{ranzato2019robustness} or Decision Tree Ensembles~\cite{einziger2019verifying} though we do not focus on such models in our work. 
+Relevant work dealing with already trained models does involve encoding trained networks in ITPs, such as Isabelle/HOL \cite{brucker2023verifying}. This Isabelle prototype supports importing feedforward neural networks from TensorFlow, eliminating the need to embed each network by hand and it is the first formalisation of neural networks in an interactive theorem prover. Similiarly another recent work to set up other interactive theorem provers for verification of neural network by formalising piecewise affine activation functions in Coq~\cite{aleksandrov2023formalizing}. 
 
-However majority of approaches involving formal methods and machine learning  apply to already trained machine learning models, and not approaches such as constraint-based training itself and thus are not very closely related to this work. This area of research is much less explored as of yet, primarily due the difficulty of expressing the mathematical theory underlying neural networks. There have however been attempts at it such as \cite{chevallier2022constrained} who formalise an embedding of linear temporal logic and an associated evaluation function in Isabelle to prove its soundness - and furthermore are able to produce OCaml versions of the aforementioned functions that can be integrated with Python and PyTorch eliminating many risks associated with ad-hoc implementations. 
-While another related example are formalisation of other types of algorithms~\cite{daukantas2021trimming} or formalisation of neural networks using Haskell~\cite{xie2023haskell}. They, while not directly related to the subject matter, utilise similar approaches and also have to contend with similar issues related to mathematical complexity.
+Other works focus on different properties important to the machine learning community such as generalisation, providing formal guarantees of the degree to which the train network will generalise to new data~\cite{bagnall2019certifying}. Since scale and lack of precise mathemtaical definitions are some of the main issues for theorem provers, reasoning about properties of certain smaller but well defined machine learning algorithms lend themselves better to formalisation. We can take as an example proving convergance of a as single-layer perceptron~\cite{murphy2017verified}.
 
-POSSIBLY AN ADDITIONAL PARAGRAPH ON NON-ML MATH FORMALISATION THAT IS TANGENTIALLY SIMILAR.
+While they do not directly formalise networks, there has also been some research related to algorithms, instead of trained models such as formalisation of an embedding of linear temporal logic and an associated evaluation function in Isabelle to prove its soundness - and furthermore are able to produce OCaml versions of the aforementioned functions that can be integrated with Python and PyTorch eliminating many risks associated with ad-hoc implementations\cite{chevallier2022constrained}. Another related example are formalisation of other types of algorithms~\cite{daukantas2021trimming} or formalisation of neural networks using Haskell~\cite{xie2023haskell}. They, while not directly related to the subject matter, utilise similar approaches and also have to contend with similar issues related to mathematical complexity.
+
+Lastly, a larger but less directly related area area where more broadly understood formal methods and machine learning combine is verification. This field has been rapidly gaining traction in the last few years and there are many different approaches present in neural network verification\cite{urban2021review,9842406,easterbrook1998formal} including abstract interpretation, SMTs (Satisfiability Modulo Theory) \cite{katz2019marabou} solvers or MILP (Mixed Integer Linear Programming). There has also been similar work done for other machine learning approaches than neural networks such as for support vector machines (SVMs)~\cite{ranzato2019robustness} or Decision Tree Ensembles~\cite{einziger2019verifying} though we do not focus on such models in our work. 
+
 
 
 
@@ -154,9 +218,11 @@ Just a lot more detail on this proof when finished.
 
 \section{Other notes}
 
-Complexity increase depending on DL is. While "complexity" is not easy to measure for a DL on paper it is obvious in its impact in formalisation. Associativity of conjunction for Łukawsiewic, Godel and product all have around 10 lines (get exact after cleanup) - but Yager takes 38 (again, correct after cleanup). If I prove STL mention that (if case split in analogous ways to other proofs we get 38 cases)
+Complexity increase depending on DL is. While "complexity" is not easy to measure for a DL on paper it is obvious in its impact in formalisation. Associativity of conjunction for Łukawsiewicz, Godel and product all have around 10 lines (get exact after cleanup) - but Yager takes 38 (again, correct after cleanup). If I prove STL mention that (if case split in analogous ways to other proofs we get 38 cases)
 
 A lot of difficulty is added due to using nary operations for the sake of generality (bigops, etc.). Will need to have good reasoning for that (primarily htat it's following the very general idea behind LDL).
+
+\section{Placeholder title: stl example}
 
 
 %%
