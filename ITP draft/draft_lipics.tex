@@ -70,6 +70,7 @@ Abstract.
 
 \section{Introduction}
 
+
 Using Interactive Theorem Provers (ITPs) in combination with machine learning (ML) is a very new approach dating only a few years back CITE. 
 The integration of formal methods with machine learning poses many challenges, stemming from the inherent differences between the two domains, from the black-box nature of many ML models, through scalability issues especially in the case of neural networks (NNs) to the lack of well-defined specifications required in formal methods. 
 
@@ -85,7 +86,7 @@ Differentiable logics belong to a method of property-based training of neural ne
 
 A property based loss will instead aim to penalise the network for deviating from said property. Training a neural network with a combination of a property based loss function and a standard data-driven one will result in a network trained to fit both the data and the property. 
 
-A DL itself consists of syntax - the logical language used to express properties - and semantics - the "translation" from the syntax to a loss function. A general typed syntax and semantics for expressing different popular DLs that we use as a reference point is Logic of Differentiable Logics (LDL) CITE. The syntax of LDL is a typed first order logic language with addition of lambdas however in this paper we will consider its propositional fragment which can be seen in Figure \ref{fig:syntax}. Importantly the type system includes the existance of vectors, vector indicies and real numbers.
+A DL itself consists of syntax - the logical language used to express properties - and semantics - the ``translation'' from the syntax to a loss function. A general typed syntax and semantics for expressing different popular DLs that we use as a reference point is Logic of Differentiable Logics (LDL) CITE. The syntax of LDL is a typed first order logic language with addition of lambdas however in this paper we will consider its propositional fragment which can be seen in Figure \ref{fig:syntax}. Importantly the type system includes the existance of vectors, vector indicies and real numbers.
 
 The syntax of LDL is then interpreted into a loss function. The semantics are parametric based on the choice of interpretation for comparisons and logical connectives which differ between various differentiable logics.
 
@@ -133,6 +134,7 @@ The problem that we address is that DL formalisation papers are often unclear or
 
 Hence we have chosen to use Mathematical Components (MathComp)~\cite{mathcomp} in Coq CITE which stands as a testament to the expressive power of formal proof systems in addressing advanced mathematical concepts. At its core, MathComp leverages the Calculus of Inductive Constructions (CIC), the underlying type theory of Coq, to encode mathematical abstractions in a way that allows bridging the gap between mathematics and the formalization of machine learning concepts. 
 
+\natalia{I'm not sure if I should be using paragraphs or subsections or what in this style? I'd normally use a paragraph for contributions but they seemed to be numbered by default}
 
 Our first contribution is the formalisation of several best known DLs using Coq and MathComp. Our formalisation of the LDL framework is designed to be generic and high-level so that it allows for easy extension to other DLs. EXPAND
 
