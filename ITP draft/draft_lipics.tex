@@ -58,6 +58,9 @@
 
 \def\rei#1{{\color{red}[NB(rei):#1]}}
 
+\usepackage[textwidth=2.5cm,textsize=footnotesize,colorinlistoftodos]{todonotes}
+\newcommand{\knote}[2][]{\todo[inline,color=blue!10,#1]{KATYA: #2}}
+
 \begin{document}
 
 \maketitle
@@ -71,8 +74,24 @@ Abstract.
 \section{Introduction}
 
 
-Using Interactive Theorem Provers (ITPs) in combination with machine learning (ML) is a very new approach dating only a few years back CITE. 
-The integration of formal methods with machine learning poses many challenges, stemming from the inherent differences between the two domains, from the black-box nature of many ML models, through scalability issues especially in the case of neural networks (NNs) to the lack of well-defined specifications required in formal methods. 
+Using Interactive Theorem Provers (ITPs) in combination with machine learning (ML)
+\knote{``in combination" is too broad; as there were works using Ml to speed up proofs. You only want to discuss using ITP in formalisation of ML/probabilistic reasoning}
+ is a very new approach dating only a few years back CITE.
+ \knote{``new" is to weak, new does not mean useful. So, probably the first sentence should start with motivating why it is a good idea to formalise these things in ITP} 
+The integration of formal methods with machine learning poses many challenges, 
+\knote{This changes focus from ITP to formal methods -- do you really need this?}
+stemming from the inherent differences between the two domains, from the black-box nature of many ML models, through scalability issues especially in the case of neural networks (NNs) to the lack of well-defined specifications required in formal methods. 
+
+\knote{I don't know... There are choices how to start, but generally, we start with an idea that is well accepted by the community we address to a problem that we assume the audience will accept as interesting.}
+\knote{For this reason, I would go as follows}
+\knote{Formalisation of mathematics has been one of major research topics within the Interactive Theorem Proving (ITP) communities, from early successes in formaisation of the Kepler conjecture~\cite{}, to Four-colour theorem~\cite{}, Odd-Order Theorem~\cite{} and more recently, to consolidated efforts to create comprehensive mathematical libraries in Coq (Mathematical Components~\cite{}) and Lean (lookup names ~\cite{}). As statistical machine learning rests on differentiation, probability theory and linear algebra, it was only a matter of time to ask whether there is a strong case for, or specific interest in, formalising machine learning in ITP. The first attempt at ITP formalisation of neural networks was made by~\cite{bagnall2019certifying}, shortly followed by analysis 
+of different perceptron forms in \cite{de2022use}, both in Coq. In both cases the formalisation aimed at
+verifying abstract properties of neural networks: generalisation bounds in ~\cite{bagnall2019certifying} and various forms of convergent behaviour in \cite{de2022use}.  
+More recent Coq formalisations, e.g. by \cite{AleksandrovV23} target proofs of theoretical properties of neural networks seen as functions. Say something about work of Alessandro? someone in Lean? someone in Isabelle?}
+\knote{That was idea 1. General introduction}
+\knote{Idea 2: you need to bring here some motivation why someone wants to study/formalise DL... I'd try to explain general motivation, without formally defining loss functions... (because defining loss functions implies defining neural nets as well, and you loose the point}
+
+
 
 However in the recent years there has been a growing interest in the intersection of these two fields. One of the first attempts to use Coq in conjunction with machine learning is MLCert~\cite{bagnall2019certifying}, a system for mechanized proofs of the generalisation bounds of an ML model in Coq, providing bounds on expected error. MLCert is compatible with deep learning frameworks such as TensorFlow but the classifier does need to be encoded by hand. Coq can be easier used for reasoning about well defined smaller machine learning algorithms, for example for proving convergence of a one-layer perceptron in specific conditions~\cite{murphy2017verified}.
 

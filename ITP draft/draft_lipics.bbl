@@ -1,5 +1,16 @@
 \begin{thebibliography}{10}
 
+\bibitem{AleksandrovV23}
+Andrei Aleksandrov and Kim V{\"{o}}llinger.
+\newblock Formalizing piecewise affine activation functions of neural networks
+  in coq.
+\newblock In Kristin~Yvonne Rozier and Swarat Chaudhuri, editors, {\em {NASA}
+  Formal Methods - 15th International Symposium, {NFM} 2023, Houston, TX, USA,
+  May 16-18, 2023, Proceedings}, volume 13903 of {\em Lecture Notes in Computer
+  Science}, pages 62--78. Springer, 2023.
+\newblock \href {https://doi.org/10.1007/978-3-031-33170-1\_4}
+  {\path{doi:10.1007/978-3-031-33170-1\_4}}.
+
 \bibitem{aleksandrov2023formalizing}
 Andrei Aleksandrov and Kim V{\"o}llinger.
 \newblock Formalizing piecewise affine activation functions of neural networks
@@ -38,6 +49,12 @@ Ieva Daukantas, Alessandro Bruni, and Carsten Sch{\"u}rmann.
 \newblock Trimming data sets: a verified algorithm for robust mean estimation.
 \newblock In {\em 23rd International Symposium on Principles and Practice of
   Declarative Programming}, pages 1--9, 2021.
+
+\bibitem{de2022use}
+Elisabetta De~Maria, Abdorrahim Bahrami, Thibaud l’Yvonnet, Amy Felty, Daniel
+  Gaff{\'e}, Annie Ressouche, and Franck Grammont.
+\newblock On the use of formal methods to model and verify neuronal archetypes.
+\newblock {\em Frontiers of Computer Science}, 16(3):1--22, 2022.
 
 \bibitem{easterbrook1998formal}
 Steve Easterbrook and John Callahan.
