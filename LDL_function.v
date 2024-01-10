@@ -986,7 +986,7 @@ Admitted.
 Lemma shadow_lifting_product_and {R : realType} : @shadow_lifting R product_and.
 Proof.
 move=> Es i Es01.
-rewrite lt_neqAle; apply/andP; split; last first.
+(*  rewrite lt_neqAle; apply/andP; split; last first.
   apply: limr_ge.
   - apply: (@monotonous_bounded_is_cvg _ _ false 0 (BRight 1) (* `]0, 1] *)).
     + rewrite {1}/row_of_seq /err_vec.
@@ -1004,7 +1004,7 @@ rewrite lt_neqAle; apply/andP; split; last first.
       * by rewrite lerDl// mulr_ge0.*) admit.
 rewrite /partial.
 (*   rewrite /(-all_0_product_partial _).  *)
-admit.
+admit. *)
 Admitted.
 
 
@@ -1260,6 +1260,16 @@ Variables (p : R).
 
 Local Notation "[[ e ]]_ l" := (translation l p e).
 
+Lemma Godel_idempotence e :
+  [[ e /\ e ]]_Godel = [[ e]]_Godel.
+Proof.
+rewrite /=/minR ?big_cons ?big_nil.
+have := translate_Bool_T_01 p Godel e.
+set t1 := _ e.
+move => h.
+rewrite /=/minr; repeat case: ifP; lra.
+Qed.
+
 Lemma Godel_andC e1 e2 :
   [[ e1 /\ e2 ]]_Godel = [[ e2 /\ e1 ]]_Godel.
 Proof.
@@ -1352,6 +1362,29 @@ Lemma dl2_andC e1 e2 :
 Proof.
   rewrite /=/sumE ?big_cons ?big_nil.
   by rewrite /= adde0 adde0 addeC. 
+Qed. 
+
+Lemma dl2_orC e1 e2 :
+  [[ e1 \/ e2 ]]_dl2 = [[ e2 \/ e1 ]]_dl2.
+Proof.
+rewrite /=/sumE ?big_cons ?big_nil.
+by rewrite !mulr1 !adde0 addeC.
+Qed.
+
+Lemma dl2_orA e1 e2 e3 :
+  [[ (e1 \/ (e2 \/ e3)) ]]_dl2 = [[ ((e1 \/ e2) \/ e3) ]]_dl2.
+Proof.
+rewrite /=/sumE ?big_cons ?big_nil.
+rewrite !mulr1 !adde0. 
+
+Admitted.
+
+Theorem dl2_andA e1 e2 e3 : (0 < p) ->
+  [[ (e1 /\ e2) /\ e3]]_dl2 = [[ e1 /\ (e2 /\ e3) ]]_dl2.
+Proof.
+move => p0.
+rewrite /=/sumE ?big_cons ?big_nil.
+by rewrite !adde0 addeA.
 Qed. 
 
 End dl2_lemmas.
