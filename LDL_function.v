@@ -2,7 +2,7 @@ Require Import Coq.Program.Equality.
 From mathcomp Require Import all_ssreflect all_algebra.
 From mathcomp Require Import lra.
 From mathcomp Require Import all_classical.
-From mathcomp Require Import reals ereal.
+From mathcomp Require Import reals ereal signed.
 From mathcomp Require Import topology derive normedtype sequences
  exp measure lebesgue_measure lebesgue_integral hoelder.
 Require Import LDL_util.
@@ -924,64 +924,42 @@ Qed.
 Print BSide.
 Print itv_bound.
 
-(* this lemma is in MCA master *)
-Lemma nonincreasing_at_right_cvgr {R : realType} (f : R -> R) a :
-    {in `]a, +oo[, nonincreasing_fun f} ->
-    has_ubound (f @` `]a, +oo[) ->
-  f x @[x --> a ^'+] --> sup (f @` `]a, +oo[).
+(* safe admits
+   see https://github.com/math-comp/analysis/pull/1147 *)
+Lemma nonincreasing_at_right_cvgr {R : realType} (f : R -> R) a (b : itv_bound R) :
+    (BRight a < b)%O ->
+    {in Interval (BRight a) b &, nonincreasing_fun f} ->
+    has_ubound (f @` [set` Interval (BRight a) b]) ->
+  f x @[x --> a ^'+] --> sup (f @` [set` Interval (BRight a) b]).
 Admitted.
 
-From mathcomp Require Import signed.
-
-Lemma nonincreasing_at_right_cvgr_itv {R : realType} (f : R -> R) a b : a < b ->
-    {in `]a, +oo[, nonincreasing_fun f} ->
-    has_ubound (f @` `]a, b[) ->
-  f x @[x --> a ^'+] --> sup (f @` `]a, b[).
-Proof.
-move=> ab lef ubf; set M := sup _.
-have supf : has_sup [set f x | x in `]a, b[].
-  split => //; exists (f (a + (b - a)/2)), (a + (b - a)/2) => //=.
-  rewrite in_itv/= ltr_addl divr_gt0/= ?subr_gt0 ?ltr0n//.
-  by rewrite -ltr_subr_addl ltr_pdivrMr ?ltr0n// ltr_pMr ?subr_gt0// ltr1n.
-apply/(@cvgrPdist_le _ [pseudoMetricNormedZmodType R of R^o]) => _/posnumP[e].
-have [p ap Mefp] : exists2 p, a < p & M - e%:num <= f p.
-  have [_ -[p ap] <- /ltW efp] := sup_adherent (gt0 e) supf.
-  exists p; last by rewrite efp.
-  by move: ap; rewrite /= in_itv/= => /andP[].
-near=> n.
-rewrite ler_distl; apply/andP; split; last first.
-  rewrite -ler_subl_addr (le_trans Mefp)// lef//.
-    by rewrite in_itv/= andbT; near: n; exact: nbhs_right_gt.
-  by near: n; exact: nbhs_right_le.
-have : f n <= M.
-  apply: sup_ub => //=; exists n => //; rewrite in_itv/=; apply/andP; split.
-    by near: n; apply: nbhs_right_gt.
-  by near: n; apply: nbhs_right_lt.
-by apply: le_trans; rewrite ler_subl_addr ler_addl.
-Unshelve. all: by end_near. Qed.
-(* TODO: generalize nonincreasing_at_right_cvgr *)
-
-(* this lemma is in MCA master *)
-Lemma nondecreasing_at_right_cvgr {R : realType} (f : R -> R) a :
-    {in `]a, +oo[, nondecreasing_fun f} ->
-    has_lbound (f @` `]a, +oo[) ->
-  f x @[x --> a ^'+] --> inf (f @` `]a, +oo[).
+(* this lemma is PRed to MCA: https://github.com/math-comp/analysis/pull/1147 *)
+Lemma nondecreasing_at_right_cvgr {R : realType} (f : R -> R) a (b : itv_bound R) :
+    (BRight a < b)%O ->
+    {in Interval (BRight a) b &, nondecreasing_fun f} ->
+    has_lbound (f @` [set` Interval (BRight a) b]) ->
+  f x @[x --> a ^'+] --> inf (f @` [set` Interval (BRight a) b]).
 Admitted.
+(* /safe admits *)
 
-(* looks doable *)
-Lemma monotonous_bounded_is_cvg {R : realType} (f : R -> R) b x y :
-  monotonous ([set` Interval (BSide b x) y]) f ->
-  has_ubound (f @` setT) ->
-  has_lbound (f @` setT) ->
+Lemma monotonous_bounded_is_cvg {R : realType} (f : R -> R) x y : (BRight x < y)%O ->
+  monotonous ([set` Interval (BRight x)(*NB(rei): was BSide b x*) y]) f ->
+  has_ubound (f @` setT) -> has_lbound (f @` setT) ->
   cvg (f x @[x --> x^'+]).
 Proof.
-move=> [inc uf lf|dec uf lf].
-  apply/cvg_ex.
-  exists (sup (f @` [set` Interval (BSide b x) y])).
-  admit.
-apply/cvg_ex.
-exists (inf (f @` [set` Interval (BSide b x) y])).
-Admitted.
+move=> xy [inc uf lf|dec uf lf].
+  apply/cvg_ex; exists (inf (f @` [set` Interval (BRight x) y])).
+  apply: nondecreasing_at_right_cvgr => //.
+    by move=> a b axy bxy ab;rewrite inc//= inE.
+  (* TODO(rei): need a lemma? *)
+  case: lf => r fr; exists r => z/= [s].
+  by rewrite in_itv/= => /andP[xs _] <-{z}; exact: fr.
+apply/cvg_ex; exists (sup (f @` [set` Interval (BRight x)(*NB(rei): was (BSide b x)*) y])).
+apply: nonincreasing_at_right_cvgr => //.
+  by move=> a b axy bxy ab; rewrite dec// inE.
+case: uf => r fr; exists r => z/= [s].
+by rewrite in_itv/= => /andP[xs _] <-{z}; exact: fr.
+Qed.
 
 Lemma shadow_lifting_product_and {R : realType} : @shadow_lifting R product_and.
 Proof.
