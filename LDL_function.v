@@ -37,13 +37,22 @@ Notation "u '``_' i" := (u (GRing.zero (Zp_zmodType O)) i) : ring_scope.
 
 Section partial.
 Context {R : realType}.
-Variables (n : nat) (f : 'rV[R]_n -> R).
+Variables (n : nat) (f : 'rV[R^o]_n.+1 -> R^o).
 
-Definition err_vec {R : ringType} n (i : 'I_n) : 'rV[R]_n :=
-  \row_(j < n) (i != j)%:R.
+Definition err_vec {R : ringType} (i : 'I_n.+1) : 'rV[R]_n.+1 :=
+  \row_(j < n.+1) (i != j)%:R.
 
-Definition partial (i : 'I_n) (a : 'rV[R]_n) :=
+Definition partial (i : 'I_n.+1) (a : 'rV[R]_n.+1) :=
   lim (h^-1 * (f (a + h *: err_vec i) - f a) @[h --> (0:R)^'+]).
+
+Lemma partialE (i : 'I_n.+1) (a : 'rV[R]_n.+1) :
+  partial i a = 'D_(err_vec i) f a .
+Proof.
+rewrite /partial.
+rewrite /derive/=.
+under eq_fun do rewrite (addrC a).
+(* NB(rei): the difference is the filter *)
+Abort.
 
 (*Search ( (_ <= lim _)%R ). Search ( _ --> _).*)
 
@@ -948,28 +957,38 @@ Definition row_of_seq {R : numDomainType} (s : seq R) : 'rV[R]_(size s) :=
 (*About MatrixFormula.seq_of_rV.*)
 
 Definition product_and {R : fieldType} n (xs : 'rV[R]_n) : R :=
-  \prod_(x < n) xs ord0 x.
+  \prod_(x < n) xs``_x.
 
-Print MatrixFormula.seq_of_rV.
-Print fgraph.
+(*Print MatrixFormula.seq_of_rV.*)
+(*Print fgraph.*)
 
-Definition gradient {R : realType} (n : nat) (f : 'rV_n -> R) a :=
-  \row_(i < n) ('d f '/d i) a.
+Definition dotmul {R : ringType} n (u v : 'rV[R]_n) : R := (u *m v^T)``_0.
+Reserved Notation "u *d w" (at level 40).
+Local Notation "u *d w" := (dotmul u w).
 
-Definition weakly_smooth_cond {R : realType} {n : nat} (a : 'rV[R]_n) :=
-  let m := \big[minr/1(*def element*)]_i a ord0 i in
-  forall i j, i != j -> a ord0 i != m /\ a ord0 j != m.
+Definition gradient {R : realType} (n : nat) (f : 'rV_n.+1 -> R) a :=
+  \row_(i < n.+1) ('d f '/d i) a.
 
-Definition weakly_smooth {R : realType} (n : nat) (f : 'rV[R]_n -> R) :=
+(* NB(rei): main property of gradients? https://en.wikipedia.org/wiki/Gradient *)
+Lemma gradientP {R : realType} (n : nat) (f : 'rV[R]_n.+1 -> R^o) (v : 'rV[R]_n.+1) :
+  forall x : 'rV[R]_n.+1, (gradient f x) *d v = 'D_v f x.
+Proof.
+move=> x.
+rewrite /gradient.
+Admitted.
+
+Definition weakly_smooth_cond {R : realType} {n : nat} (a : 'rV[R]_n.+1) :=
+  let m := \big[minr/1(*def element*)]_i a``_i in
+  forall i j, i != j -> a``_i != m /\ a``_j != m.
+
+Definition weakly_smooth {R : realType} (n : nat) (f : 'rV[R]_n.+1 -> R) :=
   (forall a, {for a, continuous f}) /\
   (forall a, weakly_smooth_cond a -> {for a, continuous (gradient f)}).
 
-Definition shadow_lifting_proposal {R : realType} (M : nat) (f : 'rV_M -> R) :=
-  forall p, p != 0 -> forall i,
-    let ps := castmx (erefl, size_nseq _ _) (row_of_seq (nseq M p)) in
-    ('d f '/d i) ps > 0.
+Definition shadow_lifting {R : realType} (M' : nat) (f : 'rV_M'.+1 -> R) :=
+  forall p, p != 0 -> forall i, ('d f '/d i) (const_mx p) > 0.
 
-Definition shadow_lifting {R : realType} (f : forall n, 'rV_n -> R) := 
+(*Definition shadow_lifting {R : realType} (f : forall n, 'rV_n.1 -> R) := 
   (* forall Es : seq R, forall i : 'I_(size Es),
     (* (forall i, nth 0 Es i != 0) -> *) *)
     forall Es : seq R, forall i : 'I_(size Es), forall e : R,
@@ -986,8 +1005,18 @@ apply/cvg_lim; first exact: Rhausdorff.
 rewrite [X in X @ _ --> _](_ : _ = 0); first exact: (@cvg_cst R).
 by apply/funext => r/=; rewrite /GRing.zero/=(*NB: I shouldn't do that*) subrr mulr0.
 Qed.
+*)
 
-Lemma shadow_lifting_product_and {R : realType} : @shadow_lifting R product_and.
+Lemma shadow_lifting_product_and {R : realType} M :
+  shadow_lifting (@product_and R M.+1).
+Proof.
+move=> p p0 i.
+rewrite /product_and/=.
+rewrite [X in 0 < X _](_ : _ =
+    (fun xs : 'rV_M.+1 => \prod_(x < M.+1 | x != i) xs``_x)); last first.
+Abort.
+
+(*Lemma shadow_lifting_product_and {R : realType} : @shadow_lifting R product_and.
 Proof.
 move=> Es i Es01.
 (*  rewrite lt_neqAle; apply/andP; split; last first.
@@ -1010,7 +1039,7 @@ rewrite /partial.
 (*   rewrite /(-all_0_product_partial _).  *)
 admit. *)
 Admitted.
-
+*)
 
 End shadow.
 
