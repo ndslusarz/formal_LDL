@@ -20,6 +20,11 @@ Import Order.TTheory.
 Import numFieldTopology.Exports.
 Local Open Scope classical_set_scope.
 
+Reserved Notation "u '``_' i" (at level 3, i at level 2,
+  left associativity, format "u '``_' i").
+Reserved Notation "'d f '/d i" (at level 10, f, i at next level,
+  format "''d'  f  ''/d'  i").
+
 Reserved Notation "{[ e ]}" (format "{[  e  ]}").
 Reserved Notation "[[ e ]]b" (at level 10, format "[[  e  ]]b").
 Reserved Notation "[[ e ]]_ l" (at level 10, format "[[ e ]]_ l").
@@ -27,6 +32,8 @@ Reserved Notation "nu .-[[ e ]]_stl" (at level 10, format "nu .-[[ e ]]_stl").
 Reserved Notation "[[ e ]]_dl2" (at level 10, format "[[ e ]]_dl2").
 
 Local Open Scope ring_scope.
+
+Notation "u '``_' i" := (u (GRing.zero (Zp_zmodType O)) i) : ring_scope.
 
 Section partial.
 Context {R : realType}.
@@ -41,6 +48,44 @@ Definition partial (i : 'I_n) (a : 'rV[R]_n) :=
 (*Search ( (_ <= lim _)%R ). Search ( _ --> _).*)
 
 End partial.
+Notation "'d f '/d i" := (partial f i).
+
+(* safe admits
+   see https://github.com/math-comp/analysis/pull/1147 *)
+Lemma nonincreasing_at_right_cvgr {R : realType} (f : R -> R) a (b : itv_bound R) :
+    (BRight a < b)%O ->
+    {in Interval (BRight a) b &, nonincreasing_fun f} ->
+    has_ubound (f @` [set` Interval (BRight a) b]) ->
+  f x @[x --> a ^'+] --> sup (f @` [set` Interval (BRight a) b]).
+Admitted.
+
+(* this lemma is PRed to MCA: https://github.com/math-comp/analysis/pull/1147 *)
+Lemma nondecreasing_at_right_cvgr {R : realType} (f : R -> R) a (b : itv_bound R) :
+    (BRight a < b)%O ->
+    {in Interval (BRight a) b &, nondecreasing_fun f} ->
+    has_lbound (f @` [set` Interval (BRight a) b]) ->
+  f x @[x --> a ^'+] --> inf (f @` [set` Interval (BRight a) b]).
+Admitted.
+(* /safe admits *)
+
+Lemma monotonous_bounded_is_cvg {R : realType} (f : R -> R) x y : (BRight x < y)%O ->
+  monotonous ([set` Interval (BRight x)(*NB(rei): was BSide b x*) y]) f ->
+  has_ubound (f @` setT) -> has_lbound (f @` setT) ->
+  cvg (f x @[x --> x^'+]).
+Proof.
+move=> xy [inc uf lf|dec uf lf].
+  apply/cvg_ex; exists (inf (f @` [set` Interval (BRight x) y])).
+  apply: nondecreasing_at_right_cvgr => //.
+    by move=> a b axy bxy ab;rewrite inc//= inE.
+  (* TODO(rei): need a lemma? *)
+  case: lf => r fr; exists r => z/= [s].
+  by rewrite in_itv/= => /andP[xs _] <-{z}; exact: fr.
+apply/cvg_ex; exists (sup (f @` [set` Interval (BRight x)(*NB(rei): was (BSide b x)*) y])).
+apply: nonincreasing_at_right_cvgr => //.
+  by move=> a b axy bxy ab; rewrite dec// inE.
+case: uf => r fr; exists r => z/= [s].
+by rewrite in_itv/= => /andP[xs _] <-{z}; exact: fr.
+Qed.
 
 Inductive simple_type : Type :=
 | Bool_T : simple_type
@@ -86,20 +131,24 @@ End expr.
 Canonical expr_Bool_T_eqType (R : realType) :=
   Equality.Pack (@gen_eqMixin (@expr R Bool_T)).
 
-Notation "a /\ b" := (and_E [:: a; b]).
-Notation "a \/ b" := (or_E [:: a; b]).
-Notation "a `=> b" := (impl_E a b) (at level 55).
-Notation "`~ a" := (not_E a) (at level 75).
-Notation "a `+ b" := (add_E a b) (at level 50).
-Notation "a `* b" := (mult_E a b) (at level 40).
-Notation "`- a" := (minus_E a) (at level 45).
+Declare Scope ldl_scope.
 
-Notation "a `<= b" := (comparisons_E le_E a b) (at level 70).
-Notation "a `== b" := (comparisons_E eq_E a b) (at level 70).
-Notation "a `!= b" := (`~ (a == b)) (at level 70).
-Notation "a `< b" := (a `<= b /\ a `!= b) (at level 70).
-Notation "a `>= b" := (b `<= a) (at level 70).
-Notation "a `> b" := (b `< a) (at level 70).
+Notation "a /\ b" := (and_E [:: a; b]) : ldl_scope.
+Notation "a \/ b" := (or_E [:: a; b]) : ldl_scope.
+Notation "a `=> b" := (impl_E a b) (at level 55) : ldl_scope.
+Notation "`~ a" := (not_E a) (at level 75) : ldl_scope.
+Notation "a `+ b" := (add_E a b) (at level 50) : ldl_scope.
+Notation "a `* b" := (mult_E a b) (at level 40) : ldl_scope.
+Notation "`- a" := (minus_E a) (at level 45) : ldl_scope.
+
+Local Open Scope ldl_scope.
+
+Notation "a `<= b" := (comparisons_E le_E a b) (at level 70) : ldl_scope.
+Notation "a `== b" := (comparisons_E eq_E a b) (at level 70) : ldl_scope.
+Notation "a `!= b" := (`~ (a == b)) (at level 70) : ldl_scope.
+Notation "a `< b" := (a `<= b /\ a `!= b) (at level 70) : ldl_scope.
+Notation "a `>= b" := (b `<= a) (at level 70) : ldl_scope.
+Notation "a `> b" := (b `< a) (at level 70) : ldl_scope.
 
 Lemma expr_ind' (R : realType) :
   forall P : forall s : simple_type, expr s -> Prop,
@@ -164,6 +213,8 @@ destruct e.
   * apply H13; eauto. 
   * apply H14; eauto. 
 Qed.
+
+Local Close Scope ldl_scope.
 
 Section natalia_prod.
 Context {R : realType}.
@@ -305,8 +356,9 @@ end.
 End type_translation.
 
 Section bool_translation.
-Context {R : realType}.
 Local Open Scope ring_scope.
+Local Open Scope ldl_scope.
+Context {R : realType}.
 
 Fixpoint bool_translation t (e : @expr R t) : bool_type_translation t :=
   match e in expr t return bool_type_translation t with
@@ -340,14 +392,13 @@ Proof. by rewrite /= foldrE big_map. Qed.
 
 End bool_translation.
 
-Notation "[[ e ]]b" := (bool_translation e).
+Notation "[[ e ]]b" := (bool_translation e) : ldl_scope.
 
 Section goedel_translation.
-Context {R : realType}.
 Local Open Scope ring_scope.
+Local Open Scope ldl_scope.
+Context {R : realType}.
 Variables (l : DL) (p : R).
-
-Locate "[".
 
 Fixpoint translation t (e: @expr R t) {struct e} : type_translation t :=
     match e in expr t return type_translation t with
@@ -399,9 +450,9 @@ where "{[ e ]}" := (translation e).
 End goedel_translation.
 
 Section dl2_translation.
-Context {R : realType}.
-
 Local Open Scope ereal_scope.
+Local Open Scope ldl_scope.
+Context {R : realType}.
 
 Fixpoint dl2_translation t (e : @expr R t) {struct e} : dl2_type_translation t :=
     match e in expr t return dl2_type_translation t with
@@ -434,12 +485,12 @@ where "{[ e ]}" := (dl2_translation e).
 End dl2_translation.
 
 Section stl_translation.
+Local Open Scope ereal_scope.
+Local Open Scope ldl_scope.
 Context {R : realType}.
 Variables (p : R) (nu : R).
-Hypothesis p1 : 1 <= p.
-Hypothesis nu0 : 0 < nu.
-
-Local Open Scope ereal_scope.
+Hypothesis p1 : (1 <= p)%R.
+Hypothesis nu0 : (0 < nu)%R.
 
 Fixpoint stl_translation t (e: expr t) : stl_type_translation t :=
     match e in expr t return stl_type_translation t with
@@ -492,13 +543,13 @@ where "{[ e ]}" := (stl_translation e).
 
 End stl_translation.
 
-Notation "nu .-[[ e ]]_stl" := (stl_translation nu e).
-Notation "[[ e ]]_dl2" := (dl2_translation e).
+Notation "nu .-[[ e ]]_stl" := (stl_translation nu e) : ldl_scope.
+Notation "[[ e ]]_dl2" := (dl2_translation e) : ldl_scope.
 
 Section translation_lemmas.
-Context {R : realType}.
 Local Open Scope ring_scope.
-Local Open Scope order_scope.
+Local Open Scope ldl_scope.
+Context {R : realType}.
 Variables (l : DL) (p : R).
 Hypothesis p1 : 1 <= p.
 
@@ -598,7 +649,7 @@ dependent induction e using expr_ind'.
 Qed.
 
 Lemma nary_inversion_andE1 (Es : seq (expr Bool_T) ) :
-  [[ and_E Es ]]_ l = 1 -> (forall i, i < size Es -> [[ nth (Bool false) Es i ]]_ l = 1).
+  [[ and_E Es ]]_ l = 1 -> (forall i, (i < size Es)%N -> [[ nth (Bool false) Es i ]]_ l = 1).
 Proof.
 have H := translate_Bool_T_01 l. move: H.
 case: l => /=; move => H.
@@ -893,8 +944,8 @@ Section shadow.
 Definition row_of_seq {R : numDomainType} (s : seq R) : 'rV[R]_(size s) :=
   (\row_(i < size s) tnth (in_tuple s) i).
 
-Check row_of_seq.
-About MatrixFormula.seq_of_rV.
+(*Check row_of_seq.*)
+(*About MatrixFormula.seq_of_rV.*)
 
 Definition product_and {R : fieldType} n (xs : 'rV[R]_n) : R :=
   \prod_(x < n) xs ord0 x.
@@ -902,6 +953,21 @@ Definition product_and {R : fieldType} n (xs : 'rV[R]_n) : R :=
 Print MatrixFormula.seq_of_rV.
 Print fgraph.
 
+Definition gradient {R : realType} (n : nat) (f : 'rV_n -> R) a :=
+  \row_(i < n) ('d f '/d i) a.
+
+Definition weakly_smooth_cond {R : realType} {n : nat} (a : 'rV[R]_n) :=
+  let m := \big[minr/1(*def element*)]_i a ord0 i in
+  forall i j, i != j -> a ord0 i != m /\ a ord0 j != m.
+
+Definition weakly_smooth {R : realType} (n : nat) (f : 'rV[R]_n -> R) :=
+  (forall a, {for a, continuous f}) /\
+  (forall a, weakly_smooth_cond a -> {for a, continuous (gradient f)}).
+
+Definition shadow_lifting_proposal {R : realType} (M : nat) (f : 'rV_M -> R) :=
+  forall p, p != 0 -> forall i,
+    let ps := castmx (erefl, size_nseq _ _) (row_of_seq (nseq M p)) in
+    ('d f '/d i) ps > 0.
 
 Definition shadow_lifting {R : realType} (f : forall n, 'rV_n -> R) := 
   (* forall Es : seq R, forall i : 'I_(size Es),
@@ -919,46 +985,6 @@ Proof.
 apply/cvg_lim; first exact: Rhausdorff.
 rewrite [X in X @ _ --> _](_ : _ = 0); first exact: (@cvg_cst R).
 by apply/funext => r/=; rewrite /GRing.zero/=(*NB: I shouldn't do that*) subrr mulr0.
-Qed.
-
-Print BSide.
-Print itv_bound.
-
-(* safe admits
-   see https://github.com/math-comp/analysis/pull/1147 *)
-Lemma nonincreasing_at_right_cvgr {R : realType} (f : R -> R) a (b : itv_bound R) :
-    (BRight a < b)%O ->
-    {in Interval (BRight a) b &, nonincreasing_fun f} ->
-    has_ubound (f @` [set` Interval (BRight a) b]) ->
-  f x @[x --> a ^'+] --> sup (f @` [set` Interval (BRight a) b]).
-Admitted.
-
-(* this lemma is PRed to MCA: https://github.com/math-comp/analysis/pull/1147 *)
-Lemma nondecreasing_at_right_cvgr {R : realType} (f : R -> R) a (b : itv_bound R) :
-    (BRight a < b)%O ->
-    {in Interval (BRight a) b &, nondecreasing_fun f} ->
-    has_lbound (f @` [set` Interval (BRight a) b]) ->
-  f x @[x --> a ^'+] --> inf (f @` [set` Interval (BRight a) b]).
-Admitted.
-(* /safe admits *)
-
-Lemma monotonous_bounded_is_cvg {R : realType} (f : R -> R) x y : (BRight x < y)%O ->
-  monotonous ([set` Interval (BRight x)(*NB(rei): was BSide b x*) y]) f ->
-  has_ubound (f @` setT) -> has_lbound (f @` setT) ->
-  cvg (f x @[x --> x^'+]).
-Proof.
-move=> xy [inc uf lf|dec uf lf].
-  apply/cvg_ex; exists (inf (f @` [set` Interval (BRight x) y])).
-  apply: nondecreasing_at_right_cvgr => //.
-    by move=> a b axy bxy ab;rewrite inc//= inE.
-  (* TODO(rei): need a lemma? *)
-  case: lf => r fr; exists r => z/= [s].
-  by rewrite in_itv/= => /andP[xs _] <-{z}; exact: fr.
-apply/cvg_ex; exists (sup (f @` [set` Interval (BRight x)(*NB(rei): was (BSide b x)*) y])).
-apply: nonincreasing_at_right_cvgr => //.
-  by move=> a b axy bxy ab; rewrite dec// inE.
-case: uf => r fr; exists r => z/= [s].
-by rewrite in_itv/= => /andP[xs _] <-{z}; exact: fr.
 Qed.
 
 Lemma shadow_lifting_product_and {R : realType} : @shadow_lifting R product_and.
@@ -989,8 +1015,9 @@ Admitted.
 End shadow.
 
 Section Lukasiewicz_lemmas.
+Local Open Scope ldl_scope.
 Context {R : realType}.
-Variables (p : R).
+Variable p : R.
 
 Local Notation "[[ e ]]_ l" := (translation l p e).
 
@@ -1036,8 +1063,9 @@ Qed.
 End Lukasiewicz_lemmas.
 
 Section Yager_lemmas.
+Local Open Scope ldl_scope.
 Context {R : realType}.
-Variables (p : R).
+Variable p : R.
 Hypothesis p1 : 1 <= p.
 
 Local Notation "[[ e ]]_ l" := (translation l p e).
@@ -1233,13 +1261,13 @@ Qed.
 End Yager_lemmas.
 
 Section Godel_lemmas.
+Local Open Scope ldl_scope.
 Context {R : realType}.
-Variables (p : R).
+Variable p : R.
 
 Local Notation "[[ e ]]_ l" := (translation l p e).
 
-Lemma Godel_idempotence e :
-  [[ e /\ e ]]_Godel = [[ e]]_Godel.
+Lemma Godel_idempotence e : [[ e /\ e ]]_Godel = [[ e]]_Godel.
 Proof.
 rewrite /=/minR ?big_cons ?big_nil.
 have := translate_Bool_T_01 p Godel e.
@@ -1288,8 +1316,9 @@ Qed.
 End Godel_lemmas.
 
 Section product_lemmas.
+Local Open Scope ldl_scope.
 Context {R : realType}.
-Variables (p : R).
+Variable p : R.
 
 Local Notation "[[ e ]]_ l" := (translation l p e).
 
@@ -1330,13 +1359,13 @@ Qed.
 End product_lemmas.
 
 Section dl2_lemmas.
+Local Open Scope ldl_scope.
 Context {R : realType}.
-Variables (p : R).
+Variable p : R.
 
 Local Notation "[[ e ]]_dl2" := (@dl2_translation R _ e).
 
-Lemma dl2_andC e1 e2 :
- [[ e1 /\ e2 ]]_dl2 = [[ e2 /\ e1 ]]_dl2.
+Lemma dl2_andC e1 e2 : [[ e1 /\ e2 ]]_dl2 = [[ e2 /\ e1 ]]_dl2.
 Proof.
   rewrite /=/sumE ?big_cons ?big_nil.
   by rewrite /= adde0 adde0 addeC. 
