@@ -1292,22 +1292,55 @@ Lemma dl2_andC e1 e2 :
 Proof.
   rewrite /=/sumE ?big_cons ?big_nil.
   by rewrite /= adde0 adde0 addeC. 
-Qed. 
+Qed.
+
+Lemma dl2_soundness e b :
+  [[ e ]]_dl2 = [[ Bool b ]]_dl2 -> [[ e ]]b = b.
+Proof.
+dependent induction e using expr_ind'.
+- move: b b0 => [] [] //=.
+Admitted.
 
 End dl2_lemmas.
 
-
-
-(* 
 Section stl_lemmas.
+Context {R : realType}.
 
-Lemma andC_stl nu e1 e2 :
+Lemma mineC : commutative (fun (x y : \bar R) => mine x y).
+Proof.
+rewrite /commutative => x y.
+rewrite /mine.
+case: ifPn; rewrite ltNge le_eqVlt.
+- by rewrite negb_or => /andP[_]; case: ifPn.
+- by rewrite Bool.negb_involutive => /orP[/eqP|]->//; case: ifPn.
+Qed.
+
+Lemma mineA : associative (fun (x y : \bar R) => mine x y).
+Proof.
+rewrite /associative => x y z.
+Admitted.
+
+Lemma andC_stl (nu : R) e1 e2 :
   nu.-[[e1 /\ e2]]_stl = nu.-[[e2 /\ e1]]_stl.
 Proof.
-rewrite /=. case: ifPn.
-- rewrite /mine; repeat case: ifPn; intros . 
-(*TO DO IN ONE LINE PREFERABLY BECAUSE THIS IS 48 CASES*)
+rewrite /=/sumE !big_cons !big_nil /=.
+set a_min := mine (nu.-[[e1]]_stl) (mine (nu.-[[e2]]_stl) +oo)%E.
+have -> : (mine (nu.-[[e2]]_stl) (mine (nu.-[[e1]]_stl) +oo))%E = a_min.
+  by rewrite mineA [X in mine X _]mineC -mineA.
+set a1 := ((nu.-[[e1]]_stl - a_min) * ((fine a_min)^-1)%:E)%E.
+set a2 := ((nu.-[[e2]]_stl - a_min) * ((fine a_min)^-1)%:E)%E.
+set d1 := ((fine (expeR (nu%:E * a1) + (expeR (nu%:E * a2) + 0)))^-1)%:E.
+have -> : ((fine (expeR (nu%:E * a2) + (expeR (nu%:E * a1) + 0)))^-1)%:E = d1.
+  by rewrite addeCA.
+case: ifPn => _; first by rewrite addeCA.
+by case: ifPn => _; first rewrite addeCA.
+Qed.  
 
-Admitted.  
+Lemma soundness_stl (nu : R) e b :
+  nu.-[[ e ]]_stl = nu.-[[ Bool b ]]_stl -> [[ e ]]b = b.
+Proof.
+dependent induction e using expr_ind'.
+- move: b b0 => [] [] //=.
+Admitted.
 
 End stl_lemmas.*)
