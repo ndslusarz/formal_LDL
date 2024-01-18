@@ -54,16 +54,6 @@ Definition sumE (Es : seq \bar R) : \bar R := \sum_(i <- Es) i.
 
 End nameme.
 
-Local Open Scope ereal_scope.
-Definition expeR {R : realType} (x : \bar R) :=
-  match x with
-  | EFin r => (expR r)%:E
-  | +oo => +oo
-  | -oo => 0
-  end.
-Local Close Scope ereal_scope.
-
-
 Lemma sum_01{R : numDomainType} (I : eqType) (s : seq I) (f : I -> R) :
   (forall i, i \in s -> f i <= 1) -> \sum_(i <- s) f i <= (size s)%:R.
 Proof.
@@ -206,4 +196,27 @@ elim.
     - apply/eqP; rewrite IH => e0 e0s.
         by apply es1; rewrite in_cons e0s orbT.
       by apply: h; rewrite in_cons e0s orbT.
+Qed.
+
+Lemma mineC {R : realType} : commutative (fun (x y : \bar R) => mine x y).
+Proof.
+rewrite /commutative => x y.
+rewrite /mine.
+case: ifPn; rewrite ltNge le_eqVlt.
+- by rewrite negb_or => /andP[_]; case: ifPn.
+- by rewrite Bool.negb_involutive => /orP[/eqP|]->//; case: ifPn.
+Qed.
+
+Lemma mineA {R : realType} : associative (fun (x y : \bar R) => mine x y).
+Proof.
+rewrite /associative => x y z.
+rewrite /mine.
+repeat case: ifPn => //; rewrite -!leNgt => a b c d; apply/eqP; rewrite eq_le.
+- by rewrite b andbT le_eqVlt (lt_trans a c) orbT.
+- by rewrite a andbT (ltW (lt_le_trans d c)).
+- by rewrite b andbT ltW.
+- by rewrite (le_trans b a) ltW.
+- by rewrite b ltW.
+- by rewrite d ltW.
+- by rewrite c ltW.
 Qed.
