@@ -841,20 +841,20 @@ case: l => /=; move=> He1; move=> He2.
 Qed.
 
 
-Lemma soundness e b c :
+Lemma soundness c (e : expr (Bool_T c)) b :
   l <> Lukasiewicz -> l <> Yager ->
     [[ e ]]_ l = [[ Bool c b ]]_ l -> [[ e ]]b = b.
 Proof.
 dependent induction e using expr_ind' => ll ly.
 - move: b b0 => [] [] //=; lra.
 - rewrite List.Forall_forall in H.
-  rewrite [ [[Bool b]]_l ]/=.  
+  rewrite [ [[Bool c b]]_l ]/=.  
   move: b => [].
   + move/nary_inversion_andE1.
     rewrite [bool_translation (and_E l0)]/= foldrE big_map big_seq big_all_cond => h.
     apply: allT => x/=.
     apply/implyP => /nthP xnth.
-    have [i il0 <-] := xnth (Bool false).
+    have [i il0 <-] := xnth (Bool c false).
     by apply: H => //; rewrite ?h// -In_in mem_nth.
   + move/nary_inversion_andE0.
     rewrite [bool_translation (and_E l0)]/= foldrE big_map big_all.
