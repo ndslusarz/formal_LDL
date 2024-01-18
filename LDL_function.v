@@ -2,7 +2,7 @@ Require Import Coq.Program.Equality.
 From mathcomp Require Import all_ssreflect all_algebra.
 From mathcomp Require Import lra.
 From mathcomp Require Import all_classical.
-From mathcomp Require Import reals ereal.
+From mathcomp Require Import reals ereal signed.
 From mathcomp Require Import topology derive normedtype sequences
  exp measure lebesgue_measure lebesgue_integral hoelder.
 Require Import LDL_util.
@@ -20,6 +20,11 @@ Import Order.TTheory.
 Import numFieldTopology.Exports.
 Local Open Scope classical_set_scope.
 
+Reserved Notation "u '``_' i" (at level 3, i at level 2,
+  left associativity, format "u '``_' i").
+Reserved Notation "'d f '/d i" (at level 10, f, i at next level,
+  format "''d'  f  ''/d'  i").
+
 Reserved Notation "{[ e ]}" (format "{[  e  ]}").
 Reserved Notation "[[ e ]]b" (at level 10, format "[[  e  ]]b").
 Reserved Notation "[[ e ]]_ l" (at level 10, format "[[ e ]]_ l").
@@ -28,19 +33,68 @@ Reserved Notation "[[ e ]]_dl2" (at level 10, format "[[ e ]]_dl2").
 
 Local Open Scope ring_scope.
 
+Notation "u '``_' i" := (u (GRing.zero (Zp_zmodType O)) i) : ring_scope.
+
 Section partial.
 Context {R : realType}.
-Variables (n : nat) (f : 'rV[R]_n -> R).
+Variables (n : nat) (f : 'rV[R^o]_n.+1 -> R^o).
 
-Definition err_vec {R : ringType} n (i : 'I_n) : 'rV[R]_n :=
-  \row_(j < n) (i != j)%:R.
+Definition err_vec {R : ringType} (i : 'I_n.+1) : 'rV[R]_n.+1 :=
+  \row_(j < n.+1) (i != j)%:R.
 
-Definition partial (i : 'I_n) (a : 'rV[R]_n) :=
+Definition partial (i : 'I_n.+1) (a : 'rV[R]_n.+1) :=
   lim (h^-1 * (f (a + h *: err_vec i) - f a) @[h --> (0:R)^'+]).
+
+Lemma partialE (i : 'I_n.+1) (a : 'rV[R]_n.+1) :
+  partial i a = 'D_(err_vec i) f a .
+Proof.
+rewrite /partial.
+rewrite /derive/=.
+under eq_fun do rewrite (addrC a).
+(* NB(rei): the difference is the filter *)
+Abort.
 
 (*Search ( (_ <= lim _)%R ). Search ( _ --> _).*)
 
 End partial.
+Notation "'d f '/d i" := (partial f i).
+
+(* safe admits
+   see https://github.com/math-comp/analysis/pull/1147 *)
+Lemma nonincreasing_at_right_cvgr {R : realType} (f : R -> R) a (b : itv_bound R) :
+    (BRight a < b)%O ->
+    {in Interval (BRight a) b &, nonincreasing_fun f} ->
+    has_ubound (f @` [set` Interval (BRight a) b]) ->
+  f x @[x --> a ^'+] --> sup (f @` [set` Interval (BRight a) b]).
+Admitted.
+
+(* this lemma is PRed to MCA: https://github.com/math-comp/analysis/pull/1147 *)
+Lemma nondecreasing_at_right_cvgr {R : realType} (f : R -> R) a (b : itv_bound R) :
+    (BRight a < b)%O ->
+    {in Interval (BRight a) b &, nondecreasing_fun f} ->
+    has_lbound (f @` [set` Interval (BRight a) b]) ->
+  f x @[x --> a ^'+] --> inf (f @` [set` Interval (BRight a) b]).
+Admitted.
+(* /safe admits *)
+
+Lemma monotonous_bounded_is_cvg {R : realType} (f : R -> R) x y : (BRight x < y)%O ->
+  monotonous ([set` Interval (BRight x)(*NB(rei): was BSide b x*) y]) f ->
+  has_ubound (f @` setT) -> has_lbound (f @` setT) ->
+  cvg (f x @[x --> x^'+]).
+Proof.
+move=> xy [inc uf lf|dec uf lf].
+  apply/cvg_ex; exists (inf (f @` [set` Interval (BRight x) y])).
+  apply: nondecreasing_at_right_cvgr => //.
+    by move=> a b axy bxy ab;rewrite inc//= inE.
+  (* TODO(rei): need a lemma? *)
+  case: lf => r fr; exists r => z/= [s].
+  by rewrite in_itv/= => /andP[xs _] <-{z}; exact: fr.
+apply/cvg_ex; exists (sup (f @` [set` Interval (BRight x)(*NB(rei): was (BSide b x)*) y])).
+apply: nonincreasing_at_right_cvgr => //.
+  by move=> a b axy bxy ab; rewrite dec// inE.
+case: uf => r fr; exists r => z/= [s].
+by rewrite in_itv/= => /andP[xs _] <-{z}; exact: fr.
+Qed.
 
 Inductive simple_type : Type :=
 | Bool_T : bool -> simple_type
@@ -85,7 +139,9 @@ End expr.
 
 Canonical expr_Bool_T_eqType (R : realType) b :=
   Equality.Pack (@gen_eqMixin (@expr R (Bool_T b))).
-
+  
+Declare Scope ldl_scope.
+  
 Notation "a /\ b" := (and_E _ [:: a; b]).
 Notation "a \/ b" := (or_E _ [:: a; b]).
 Notation "a `=> b" := (impl_E a b) (at level 55).
@@ -93,6 +149,8 @@ Notation "`~ a" := (not_E a) (at level 75).
 Notation "a `+ b" := (add_E a b) (at level 50).
 Notation "a `* b" := (mult_E a b) (at level 40).
 Notation "`- a" := (minus_E a) (at level 45).
+
+Local Open Scope ldl_scope.
 
 Notation "a `<= b" := (comparisons_E _ le_E a b) (at level 70).
 Notation "a `== b" := (comparisons_E _ eq_E a b) (at level 70).
@@ -110,7 +168,8 @@ Lemma expr_ind' (R : realType) :
        (forall b (l : seq (expr (Bool_T b))), List.Forall (fun x => P (Bool_T b) x) l -> P (Bool_T b) (and_E l)) ->
        (* (forall l : seq (expr Bool_T), P Bool_T (and_E l)) -> *)
        (forall b (l : seq (expr (Bool_T b))), List.Forall (fun x => P (Bool_T b) x) l -> P (Bool_T b) (or_E l)) ->
-       (forall b (l : seq (expr (Bool_T b))) i, List.Forall (fun x => P (Bool_T b) x) l -> P (Bool_T b) (nth (Bool b false) l i)) ->
+       (*NB(rei): removed on 2024-01-18, looks spurious    (forall (l : seq (expr Bool_T)) i, List.Forall (fun x => P Bool_T x) l ->
+      P Bool_T (nth (Bool false) l i)) -> *)
        (forall (e : expr (Bool_T true)),
         P (Bool_T true) e -> forall e0 : expr (Bool_T true), P (Bool_T true) e0 -> P (Bool_T true) (e `=> e0)) ->
        (forall e : expr (Bool_T true), P (Bool_T true) e -> P (Bool_T true) (`~ e)) ->
@@ -130,7 +189,7 @@ Lemma expr_ind' (R : realType) :
         P Real_T e -> forall e0 : expr Real_T, P Real_T e0 -> P (Bool_T b) (comparisons_E b c e e0)) ->
        forall (s : simple_type) (e : expr s), P s e.
 Proof.
-move => P H H0 H1 H2 H3 H4 H5 H6 H7 H8 H9 H10 H11 H12 H13 H14 s e.
+move => P H H0 H1 H2 H3 H4 (*H5*) H6 H7 H8 H9 H10 H11 H12 H13 H14 s e.
 revert e.
 revert s.
 fix F1 2.
@@ -164,6 +223,8 @@ destruct e.
   * apply H13; eauto. 
   * apply H14; eauto. 
 Qed.
+
+Local Close Scope ldl_scope.
 
 Section natalia_prod.
 Context {R : realType}.
@@ -284,7 +345,7 @@ Definition bool_type_translation (t : simple_type) : Type:=
   | Network_T n m => n.-tuple R -> m.-tuple R
   end.
 
-Definition dl2_type_translation (t : simple_type) : Type:=
+Definition dl2_type_translation (t : simple_type) : Type :=
   match t with
   | Bool_T x => \bar R (* TODO: this should b [-oo,0] *)
   | Real_T => R
@@ -305,8 +366,9 @@ end.
 End type_translation.
 
 Section bool_translation.
-Context {R : realType}.
 Local Open Scope ring_scope.
+Local Open Scope ldl_scope.
+Context {R : realType}.
 
 Fixpoint bool_translation t (e : @expr R t) : bool_type_translation t :=
   match e in expr t return bool_type_translation t with
@@ -340,11 +402,12 @@ Proof. by rewrite /= foldrE big_map. Qed.
 
 End bool_translation.
 
-Notation "[[ e ]]b" := (bool_translation e).
+Notation "[[ e ]]b" := (bool_translation e) : ldl_scope.
 
 Section goedel_translation.
-Context {R : realType}.
 Local Open Scope ring_scope.
+Local Open Scope ldl_scope.
+Context {R : realType}.
 Variables (l : DL) (p : R).
 
 Fixpoint translation t (e: @expr R t) {struct e} : type_translation t :=
@@ -397,9 +460,9 @@ where "{[ e ]}" := (translation e).
 End goedel_translation.
 
 Section dl2_translation.
-Context {R : realType}.
-
 Local Open Scope ereal_scope.
+Local Open Scope ldl_scope.
+Context {R : realType}.
 
 Fixpoint dl2_translation t (e : @expr R t) {struct e} : dl2_type_translation t :=
     match e in expr t return dl2_type_translation t with
@@ -410,7 +473,8 @@ Fixpoint dl2_translation t (e : @expr R t) {struct e} : dl2_type_translation t :
     | Vector n t => t
 
     | and_E _ Es => sumE (map (@dl2_translation _) Es)
-    | or_E _ Es => (-1^+(1+length Es)%nat * (sumE (map (@dl2_translation _) Es)))
+    | or_E _ Es => ((- 1) ^+ (length Es).+1)%:E *
+                 \big[*%E/1%E]_(i <- map (@dl2_translation _) Es) i
     | impl_E E1 E2 => (+oo)%E (* FIX: this case is not covered by DL2 *)
     | `~ E1 => (+oo)%E (* FIX: this case is not covered by DL2 *)
 
@@ -432,12 +496,12 @@ where "{[ e ]}" := (dl2_translation e).
 End dl2_translation.
 
 Section stl_translation.
+Local Open Scope ereal_scope.
+Local Open Scope ldl_scope.
 Context {R : realType}.
 Variables (p : R) (nu : R).
-Hypothesis p1 : 1 <= p.
-Hypothesis nu0 : 0 < nu.
-
-Local Open Scope ereal_scope.
+Hypothesis p1 : (1 <= p)%R.
+Hypothesis nu0 : (0 < nu)%R.
 
 Fixpoint stl_translation t (e: expr t) : stl_type_translation t :=
     match e in expr t return stl_type_translation t with
@@ -492,13 +556,13 @@ where "{[ e ]}" := (stl_translation e).
 
 End stl_translation.
 
-Notation "nu .-[[ e ]]_stl" := (stl_translation nu e).
-Notation "[[ e ]]_dl2" := (dl2_translation e).
+Notation "nu .-[[ e ]]_stl" := (stl_translation nu e) : ldl_scope.
+Notation "[[ e ]]_dl2" := (dl2_translation e) : ldl_scope.
 
 Section translation_lemmas.
-Context {R : realType}.
 Local Open Scope ring_scope.
-Local Open Scope order_scope.
+Local Open Scope ldl_scope.
+Context {R : realType}.
 Variables (l : DL) (p : R).
 Hypothesis p1 : 1 <= p.
 
@@ -578,11 +642,11 @@ dependent induction e using expr_ind'.
       by apply: (andP (H _ _ _ _ _ _ _ _)).2 => //; rewrite -In_in.
   + rewrite /natalia_prodR big_map natalia_prod_seq_01=> //i il0.
     by apply: H => //; rewrite -In_in.
-- move/List.Forall_forall in H.
+(*- move/List.Forall_forall in H.
   have [il0|il0] := ltP i (size l0).
     rewrite (H (nth (Bool c false) l0 i))//.
     by apply/In_in; rewrite mem_nth.
-  by rewrite nth_default//= lexx ler01.
+  by rewrite nth_default//= lexx ler01.*)
 - have := IHe1 _ p1 _ e1 erefl JMeq_refl.
   have := IHe2 _ p1 _ e2 erefl JMeq_refl.
   move: IHe1 IHe2.
@@ -598,7 +662,7 @@ dependent induction e using expr_ind'.
 Qed.
 
 Lemma nary_inversion_andE1 (Es : seq (expr Bool_T) ) :
-  [[ and_E Es ]]_ l = 1 -> (forall i, i < size Es -> [[ nth (Bool false) Es i ]]_ l = 1).
+  [[ and_E Es ]]_ l = 1 -> (forall i, (i < size Es)%N -> [[ nth (Bool false) Es i ]]_ l = 1).
 Proof.
 have H := translate_Bool_T_01 l. move: H.
 case: l => /=; move => H.
@@ -813,10 +877,10 @@ dependent induction e using expr_ind' => ll ly.
     move/nthP => xnth.
     have [i il0 <-] := xnth (Bool false).
     by apply/negPf; apply: H => //; rewrite ?h// -In_in mem_nth.
-- have /orP[isize|isize] := leqVgt (size l0) i.
+(*- have /orP[isize|isize] := leqVgt (size l0) i.
     by rewrite !nth_default//=; case: b => ///eqP; rewrite lt_eqF ?ltr01.
   rewrite List.Forall_forall in H => h.
-  by apply: H => //; rewrite -In_in mem_nth.
+  by apply: H => //; rewrite -In_in mem_nth.*)
 - have {} IHe1 := IHe1 e1 erefl JMeq_refl.
   have {} IHe2 := IHe2 e2 erefl JMeq_refl.
   rewrite [ [[Bool b]]_l ]/=. move: b => [].
@@ -881,25 +945,60 @@ Qed.
 
 End translation_lemmas.
 
+(* this is already in MCA master *)
+#[global] Hint Extern 0 (Filter (nbhs _^'+)) =>
+  (apply: at_right_proper_filter) : typeclass_instances.
+
+#[global] Hint Extern 0 (Filter (nbhs _^'-)) =>
+  (apply: at_left_proper_filter) : typeclass_instances.
+
 Section shadow.
 
 Definition row_of_seq {R : numDomainType} (s : seq R) : 'rV[R]_(size s) :=
   (\row_(i < size s) tnth (in_tuple s) i).
 
-Check row_of_seq.
-About MatrixFormula.seq_of_rV.
+(*Check row_of_seq.*)
+(*About MatrixFormula.seq_of_rV.*)
 
-Definition product_and {R : fieldType} n (xs: 'rV[R]_n) : R := 
-  \prod_(x <- (MatrixFormula.seq_of_rV xs)) x.
+Definition product_and {R : fieldType} n (xs : 'rV[R]_n) : R :=
+  \prod_(x < n) xs``_x.
 
-Print MatrixFormula.seq_of_rV.
-Print fgraph.
+(*Print MatrixFormula.seq_of_rV.*)
+(*Print fgraph.*)
 
+Definition dotmul {R : ringType} n (u v : 'rV[R]_n) : R := (u *m v^T)``_0.
+Reserved Notation "u *d w" (at level 40).
+Local Notation "u *d w" := (dotmul u w).
 
-Definition shadow_lifting {R : realType} (f : forall n, 'rV_n -> R) := 
-  forall Es : seq R, forall i : 'I_(size Es),
-    (* (forall i, nth 0 Es i != 0) -> *)
-    (forall i, 0 < nth 0 Es i <= 1) ->
+Definition gradient {R : realType} (n : nat) (f : 'rV_n.+1 -> R) a :=
+  \row_(i < n.+1) ('d f '/d i) a.
+
+(* NB(rei): main property of gradients? https://en.wikipedia.org/wiki/Gradient *)
+Lemma gradientP {R : realType} (n : nat) (f : 'rV[R]_n.+1 -> R^o) (v : 'rV[R]_n.+1) :
+  forall x : 'rV[R]_n.+1, (gradient f x) *d v = 'D_v f x.
+Proof.
+move=> x.
+rewrite /gradient.
+Admitted.
+
+Definition weakly_smooth_cond {R : realType} {n : nat} (a : 'rV[R]_n.+1) :=
+  let m := \big[minr/1(*def element*)]_i a``_i in
+  forall i j, i != j -> a``_i != m /\ a``_j != m.
+
+Definition weakly_smooth {R : realType} (n : nat) (f : 'rV[R]_n.+1 -> R) :=
+  (forall a, {for a, continuous f}) /\
+  (forall a, weakly_smooth_cond a -> {for a, continuous (gradient f)}).
+
+Definition shadow_lifting {R : realType} (M' : nat) (f : 'rV_M'.+1 -> R) :=
+  forall p, p != 0 -> forall i, ('d f '/d i) (const_mx p) > 0.
+
+(*Definition shadow_lifting {R : realType} (f : forall n, 'rV_n.1 -> R) := 
+  (* forall Es : seq R, forall i : 'I_(size Es),
+    (* (forall i, nth 0 Es i != 0) -> *) *)
+    forall Es : seq R, forall i : 'I_(size Es), forall e : R,
+    e != 0 (* (0 < e <= 1)  *)->
+    0 < nth 0 Es i <= 1 ->
+    (forall j, j != i -> nth 0 Es j = e) ->
     partial (f (size Es)) i (row_of_seq Es) > 0.
 
 Lemma all_0_product_partial {R : realType} (Es : seq R) (i : 'I_(size Es)) :
@@ -910,49 +1009,48 @@ apply/cvg_lim; first exact: Rhausdorff.
 rewrite [X in X @ _ --> _](_ : _ = 0); first exact: (@cvg_cst R).
 by apply/funext => r/=; rewrite /GRing.zero/=(*NB: I shouldn't do that*) subrr mulr0.
 Qed.
+*)
 
-Print BSide.
-Print itv_bound.
-
-Lemma monotonous_bounded_is_cvg {R : realType} (f : R -> R) x a b:
-  monotonous ([set` Interval (BSide b x) a]) f ->
-  (* has_ubound (f @` setT) ->  *)
-  has_lbound (f @` setT (*isn't this too restrictive?*) ) ->
-  cvg (f x @[x --> (x)^'+]).
+Lemma shadow_lifting_product_and {R : realType} M :
+  shadow_lifting (@product_and R M.+1).
 Proof.
-rewrite /monotonous/has_lbound.
-Search "lbound" "cvg".
-Admitted.
+move=> p p0 i.
+rewrite /product_and/=.
+rewrite [X in 0 < X _](_ : _ =
+    (fun xs : 'rV_M.+1 => \prod_(x < M.+1 | x != i) xs``_x)); last first.
+Abort.
 
-Lemma shadow_lifting_product_and {R : realType} : @shadow_lifting R product_and.
+(*Lemma shadow_lifting_product_and {R : realType} : @shadow_lifting R product_and.
 Proof.
 move=> Es i Es01.
-rewrite lt_neqAle; apply/andP; split; last first.
-+ apply: limr_ge.
-  - apply: (monotonous_bounded_is_cvg _ _ ).
-    * rewrite /monotonous. admit.
-    * rewrite /has_lbound.  Search "lbound".
-      (* rewrite -int_lbound_has_minimum.  *)
+(*  rewrite lt_neqAle; apply/andP; split; last first.
+  apply: limr_ge.
+  - apply: (@monotonous_bounded_is_cvg _ _ false 0 (BRight 1) (* `]0, 1] *)).
+    + rewrite {1}/row_of_seq /err_vec.
       admit.
+    + admit.
+    + admit.
+      (* rewrite -int_lbound_has_minimum.  *)
   - near=> x.
     rewrite mulr_ge0//.
     + by rewrite invr_ge0.
-    + rewrite subr_ge0 /product_and !big_map/= ler_prod// => j _.
-      rewrite !ffunE !mxE; apply/andP; split.
-      - rewrite /tnth (set_nth_default (0:R))//.
+    + rewrite subr_ge0 /product_and ler_prod// => j _.
+(*      rewrite !ffunE !mxE; apply/andP; split.
+      * rewrite /tnth (set_nth_default (0:R))//.
         by have /andP[/ltW] := Es01 j.
-      - by rewrite lerDl// mulr_ge0.
-+ rewrite /partial.
+      * by rewrite lerDl// mulr_ge0.*) admit.
+rewrite /partial.
 (*   rewrite /(-all_0_product_partial _).  *)
-  admit. 
+admit. *)
 Admitted.
-
+*)
 
 End shadow.
 
 Section Lukasiewicz_lemmas.
+Local Open Scope ldl_scope.
 Context {R : realType}.
-Variables (p : R).
+Variable p : R.
 
 Local Notation "[[ e ]]_ l" := (translation l p e).
 
@@ -998,8 +1096,9 @@ Qed.
 End Lukasiewicz_lemmas.
 
 Section Yager_lemmas.
+Local Open Scope ldl_scope.
 Context {R : realType}.
-Variables (p : R).
+Variable p : R.
 Hypothesis p1 : 1 <= p.
 
 Local Notation "[[ e ]]_ l" := (translation l p e).
@@ -1195,18 +1294,19 @@ Qed.
 End Yager_lemmas.
 
 Section Godel_lemmas.
+Local Open Scope ldl_scope.
 Context {R : realType}.
-Variables (p : R).
+Variable p : R.
 
 Local Notation "[[ e ]]_ l" := (translation l p e).
 
-Lemma Godel_andI e : [[ e /\ e ]]_Godel = [[ e ]]_Godel.
+Lemma Godel_idempotence e : [[ e /\ e ]]_Godel = [[ e]]_Godel.
 Proof.
-rewrite /=/minR ?big_cons big_nil /minr.
-case: ifPn => //; rewrite -leNgt.
-case: ifPn => // _ ege1; apply/eqP.
-have /andP[_ ele1] := translate_Bool_T_01 p Godel e.
-by rewrite eq_le ele1 ege1.
+rewrite /=/minR ?big_cons ?big_nil.
+have := translate_Bool_T_01 p Godel e.
+set t1 := _ e.
+move => h.
+rewrite /=/minr; repeat case: ifP; lra.
 Qed.
 
 Lemma Godel_orI e : [[ e \/ e ]]_Godel = [[ e ]]_Godel.
@@ -1257,8 +1357,9 @@ Qed.
 End Godel_lemmas.
 
 Section product_lemmas.
+Local Open Scope ldl_scope.
 Context {R : realType}.
-Variables (p : R).
+Variable p : R.
 
 Local Notation "[[ e ]]_ l" := (translation l p e).
 
@@ -1299,15 +1400,15 @@ Qed.
 End product_lemmas.
 
 Section dl2_lemmas.
+Local Open Scope ldl_scope.
 Context {R : realType}.
-Variables (p : R).
+Variable p : R.
 
 Local Notation "[[ e ]]_dl2" := (@dl2_translation R _ e).
 
-Lemma dl2_andC e1 e2 :
- [[ e1 /\ e2 ]]_dl2 = [[ e2 /\ e1 ]]_dl2.
+Lemma dl2_andC e1 e2 : [[ e1 /\ e2 ]]_dl2 = [[ e2 /\ e1 ]]_dl2.
 Proof.
-by rewrite /=/sumE ?big_cons ?big_nil /= adde0 adde0 addeC. 
+by rewrite /=/sumE ?big_cons ?big_nil /= adde0 adde0 addeC.
 Qed.
 
 Lemma dl2_andA e1 e2 e3 :
@@ -1318,11 +1419,52 @@ Qed.
 
 Lemma dl2_orC e1 e2 :
  [[ e1 \/ e2 ]]_dl2 = [[ e2 \/ e1 ]]_dl2.
+Proof.
+rewrite /= !big_cons big_nil !mule1; congr *%E.
+by rewrite muleC.
+Qed.
+
+Axiom sge : \bar R -> R.
+
+Lemma prodN1 (l : seq (expr Bool_T)) (f : @expr R Bool_T -> \bar R) :
+  (forall e, f e < 0)%E ->
+  sge (\big[*%E/1%E]_(e <- l) f e) = (- 1) ^+ (size l).
+Admitted.
+
+
+Lemma dl2_translation_le0 e :
+  ([[ e ]]_dl2 <= 0 :> dl2_type_translation Bool_T)%E.
+Proof.
+dependent induction e using expr_ind' => /=.
+- by case: b.
+- rewrite /sumE big_map big_seq sume_le0// => t tl.
+  move/List.Forall_forall : H => /(_ t); apply => //.
+  exact/In_in.
+- rewrite big_map big_seq; have [ol|el] := boolP (odd (length l)).
+    rewrite exprS -signr_odd ol expr1 mulrN1 !EFinN oppeK mul1e.
+    set lhs := (leLHS).
+    have : sge lhs = -1.
+      rewrite /lhs -big_seq prodN1.
+      admit.
+    admit.
+    admit.
+  rewrite exprS -signr_odd (negbTE el) expr0 mulN1r.
+  rewrite EFinN mulN1e oppe_le0.
+  admit.
+- admit.
+- admit.
+- admit.
 Admitted.
 
 Lemma dl2_orA e1 e2 e3 :
   [[ e1 \/ (e2 \/ e3) ]]_dl2 = [[ (e1 \/ e2) \/ e3 ]]_dl2.
-Admitted.
+Proof.
+rewrite /=.
+rewrite !big_cons big_nil !mule1.
+congr (_ * _)%E.
+rewrite muleCA.
+by rewrite !muleA.
+Qed.
 
 (* note: dl2_soundness should go through because we exclude the translation of implication and negation by mapping to +oo *)
 Lemma dl2_soundness e b :
@@ -1337,6 +1479,8 @@ End dl2_lemmas.
 Section stl_lemmas.
 Context {R : realType}.
 Variables (nu : R).
+Local Open Scope ring_scope.
+Local Open Scope ldl_scope.
 
 Lemma andI_stl e :
   nu.-[[e /\ e]]_stl = nu.-[[e]]_stl.
@@ -1476,10 +1620,10 @@ dependent induction e using expr_ind'.
     move/nthP => xnth.
     have [i il0 <-] := xnth (Bool false).
     by apply/negPf; apply: H => //; rewrite ?h// -In_in mem_nth.
-- have /orP[isize|isize] := leqVgt (size l) i.
+(*- have /orP[isize|isize] := leqVgt (size l) i.
     by rewrite !nth_default//=; case: b => ///eqP; rewrite lt_eqF ?ltr01.
   rewrite List.Forall_forall in H => h.
-  by apply: H => //; rewrite -In_in mem_nth.
+  by apply: H => //; rewrite -In_in mem_nth.*)
 - have {} IHe1 := IHe1 e1 erefl JMeq_refl.
   have {} IHe2 := IHe2 e2 erefl JMeq_refl.
   rewrite [ nu.-[[Bool b]]_stl ]/=. move: b => [].
