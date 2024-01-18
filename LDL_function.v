@@ -1213,8 +1213,11 @@ Qed.
 
 Lemma Godel_orI e : [[ e \/ e ]]_Godel = [[ e ]]_Godel.
 Proof.
-rewrite /=/maxR ?big_cons big_nil /maxr.
-Admitted.
+rewrite /= /maxR !big_cons big_nil.
+have /max_idPl -> : 0 <= [[ e ]]_Godel.
+  by have /andP[] := translate_Bool_T_01 p Godel e.
+by rewrite maxxx.
+Qed.
 
 Lemma Godel_andC e1 e2 :
   [[ e1 /\ e2 ]]_Godel = [[ e2 /\ e1 ]]_Godel.
