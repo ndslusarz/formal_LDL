@@ -855,35 +855,38 @@ dependent induction e using expr_ind' => ll ly.
     apply: allT => x/=.
     apply/implyP => /nthP xnth.
     have [i il0 <-] := xnth (Bool c false).
-    by apply: H => //; rewrite ?h// -In_in mem_nth.
+    (* by apply: H  => //; rewrite ?h// -In_in mem_nth. *)
+    apply: H => //. rewrite ?h// -In_in mem_nth. exact. by rewrite il0. 
+  rewrite //=.  admit.
   + move/nary_inversion_andE0.
     rewrite [bool_translation (and_E l0)]/= foldrE big_map big_all.
     elim=>// i /andP[/eqP i0 isize].
-    apply/allPn; exists (nth (Bool false) l0 i); first by rewrite mem_nth.
-    apply/negPf; apply: H => //.
-    by rewrite -In_in mem_nth.
+    apply/allPn; exists (nth (Bool c false) l0 i); first by rewrite mem_nth.
+    (*apply/negPf; apply: H => //. *)
+    (*Natalia: the application of H above now takes forever and has to be shut down - why?*)
+    (* by rewrite -In_in mem_nth. *) admit.
 - rewrite List.Forall_forall in H.
-  rewrite [ [[Bool b]]_l]/=.
+  rewrite [ [[Bool c b]]_l]/=.
   move: b => [].
   + move/nary_inversion_orE1.
     rewrite [bool_translation (or_E l0)]/= foldrE big_map big_has.
     elim=>// i /andP[/eqP i0 isize].
-    apply/hasP; exists (nth (Bool false) l0 i); first by rewrite mem_nth.
-    apply: H => //.
-    by rewrite -In_in mem_nth.
+    apply/hasP; exists (nth (Bool c false) l0 i); first by rewrite mem_nth.
+    (* apply: H => //.
+    by rewrite -In_in mem_nth. *) admit.
   + move/nary_inversion_orE0.
     rewrite [bool_translation (or_E l0)]/= foldrE big_map big_has => h.
     apply/hasPn => x.
     move/nthP => xnth.
-    have [i il0 <-] := xnth (Bool false).
-    by apply/negPf; apply: H => //; rewrite ?h// -In_in mem_nth.
+    have [i il0 <-] := xnth (Bool c false).
+    (* by apply/negPf; apply: H => //; rewrite ?h// -In_in mem_nth. *) admit.
 (*- have /orP[isize|isize] := leqVgt (size l0) i.
     by rewrite !nth_default//=; case: b => ///eqP; rewrite lt_eqF ?ltr01.
   rewrite List.Forall_forall in H => h.
   by apply: H => //; rewrite -In_in mem_nth.*)
-- have {} IHe1 := IHe1 e1 erefl JMeq_refl.
-  have {} IHe2 := IHe2 e2 erefl JMeq_refl.
-  rewrite [ [[Bool b]]_l ]/=. move: b => [].
+- have {} IHe1 := IHe1 _ p1 _ e1 erefl JMeq_refl.
+  have {} IHe2 := IHe2 _ p1 _ e2 erefl JMeq_refl.
+  rewrite [ [[Bool true b]]_l ]/=. move: b => [].
   + move/(inversion_implE1 ll ly ).
     case; rewrite [bool_translation (e1 `=> e2)]/=.
     by move/(IHe1 false ll ly) => ->.
@@ -893,13 +896,13 @@ dependent induction e using expr_ind' => ll ly.
     move/(IHe1 true ll ly) => ->.
     by move/(IHe2 false ll ly) => ->.
 - rewrite //=.
-  have {} IHe := IHe e erefl JMeq_refl.
+  have {} IHe := IHe _ p1 _ e erefl JMeq_refl.
   case: b => ?.
   have: [[ e ]]_l = 0 by lra.
   by move/(IHe false) => ->.
   have: [[ e ]]_l = 1 by lra.
   by move/(IHe true) => ->.
-- case: c; rewrite //=; rewrite -!translations_Real_coincide;
+- case: c0; rewrite //=; rewrite -!translations_Real_coincide;
   set t1 := _ e1; set t2 := _ e2.
   + case: ifPn => [/eqP ->|e12eq].
     have [] := leP (-t2) t2 => /=; case: b; lra.
@@ -941,7 +944,7 @@ dependent induction e using expr_ind' => ll ly.
       have : `|(t1 - t2) / (t1 + t2)| == 1 by lra.
       rewrite eqr_norml.
       nra.
-Qed.
+Admitted.
 
 End translation_lemmas.
 
