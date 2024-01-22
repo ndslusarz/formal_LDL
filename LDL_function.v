@@ -1420,6 +1420,16 @@ Lemma prodN1 (l : seq (expr Bool_N)) (f : @expr R Bool_N -> \bar R) :
   sge (\big[*%E/1%E]_(e <- l) f e) = (- 1) ^+ (size l).
 Admitted.
 
+Lemma dl2_orA (e1 e2 e3 : expr Bool_N) :
+  [[ e1 `\/ (e2 `\/ e3) ]]_dl2 = [[ (e1 `\/ e2) `\/ e3 ]]_dl2.
+Proof.
+rewrite /=.
+rewrite !big_cons big_nil !mule1.
+congr (_ * _)%E.
+rewrite muleCA.
+by rewrite !muleA.
+Qed.
+
 
 Lemma dl2_translation_le0 e :
   ([[ e ]]_dl2 <= 0 :> dl2_type_translation Bool_N)%E.
@@ -1445,14 +1455,46 @@ dependent induction e using expr_ind' => /=.
 - admit.
 Admitted.
 
-Lemma dl2_orA (e1 e2 e3 : expr Bool_N) :
-  [[ e1 `\/ (e2 `\/ e3) ]]_dl2 = [[ (e1 `\/ e2) `\/ e3 ]]_dl2.
+Lemma dl2_nary_inversion_andE1 (Es : seq (expr (Bool_N)) ) :
+  [[ and_E  Es ]]_dl2 = 0%E -> (forall i, (i < size Es)%N -> [[ nth (Bool _ false) Es i ]]_dl2 = 0%E).
 Proof.
-rewrite /=.
-rewrite !big_cons big_nil !mule1.
-congr (_ * _)%E.
-rewrite muleCA.
-by rewrite !muleA.
+Admitted.
+
+Lemma dl2_nary_inversion_andE0 (Es : seq (expr (Bool_N)) ) :
+    [[ and_E Es ]]_dl2 = -oo%E -> (exists (i : nat), ([[ nth (Bool _ false) Es i ]]_dl2 == -oo%E ) && (i < size Es)%nat).
+Proof.
+Admitted.
+
+Lemma dl2_nary_inversion_orE1 (Es : seq (expr (Bool_N)) ) :
+    [[ or_E Es ]]_dl2 = 0%E -> (exists i, ([[ nth (Bool _ false) Es i ]]_dl2 == 0%E) && (i < size Es)%nat).
+Proof.
+Admitted.
+
+Lemma dl2_nary_inversion_orE0 (Es : seq (expr (Bool_N)) ) :
+    [[ or_E Es ]]_dl2  = -oo%E -> (forall i, (i < size Es)%nat -> [[ nth (Bool _ false) Es i ]]_dl2 = -oo%E).
+Proof.
+Admitted.
+
+Lemma dl2_translations_Vector_coincide: forall n (e : @expr R (Vector_T n)),
+  [[ e ]]_dl2 = [[ e ]]b.
+Proof.
+dependent induction e => //=.
+dependent destruction e1.
+by rewrite (IHe2 _ _ e2 erefl JMeq_refl).
+Qed.
+
+Lemma dl2_translations_Index_coincide: forall n (e : expr (Index_T n)),
+  [[ e ]]_dl2 = [[ e ]]b.
+Proof.
+dependent induction e => //=.
+Qed.
+
+Lemma dl2_translations_Real_coincide (e : expr Real_T):
+  [[ e ]]_dl2 = [[ e ]]b.
+Proof.
+dependent induction e => //=;
+rewrite ?(IHe1 e1 erefl JMeq_refl) ?(IHe2 e2 erefl JMeq_refl) ?(IHe e erefl JMeq_refl) //=.
+by rewrite dl2_translations_Vector_coincide dl2_translations_Index_coincide.
 Qed.
 
 (* note: dl2_soundness should go through because we exclude the translation of implication and negation by mapping to +oo *)
@@ -1461,6 +1503,47 @@ Lemma dl2_soundness (e : expr Bool_N) b :
 Proof.
 dependent induction e using expr_ind'.
 - move: b b0 => [] [] //=.
+- rewrite List.Forall_forall in H. 
+  move: b => [].
+  + move/dl2_nary_inversion_andE1.
+    rewrite [bool_translation (and_E l)]/= foldrE big_map big_seq big_all_cond => h.
+    apply: allT => x/=.
+    apply/implyP => /nthP xnth.
+    have [i il0 <-] := xnth (Bool _ false).
+    by apply: H => //; rewrite ?h// -In_in mem_nth.
+  + move/dl2_nary_inversion_andE0.
+    rewrite [bool_translation (and_E l)]/= foldrE big_map big_all.
+    elim=>// i /andP[/eqP i0 isize].
+    apply/allPn; exists (nth (Bool _ false) l i); first by rewrite mem_nth.
+    apply/negPf; apply: H => //.
+    by rewrite -In_in mem_nth.
+- rewrite List.Forall_forall in H.
+  move: b => [].
+  + move/dl2_nary_inversion_orE1.
+    rewrite [bool_translation (or_E l)]/= foldrE big_map big_has.
+    elim=>// i /andP[/eqP i0 isize].
+    apply/hasP; exists (nth (Bool _ false) l i); first by rewrite mem_nth.
+    apply: H => //.
+    by rewrite -In_in mem_nth.
+  + move/dl2_nary_inversion_orE0.
+    rewrite [bool_translation (or_E l)]/= foldrE big_map big_has => h.
+    apply/hasPn => x.
+    move/nthP => xnth.
+    have [i il0 <-] := xnth (Bool _ false).
+    by apply/negPf; apply: H => //; rewrite ?h// -In_in mem_nth.
+- have {} IHe1 := IHe1 e1 erefl JMeq_refl.
+  have {} IHe2 := IHe2 e2 erefl JMeq_refl.
+  move: b => [].
+  admit. (*no implication use flag*)
+- rewrite //=.
+  have {} IHe := IHe e erefl JMeq_refl.
+  admit. (*no negation, use flag*)
+- case: c; rewrite //=; rewrite -!dl2_translations_Real_coincide;
+  set t1 := _ e1; set t2 := _ e2; case: b.
+  + admit.
+  + admit.
+  + admit.
+  + admit.   
 Admitted.
 
 End dl2_lemmas.
