@@ -1400,13 +1400,13 @@ Proof.
 by rewrite /=/sumE ?big_cons ?big_nil /= adde0 adde0 addeC.
 Qed.
 
-Lemma dl2_andA (e1 e2 e3 : expr Bool_N) :
+Lemma dl2_andA (e1 e2 e3 : expr Bool_P) :
   [[ e1 `/\ (e2 `/\ e3) ]]_dl2 = [[ (e1 `/\ e2) `/\ e3 ]]_dl2.
 Proof.
 by rewrite /=/sumE ?big_cons ?big_nil !adde0 addeA.
 Qed.
 
-Lemma dl2_orC (e1 e2 : expr Bool_N) :
+Lemma dl2_orC (e1 e2 : expr Bool_P) :
  [[ e1 `\/ e2 ]]_dl2 = [[ e2 `\/ e1 ]]_dl2.
 Proof.
 rewrite /= !big_cons big_nil !mule1; congr *%E.
@@ -1415,12 +1415,12 @@ Qed.
 
 Axiom sge : \bar R -> R.
 
-Lemma prodN1 (l : seq (expr Bool_N)) (f : @expr R Bool_N -> \bar R) :
+Lemma prodN1 (l : seq (expr Bool_P)) (f : @expr R Bool_P -> \bar R) :
   (forall e, f e < 0)%E ->
   sge (\big[*%E/1%E]_(e <- l) f e) = (- 1) ^+ (size l).
 Admitted.
 
-Lemma dl2_orA (e1 e2 e3 : expr Bool_N) :
+Lemma dl2_orA (e1 e2 e3 : expr Bool_P) :
   [[ e1 `\/ (e2 `\/ e3) ]]_dl2 = [[ (e1 `\/ e2) `\/ e3 ]]_dl2.
 Proof.
 rewrite /=.
@@ -1432,7 +1432,7 @@ Qed.
 
 
 Lemma dl2_translation_le0 e :
-  ([[ e ]]_dl2 <= 0 :> dl2_type_translation Bool_N)%E.
+  ([[ e ]]_dl2 <= 0 :> dl2_type_translation Bool_P)%E.
 Proof.
 dependent induction e using expr_ind' => /=.
 - by case: b.
@@ -1444,6 +1444,7 @@ dependent induction e using expr_ind' => /=.
     set lhs := (leLHS).
     have : sge lhs = -1.
       rewrite /lhs -big_seq prodN1.
+      Search ( (-1)^ _ ).
       admit.
     admit.
     admit.
@@ -1451,26 +1452,28 @@ dependent induction e using expr_ind' => /=.
   rewrite EFinN mulN1e oppe_le0.
   admit.
 - admit.
-- admit.
-- admit.
 Admitted.
 
-Lemma dl2_nary_inversion_andE1 (Es : seq (expr (Bool_N)) ) :
+(* Lemma pow_neg1_odd :
+  foall l *)
+
+
+Lemma dl2_nary_inversion_andE1 (Es : seq (expr (Bool_P)) ) :
   [[ and_E  Es ]]_dl2 = 0%E -> (forall i, (i < size Es)%N -> [[ nth (Bool _ false) Es i ]]_dl2 = 0%E).
 Proof.
 Admitted.
 
-Lemma dl2_nary_inversion_andE0 (Es : seq (expr (Bool_N)) ) :
+Lemma dl2_nary_inversion_andE0 (Es : seq (expr (Bool_P)) ) :
     [[ and_E Es ]]_dl2 = -oo%E -> (exists (i : nat), ([[ nth (Bool _ false) Es i ]]_dl2 == -oo%E ) && (i < size Es)%nat).
 Proof.
 Admitted.
 
-Lemma dl2_nary_inversion_orE1 (Es : seq (expr (Bool_N)) ) :
+Lemma dl2_nary_inversion_orE1 (Es : seq (expr (Bool_P)) ) :
     [[ or_E Es ]]_dl2 = 0%E -> (exists i, ([[ nth (Bool _ false) Es i ]]_dl2 == 0%E) && (i < size Es)%nat).
 Proof.
 Admitted.
 
-Lemma dl2_nary_inversion_orE0 (Es : seq (expr (Bool_N)) ) :
+Lemma dl2_nary_inversion_orE0 (Es : seq (expr (Bool_P)) ) :
     [[ or_E Es ]]_dl2  = -oo%E -> (forall i, (i < size Es)%nat -> [[ nth (Bool _ false) Es i ]]_dl2 = -oo%E).
 Proof.
 Admitted.
@@ -1497,8 +1500,13 @@ rewrite ?(IHe1 e1 erefl JMeq_refl) ?(IHe2 e2 erefl JMeq_refl) ?(IHe e erefl JMeq
 by rewrite dl2_translations_Vector_coincide dl2_translations_Index_coincide.
 Qed.
 
+
+Lemma maxr00_le :
+  forall x : R , x <= 0 -> (- maxr x 0)%:E = 0%E.
+Admitted.
+
 (* note: dl2_soundness should go through because we exclude the translation of implication and negation by mapping to +oo *)
-Lemma dl2_soundness (e : expr Bool_N) b :
+Lemma dl2_soundness (e : expr Bool_P) b :
   [[ e ]]_dl2 = [[ Bool _ b ]]_dl2 -> [[ e ]]b = b.
 Proof.
 dependent induction e using expr_ind'.
@@ -1531,20 +1539,14 @@ dependent induction e using expr_ind'.
     move/nthP => xnth.
     have [i il0 <-] := xnth (Bool _ false).
     by apply/negPf; apply: H => //; rewrite ?h// -In_in mem_nth.
-- have {} IHe1 := IHe1 e1 erefl JMeq_refl.
-  have {} IHe2 := IHe2 e2 erefl JMeq_refl.
-  move: b => [].
-  admit. (*no implication use flag*)
-- rewrite //=.
-  have {} IHe := IHe e erefl JMeq_refl.
-  admit. (*no negation, use flag*)
 - case: c; rewrite //=; rewrite -!dl2_translations_Real_coincide;
-  set t1 := _ e1; set t2 := _ e2; case: b.
+  set t1 := _ e1; set t2 := _ e2; case: b. Search (maxr _ 0).
+  + rewrite maxr00_le. admit. (*to do: specific maxr lemma*)
   + admit.
-  + admit.
-  + admit.
+  + Search ( `| _ | = 0). admit.
   + admit.   
 Admitted.
+
 
 End dl2_lemmas.
 
