@@ -229,35 +229,35 @@ Qed.
 
 Local Close Scope ldl_scope.
 
-Section natalia_prod.
+Section product_dl_prod.
 Context {R : realType}.
 
-Lemma natalia_prod_01 : forall (x y : R), 0 <= x <= 1 -> 0 <= y <= 1 -> 0 <= natalia_prod x y <= 1.
-Proof. by move => x y; rewrite /natalia_prod; nra. Qed.
+Lemma product_dl_prod_01 : forall (x y : R), 0 <= x <= 1 -> 0 <= y <= 1 -> 0 <= product_dl_prod x y <= 1.
+Proof. by move => x y; rewrite /product_dl_prod; nra. Qed.
 
-Lemma natalia_prod_seq_01 (T : eqType) (f : T -> R) (l0 : seq T) :
-  (forall i, i \in l0 -> 0 <= f i <= 1) -> (0 <= \big[natalia_prod/0]_(i <- l0) f i <= 1).
+Lemma product_dl_prod_seq_01 (T : eqType) (f : T -> R) (l0 : seq T) :
+  (forall i, i \in l0 -> 0 <= f i <= 1) -> (0 <= \big[product_dl_prod/0]_(i <- l0) f i <= 1).
 Proof.
 elim: l0.
 - by rewrite big_nil lexx ler01.
 - move=> a l0 IH h.
-  rewrite big_cons natalia_prod_01 ?h ?mem_head//.
+  rewrite big_cons product_dl_prod_01 ?h ?mem_head//.
   apply: IH => i il0; apply: h.
   by rewrite in_cons il0 orbT.
 Qed.
 
-Lemma natalia_prod_inv (x y : R) :
+Lemma product_dl_prod_inv (x y : R) :
   (0 <= x <= 1) -> (0 <= y <= 1) ->
-    reflect (x = 1 \/ y = 1) (natalia_prod x y == 1).
+    reflect (x = 1 \/ y = 1) (product_dl_prod x y == 1).
 Proof.
-move=> x01 y01; apply: (iffP eqP); rewrite /natalia_prod; nra.
+move=> x01 y01; apply: (iffP eqP); rewrite /product_dl_prod; nra.
 Qed.
 
-Lemma natalia_prod_inv0 (x y : R) :
+Lemma product_dl_prod_inv0 (x y : R) :
   (0 <= x <= 1) -> (0 <= y <= 1) ->
-    reflect (x = 0 /\ y = 0) (natalia_prod x y == 0).
+    reflect (x = 0 /\ y = 0) (product_dl_prod x y == 0).
 Proof.
-move=> x01 y01; apply: (iffP eqP); rewrite /natalia_prod; nra.
+move=> x01 y01; apply: (iffP eqP); rewrite /product_dl_prod; nra.
 Qed.
 
 Lemma bigsum_0x (T : eqType) f :
@@ -323,7 +323,7 @@ apply: (iffP idP).
   exact: mem_head.
 Qed.
 
-End natalia_prod.
+End product_dl_prod.
 
 Inductive DL := Lukasiewicz | Yager | Godel | product.
 
@@ -433,7 +433,7 @@ Fixpoint translation t (e: @expr R t) {struct e} : type_translation t :=
         | Lukasiewicz => minr (sumR (map (@translation _) Es)) 1
         | Yager => minr ((sumR (map (fun E => ({[ E ]} : type_translation (Bool_T _))`^p) Es))`^p^-1) 1
         | Godel => maxR (map (@translation _) Es)
-        | product => natalia_prodR (map (@translation _) Es)
+        | product => product_dl_prodR (map (@translation _) Es)
         end
     | impl_E E1 E2 =>
         match l with
@@ -643,7 +643,7 @@ dependent induction e using expr_ind'.
       by rewrite /maxr; case: ifPn; lra.
     * rewrite bigmax_le ?ler01// => i il0.
       by apply: (andP (H _ _ _ _ _)).2 => //; rewrite -In_in.
-  + rewrite /natalia_prodR big_map natalia_prod_seq_01=> //i il0.
+  + rewrite /product_dl_prodR big_map product_dl_prod_seq_01=> //i il0.
     by apply: H => //; rewrite -In_in.
 (*- move/List.Forall_forall in H.
   have [il0|il0] := ltP i (size l0).
@@ -743,14 +743,14 @@ case: l => //=; move => H.
     rewrite big_seq; move/IH => [i i1].
     by exists i.+1.
 - move => l1 l2 /eqP.
-  rewrite /natalia_prodR big_map big_seq.
+  rewrite /product_dl_prodR big_map big_seq.
   elim: Es.
   + by rewrite big_nil eq_sym oner_eq0.
   + move=> a l0 IH.
-    rewrite -big_seq big_cons {1}/natalia_prod.
-    move/natalia_prod_inv => [|||/eqP].
+    rewrite -big_seq big_cons {1}/product_dl_prod.
+    move/product_dl_prod_inv => [|||/eqP].
     * exact: H.
-    * by apply: natalia_prod_seq_01.
+    * by apply: product_dl_prod_seq_01.
     * by exists 0%nat; rewrite a0 eq_refl ltn0Sn.
     * by rewrite big_seq; move/IH => [x ?]; exists x.+1.
 Qed.
@@ -779,7 +779,7 @@ case: l => //=; move => H.
     by rewrite mem_nth.
   apply/mapP; exists (nth (Bool _ false) Es i) => //.
     by rewrite mem_nth.
-- rewrite /maxR/natalia_prodR.
+- rewrite /maxR/product_dl_prodR.
   elim: Es => [h i|a l0 IH h]; first by rewrite nth_nil.
   elim => /=[_|].
   + move: h.
@@ -791,17 +791,17 @@ case: l => //=; move => H.
     move: h; rewrite !big_map big_cons {1}/maxr.
     case: ifPn => // /[swap] ->; rewrite -leNgt => bigle0.
     by apply/eqP; rewrite eq_le bigle0 bigmax_idl le_maxr lexx.
-- rewrite /natalia_prodR.
+- rewrite /product_dl_prodR.
   rewrite big_map.
   elim: Es => // a l0 IH.
-  rewrite big_cons => /eqP /natalia_prod_inv0 h.
+  rewrite big_cons => /eqP /product_dl_prod_inv0 h.
   case => /=[_|i].
   + apply: (h _ _).1 => //.
-    exact: natalia_prod_seq_01.
+    exact: product_dl_prod_seq_01.
   + rewrite ltnS => isize.
     apply: IH =>//.
     apply: (h _ _).2 => //.
-    exact: natalia_prod_seq_01.
+    exact: product_dl_prod_seq_01.
 Qed.
 
 Lemma inversion_implE1 e1 e2 :
@@ -1018,7 +1018,7 @@ Lemma almost_shadowlifting_product_and {R : realType} M:
 Proof.
 move => p p0 i.
 unfold partial. 
-(* rewrite -upper_lower_lim. *)
+(* rewrite upper_lower_lim. *)
 
 Admitted. 
 (*this is where the proof based on stl paper happens*)
@@ -1101,7 +1101,7 @@ Proof.
 have := translate_Bool_T_01 p Lukasiewicz e1.
 have := translate_Bool_T_01 p Lukasiewicz e2.
 have := translate_Bool_T_01 p Lukasiewicz e3. 
-rewrite /=/sumR/maxR/minR/natalia_prodR ?big_cons ?big_nil.
+rewrite /=/sumR/maxR/minR/product_dl_prodR ?big_cons ?big_nil.
 set t1 := _ e1.
 set t2 := _ e2.
 set t3 := _ e3.
@@ -1141,7 +1141,7 @@ have ? : p != 0 by exact: lt0r_neq0.
 have := translate_Bool_T_01 p Yager e1.
 have := translate_Bool_T_01 p Yager e2.
 have := translate_Bool_T_01 p Yager e3.
-rewrite /=/sumR/maxR/minR/natalia_prodR ?big_cons ?big_nil.
+rewrite /=/sumR/maxR/minR/product_dl_prodR ?big_cons ?big_nil.
 rewrite ![in _ + _]addr0 addr0 addr0.
 set t1 := _ e1.
 set t2 := _ e2.
@@ -1204,7 +1204,7 @@ have pneq0 : p != 0 by exact: lt0r_neq0.
 have := translate_Bool_T_01 p Yager e1.
 have := translate_Bool_T_01 p Yager e2.
 have := translate_Bool_T_01 p Yager e3.
-rewrite /=/sumR/maxR/minR/natalia_prodR ?big_cons ?big_nil.
+rewrite /=/sumR/maxR/minR/product_dl_prodR ?big_cons ?big_nil.
 set t1 := _ e1.
 set t2 := _ e2.
 set t3 := _ e3.
@@ -1389,22 +1389,22 @@ Qed.
 Lemma product_orC (e1 e2 : expr Bool_N) :
   [[ e1 `\/ e2 ]]_product = [[ e2 `\/ e1 ]]_product.
 Proof.
-rewrite /=/sumR/maxR/natalia_prodR ?big_cons ?big_nil.
-by rewrite /=/natalia_prod addr0 addr0 mulr0 mulr0 subr0 subr0 mulrC -(addrC (_ e2)).
+rewrite /=/sumR/maxR/product_dl_prodR ?big_cons ?big_nil.
+by rewrite /=/product_dl_prod addr0 addr0 mulr0 mulr0 subr0 subr0 mulrC -(addrC (_ e2)).
 Qed.
 
 Lemma product_orA (e1 e2 e3 : expr Bool_N) :
   [[ (e1 `\/ (e2 `\/ e3)) ]]_product = [[ ((e1 `\/ e2) `\/ e3) ]]_product.
 Proof.
-rewrite /=/sumR/natalia_prodR ?big_cons ?big_nil.
-rewrite /natalia_prod !addr0 !mulr0 !subr0.
+rewrite /=/sumR/product_dl_prodR ?big_cons ?big_nil.
+rewrite /product_dl_prod !addr0 !mulr0 !subr0.
 lra.
 Qed.
 
 Theorem product_andA (e1 e2 e3 : expr Bool_N) : (0 < p) ->
   [[ (e1 `/\ e2) `/\ e3]]_product = [[ e1 `/\ (e2 `/\ e3) ]]_product.
 Proof.
-rewrite /=/sumR/maxR/minR/natalia_prodR ?big_cons ?big_nil.
+rewrite /=/sumR/maxR/minR/product_dl_prodR ?big_cons ?big_nil.
 set t1 := _ e1.
 set t2 := _ e2.
 set t3 := _ e3.
@@ -1480,8 +1480,6 @@ dependent induction e using expr_ind' => /=.
 - admit.
 Admitted.
 
-(* Lemma pow_neg1_odd :
-  foall l *)
 
 
 Lemma dl2_nary_inversion_andE1 (Es : seq (expr (Bool_P)) ) :
@@ -1567,7 +1565,7 @@ dependent induction e using expr_ind'.
     by apply/negPf; apply: H => //; rewrite ?h// -In_in mem_nth.
 - case: c; rewrite //=; rewrite -!dl2_translations_Real_coincide;
   set t1 := _ e1; set t2 := _ e2; case: b. Search (maxr _ 0).
-  + rewrite maxr00_le. admit. admit. (*to do: specific maxr lemma*)
+  + rewrite maxr00_le //=. Search (?x%E = ?x%E). admit. admit. (*to do: specific maxr lemma*)
   + admit.
   + (* Search (- _ = 0). rewrite abse_eq0.   *)Search ( abse). admit.
   + admit.   

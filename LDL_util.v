@@ -45,8 +45,8 @@ Context {R : numDomainType}.
 
 Definition sumR (Es : seq R) : R := \sum_(i <- Es) i.
 Definition prodR (Es : seq R) : R := \prod_(i <- Es) i.
-Definition natalia_prod : R -> R -> R := (fun a1 a2 => a1 + a2 - a1 * a2).
-Definition natalia_prodR (Es : seq R) : R := \big[natalia_prod/0]_(i <- Es) i.
+Definition product_dl_prod : R -> R -> R := (fun a1 a2 => a1 + a2 - a1 * a2).
+Definition product_dl_prodR (Es : seq R) : R := \big[product_dl_prod/0]_(i <- Es) i.
 Definition minR (Es : seq R) : R := \big[minr/1]_(i <- Es) i.
 Definition maxR (Es : seq R) : R := \big[maxr/0]_(i <- Es) i.
 
