@@ -979,8 +979,10 @@ Definition weakly_smooth {R : realType} (n : nat) (f : 'rV[R]_n.+1 -> R) :=
   (forall a, {for a, continuous f}) /\
   (forall a, weakly_smooth_cond a -> {for a, continuous (gradient f)}).
 
+(*we can afford p>0 rather than p!=0 because all values must be between
+0 and 1 for this DL anyway*)
 Definition shadow_lifting {R : realType} (M' : nat) (f : 'rV_M'.+1 -> R) :=
-  forall p, p != 0 -> forall i, ('d f '/d i) (const_mx p) > 0.
+  forall p, p > 0 -> forall i, ('d f '/d i) (const_mx p) > 0.
 
 (*Definition shadow_lifting {R : realType} (f : forall n, 'rV_n.1 -> R) := 
   (* forall Es : seq R, forall i : 'I_(size Es),
@@ -1001,13 +1003,37 @@ by apply/funext => r/=; rewrite /GRing.zero/=(*NB: I shouldn't do that*) subrr m
 Qed.
 *)
 
+(*if limit from above and below both exist and are equal, the limit itself exists
+and is equal to the same*)
+Lemma upper_lower_lim {R : realType} M' (i : 'I_M'.+1) (a : 'rV[R]_M'.+1) (f : 'rV_M'.+1 -> R) x:
+  lim (h^-1 * (f (a + h *: err_vec i) - f a) @[h --> (0:R)^'+]) = x ->
+  lim (h^-1 * (f (a + h *: err_vec i) - f a) @[h --> (0:R)^'-]) = x->
+  lim (h^-1 * (f (a + h *: err_vec i) - f a) @[h --> (0:R)]) = x.
+Admitted.
+  
+
+ (*needs new name*)
+Lemma almost_shadowlifting_product_and {R : realType} M:
+  forall p, p > 0 -> forall i, ('d (@product_and R M.+1) '/d i) (const_mx p) = p`^( (M)%:R -1).
+Proof.
+move => p p0 i.
+unfold partial. 
+(* rewrite -upper_lower_lim. *)
+
+Admitted. 
+(*this is where the proof based on stl paper happens*)
+
+
 Lemma shadow_lifting_product_and {R : realType} M :
   shadow_lifting (@product_and R M.+1).
 Proof.
 move=> p p0 i.
-rewrite /product_and/=.
+rewrite almost_shadowlifting_product_and.
+- admit.
+- by rewrite p0.
+(* rewrite /product_and/=.
 rewrite [X in 0 < X _](_ : _ =
-    (fun xs : 'rV_M.+1 => \prod_(x < M.+1 | x != i) xs``_x)); last first.
+    (fun xs : 'rV_M.+1 => \prod_(x < M.+1 | x != i) xs``_x)); last first. *)
 Abort.
 
 (*Lemma shadow_lifting_product_and {R : realType} : @shadow_lifting R product_and.
@@ -1541,9 +1567,9 @@ dependent induction e using expr_ind'.
     by apply/negPf; apply: H => //; rewrite ?h// -In_in mem_nth.
 - case: c; rewrite //=; rewrite -!dl2_translations_Real_coincide;
   set t1 := _ e1; set t2 := _ e2; case: b. Search (maxr _ 0).
-  + rewrite maxr00_le. admit. (*to do: specific maxr lemma*)
+  + rewrite maxr00_le. admit. admit. (*to do: specific maxr lemma*)
   + admit.
-  + Search ( `| _ | = 0). admit.
+  + (* Search (- _ = 0). rewrite abse_eq0.   *)Search ( abse). admit.
   + admit.   
 Admitted.
 
