@@ -1399,6 +1399,14 @@ Lemma lte0_sg {R : numDomainType} (x : \bar R) :
   (x < 0)%E -> sge x = -1.
 Proof. by move: x => [x| |]//; rewrite lte_fin => /ltr0_sg. Qed.
 
+Lemma sgN1_lt0 {R : realDomainType} (x : \bar R) :
+  sge x = -1 -> (x < 0)%E.
+Proof.
+move: x => [x| |]//=.
+- by rewrite lte_fin => /eqP; rewrite sgr_cp0.
+- by move=> /eqP; rewrite -subr_eq0 opprK -(natrD _ 1%N 1%N) pnatr_eq0.
+Qed.
+
 Lemma prodeN1 {R : realDomainType} T (l : seq T) (f : T -> \bar R) :
   (forall e, f e < 0)%E ->
   sge (\big[*%E/1%E]_(e <- l) f e) = (- 1) ^+ (size l).
@@ -1460,7 +1468,7 @@ dependent induction e using expr_ind' => /=.
           rewrite lt_neqAle.
           admit.
         by rewrite -signr_odd ol expr1.
-      admit.
+      by move/sgN1_lt0/ltW.
     admit.
   rewrite exprS -signr_odd (negbTE el) expr0 mulN1r.
   rewrite EFinN mulN1e oppe_le0.
