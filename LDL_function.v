@@ -1629,13 +1629,40 @@ Qed.
 
 Lemma orI_stl (e : expr Bool_N) :
   nu.-[[e `\/ e]]_stl = nu.-[[e]]_stl.
+Proof.
+rewrite /=/sumE !big_cons !big_nil/=.
+have [->//|enoo] := eqVneq (nu.-[[e]]_stl) (-oo)%E.
+have [->//=|epoo] := eqVneq (nu.-[[e]]_stl) (+oo)%E. 
+  (*seems to be contradition 
+- my fault or truly not idempotent?*)
+Admitted.
+
+(*Nat: generic, could be added to library when proven since mineA exists*)
+Lemma maxeA : 
+  forall {R : realType}, associative (fun x : \bar R => [eta maxe x]).
+Admitted.
+
+Lemma maxeC :
+  forall {R : realType}, commutative (fun x : \bar R => [eta maxe x]).
 Admitted.
 
 Lemma orC_stl (e1 e2 : expr Bool_N) :
   nu.-[[e1 `\/ e2]]_stl  = nu.-[[e2 `\/ e1]]_stl.
 Proof.
-rewrite /=/sumE !big_cons !big_nil/=.
-Admitted.
+rewrite /=/sumE !big_cons !big_nil /=.
+set a_max := maxe (nu.-[[e1]]_stl) (maxe (nu.-[[e2]]_stl) +oo)%E.
+have -> : (maxe (nu.-[[e2]]_stl) (maxe (nu.-[[e1]]_stl) +oo))%E = a_max.
+  by rewrite maxeA [X in maxe X _]maxeC -maxeA.
+Search ( - (- _) ).
+set a1 := ((- nu.-[[e1]]_stl - - a_max) * ((fine (- a_max))^-1)%:E)%E.
+set a2 := (((- nu.-[[e2]]_stl - - a_max) * ((fine (- a_max))^-1)%:E))%E.
+set d1 := ((fine (expeR (nu%:E * a1) + (expeR (nu%:E * a2) + 0)))^-1)%:E.
+have -> : ((fine (expeR (nu%:E * a2) + (expeR (nu%:E * a1) + 0)))^-1)%:E = d1.
+  by rewrite addeCA.
+case: ifPn => //.
+case: ifPn => _; first by rewrite addeCA.
+by case: ifPn => _; first rewrite addeCA.
+Qed.
 
 Lemma stl_nary_inversion_andE1 (Es : seq (expr Bool_N) ) :
   nu.-[[ and_E Es ]]_stl = +oo%E -> (forall i, (i < size Es)%N -> nu.-[[ nth (Bool _ false) Es i ]]_stl = +oo%E).
