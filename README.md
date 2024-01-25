@@ -11,5 +11,5 @@ Parts of formalisation left, sorted by DL:
   + shadow lifting
 - STL
   + inversion lemmas
-  + idempotence of or
-  + commutativity of or
+  + orI
+  + orC (proven, need to finish lemmas maxeA and maxeC)
