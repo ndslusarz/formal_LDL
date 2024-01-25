@@ -13,3 +13,4 @@ Parts of formalisation left, sorted by DL:
   + inversion lemmas
   + orI
   + orC (proven, need to finish lemmas maxeA and maxeC)
+  + shadow lifting
