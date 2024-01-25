@@ -43,7 +43,7 @@ Definition err_vec {R : ringType} (i : 'I_n.+1) : 'rV[R]_n.+1 :=
   \row_(j < n.+1) (i != j)%:R.
 
 Definition partial (i : 'I_n.+1) (a : 'rV[R]_n.+1) :=
-  lim (h^-1 * (f (a + h *: err_vec i) - f a) @[h --> (0:R)^'+]).
+  lim (h^-1 * (f (a + h *: err_vec i) - f a) @[h --> (0:R)^']).
 
 Lemma partialE (i : 'I_n.+1) (a : 'rV[R]_n.+1) :
   partial i a = 'D_(err_vec i) f a .
@@ -531,6 +531,7 @@ Fixpoint stl_translation t (e: expr t) : stl_type_translation t :=
         let a_max: \bar R := - (foldr maxe (+oo)%E A) in
         let a'_i (a_i: \bar R) := (- a_i - a_max) * (fine a_max)^-1%:E  in
         if a_max == -oo then -oo
+        else if a_max == +oo then +oo
         else if a_max < 0 then
           sumE (map (fun a => a_max * expeR (a'_i a) * expeR (nu%:E * a'_i a)) A) *
           (fine (sumE (map (fun a => expeR (nu%:E * (a'_i a))) A)))^-1%:E
@@ -1633,17 +1634,24 @@ Proof.
 rewrite /=/sumE !big_cons !big_nil/=.
 have [->//|enoo] := eqVneq (nu.-[[e]]_stl) (-oo)%E.
 have [->//=|epoo] := eqVneq (nu.-[[e]]_stl) (+oo)%E. 
+- admit.
+set a_max := maxe (nu.-[[e]]_stl) (maxe (nu.-[[e]]_stl) +oo)%E.
+set a := (((- nu.-[[e]]_stl - - a_max) * ((fine (- a_max))^-1)%:E))%E.
+have a_max_e : a_max = nu.-[[e]]_stl.
+  rewrite /a_max /maxe; repeat case: ifPn => //. (* rewrite -leNgt leye_eq => /eqP ->.
+have -> : a = 0%E.
+  by rewrite /a a_min_e subee ?mul0e// fin_numE epoo enoo.
+rewrite !adde0 !mule0 expeR0 !mule1/= a_min_e.
+have : ((nu.-[[e]]_stl + nu.-[[e]]_stl) * ((1 + 1)^-1)%:E)%E = nu.-[[e]]_stl.
+  have -> : 1 + 1 = (2 : R) by lra.
+  rewrite -(@fineK _ (nu.-[[e]]_stl)); last by rewrite fin_numE epoo enoo.
+  by rewrite -EFinD -EFinM mulrDl -splitr.
+case: ifPn => [/eqP->//|_].
+case: ifPn => [_//|]; rewrite -leNgt => ege0.
+case: ifPn => [_//|]; rewrite -leNgt => ele0 _.
+by apply/eqP; rewrite eq_le ege0 ele0. *)
   (*seems to be contradition 
 - my fault or truly not idempotent?*)
-Admitted.
-
-(*Nat: generic, could be added to library when proven since mineA exists*)
-Lemma maxeA : 
-  forall {R : realType}, associative (fun x : \bar R => [eta maxe x]).
-Admitted.
-
-Lemma maxeC :
-  forall {R : realType}, commutative (fun x : \bar R => [eta maxe x]).
 Admitted.
 
 Lemma orC_stl (e1 e2 : expr Bool_N) :
@@ -1652,8 +1660,7 @@ Proof.
 rewrite /=/sumE !big_cons !big_nil /=.
 set a_max := maxe (nu.-[[e1]]_stl) (maxe (nu.-[[e2]]_stl) +oo)%E.
 have -> : (maxe (nu.-[[e2]]_stl) (maxe (nu.-[[e1]]_stl) +oo))%E = a_max.
-  by rewrite maxeA [X in maxe X _]maxeC -maxeA.
-Search ( - (- _) ).
+  by rewrite maxA [X in maxe X _]maxC -maxA.
 set a1 := ((- nu.-[[e1]]_stl - - a_max) * ((fine (- a_max))^-1)%:E)%E.
 set a2 := (((- nu.-[[e2]]_stl - - a_max) * ((fine (- a_max))^-1)%:E))%E.
 set d1 := ((fine (expeR (nu%:E * a1) + (expeR (nu%:E * a2) + 0)))^-1)%:E.
