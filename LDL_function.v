@@ -59,23 +59,25 @@ Abort.
 End partial.
 Notation "'d f '/d i" := (partial f i).
 
-(* safe admits
-   see https://github.com/math-comp/analysis/pull/1147 *)
 Lemma nonincreasing_at_right_cvgr {R : realType} (f : R -> R) a (b : itv_bound R) :
     (BRight a < b)%O ->
     {in Interval (BRight a) b &, nonincreasing_fun f} ->
     has_ubound (f @` [set` Interval (BRight a) b]) ->
   f x @[x --> a ^'+] --> sup (f @` [set` Interval (BRight a) b]).
-Admitted.
+Proof.
+move=> ab nif ubf.
+exact: realfun.nonincreasing_at_right_cvgr.
+Qed.
 
-(* this lemma is PRed to MCA: https://github.com/math-comp/analysis/pull/1147 *)
 Lemma nondecreasing_at_right_cvgr {R : realType} (f : R -> R) a (b : itv_bound R) :
     (BRight a < b)%O ->
     {in Interval (BRight a) b &, nondecreasing_fun f} ->
     has_lbound (f @` [set` Interval (BRight a) b]) ->
   f x @[x --> a ^'+] --> inf (f @` [set` Interval (BRight a) b]).
-Admitted.
-(* /safe admits *)
+Proof.
+move=> ab ndf lbf.
+exact: realfun.nondecreasing_at_right_cvgr.
+Qed.
 
 Lemma monotonous_bounded_is_cvg {R : realType} (f : R -> R) x y : (BRight x < y)%O ->
   monotonous ([set` Interval (BRight x)(*NB(rei): was BSide b x*) y]) f ->
@@ -944,6 +946,10 @@ Lemma upper_lower_lim {R : realType} M' (i : 'I_M'.+1) (a : 'rV[R]_M'.+1) (f : '
   lim (h^-1 * (f (a + h *: err_vec i) - f a) @[h --> (0:R)^'+]) = x ->
   lim (h^-1 * (f (a + h *: err_vec i) - f a) @[h --> (0:R)^'-]) = x->
   lim (h^-1 * (f (a + h *: err_vec i) - f a) @[h --> (0:R)]) = x.
+Proof.
+
+
+
 Admitted.
   
 
@@ -1349,6 +1355,57 @@ Qed.
 
 End product_lemmas.
 
+Lemma prodrN1 {R : realDomainType} T (l : seq T) (f : T -> R) :
+  (forall e, f e < 0)%R ->
+  sgr (\big[*%R/1%R]_(e <- l) f e) = (- 1) ^+ (size l).
+Proof.
+move=> f0; elim: l => [|h t ih]; first by rewrite big_nil/= expr0 sgr1.
+by rewrite big_cons sgrM ih/= exprS ltr0_sg.
+Qed.
+
+Definition sge {R : numDomainType} (x : \bar R) : R :=
+  match x with | -oo%E => -1 | +oo%E => 1 | r%:E => sgr r end.
+
+(* NB: this should be shorter *)
+Lemma sgeM {R : realDomainType} (x y : \bar R) :
+  sge (x * y) = sge x * sge y.
+Proof.
+move: x y => [x| |] [y| |] //=.
+- by rewrite sgrM.
+- rewrite mulry/=; have [x0|x0|->] := ltgtP x 0.
+  + by rewrite ltr0_sg//= EFinN mulN1e/= mulN1r.
+  + by rewrite gtr0_sg//= !mul1e mul1r.
+  + by rewrite sgr0 mul0e mul0r/= sgr0.
+- rewrite mulrNy/=; have [x0|x0|->] := ltgtP x 0.
+  + by rewrite ltr0_sg//= EFinN mulN1e/= mulN1r opprK.
+  + by rewrite gtr0_sg//= !mul1e mul1r.
+  + by rewrite sgr0 mul0e mul0r/= sgr0.
+- rewrite mulyr/=; have [x0|x0|->] := ltgtP y 0.
+  + by rewrite ltr0_sg//= EFinN mulN1e/= mulrN1.
+  + by rewrite gtr0_sg//= !mul1e mul1r.
+  + by rewrite sgr0 mul0e mulr0/= sgr0.
+- by rewrite mulyy mulr1.
+- by rewrite mulyNy mulrN1.
+- rewrite mulNyr/=; have [x0|x0|->] := ltgtP y 0.
+  + by rewrite ltr0_sg//= EFinN mulN1e/= mulrN1 opprK.
+  + by rewrite gtr0_sg//= !mul1e mulN1r.
+  + by rewrite sgr0 mul0e mulr0/= sgr0.
+- by rewrite mulNyy mulN1r.
+- by rewrite mulrN1 opprK.
+Qed.
+
+Lemma lte0_sg {R : numDomainType} (x : \bar R) :
+  (x < 0)%E -> sge x = -1.
+Proof. by move: x => [x| |]//; rewrite lte_fin => /ltr0_sg. Qed.
+
+Lemma prodeN1 {R : realDomainType} T (l : seq T) (f : T -> \bar R) :
+  (forall e, f e < 0)%E ->
+  sge (\big[*%E/1%E]_(e <- l) f e) = (- 1) ^+ (size l).
+Proof.
+move=> f0; elim: l => [|h t ih]; first by rewrite big_nil/= expr0 sgr1.
+by rewrite big_cons sgeM ih/= exprS lte0_sg.
+Qed.
+
 Section dl2_lemmas.
 Local Open Scope ldl_scope.
 Context {R : realType}.
@@ -1374,13 +1431,6 @@ rewrite /= !big_cons big_nil !mule1; congr *%E.
 by rewrite muleC.
 Qed.
 
-Axiom sge : \bar R -> R.
-
-Lemma prodN1 (l : seq (expr Bool_P)) (f : @expr R Bool_P -> \bar R) :
-  (forall e, f e < 0)%E ->
-  sge (\big[*%E/1%E]_(e <- l) f e) = (- 1) ^+ (size l).
-Admitted.
-
 Lemma dl2_orA (e1 e2 e3 : expr Bool_P) :
   [[ e1 `\/ (e2 `\/ e3) ]]_dl2 = [[ (e1 `\/ e2) `\/ e3 ]]_dl2.
 Proof.
@@ -1390,7 +1440,6 @@ congr (_ * _)%E.
 rewrite muleCA.
 by rewrite !muleA.
 Qed.
-
 
 Lemma dl2_translation_le0 e :
   ([[ e ]]_dl2 <= 0 :> dl2_type_translation Bool_P)%E.
@@ -1402,20 +1451,21 @@ dependent induction e using expr_ind' => /=.
   exact/In_in.
 - rewrite big_map big_seq; have [ol|el] := boolP (odd (length l)).
     rewrite exprS -signr_odd ol expr1 mulrN1 !EFinN oppeK mul1e.
-    set lhs := (leLHS).
-    have : sge lhs = -1.
-      rewrite /lhs -big_seq prodN1.
-      Search ( (-1)^ _ ).
+    have [l0|l0] := pselect (forall i, i \in l -> [[i]]_dl2 != 0)%E.
+      set lhs := (leLHS).
+      have : sge lhs = -1.
+        rewrite /lhs -big_seq prodeN1; last first.
+          move=> e.
+          rewrite lt_neqAle.
+          admit.
+        by rewrite -signr_odd ol expr1.
       admit.
-    admit.
     admit.
   rewrite exprS -signr_odd (negbTE el) expr0 mulN1r.
   rewrite EFinN mulN1e oppe_le0.
   admit.
 - admit.
 Admitted.
-
-
 
 Lemma dl2_nary_inversion_andE1 (Es : seq (expr (Bool_P)) ) :
   [[ and_E  Es ]]_dl2 = 0%E -> (forall i, (i < size Es)%N -> [[ nth (Bool _ false) Es i ]]_dl2 = 0%E).
