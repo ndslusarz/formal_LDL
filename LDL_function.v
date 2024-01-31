@@ -170,10 +170,7 @@ Lemma expr_ind' (R : realType) :
        (forall (n : nat) (o : 'I_n), P (Index_T n) (Index o)) ->
        (forall (n : nat) (t : n.-tuple R), P (Vector_T n) (Vector t)) ->
        (forall b (l : seq (expr (Bool_T b))), List.Forall (fun x => P (Bool_T b) x) l -> P (Bool_T b) (and_E l)) ->
-       (* (forall l : seq (expr Bool_T), P Bool_T (and_E l)) -> *)
        (forall b (l : seq (expr (Bool_T b))), List.Forall (fun x => P (Bool_T b) x) l -> P (Bool_T b) (or_E l)) ->
-       (*NB(rei): removed on 2024-01-18, looks spurious    (forall (l : seq (expr Bool_T)) i, List.Forall (fun x => P Bool_T x) l ->
-      P Bool_T (nth (Bool false) l i)) -> *)
        (forall e : expr (Bool_T true), P (Bool_T true) e -> P (Bool_T true) (`~ e)) ->
        (forall e : expr Real_T,
         P Real_T e -> forall e0 : expr Real_T, P Real_T e0 -> P Real_T (e `+ e0)) ->
@@ -191,7 +188,7 @@ Lemma expr_ind' (R : realType) :
         P Real_T e -> forall e0 : expr Real_T, P Real_T e0 -> P (Bool_T b) (comparisons_E b c e e0)) ->
        forall (s : simple_type) (e : expr s), P s e.
 Proof.
-move => P H H0 H1 H2 H3 H4 (*H5*) H7 H8 H9 H10 H11 H12 H13 H14 s e.
+move => P H H0 H1 H2 H3 H4 H7 H8 H9 H10 H11 H12 H13 H14 s e.
 revert e.
 revert s.
 fix F1 2.
@@ -917,8 +914,6 @@ Definition weakly_smooth {R : realType} (n : nat) (f : 'rV[R]_n.+1 -> R) :=
   (forall a, {for a, continuous f}) /\
   (forall a, weakly_smooth_cond a -> {for a, continuous (gradient f)}).
 
-(*we can afford p>0 rather than p!=0 because all values must be between
-0 and 1 for this DL anyway*)
 Definition shadow_lifting {R : realType} (M' : nat) (f : 'rV_M'.+1 -> R) :=
   forall p, p > 0 -> forall i, ('d f '/d i) (const_mx p) > 0.
 
@@ -943,15 +938,22 @@ Qed.
 
 (*if limit from above and below both exist and are equal, the limit itself exists
 and is equal to the same*)
-Lemma upper_lower_lim {R : realType} M' (i : 'I_M'.+1) (a : 'rV[R]_M'.+1) (f : 'rV_M'.+1 -> R) x:
+(* Lemma upper_lower_lim {R : realType} M' (i : 'I_M'.+1) (a : 'rV[R]_M'.+1) (f : 'rV_M'.+1 -> R) x:
   lim (h^-1 * (f (a + h *: err_vec i) - f a) @[h --> (0:R)^'+]) = x ->
   lim (h^-1 * (f (a + h *: err_vec i) - f a) @[h --> (0:R)^'-]) = x->
   lim (h^-1 * (f (a + h *: err_vec i) - f a) @[h --> (0:R)]) = x.
 Proof.
+move => H1 H2.
 
 
+Admitted. *)
 
-Admitted.
+About realfun.left_right_continuousP.
+
+(* realfun.left_right_continuousP
+  forall {R : realFieldType} {T : topologicalType} (f : R -> T) (x : R),
+  f x @[x --> x^'-] --> f x /\ f x @[x --> x^'+] --> f x <->
+  f x @[x --> x] --> f x *)
   
 
  (*needs new name*)
@@ -959,24 +961,27 @@ Lemma almost_shadowlifting_product_and {R : realType} M:
   forall p, p > 0 -> forall i, ('d (@product_and R M.+1) '/d i) (const_mx p) = p`^( (M)%:R -1).
 Proof.
 move => p p0 i.
-unfold partial. 
-(* rewrite upper_lower_lim. *)
+unfold partial. (* unfold lim.
+rewrite -realfun.left_right_continuousP. *)
 
-Admitted. 
+
+
 (*this is where the proof based on stl paper happens*)
+Admitted. 
 
 
+(*this is not actually finished, majority of the proof in above lemma*)
 Lemma shadow_lifting_product_and {R : realType} M :
   shadow_lifting (@product_and R M.+1).
 Proof.
 move=> p p0 i.
 rewrite almost_shadowlifting_product_and.
-- admit.
+- by rewrite powR_gt0.
 - by rewrite p0.
 (* rewrite /product_and/=.
 rewrite [X in 0 < X _](_ : _ =
     (fun xs : 'rV_M.+1 => \prod_(x < M.+1 | x != i) xs``_x)); last first. *)
-Abort.
+Qed.
 
 (*Lemma shadow_lifting_product_and {R : realType} : @shadow_lifting R product_and.
 Proof.
@@ -1479,6 +1484,14 @@ Admitted.
 Lemma dl2_nary_inversion_andE1 (Es : seq (expr (Bool_P)) ) :
   [[ and_E  Es ]]_dl2 = 0%E -> (forall i, (i < size Es)%N -> [[ nth (Bool _ false) Es i ]]_dl2 = 0%E).
 Proof.
+have H := dl2_translation_le0. move: H.
+rewrite /=; move => H.
+move/eqP. rewrite /sumE eq_sym. move => H1 i i0.
+move: H => /(_ (nth (Bool _ false) Es i)).
+(*     apply.
+    apply/(nthP (Bool _ false)).  *)
+
+
 Admitted.
 
 Lemma dl2_nary_inversion_andE0 (Es : seq (expr (Bool_P)) ) :
@@ -1519,8 +1532,21 @@ by rewrite dl2_translations_Vector_coincide dl2_translations_Index_coincide.
 Qed.
 
 
-Lemma maxr00_le :
+(* Lemma maxr00_le :
   forall x : R , x <= 0 -> (- maxr x 0)%:E = 0%E.
+Proof.
+move => r r0. rewrite max_r.
+- by rewrite oppr0.
+- by rewrite r0.
+Qed. *)
+
+Lemma maxr0_le :
+  forall x : R , (- maxr x 0)%:E = 0%E -> x <= 0.
+Proof.
+move => r.
+rewrite /maxr. case: ifP.
+- by lra.
+- move => h. Search ( - _ = _).
 Admitted.
 
 (* note: dl2_soundness should go through because we exclude the translation of implication and negation by mapping to +oo *)
@@ -1558,8 +1584,8 @@ dependent induction e using expr_ind'.
     have [i il0 <-] := xnth (Bool _ false).
     by apply/negPf; apply: H => //; rewrite ?h// -In_in mem_nth.
 - case: c; rewrite //=; rewrite -!dl2_translations_Real_coincide;
-  set t1 := _ e1; set t2 := _ e2; case: b. Search (maxr _ 0).
-  + rewrite maxr00_le //=. Search (?x%E = ?x%E). admit. admit. (*to do: specific maxr lemma*)
+  set t1 := _ e1; set t2 := _ e2; case: b.
+  + (* rewrite -maxr0_le  //=. Search (?x%E = ?x%E). *) admit.  (*to do: specific maxr lemma*)
   + admit.
   + (* Search (- _ = 0). rewrite abse_eq0.   *)Search ( abse). admit.
   + admit.   
@@ -1621,7 +1647,7 @@ case: ifPn => _; first by rewrite addeCA.
 by case: ifPn => _; first rewrite addeCA.
 Qed.  
 
-Lemma orI_stl (e : expr Bool_N) :
+(* Lemma orI_stl (e : expr Bool_N) :
   nu.-[[e `\/ e]]_stl = nu.-[[e]]_stl.
 Proof.
 rewrite /=/sumE !big_cons !big_nil/=.
@@ -1645,9 +1671,9 @@ case: ifPn => [_//|]; rewrite -leNgt => ele0 _.
 by apply/eqP; rewrite eq_le ege0 ele0. *)
   (*seems to be contradition 
 - my fault or truly not idempotent?*)
-Admitted.
+Admitted. *)
 
-Lemma orC_stl (e1 e2 : expr Bool_N) :
+(* Lemma orC_stl (e1 e2 : expr Bool_N) :
   nu.-[[e1 `\/ e2]]_stl  = nu.-[[e2 `\/ e1]]_stl.
 Proof.
 rewrite /=/sumE !big_cons !big_nil /=.
@@ -1662,10 +1688,12 @@ have -> : ((fine (expeR (nu%:E * a2) + (expeR (nu%:E * a1) + 0)))^-1)%:E = d1.
 case: ifPn => //.
 case: ifPn => _; first by rewrite addeCA.
 by case: ifPn => _; first rewrite addeCA.
-Qed.
+Qed. *)
 
 Lemma stl_nary_inversion_andE1 (Es : seq (expr Bool_N) ) :
   nu.-[[ and_E Es ]]_stl = +oo%E -> (forall i, (i < size Es)%N -> nu.-[[ nth (Bool _ false) Es i ]]_stl = +oo%E).
+Proof.
+
 Admitted.
 
 Lemma stl_nary_inversion_andE0 (Es : seq (expr Bool_N) ) :
