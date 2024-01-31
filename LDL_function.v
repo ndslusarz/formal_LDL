@@ -1542,23 +1542,6 @@ by rewrite dl2_translations_Vector_coincide dl2_translations_Index_coincide.
 Qed.
 
 
-(* Lemma maxr00_le :
-  forall x : R , x <= 0 -> (- maxr x 0)%:E = 0%E.
-Proof.
-move => r r0. rewrite max_r.
-- by rewrite oppr0.
-- by rewrite r0.
-Qed. *)
-
-Lemma maxr0_le :
-  forall x : R , (- maxr x 0)%:E = 0%E -> x <= 0.
-Proof.
-move => r.
-rewrite /maxr. case: ifP.
-- by lra.
-- move => h. Search ( - _ = _).
-Admitted.
-
 (* note: dl2_soundness should go through because we exclude the translation of implication and negation by mapping to +oo *)
 Lemma dl2_soundness (e : expr Bool_P) b :
   [[ e ]]_dl2 = [[ Bool _ b ]]_dl2 -> [[ e ]]b = b.
@@ -1616,7 +1599,7 @@ dependent induction e using expr_ind'.
     apply/implyP => /nthP xnth.
     have [i il0 <-] := xnth (Bool _ false).
     apply: H => //. rewrite ?h// -In_in mem_nth//.
-    rewrite /is_dl2/=. admit.
+    rewrite /is_dl2/=. by rewrite h. 
   + move/dl2_nary_inversion_andE0'.
     rewrite [bool_translation (and_E l)]/= foldrE big_map big_all.
     elim=>// i /andP[/eqP i0 isize].
@@ -1633,7 +1616,7 @@ dependent induction e using expr_ind'.
     apply/hasP; exists (nth (Bool _ false) l i); first by rewrite mem_nth.
     apply: H => //.
     by rewrite -In_in mem_nth.
-    rewrite /is_dl2/=. admit.
+    rewrite /is_dl2/=. by rewrite i0.
   + move/dl2_nary_inversion_orE0'.
     rewrite [bool_translation (or_E l)]/= foldrE big_map big_has => h.
     apply/hasPn => x.
@@ -1650,7 +1633,7 @@ dependent induction e using expr_ind'.
   + by rewrite/is_dl2=>/eqP; case=>/eqP; rewrite oppr_eq0 normr_eq0 subr_eq0.
   + rewrite/is_dl2; rewrite lte_fin oppr_lt0 normr_gt0.
     by rewrite subr_eq0; move/eqP => h; apply/eqP.
-Admitted.
+Qed.
 
 End dl2_lemmas.
 
