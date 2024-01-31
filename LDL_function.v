@@ -1499,6 +1499,11 @@ Lemma dl2_nary_inversion_andE0 (Es : seq (expr (Bool_P)) ) :
 Proof.
 Admitted.
 
+Lemma dl2_nary_inversion_andE0' (Es : seq (expr (Bool_P)) ) :
+    ([[ and_E Es ]]_dl2 < 0)%E -> (exists (i : nat), (([[ nth (Bool _ false) Es i ]]_dl2 < 0)%E ) && (i < size Es)%nat).
+Proof.
+Admitted.
+
 Lemma dl2_nary_inversion_orE1 (Es : seq (expr (Bool_P)) ) :
     [[ or_E Es ]]_dl2 = 0%E -> (exists i, ([[ nth (Bool _ false) Es i ]]_dl2 == 0%E) && (i < size Es)%nat).
 Proof.
@@ -1506,6 +1511,11 @@ Admitted.
 
 Lemma dl2_nary_inversion_orE0 (Es : seq (expr (Bool_P)) ) :
     [[ or_E Es ]]_dl2  = -oo%E -> (forall i, (i < size Es)%nat -> [[ nth (Bool _ false) Es i ]]_dl2 = -oo%E).
+Proof.
+Admitted.
+
+Lemma dl2_nary_inversion_orE0' (Es : seq (expr (Bool_P)) ) :
+    ([[ or_E Es ]]_dl2  < 0)%E  -> (forall i, (i < size Es)%nat -> ([[ nth (Bool _ false) Es i ]]_dl2 < 0)%E).
 Proof.
 Admitted.
 
@@ -1597,7 +1607,7 @@ Lemma dl2_soundness' (e : expr Bool_P) b :
 Proof.
 dependent induction e using expr_ind'.
 - move: b b0 => [] [] //=.
-- by rewrite lt_irreflexive.
+  by rewrite lt_irreflexive.
 - rewrite List.Forall_forall in H. 
   move: b => [].
   + rewrite/is_dl2=>/eqP; move/dl2_nary_inversion_andE1.
@@ -1607,7 +1617,14 @@ dependent induction e using expr_ind'.
     have [i il0 <-] := xnth (Bool _ false).
     apply: H => //. rewrite ?h// -In_in mem_nth//.
     rewrite /is_dl2/=. admit.
-  + admit.
+  + move/dl2_nary_inversion_andE0'.
+    rewrite [bool_translation (and_E l)]/= foldrE big_map big_all.
+    elim=>// i /andP[/eqP i0 isize].
+    apply/allPn; exists (nth (Bool _ false) l i); first by rewrite mem_nth.
+    apply/negPf; apply: H => //.
+    * by rewrite -In_in mem_nth.
+    * rewrite /is_dl2/=. move: i0.
+      by rewrite eqb_id.
 - rewrite List.Forall_forall in H.
   move: b => [].
   + rewrite/is_dl2=>/eqP; move/dl2_nary_inversion_orE1.
@@ -1617,7 +1634,14 @@ dependent induction e using expr_ind'.
     apply: H => //.
     by rewrite -In_in mem_nth.
     rewrite /is_dl2/=. admit.
-  + admit.
+  + move/dl2_nary_inversion_orE0'.
+    rewrite [bool_translation (or_E l)]/= foldrE big_map big_has => h.
+    apply/hasPn => x.
+    move/nthP => xnth.
+    have [i il0 <-] := xnth (Bool _ false).
+    apply/negPf; apply: H => //. 
+    * by rewrite ?h// -In_in mem_nth.
+    * by rewrite /is_dl2/= h.
 - case: c; rewrite //=; rewrite -!dl2_translations_Real_coincide;
   set t1 := _ e1; set t2 := _ e2; case: b => //.
   + by rewrite/is_dl2=>/eqP; move/maxr0_le; rewrite subr_le0.
