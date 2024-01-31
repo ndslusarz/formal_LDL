@@ -1481,22 +1481,35 @@ dependent induction e using expr_ind' => /=.
 - admit.
 Admitted.
 
+(*move to util onece proven*)
+
+Lemma psume_eq0 (I : eqType) (r : seq I) (P : pred I) (F : I -> \bar R
+) :
+    (forall i, P i -> 0 <= F i)%E ->
+  (\sum_(i <- r | P i) (F i) == 0)%E = (all (fun i => (P i) ==> (F i == 0%E)) r).
+Proof.
+elim: r=> [|a r ihr hr] /=; rewrite (big_nil, big_cons); first by rewrite eqxx.
+case: ifP=> pa /=. (* rewrite ?paddr_eq0 ?ihr ?hr // sumr_ge0. *)
+Admitted.
+
 Lemma dl2_nary_inversion_andE1 (Es : seq (expr (Bool_P)) ) :
   [[ and_E  Es ]]_dl2 = 0%E -> (forall i, (i < size Es)%N -> [[ nth (Bool _ false) Es i ]]_dl2 = 0%E).
 Proof.
 have H := dl2_translation_le0. move: H.
 rewrite /=; move => H.
 move/eqP. rewrite /sumE eq_sym. move => H1 i i0.
-move: H => /(_ (nth (Bool _ false) Es i)).
-(*     apply.
-    apply/(nthP (Bool _ false)).  *)
-
+move: H => /(_ (nth (Bool _ false) Es i)). move: H1.
+rewrite eq_sym.
+rewrite psume_eq0. 
+move => /allP h iEs.
+apply/eqP.
 
 Admitted.
 
 Lemma dl2_nary_inversion_andE0 (Es : seq (expr (Bool_P)) ) :
     [[ and_E Es ]]_dl2 = -oo%E -> (exists (i : nat), ([[ nth (Bool _ false) Es i ]]_dl2 == -oo%E ) && (i < size Es)%nat).
 Proof.
+
 Admitted.
 
 Lemma dl2_nary_inversion_andE0' (Es : seq (expr (Bool_P)) ) :
