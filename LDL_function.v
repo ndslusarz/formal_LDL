@@ -1583,14 +1583,50 @@ dependent induction e using expr_ind'.
     move/nthP => xnth.
     have [i il0 <-] := xnth (Bool _ false).
     by apply/negPf; apply: H => //; rewrite ?h// -In_in mem_nth.
--  case: c; rewrite //=; rewrite -!dl2_translations_Real_coincide;
-  set t1 := _ e1; set t2 := _ e2; case: b. Search "maxr" 0.
-  + maxr0_le. admit.  (*to do: specific maxr lemma*)
-  + admit.
-  + (* Search (- _ = 0). rewrite abse_eq0.   *)Search ( abse). admit.
-  + admit.    
-Admitted.
+- case: c; rewrite //=; rewrite -!dl2_translations_Real_coincide;
+  set t1 := _ e1; set t2 := _ e2; case: b => //.
+  + by move/maxr0_le; rewrite subr_le0.
+  + by case=>/eqP; rewrite oppr_eq0 normr_eq0 subr_eq0.
+Qed.
 
+
+Definition is_dl2 b (x : \bar R) := (if b then x == 0 else x < 0)%E.
+
+Lemma dl2_soundness' (e : expr Bool_P) b :
+  is_dl2 b ([[ e ]]_dl2) -> [[ e ]]b = b.
+Proof.
+dependent induction e using expr_ind'.
+- move: b b0 => [] [] //=.
+- by rewrite lt_irreflexive.
+- rewrite List.Forall_forall in H. 
+  move: b => [].
+  + rewrite/is_dl2=>/eqP; move/dl2_nary_inversion_andE1.
+    rewrite [bool_translation (and_E l)]/= foldrE big_map big_seq big_all_cond => h.
+    apply: allT => x/=.
+    apply/implyP => /nthP xnth.
+    have [i il0 <-] := xnth (Bool _ false).
+    apply: H => //. rewrite ?h// -In_in mem_nth//.
+    rewrite /is_dl2/=. admit.
+  + admit.
+- rewrite List.Forall_forall in H.
+  move: b => [].
+  + rewrite/is_dl2=>/eqP; move/dl2_nary_inversion_orE1.
+    rewrite [bool_translation (or_E l)]/= foldrE big_map big_has.
+    elim=>// i /andP[/eqP i0 isize].
+    apply/hasP; exists (nth (Bool _ false) l i); first by rewrite mem_nth.
+    apply: H => //.
+    by rewrite -In_in mem_nth.
+    rewrite /is_dl2/=. admit.
+  + admit.
+- case: c; rewrite //=; rewrite -!dl2_translations_Real_coincide;
+  set t1 := _ e1; set t2 := _ e2; case: b => //.
+  + by rewrite/is_dl2=>/eqP; move/maxr0_le; rewrite subr_le0.
+  + rewrite/is_dl2 lte_fin oppr_lt0 /maxr; case: ifPn; first by rewrite lt_irreflexive.
+    by rewrite subr_gt0 => _; move/lt_geF.
+  + by rewrite/is_dl2=>/eqP; case=>/eqP; rewrite oppr_eq0 normr_eq0 subr_eq0.
+  + rewrite/is_dl2; rewrite lte_fin oppr_lt0 normr_gt0.
+    by rewrite subr_eq0; move/eqP => h; apply/eqP.
+Admitted.
 
 End dl2_lemmas.
 
@@ -1778,7 +1814,7 @@ dependent induction e using expr_ind'.
   have: nu.-[[ e ]]_stl = +oo%E.
     by move: h; rewrite /oppe; case: (nu.-[[e]]_stl).
   by move/(IHe true) => ->.
-- case: c; rewrite //=; rewrite -!stl_translations_Real_coincide;
+- by case: c; rewrite //=; rewrite -!stl_translations_Real_coincide;
   set t1 := _ e1; set t2 := _ e2; case: b.  
 Qed.
 
