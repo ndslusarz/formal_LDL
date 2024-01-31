@@ -534,7 +534,7 @@ Fixpoint stl_translation t (e: expr t) : stl_type_translation t :=
 
     (*comparisons*)
     | E1 `== E2 => (- `| {[ E1 ]} - {[ E2 ]}|)%:E
-    | E1 `<= E2 => (- maxr ({[ E1 ]} - {[ E2 ]}) 0)%:E
+    | E1 `<= E2 => ({[ E1 ]} - {[ E2 ]})%:E(* (- maxr ({[ E1 ]} - {[ E2 ]}) 0)%:E *)
 
     | net n m f => f
     | app_net n m f v => {[ f ]} {[ v ]}
@@ -1583,12 +1583,12 @@ dependent induction e using expr_ind'.
     move/nthP => xnth.
     have [i il0 <-] := xnth (Bool _ false).
     by apply/negPf; apply: H => //; rewrite ?h// -In_in mem_nth.
-- case: c; rewrite //=; rewrite -!dl2_translations_Real_coincide;
-  set t1 := _ e1; set t2 := _ e2; case: b.
-  + (* rewrite -maxr0_le  //=. Search (?x%E = ?x%E). *) admit.  (*to do: specific maxr lemma*)
+-  case: c; rewrite //=; rewrite -!dl2_translations_Real_coincide;
+  set t1 := _ e1; set t2 := _ e2; case: b. Search "maxr" 0.
+  + maxr0_le. admit.  (*to do: specific maxr lemma*)
   + admit.
   + (* Search (- _ = 0). rewrite abse_eq0.   *)Search ( abse). admit.
-  + admit.   
+  + admit.    
 Admitted.
 
 
@@ -1778,7 +1778,7 @@ dependent induction e using expr_ind'.
   have: nu.-[[ e ]]_stl = +oo%E.
     by move: h; rewrite /oppe; case: (nu.-[[e]]_stl).
   by move/(IHe true) => ->.
-- by case: c; rewrite //=; rewrite -!stl_translations_Real_coincide;
+- case: c; rewrite //=; rewrite -!stl_translations_Real_coincide;
   set t1 := _ e1; set t2 := _ e2; case: b.  
 Qed.
 
