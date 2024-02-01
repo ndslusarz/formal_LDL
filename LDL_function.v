@@ -1431,7 +1431,7 @@ Lemma lte0_sg {R : numDomainType} (x : \bar R) :
   (x < 0)%E -> sge x = -1.
 Proof. by move: x => [x| |]//; rewrite lte_fin => /ltr0_sg. Qed.
 
-Lemma sgN1_lt0 {R : realDomainType} (x : \bar R) :
+Lemma sgeN1_lt0 {R : realDomainType} (x : \bar R) :
   sge x = -1 -> (x < 0)%E.
 Proof.
 move: x => [x| |]//=.
@@ -1439,12 +1439,30 @@ move: x => [x| |]//=.
 - by move=> /eqP; rewrite -subr_eq0 opprK -(natrD _ 1%N 1%N) pnatr_eq0.
 Qed.
 
-Lemma prodeN1 {R : realDomainType} T (l : seq T) (f : T -> \bar R) :
-  (forall e, f e < 0)%E ->
+Lemma sge1_gt0 {R : realDomainType} (x : \bar R) : sge x = 1 -> (0 < x)%E.
+Proof.
+move: x => [x| |]//=.
+- by rewrite lte_fin => /eqP; rewrite sgr_cp0.
+- by move=> /eqP; rewrite eq_sym -subr_eq0 opprK -(natrD _ 1%N 1%N) pnatr_eq0.
+Qed.
+
+Lemma prodeN1 {R : realDomainType} (T : eqType) (l : seq T) (f : T -> \bar R) :
+  (forall e, e \in l -> f e < 0)%E ->
   sge (\big[*%E/1%E]_(e <- l) f e) = (- 1) ^+ (size l).
 Proof.
-move=> f0; elim: l => [|h t ih]; first by rewrite big_nil/= expr0 sgr1.
-by rewrite big_cons sgeM ih/= exprS lte0_sg.
+elim: l => [|h t ih H]; first by rewrite big_nil/= expr0 sgr1.
+rewrite big_cons sgeM ih/=; last first.
+  by move=> e et; rewrite H// inE et orbT.
+by rewrite exprS lte0_sg// H// mem_head.
+Qed.
+
+Lemma prode_seq_eq0 {R : numDomainType} {I : Type} (r : seq I) (P : pred I)
+    (F : I -> \bar R) :
+  (\big[*%E/1]_(i <- r | P i) F i == 0)%E = has (fun i => P i && (F i == 0)) r.
+Proof.
+elim: r => /= [|h t ih]; first by rewrite big_nil onee_eq0.
+rewrite big_cons; case: ifPn => Ph /=; last by rewrite ih.
+by rewrite mule_eq0 ih.
 Qed.
 
 Section dl2_lemmas.
@@ -1490,25 +1508,33 @@ dependent induction e using expr_ind' => /=.
 - rewrite /sumE big_map big_seq sume_le0// => t tl.
   move/List.Forall_forall : H => /(_ t); apply => //.
   exact/In_in.
-- rewrite big_map big_seq; have [ol|el] := boolP (odd (length l)).
+- rewrite big_map big_seq; have [ol|ol] := boolP (odd (length l)).
     rewrite exprS -signr_odd ol expr1 mulrN1 !EFinN oppeK mul1e.
-    have [l0|l0] := pselect (forall i, i \in l -> [[i]]_dl2 != 0)%E.
-      set lhs := (leLHS).
-      have : sge lhs = -1.
-        rewrite /lhs -big_seq prodeN1; last first.
-          move=> e.
-          rewrite lt_neqAle.
-          admit.
-        by rewrite -signr_odd ol expr1.
-      by move/sgN1_lt0/ltW.
-    admit.
-  rewrite exprS -signr_odd (negbTE el) expr0 mulN1r.
+    have [l0|l0] := pselect (forall i, i \in l -> [[i]]_dl2 != 0)%E; last first.
+      move/existsNP : l0 => [/= x /not_implyP[xl /negP/negPn/eqP x0]].
+      rewrite le_eqVlt; apply/orP; left.
+      rewrite prode_seq_eq0; apply/hasP; exists x => //.
+      by rewrite xl x0 eqxx.
+    apply/ltW/sgeN1_lt0; rewrite -big_seq prodeN1.
+      by rewrite -signr_odd ol expr1.
+    move=> e el; rewrite lt_neqAle l0//=.
+    by move/List.Forall_forall : H => /(_ e); apply => //; exact/In_in.
+  rewrite exprS -signr_odd (negbTE ol) expr0 mulN1r.
   rewrite EFinN mulN1e oppe_le0.
-  admit.
-- admit.
-Admitted.
+  have [l0|l0] := pselect (forall i, i \in l -> [[i]]_dl2 != 0)%E; last first.
+    move/existsNP : l0 => [/= x /not_implyP[xl /negP/negPn/eqP x0]].
+    rewrite le_eqVlt; apply/orP; left.
+    rewrite eq_sym prode_seq_eq0; apply/hasP; exists x => //.
+    by rewrite xl x0 eqxx.
+  apply/ltW/sge1_gt0; rewrite -big_seq prodeN1.
+    by rewrite -signr_odd (negbTE ol) expr0.
+  move=> e el; rewrite lt_neqAle l0//=.
+  by move/List.Forall_forall : H => /(_ e); apply => //; exact/In_in.
+- case: c => //=.
+  by rewrite lee_fin oppr_le0 le_maxr lexx orbT.
+Qed.
 
-(*move to util onece proven*)
+(*move to util once proven*)
 
 Lemma psume_eq0 (I : eqType) (r : seq I) (P : pred I) (F : I -> \bar R
 ) :
