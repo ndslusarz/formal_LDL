@@ -171,10 +171,7 @@ Lemma expr_ind' (R : realType) :
        (forall (n : nat) (o : 'I_n), P (Index_T n) (Index o)) ->
        (forall (n : nat) (t : n.-tuple R), P (Vector_T n) (Vector t)) ->
        (forall b (l : seq (expr (Bool_T b))), List.Forall (fun x => P (Bool_T b) x) l -> P (Bool_T b) (and_E l)) ->
-       (* (forall l : seq (expr Bool_T), P Bool_T (and_E l)) -> *)
        (forall b (l : seq (expr (Bool_T b))), List.Forall (fun x => P (Bool_T b) x) l -> P (Bool_T b) (or_E l)) ->
-       (*NB(rei): removed on 2024-01-18, looks spurious    (forall (l : seq (expr Bool_T)) i, List.Forall (fun x => P Bool_T x) l ->
-      P Bool_T (nth (Bool false) l i)) -> *)
        (forall e : expr (Bool_T true), P (Bool_T true) e -> P (Bool_T true) (`~ e)) ->
        (forall e : expr Real_T,
         P Real_T e -> forall e0 : expr Real_T, P Real_T e0 -> P Real_T (e `+ e0)) ->
@@ -192,7 +189,7 @@ Lemma expr_ind' (R : realType) :
         P Real_T e -> forall e0 : expr Real_T, P Real_T e0 -> P (Bool_T b) (comparisons_E b c e e0)) ->
        forall (s : simple_type) (e : expr s), P s e.
 Proof.
-move => P H H0 H1 H2 H3 H4 (*H5*) H7 H8 H9 H10 H11 H12 H13 H14 s e.
+move => P H H0 H1 H2 H3 H4 H7 H8 H9 H10 H11 H12 H13 H14 s e.
 revert e.
 revert s.
 fix F1 2.
@@ -538,7 +535,7 @@ Fixpoint stl_translation t (e: expr t) : stl_type_translation t :=
 
     (*comparisons*)
     | E1 `== E2 => (- `| {[ E1 ]} - {[ E2 ]}|)%:E
-    | E1 `<= E2 => (- maxr ({[ E1 ]} - {[ E2 ]}) 0)%:E
+    | E1 `<= E2 => ({[ E1 ]} - {[ E2 ]})%:E(* (- maxr ({[ E1 ]} - {[ E2 ]}) 0)%:E *)
 
     | net n m f => f
     | app_net n m f v => {[ f ]} {[ v ]}
@@ -927,8 +924,6 @@ Definition weakly_smooth {R : realType} (n : nat) (f : 'rV[R]_n.+1 -> R) :=
   (forall a, {for a, continuous f}) /\
   (forall a, weakly_smooth_cond a -> {for a, continuous (gradient f)}).
 
-(*we can afford p>0 rather than p!=0 because all values must be between
-0 and 1 for this DL anyway*)
 Definition shadow_lifting {R : realType} (M' : nat) (f : 'rV_M'.+1 -> R) :=
   forall p, p > 0 -> forall i, ('d f '/d i) (const_mx p) > 0.
 
@@ -953,15 +948,22 @@ Qed.
 
 (*if limit from above and below both exist and are equal, the limit itself exists
 and is equal to the same*)
-Lemma upper_lower_lim {R : realType} M' (i : 'I_M'.+1) (a : 'rV[R]_M'.+1) (f : 'rV_M'.+1 -> R) x:
+(* Lemma upper_lower_lim {R : realType} M' (i : 'I_M'.+1) (a : 'rV[R]_M'.+1) (f : 'rV_M'.+1 -> R) x:
   lim (h^-1 * (f (a + h *: err_vec i) - f a) @[h --> (0:R)^'+]) = x ->
   lim (h^-1 * (f (a + h *: err_vec i) - f a) @[h --> (0:R)^'-]) = x->
   lim (h^-1 * (f (a + h *: err_vec i) - f a) @[h --> (0:R)]) = x.
 Proof.
+move => H1 H2.
 
 
+Admitted. *)
 
-Admitted.
+About realfun.left_right_continuousP.
+
+(* realfun.left_right_continuousP
+  forall {R : realFieldType} {T : topologicalType} (f : R -> T) (x : R),
+  f x @[x --> x^'-] --> f x /\ f x @[x --> x^'+] --> f x <->
+  f x @[x --> x] --> f x *)
   
 
  (*needs new name*)
@@ -969,24 +971,27 @@ Lemma almost_shadowlifting_product_and {R : realType} M:
   forall p, p > 0 -> forall i, ('d (@product_and R M.+1) '/d i) (const_mx p) = p`^( (M)%:R -1).
 Proof.
 move => p p0 i.
-unfold partial. 
-(* rewrite upper_lower_lim. *)
+unfold partial. (* unfold lim.
+rewrite -realfun.left_right_continuousP. *)
 
-Admitted. 
+
+
 (*this is where the proof based on stl paper happens*)
+Admitted. 
 
 
+(*this is not actually finished, majority of the proof in above lemma*)
 Lemma shadow_lifting_product_and {R : realType} M :
   shadow_lifting (@product_and R M.+1).
 Proof.
 move=> p p0 i.
 rewrite almost_shadowlifting_product_and.
-- admit.
+- by rewrite powR_gt0.
 - by rewrite p0.
 (* rewrite /product_and/=.
 rewrite [X in 0 < X _](_ : _ =
     (fun xs : 'rV_M.+1 => \prod_(x < M.+1 | x != i) xs``_x)); last first. *)
-Abort.
+Qed.
 
 (*Lemma shadow_lifting_product_and {R : realType} : @shadow_lifting R product_and.
 Proof.
@@ -1486,13 +1491,39 @@ dependent induction e using expr_ind' => /=.
 - admit.
 Admitted.
 
+(*move to util onece proven*)
+
+Lemma psume_eq0 (I : eqType) (r : seq I) (P : pred I) (F : I -> \bar R
+) :
+    (forall i, P i -> 0 <= F i)%E ->
+  (\sum_(i <- r | P i) (F i) == 0)%E = (all (fun i => (P i) ==> (F i == 0%E)) r).
+Proof.
+elim: r=> [|a r ihr hr] /=; rewrite (big_nil, big_cons); first by rewrite eqxx.
+case: ifP=> pa /=. (* rewrite ?paddr_eq0 ?ihr ?hr // sumr_ge0. *)
+Admitted.
+
 Lemma dl2_nary_inversion_andE1 (Es : seq (expr (Bool_P)) ) :
   [[ and_E  Es ]]_dl2 = 0%E -> (forall i, (i < size Es)%N -> [[ nth (Bool _ false) Es i ]]_dl2 = 0%E).
 Proof.
+have H := dl2_translation_le0. move: H.
+rewrite /=; move => H.
+move/eqP. rewrite /sumE eq_sym. move => H1 i i0.
+move: H => /(_ (nth (Bool _ false) Es i)). move: H1.
+rewrite eq_sym.
+rewrite psume_eq0. 
+move => /allP h iEs.
+apply/eqP.
+
 Admitted.
 
 Lemma dl2_nary_inversion_andE0 (Es : seq (expr (Bool_P)) ) :
     [[ and_E Es ]]_dl2 = -oo%E -> (exists (i : nat), ([[ nth (Bool _ false) Es i ]]_dl2 == -oo%E ) && (i < size Es)%nat).
+Proof.
+
+Admitted.
+
+Lemma dl2_nary_inversion_andE0' (Es : seq (expr (Bool_P)) ) :
+    ([[ and_E Es ]]_dl2 < 0)%E -> (exists (i : nat), (([[ nth (Bool _ false) Es i ]]_dl2 < 0)%E ) && (i < size Es)%nat).
 Proof.
 Admitted.
 
@@ -1503,6 +1534,11 @@ Admitted.
 
 Lemma dl2_nary_inversion_orE0 (Es : seq (expr (Bool_P)) ) :
     [[ or_E Es ]]_dl2  = -oo%E -> (forall i, (i < size Es)%nat -> [[ nth (Bool _ false) Es i ]]_dl2 = -oo%E).
+Proof.
+Admitted.
+
+Lemma dl2_nary_inversion_orE0' (Es : seq (expr (Bool_P)) ) :
+    ([[ or_E Es ]]_dl2  < 0)%E  -> (forall i, (i < size Es)%nat -> ([[ nth (Bool _ false) Es i ]]_dl2 < 0)%E).
 Proof.
 Admitted.
 
@@ -1528,10 +1564,6 @@ rewrite ?(IHe1 e1 erefl JMeq_refl) ?(IHe2 e2 erefl JMeq_refl) ?(IHe e erefl JMeq
 by rewrite dl2_translations_Vector_coincide dl2_translations_Index_coincide.
 Qed.
 
-
-Lemma maxr00_le :
-  forall x : R , x <= 0 -> (- maxr x 0)%:E = 0%E.
-Admitted.
 
 (* note: dl2_soundness should go through because we exclude the translation of implication and negation by mapping to +oo *)
 Lemma dl2_soundness (e : expr Bool_P) b :
@@ -1568,13 +1600,63 @@ dependent induction e using expr_ind'.
     have [i il0 <-] := xnth (Bool _ false).
     by apply/negPf; apply: H => //; rewrite ?h// -In_in mem_nth.
 - case: c; rewrite //=; rewrite -!dl2_translations_Real_coincide;
-  set t1 := _ e1; set t2 := _ e2; case: b. Search (maxr _ 0).
-  + rewrite maxr00_le //=. Search (?x%E = ?x%E). admit. admit. (*to do: specific maxr lemma*)
-  + admit.
-  + (* Search (- _ = 0). rewrite abse_eq0.   *)Search ( abse). admit.
-  + admit.   
-Admitted.
+  set t1 := _ e1; set t2 := _ e2; case: b => //.
+  + by move/maxr0_le; rewrite subr_le0.
+  + by case=>/eqP; rewrite oppr_eq0 normr_eq0 subr_eq0.
+Qed.
 
+
+Definition is_dl2 b (x : \bar R) := (if b then x == 0 else x < 0)%E.
+
+Lemma dl2_soundness' (e : expr Bool_P) b :
+  is_dl2 b ([[ e ]]_dl2) -> [[ e ]]b = b.
+Proof.
+dependent induction e using expr_ind'.
+- move: b b0 => [] [] //=.
+  by rewrite lt_irreflexive.
+- rewrite List.Forall_forall in H. 
+  move: b => [].
+  + rewrite/is_dl2=>/eqP; move/dl2_nary_inversion_andE1.
+    rewrite [bool_translation (and_E l)]/= foldrE big_map big_seq big_all_cond => h.
+    apply: allT => x/=.
+    apply/implyP => /nthP xnth.
+    have [i il0 <-] := xnth (Bool _ false).
+    apply: H => //. rewrite ?h// -In_in mem_nth//.
+    rewrite /is_dl2/=. by rewrite h. 
+  + move/dl2_nary_inversion_andE0'.
+    rewrite [bool_translation (and_E l)]/= foldrE big_map big_all.
+    elim=>// i /andP[/eqP i0 isize].
+    apply/allPn; exists (nth (Bool _ false) l i); first by rewrite mem_nth.
+    apply/negPf; apply: H => //.
+    * by rewrite -In_in mem_nth.
+    * rewrite /is_dl2/=. move: i0.
+      by rewrite eqb_id.
+- rewrite List.Forall_forall in H.
+  move: b => [].
+  + rewrite/is_dl2=>/eqP; move/dl2_nary_inversion_orE1.
+    rewrite [bool_translation (or_E l)]/= foldrE big_map big_has.
+    elim=>// i /andP[/eqP i0 isize].
+    apply/hasP; exists (nth (Bool _ false) l i); first by rewrite mem_nth.
+    apply: H => //.
+    by rewrite -In_in mem_nth.
+    rewrite /is_dl2/=. by rewrite i0.
+  + move/dl2_nary_inversion_orE0'.
+    rewrite [bool_translation (or_E l)]/= foldrE big_map big_has => h.
+    apply/hasPn => x.
+    move/nthP => xnth.
+    have [i il0 <-] := xnth (Bool _ false).
+    apply/negPf; apply: H => //. 
+    * by rewrite ?h// -In_in mem_nth.
+    * by rewrite /is_dl2/= h.
+- case: c; rewrite //=; rewrite -!dl2_translations_Real_coincide;
+  set t1 := _ e1; set t2 := _ e2; case: b => //.
+  + by rewrite/is_dl2=>/eqP; move/maxr0_le; rewrite subr_le0.
+  + rewrite/is_dl2 lte_fin oppr_lt0 /maxr; case: ifPn; first by rewrite lt_irreflexive.
+    by rewrite subr_gt0 => _; move/lt_geF.
+  + by rewrite/is_dl2=>/eqP; case=>/eqP; rewrite oppr_eq0 normr_eq0 subr_eq0.
+  + rewrite/is_dl2; rewrite lte_fin oppr_lt0 normr_gt0.
+    by rewrite subr_eq0; move/eqP => h; apply/eqP.
+Qed.
 
 End dl2_lemmas.
 
@@ -1633,7 +1715,7 @@ case: ifPn => _; first by rewrite addeCA.
 by case: ifPn => _; first rewrite addeCA.
 Qed.  
 
-Lemma orI_stl (e : expr Bool_N) :
+(* Lemma orI_stl (e : expr Bool_N) :
   nu.-[[e `\/ e]]_stl = nu.-[[e]]_stl.
 Proof.
 rewrite /=/sumE !big_cons !big_nil/=.
@@ -1657,9 +1739,9 @@ case: ifPn => [_//|]; rewrite -leNgt => ele0 _.
 by apply/eqP; rewrite eq_le ege0 ele0. *)
   (*seems to be contradition 
 - my fault or truly not idempotent?*)
-Admitted.
+Admitted. *)
 
-Lemma orC_stl (e1 e2 : expr Bool_N) :
+(* Lemma orC_stl (e1 e2 : expr Bool_N) :
   nu.-[[e1 `\/ e2]]_stl  = nu.-[[e2 `\/ e1]]_stl.
 Proof.
 rewrite /=/sumE !big_cons !big_nil /=.
@@ -1681,6 +1763,8 @@ Qed.
 
 Lemma stl_nary_inversion_andE1 (Es : seq (expr Bool_N) ) :
   nu.-[[ and_E Es ]]_stl = +oo%E -> (forall i, (i < size Es)%N -> nu.-[[ nth (Bool _ false) Es i ]]_stl = +oo%E).
+Proof.
+
 Admitted.
 
 Lemma stl_nary_inversion_andE0 (Es : seq (expr Bool_N) ) :
