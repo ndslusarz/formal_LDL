@@ -1766,7 +1766,7 @@ by apply/eqP; rewrite eq_le ege0 ele0. *)
 - my fault or truly not idempotent?*)
 Admitted. *)
 
-(* Lemma orC_stl (e1 e2 : expr Bool_N) :
+Lemma orC_stl (e1 e2 : expr Bool_N) :
   nu.-[[e1 `\/ e2]]_stl  = nu.-[[e2 `\/ e1]]_stl.
 Proof.
 rewrite /=/sumE !big_cons !big_nil /=.
