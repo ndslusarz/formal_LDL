@@ -40,7 +40,7 @@ Context {R : realType}.
 Variables (n : nat) (f : 'rV[R^o]_n.+1 -> R^o).
 
 Definition err_vec {R : ringType} (i : 'I_n.+1) : 'rV[R]_n.+1 :=
-  \row_(j < n.+1) (i != j)%:R.
+  \row_(j < n.+1) (i == j)%:R.
 
 Definition partial (i : 'I_n.+1) (a : 'rV[R]_n.+1) :=
   lim (h^-1 * (f (a + h *: err_vec i) - f a) @[h --> (0:R)^']).
@@ -50,9 +50,8 @@ Lemma partialE (i : 'I_n.+1) (a : 'rV[R]_n.+1) :
 Proof.
 rewrite /partial.
 rewrite /derive/=.
-under eq_fun do rewrite (addrC a).
-(* NB(rei): the difference is the filter *)
-Abort.
+by under eq_fun do rewrite (addrC a).
+Qed.
 
 (*Search ( (_ <= lim _)%R ). Search ( _ --> _).*)
 
@@ -957,30 +956,48 @@ About realfun.left_right_continuousP.
   
 
  (*needs new name*)
-Lemma almost_shadowlifting_product_and {R : realType} M:
-  forall p, p > 0 -> forall i, ('d (@product_and R M.+1) '/d i) (const_mx p) = p`^( (M)%:R -1).
+Lemma almost_shadowlifting_product_and {R : realType} M : M != 0%N ->
+  forall p, p > 0 -> forall i, ('d (@product_and R M.+1) '/d i) (const_mx p) = p ^+ M.
 Proof.
-move => p p0 i.
-unfold partial. (* unfold lim.
-rewrite -realfun.left_right_continuousP. *)
-
-
-
-(*this is where the proof based on stl paper happens*)
-Admitted. 
-
+move=> M0 p p0 i.
+rewrite /partial.
+have /cvg_lim : h^-1 * (product_and (const_mx p + h *: err_vec i) -
+                        product_and (n:=M.+1) (const_mx p))
+       @[h --> (0:R)^'] --> p ^+ M.
+  rewrite /product_and.
+  have H : forall h : R, h != 0 ->
+      \prod_(x < M.+1) (const_mx p + h *: err_vec i) 0 x -
+      \prod_(x < M.+1) const_mx (m:=M.+1) p 0 x = h * p ^+ M.
+    move=> h h0; rewrite [X in X - _](bigD1 i)//= !mxE eqxx mulr1.
+    rewrite (eq_bigr (fun=> p)); last first.
+      by move=> j ji; rewrite !mxE eq_sym (negbTE ji) mulr0 addr0.
+    rewrite [X in _ - X](eq_bigr (fun=> p)); last by move=> *; rewrite mxE.
+    rewrite [X in _ - X](bigD1 i)//= -mulrBl addrAC subrr add0r; congr (h * _).
+    transitivity (\prod_(i0 in @predC1 [the eqType of 'I_M.+1] i) p).
+      by apply: eq_bigl => j; rewrite inE.
+    rewrite prodr_const; congr (_ ^+ _).
+    by rewrite cardC1 card_ord.
+  have : h^-1 * (h * p ^+ M) @[h --> (0:R)^'] --> p ^+ M.
+    have : {near (0:R)^', (fun=> p ^+ M) =1 (fun h => h^-1 * (h * p ^+ M))}.
+      near=> h; rewrite mulrA mulVf ?mul1r//.
+      by near: h; exact: nbhs_dnbhs_neq.
+    by move/near_eq_cvg/cvg_trans; apply; exact: cvg_cst.
+  apply: cvg_trans; apply: near_eq_cvg; near=> k.
+  have <-// := H k.
+    congr (_ * (_ - _)).
+    apply: eq_bigr => /= j _.
+    by rewrite !mxE.
+  by near: k; exact: nbhs_dnbhs_neq.
+by apply; exact: Rhausdorff.
+Unshelve. all: by end_near. Qed.
 
 (*this is not actually finished, majority of the proof in above lemma*)
-Lemma shadow_lifting_product_and {R : realType} M :
+Lemma shadow_lifting_product_and {R : realType} M : M != 0%N ->
   shadow_lifting (@product_and R M.+1).
 Proof.
-move=> p p0 i.
-rewrite almost_shadowlifting_product_and.
-- by rewrite powR_gt0.
-- by rewrite p0.
-(* rewrite /product_and/=.
-rewrite [X in 0 < X _](_ : _ =
-    (fun xs : 'rV_M.+1 => \prod_(x < M.+1 | x != i) xs``_x)); last first. *)
+move=> M0 p p0 i.
+rewrite almost_shadowlifting_product_and//.
+by rewrite exprn_gt0.
 Qed.
 
 (*Lemma shadow_lifting_product_and {R : realType} : @shadow_lifting R product_and.
