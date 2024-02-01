@@ -1,3 +1,4 @@
+From HB Require Import structures.
 Require Import Coq.Program.Equality.
 From mathcomp Require Import all_ssreflect all_algebra.
 From mathcomp Require Import lra.
@@ -33,7 +34,7 @@ Reserved Notation "[[ e ]]_dl2" (at level 10, format "[[ e ]]_dl2").
 
 Local Open Scope ring_scope.
 
-Notation "u '``_' i" := (u (GRing.zero (Zp_zmodType O)) i) : ring_scope.
+Notation "u '``_' i" := (u 0%R i) : ring_scope.
 
 Section partial.
 Context {R : realType}.
@@ -140,11 +141,11 @@ Inductive expr : simple_type -> Type :=
 
 End expr.
 
-Canonical expr_Bool_T_eqType (R : realType) b :=
-  Equality.Pack (@gen_eqMixin (@expr R (Bool_T b))).
-  
+HB.instance Definition _ (R : realType) b :=
+  @gen_eqMixin (@expr R (Bool_T b)).
+
 Declare Scope ldl_scope.
-  
+
 Notation "a `/\ b" := (and_E [:: a; b]) (at level 45).
 Notation "a `\/ b" := (or_E [:: a; b]) (at level 45).
 Notation "a `=> b" := (or_E [:: (not_E a); b]) (at level 55).
@@ -850,9 +851,15 @@ dependent induction e using expr_ind' => ll ly.
     have [] := eqVneq (-t2) t2 => /=; case: b; lra.
     rewrite /maxr.
     case: b; case: ifPn; try lra; rewrite -?leNgt.
-    * move=> _ ?.
-      have : `|(t1 - t2) / (t1 + t2)| == 0 by lra.
-      rewrite normr_eq0 mulf_eq0 invr_eq0; lra.
+    * move=> _ H.
+      have : `|(t1 - t2) / (t1 + t2)|%R == 0.
+        clear -H.
+        simpl in *.
+        by lra.
+      simpl in *.
+      rewrite normr_eq0 mulf_eq0 invr_eq0.
+      clear -H e12eq.
+      lra.
     * rewrite subr_lt0 lter_normr.
       have [|t120] := leP (t1+t2) 0.
       rewrite le_eqVlt => /orP [|t120]; first lra.
@@ -861,8 +868,11 @@ dependent induction e using expr_ind' => ll ly.
       rewrite -mulNr.
       rewrite !ltr_pdivlMr// !mul1r opprD opprK.
       lra.
-    * move=> _ ?.
-      have : `|(t1 - t2) / (t1 + t2)| == 1 by lra.
+    * move=> H0 H1.
+      have : `|(t1 - t2) / (t1 + t2)| == 1.
+        simpl in *.
+        clear -e12eq H0 H1.
+        lra.
       rewrite eqr_norml.
       nra.
 Qed.
@@ -1683,8 +1693,10 @@ have [->//=|enoo] := eqVneq (nu.-[[e]]_stl) (-oo)%E.
   case: ifPn => [_|]; last by rewrite ltNyr. 
   rewrite !invr0 !mule0 !expeR0 !mule1 !adde0 /=.
   rewrite /adde /= mulNyr /Num.sg.
-  case: ifPn => [|_]; first by rewrite invr_eq0 => /eqP; lra.
-  case: ifPn => [|_]; first by rewrite invr_lt0; lra.
+  case: ifPn => [|_].
+    by rewrite invr_eq0 (_ : 1%R = 1%:R)// -natrD pnatr_eq0.
+  case: ifPn => [|_].
+    by rewrite invr_lt0 (_ : 1%R = 1%:R)// -natrD ltrn0.
   by rewrite mul1e.
 set a_min := mine (nu.-[[e]]_stl) (mine (nu.-[[e]]_stl) +oo)%E.
 set a := ((nu.-[[e]]_stl - a_min) * ((fine a_min)^-1)%:E)%E.
@@ -1758,10 +1770,13 @@ set a2 := (((- nu.-[[e2]]_stl - - a_max) * ((fine (- a_max))^-1)%:E))%E.
 set d1 := ((fine (expeR (nu%:E * a1) + (expeR (nu%:E * a2) + 0)))^-1)%:E.
 have -> : ((fine (expeR (nu%:E * a2) + (expeR (nu%:E * a1) + 0)))^-1)%:E = d1.
   by rewrite addeCA.
-case: ifPn => //.
-case: ifPn => _; first by rewrite addeCA.
-by case: ifPn => _; first rewrite addeCA.
-Qed. *)
+case: ifPn => // ?.
+case: ifPn => // ?.
+case: ifPn => [|?].
+  by rewrite addeCA.
+case: ifPn => // ?.
+by rewrite addeCA.
+Qed.
 
 Lemma stl_nary_inversion_andE1 (Es : seq (expr Bool_N) ) :
   nu.-[[ and_E Es ]]_stl = +oo%E -> (forall i, (i < size Es)%N -> nu.-[[ nth (Bool _ false) Es i ]]_stl = +oo%E).
