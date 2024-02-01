@@ -891,14 +891,9 @@ Section shadow.
 Definition row_of_seq {R : numDomainType} (s : seq R) : 'rV[R]_(size s) :=
   (\row_(i < size s) tnth (in_tuple s) i).
 
-(*Check row_of_seq.*)
-(*About MatrixFormula.seq_of_rV.*)
 
 Definition product_and {R : fieldType} n (xs : 'rV[R]_n) : R :=
   \prod_(x < n) xs``_x.
-
-(*Print MatrixFormula.seq_of_rV.*)
-(*Print fgraph.*)
 
 Definition dotmul {R : ringType} n (u v : 'rV[R]_n) : R := (u *m v^T)``_0.
 Reserved Notation "u *d w" (at level 40).
@@ -945,18 +940,6 @@ by apply/funext => r/=; rewrite /GRing.zero/=(*NB: I shouldn't do that*) subrr m
 Qed.
 *)
 
-(*if limit from above and below both exist and are equal, the limit itself exists
-and is equal to the same*)
-(* Lemma upper_lower_lim {R : realType} M' (i : 'I_M'.+1) (a : 'rV[R]_M'.+1) (f : 'rV_M'.+1 -> R) x:
-  lim (h^-1 * (f (a + h *: err_vec i) - f a) @[h --> (0:R)^'+]) = x ->
-  lim (h^-1 * (f (a + h *: err_vec i) - f a) @[h --> (0:R)^'-]) = x->
-  lim (h^-1 * (f (a + h *: err_vec i) - f a) @[h --> (0:R)]) = x.
-Proof.
-move => H1 H2.
-
-
-Admitted. *)
-
 About realfun.left_right_continuousP.
 
 (* realfun.left_right_continuousP
@@ -969,7 +952,7 @@ About realfun.left_right_continuousP.
 Lemma almost_shadowlifting_product_and {R : realType} M : M != 0%N ->
   forall p, p > 0 -> forall i, ('d (@product_and R M.+1) '/d i) (const_mx p) = p ^+ M.
 Proof.
-move=> M0 p p0 i.
+move => M0 p p0 i.
 rewrite /partial.
 have /cvg_lim : h^-1 * (product_and (const_mx p + h *: err_vec i) -
                         product_and (n:=M.+1) (const_mx p))
@@ -1001,7 +984,6 @@ have /cvg_lim : h^-1 * (product_and (const_mx p + h *: err_vec i) -
 by apply; exact: Rhausdorff.
 Unshelve. all: by end_near. Qed.
 
-(*this is not actually finished, majority of the proof in above lemma*)
 Lemma shadow_lifting_product_and {R : realType} M : M != 0%N ->
   shadow_lifting (@product_and R M.+1).
 Proof.
@@ -1009,6 +991,48 @@ move=> M0 p p0 i.
 rewrite almost_shadowlifting_product_and//.
 by rewrite exprn_gt0.
 Qed.
+
+Definition dl2_and {R : fieldType} n (xs : 'rV[R]_n) : R :=
+  \sum_(x < n) xs``_x.
+
+
+Lemma almost_shadowlifting_dl2_and {R : realType} M : M != 0%N ->
+  forall p, p > 0 -> forall i, ('d (@dl2_and R M.+1) '/d i) (const_mx p) = 1.
+Proof.
+move => M0 p p0 i.
+rewrite /partial. Search (_ --> 0).
+(* have /cvg_lim : h^-1 * (dl2_and (const_mx p + h *: err_vec i) -
+                        dl2_and (n:=M.+1) (const_mx p))
+       @[h --> (0:R)^'] --> 1%R. *)
+
+Admitted.
+
+Lemma shadow_lifting_dl2_and {R : realType} M : M != 0%N ->
+  shadow_lifting (@dl2_and R M.+1).
+Proof.
+move=> M0 p p0 i.
+rewrite almost_shadowlifting_dl2_and//.
+Qed.
+
+Print sumE.
+Print expeR.
+
+(* The ones below do not type check yet, need to check if we can extend to ereal *)
+(* Definition stl_a_min {R : fieldType} n (xs : 'rV[R]_n) : \bar R :=
+  foldr mine (+oo)%E xs.
+
+Definition stl_a'_i {R : fieldType} n (xs : 'rV[R]_n) : \bar R :=
+  (a_i - a_min) * (fine a_min)^-1%:E.
+
+Definition stl_and {R : fieldType} n (xs : 'rV[R]_n) : R :=
+   if a_min == +oo then +oo
+   else if a_min < 0 then
+     sumE (map (fun a => a_min * expeR (a'_i a) * expeR (nu%:E * a'_i a)) A) *
+     (fine (sumE (map (fun a => expeR (nu%:E * a'_i a)) A)))^-1%:E
+   else if a_min > 0 then
+     sumE (map (fun a => a * expeR (-nu%:E * a'_i a)) A) *
+     (fine (sumE (map (fun a => expeR (nu%:E * (a'_i a))) A)))^-1%:E
+     else 0. *)
 
 (*Lemma shadow_lifting_product_and {R : realType} : @shadow_lifting R product_and.
 Proof.
