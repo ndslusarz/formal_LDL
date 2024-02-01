@@ -1581,6 +1581,14 @@ rewrite ?(IHe1 e1 erefl JMeq_refl) ?(IHe2 e2 erefl JMeq_refl) ?(IHe e erefl JMeq
 by rewrite dl2_translations_Vector_coincide dl2_translations_Index_coincide.
 Qed.
 
+Lemma maxr0_le :
+  forall x : R , (- maxr x 0)%:E = 0%E -> x <= 0.
+Proof.
+move => r.
+rewrite /maxr. case: ifP.
+- by lra.
+- move => h. Search ( - _ = _).
+Admitted.
 
 (* note: dl2_soundness should go through because we exclude the translation of implication and negation by mapping to +oo *)
 Lemma dl2_soundness (e : expr Bool_P) b :
