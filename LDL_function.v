@@ -1018,10 +1018,23 @@ problem*)
                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                   
   + have : h^-1 * h @[h --> (0:R)^'] --> p * 0 + 1%R.
     * rewrite mulr0 addrC addr0. admit.
-    * admit.
-  + admit.
+    * rewrite mulr0 addrC addr0. admit.
+  + rewrite mulr0 addrC addr0. admit.
 
 Admitted.
+
+(* have : {near (0:R)^', (fun=> p ^+ M) =1 (fun h => h^-1 * (h * p ^+ M))}.
+      near=> h; rewrite mulrA mulVf ?mul1r//.
+      by near: h; exact: nbhs_dnbhs_neq.
+    by move/near_eq_cvg/cvg_trans; apply; exact: cvg_cst.
+  apply: cvg_trans; apply: near_eq_cvg; near=> k.
+  have <-// := H k.
+    congr (_ * (_ - _)).
+    apply: eq_bigr => /= j _.
+    by rewrite !mxE.
+  by near: k; exact: nbhs_dnbhs_neq.
+by apply; exact: Rhausdorff.
+Unshelve. all: by end_near. *)
 
 Lemma shadow_lifting_dl2_and {R : realType} M : M != 0%N ->
   shadow_lifting (@dl2_and R M.+1).
