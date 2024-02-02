@@ -54,8 +54,6 @@ rewrite /derive/=.
 by under eq_fun do rewrite (addrC a).
 Qed.
 
-(*Search ( (_ <= lim _)%R ). Search ( _ --> _).*)
-
 End partial.
 Notation "'d f '/d i" := (partial f i).
 
@@ -939,13 +937,8 @@ rewrite [X in X @ _ --> _](_ : _ = 0); first exact: (@cvg_cst R).
 by apply/funext => r/=; rewrite /GRing.zero/=(*NB: I shouldn't do that*) subrr mulr0.
 Qed.
 *)
-
-About realfun.left_right_continuousP.
-
-(* realfun.left_right_continuousP
-  forall {R : realFieldType} {T : topologicalType} (f : R -> T) (x : R),
-  f x @[x --> x^'-] --> f x /\ f x @[x --> x^'+] --> f x <->
-  f x @[x --> x] --> f x *)
+(* 
+About realfun.left_right_continuousP. *)
   
 
  (*needs new name*)
@@ -1001,9 +994,32 @@ Lemma almost_shadowlifting_dl2_and {R : realType} M : M != 0%N ->
 Proof.
 move => M0 p p0 i.
 rewrite /partial. Search (_ --> 0).
-(* have /cvg_lim : h^-1 * (dl2_and (const_mx p + h *: err_vec i) -
+have /cvg_lim : h^-1 * (dl2_and (const_mx p + h *: err_vec i) -
                         dl2_and (n:=M.+1) (const_mx p))
-       @[h --> (0:R)^'] --> 1%R. *)
+       @[h --> (0:R)^'] --> p * 0 + 1%R. (*so I added p * 0 to get it to stop
+with the type error, couldn't cast 1 the right way for it to work
+, but I need to fix this*)
+- rewrite mulr0 addrC addr0. (*TO DO: can be deleted when I get rid of the above
+problem*)
+  rewrite /dl2_and.
+  have H : forall h : R, h != 0 ->
+      \sum_(x < M.+1) (const_mx p + h *: err_vec i) 0 x -
+      \sum_(x < M.+1) const_mx (m:=M.+1) p 0 x = h.
+  + move=> h h0; rewrite [X in X - _](bigD1 i)//= !mxE eqxx mulr1.
+    rewrite (eq_bigr (fun=> p)); last first.
+      * by move=> j ji; rewrite !mxE eq_sym (negbTE ji) mulr0 addr0.
+      * rewrite [X in _ - X](eq_bigr (fun=> p)); last by move=> *; rewrite mxE.
+      rewrite [X in _ - X](bigD1 i)//=.
+      rewrite (addrC p h). rewrite -addrA.  
+      set a := (\sum_(i0 < M.+1 | i0 != i) p).
+      Search (_ - _ = _).   
+      admit. 
+    (*simple, just need to find right lemma*)
+                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                  
+  + have : h^-1 * h @[h --> (0:R)^'] --> p * 0 + 1%R.
+    * rewrite mulr0 addrC addr0. admit.
+    * admit.
+  + admit.
 
 Admitted.
 
@@ -1014,8 +1030,6 @@ move=> M0 p p0 i.
 rewrite almost_shadowlifting_dl2_and//.
 Qed.
 
-Print sumE.
-Print expeR.
 
 (* The ones below do not type check yet, need to check if we can extend to ereal *)
 (* Definition stl_a_min {R : fieldType} n (xs : 'rV[R]_n) : \bar R :=
