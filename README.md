@@ -8,6 +8,5 @@ Parts of formalisation left, sorted by DL:
   + shadow lifting
 - STL
   + inversion lemmas
-  (+ orI
-  + orC proven) - discarded, may restore if we fix or 
+  + ( orI proven, orC not) - discarded, may restore if we fix or 
   + shadow lifting
