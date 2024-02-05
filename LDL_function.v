@@ -993,7 +993,7 @@ Lemma almost_shadowlifting_dl2_and {R : realType} M : M != 0%N ->
   forall p, p > 0 -> forall i, ('d (@dl2_and R M.+1) '/d i) (const_mx p) = 1.
 Proof.
 move => M0 p p0 i.
-rewrite /partial. Search (_ --> 0).
+rewrite /partial. 
 have /cvg_lim : h^-1 * (dl2_and (const_mx p + h *: err_vec i) -
                         dl2_and (n:=M.+1) (const_mx p))
        @[h --> (0:R)^'] --> p * 0 + 1%R. (*so I added p * 0 to get it to stop
@@ -1013,20 +1013,27 @@ problem*)
       rewrite (addrC p h). rewrite -addrA.  
       set a := (\sum_(i0 < M.+1 | i0 != i) p).
       Search (_ - _ = _).   
+      (* rewrite (-adde0 ((p+a)%E)). *)
       admit. 
-    (*simple, just need to find right lemma*)
+      (* rewrite addrKA. *)
+    (*simple, just need to find right lemma combo*)
                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                   
   + have : h^-1 * h @[h --> (0:R)^'] --> p * 0 + 1%R.
-    * rewrite mulr0 addrC addr0. admit.
-    * rewrite mulr0 addrC addr0. admit.
-  + rewrite mulr0 addrC addr0. admit.
-
+    * rewrite mulr0 addrC addr0. 
+      have : {near (0:R)^', (fun=> p * 0 + 1%R) =1 (fun h => h^-1 * h)}.
+      - near=> h; rewrite mulr0 addrC addr0 mulVf. exact.
+        by near: h;  exact: nbhs_dnbhs_neq.
+      - rewrite mulr0 addrC addr0. 
+        by move/near_eq_cvg/cvg_trans; apply; exact: cvg_cst.
+    * rewrite mulr0 addrC addr0.
+      move => h1. About cvg_trans.
+      (* have <-// := H. *)
+(* rewrite H. *) admit.
+  + rewrite mulr0 addrC addr0. by apply; exact: Rhausdorff.
+  (* Print Rhausdorff. *)
 Admitted.
 
-(* have : {near (0:R)^', (fun=> p ^+ M) =1 (fun h => h^-1 * (h * p ^+ M))}.
-      near=> h; rewrite mulrA mulVf ?mul1r//.
-      by near: h; exact: nbhs_dnbhs_neq.
-    by move/near_eq_cvg/cvg_trans; apply; exact: cvg_cst.
+(* 
   apply: cvg_trans; apply: near_eq_cvg; near=> k.
   have <-// := H k.
     congr (_ * (_ - _)).
