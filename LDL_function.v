@@ -8,8 +8,26 @@ From mathcomp Require Import topology derive normedtype sequences
  exp measure lebesgue_measure lebesgue_integral hoelder.
 Require Import LDL_util.
 
-(******************************************************************************)
-(*                                 Logics                                     *)
+(**md**************************************************************************)
+(* # Logics                                                                   *)
+(*                                                                            *)
+(* ## Definitions                                                             *)
+(* - err_vec i with i : 'I_n.+1                                               *)
+(*   a vector $\delta_i$ with $1$ at index $i$ and $0$ elsewhere              *)
+(* - ('d f '/d i) a with f : rV[R]_n.+1 -> R                                  *)
+(*   $\lim_{h\to 0, h\neq 0} \frac{f(a + h\delta_i) - f(a)}{h}$               *)
+(* - shadow_lifting f with f : rV[R]_n.+1 -> R                                *)
+(*   $\forall p, p > 0 \to \forall i, \frac{d\,f}{d\,x_i} [p; \cdots; p] > 0$ *)
+(* - product_and v with v : 'rV_n                                             *)
+(*   $\Pi_{i < n} v_i$                                                        *)
+(* - dl2_and v with v : 'rV_n                                                 *)
+(*   $\sum_{i < n} v_i$                                                       *)
+(*                                                                            *)
+(* ## Properties                                                              *)
+(* - satisfy shadow_lifting:                                                  *)
+(*   + product_and                                                            *)
+(*   + dl2_and                                                                *)
+(*                                                                            *)
 (******************************************************************************)
 
 Set Implicit Arguments.
@@ -49,8 +67,7 @@ Definition partial (i : 'I_n.+1) (a : 'rV[R]_n.+1) :=
 Lemma partialE (i : 'I_n.+1) (a : 'rV[R]_n.+1) :
   partial i a = 'D_(err_vec i) f a .
 Proof.
-rewrite /partial.
-rewrite /derive/=.
+rewrite /partial /derive/=.
 by under eq_fun do rewrite (addrC a).
 Qed.
 
@@ -77,7 +94,8 @@ move=> ab ndf lbf.
 exact: realfun.nondecreasing_at_right_cvgr.
 Qed.
 
-Lemma monotonous_bounded_is_cvg {R : realType} (f : R -> R) x y : (BRight x < y)%O ->
+Lemma monotonous_bounded_is_cvg {R : realType} (f : R -> R) x y :
+  (BRight x < y)%O ->
   monotonous ([set` Interval (BRight x)(*NB(rei): was BSide b x*) y]) f ->
   has_ubound (f @` setT) -> has_lbound (f @` setT) ->
   cvg (f x @[x --> x^'+]).
@@ -323,7 +341,7 @@ Inductive DL := Lukasiewicz | Yager | Godel | product.
 Section type_translation.
 Context {R : realType}.
 
-Definition type_translation (t:  simple_type) : Type:=
+Definition type_translation (t : simple_type) : Type:=
   match t with
   | Bool_T x => R
   | Real_T => R
@@ -884,19 +902,38 @@ End translation_lemmas.
 #[global] Hint Extern 0 (Filter (nbhs _^'-)) =>
   (apply: at_left_proper_filter) : typeclass_instances.
 
-Section shadow.
+Definition shadow_lifting {R : realType} n (f : 'rV_n.+1 -> R) :=
+  forall p, p > 0 -> forall i, ('d f '/d i) (const_mx p) > 0.
+
+(*Definition shadow_lifting {R : realType} (f : forall n, 'rV_n.1 -> R) :=
+  (* forall Es : seq R, forall i : 'I_(size Es),
+    (* (forall i, nth 0 Es i != 0) -> *) *)
+    forall Es : seq R, forall i : 'I_(size Es), forall e : R,
+    e != 0 (* (0 < e <= 1)  *)->
+    0 < nth 0 Es i <= 1 ->
+    (forall j, j != i -> nth 0 Es j = e) ->
+    partial (f (size Es)) i (row_of_seq Es) > 0.
+
+Lemma all_0_product_partial {R : realType} (Es : seq R) (i : 'I_(size Es)) :
+  partial 0 i (row_of_seq Es) = 0.
+(*I'm not sure if I don't need an additional assumption here*)
+Proof.
+apply/cvg_lim; first exact: Rhausdorff.
+rewrite [X in X @ _ --> _](_ : _ = 0); first exact: (@cvg_cst R).
+by apply/funext => r/=; rewrite /GRing.zero/=(*NB: I shouldn't do that*) subrr mulr0.
+Qed.
+*)
+(*
+About realfun.left_right_continuousP. *)
 
 Definition row_of_seq {R : numDomainType} (s : seq R) : 'rV[R]_(size s) :=
   (\row_(i < size s) tnth (in_tuple s) i).
-
-
-Definition product_and {R : fieldType} n (xs : 'rV[R]_n) : R :=
-  \prod_(x < n) xs``_x.
 
 Definition dotmul {R : ringType} n (u v : 'rV[R]_n) : R := (u *m v^T)``_0.
 Reserved Notation "u *d w" (at level 40).
 Local Notation "u *d w" := (dotmul u w).
 
+(* NB(rei): WIP *)
 Definition gradient {R : realType} (n : nat) (f : 'rV_n.+1 -> R) a :=
   \row_(i < n.+1) ('d f '/d i) a.
 
@@ -916,36 +953,18 @@ Definition weakly_smooth {R : realType} (n : nat) (f : 'rV[R]_n.+1 -> R) :=
   (forall a, {for a, continuous f}) /\
   (forall a, weakly_smooth_cond a -> {for a, continuous (gradient f)}).
 
-Definition shadow_lifting {R : realType} (M' : nat) (f : 'rV_M'.+1 -> R) :=
-  forall p, p > 0 -> forall i, ('d f '/d i) (const_mx p) > 0.
+Definition product_and {R : fieldType} n (u : 'rV[R]_n) : R :=
+  \prod_(i < n) u ``_ i.
 
-(*Definition shadow_lifting {R : realType} (f : forall n, 'rV_n.1 -> R) := 
-  (* forall Es : seq R, forall i : 'I_(size Es),
-    (* (forall i, nth 0 Es i != 0) -> *) *)
-    forall Es : seq R, forall i : 'I_(size Es), forall e : R,
-    e != 0 (* (0 < e <= 1)  *)->
-    0 < nth 0 Es i <= 1 ->
-    (forall j, j != i -> nth 0 Es j = e) ->
-    partial (f (size Es)) i (row_of_seq Es) > 0.
+Section shadow_lifting_product_and.
+Context {R : realType}.
+Variable M : nat.
+Hypothesis M0 : M != 0%N.
 
-Lemma all_0_product_partial {R : realType} (Es : seq R) (i : 'I_(size Es)) :
-  partial 0 i (row_of_seq Es) = 0.
-(*I'm not sure if I don't need an additional assumption here*)
+Lemma shadowlifting_product_andE p : p > 0 ->
+  forall i, ('d (@product_and R M.+1) '/d i) (const_mx p) = p ^+ M.
 Proof.
-apply/cvg_lim; first exact: Rhausdorff.
-rewrite [X in X @ _ --> _](_ : _ = 0); first exact: (@cvg_cst R).
-by apply/funext => r/=; rewrite /GRing.zero/=(*NB: I shouldn't do that*) subrr mulr0.
-Qed.
-*)
-(* 
-About realfun.left_right_continuousP. *)
-  
-
- (*needs new name*)
-Lemma almost_shadowlifting_product_and {R : realType} M : M != 0%N ->
-  forall p, p > 0 -> forall i, ('d (@product_and R M.+1) '/d i) (const_mx p) = p ^+ M.
-Proof.
-move => M0 p p0 i.
+move=> p0 i.
 rewrite /partial.
 have /cvg_lim : h^-1 * (product_and (const_mx p + h *: err_vec i) -
                         product_and (n:=M.+1) (const_mx p))
@@ -977,79 +996,54 @@ have /cvg_lim : h^-1 * (product_and (const_mx p + h *: err_vec i) -
 by apply; exact: Rhausdorff.
 Unshelve. all: by end_near. Qed.
 
-Lemma shadow_lifting_product_and {R : realType} M : M != 0%N ->
+Corollary shadow_lifting_product_and :
   shadow_lifting (@product_and R M.+1).
 Proof.
-move=> M0 p p0 i.
-rewrite almost_shadowlifting_product_and//.
-by rewrite exprn_gt0.
+by move=> p p0 i; rewrite shadowlifting_product_andE// exprn_gt0.
 Qed.
 
-Definition dl2_and {R : fieldType} n (xs : 'rV[R]_n) : R :=
-  \sum_(x < n) xs``_x.
+End shadow_lifting_product_and.
 
+Definition dl2_and {R : fieldType} n (v : 'rV[R]_n) :=
+  \sum_(i < n) v ``_ i.
 
-Lemma almost_shadowlifting_dl2_and {R : realType} M : M != 0%N ->
-  forall p, p > 0 -> forall i, ('d (@dl2_and R M.+1) '/d i) (const_mx p) = 1.
+Section shadow_lifting_dl2_and.
+Context {R : realType}.
+Variable M : nat.
+Hypothesis M0 : M != 0%N.
+
+Lemma shadowlifting_dl2_andE (p : R) : p > 0 ->
+  forall i, ('d (@dl2_and _ M.+1) '/d i) (const_mx p) = 1.
 Proof.
-move => M0 p p0 i.
-rewrite /partial. 
+move=> p0 i.
+rewrite /partial.
 have /cvg_lim : h^-1 * (dl2_and (const_mx p + h *: err_vec i) -
                         dl2_and (n:=M.+1) (const_mx p))
-       @[h --> (0:R)^'] --> p * 0 + 1%R. (*so I added p * 0 to get it to stop
-with the type error, couldn't cast 1 the right way for it to work
-, but I need to fix this*)
-- rewrite mulr0 addrC addr0. (*TO DO: can be deleted when I get rid of the above
-problem*)
+       @[h --> (0:R)^'] --> (1:R)%R.
   rewrite /dl2_and.
-  have H : forall h : R, h != 0 ->
-      \sum_(x < M.+1) (const_mx p + h *: err_vec i) 0 x -
-      \sum_(x < M.+1) const_mx (m:=M.+1) p 0 x = h.
-  + move=> h h0; rewrite [X in X - _](bigD1 i)//= !mxE eqxx mulr1.
+  have H : forall h, h != 0 ->
+      \sum_(x < M.+1) (const_mx p + h *: err_vec i) ``_ x -
+      \sum_(x < M.+1) (const_mx (n:=M.+1) (m:=1) p) ``_ x = h.
+    move=> h h0; rewrite [X in X - _](bigD1 i)//= !mxE eqxx mulr1.
     rewrite (eq_bigr (fun=> p)); last first.
-      * by move=> j ji; rewrite !mxE eq_sym (negbTE ji) mulr0 addr0.
-      * rewrite [X in _ - X](eq_bigr (fun=> p)); last by move=> *; rewrite mxE.
-      rewrite [X in _ - X](bigD1 i)//=.
-      rewrite (addrC p h). rewrite -addrA.  
-      set a := (\sum_(i0 < M.+1 | i0 != i) p).
-      Search (_ - _ = _).   
-      (* rewrite (-adde0 ((p+a)%E)). *)
-      admit. 
-      (* rewrite addrKA. *)
-    (*simple, just need to find right lemma combo*)
-                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                  
-  + have : h^-1 * h @[h --> (0:R)^'] --> p * 0 + 1%R.
-    * rewrite mulr0 addrC addr0. 
-      have : {near (0:R)^', (fun=> p * 0 + 1%R) =1 (fun h => h^-1 * h)}.
-      - near=> h; rewrite mulr0 addrC addr0 mulVf. exact.
-        by near: h;  exact: nbhs_dnbhs_neq.
-      - rewrite mulr0 addrC addr0. 
-        by move/near_eq_cvg/cvg_trans; apply; exact: cvg_cst.
-    * rewrite mulr0 addrC addr0.
-      move => h1. About cvg_trans.
-      (* have <-// := H. *)
-(* rewrite H. *) admit.
-  + rewrite mulr0 addrC addr0. by apply; exact: Rhausdorff.
-  (* Print Rhausdorff. *)
-Admitted.
-
-(* 
-  apply: cvg_trans; apply: near_eq_cvg; near=> k.
-  have <-// := H k.
-    congr (_ * (_ - _)).
-    apply: eq_bigr => /= j _.
-    by rewrite !mxE.
-  by near: k; exact: nbhs_dnbhs_neq.
+      by move=> j ji; rewrite !mxE eq_sym (negbTE ji) mulr0 addr0.
+    rewrite [X in _ - X](eq_bigr (fun=> p)); last by move=> *; rewrite mxE.
+    rewrite [X in _ - X](bigD1 i)//= (addrC p h) -addrA.
+    by rewrite addrA -(addrA h) addrK.
+  have : h^-1 * h @[h --> (0:R)^'] --> (1:R)%R.
+    have : {near (0:R)^', (fun=> 1) =1 (fun h => h^-1 * h)}.
+      near=> h; rewrite mulVf//.
+      by near: h;  exact: nbhs_dnbhs_neq.
+    by move/near_eq_cvg/cvg_trans; apply; exact: cvg_cst.
+  apply: cvg_trans; apply: near_eq_cvg => /=; near=> k.
+  by rewrite H//; near: k; exact: nbhs_dnbhs_neq.
 by apply; exact: Rhausdorff.
-Unshelve. all: by end_near. *)
+Unshelve. all: by end_near. Qed.
 
-Lemma shadow_lifting_dl2_and {R : realType} M : M != 0%N ->
-  shadow_lifting (@dl2_and R M.+1).
-Proof.
-move=> M0 p p0 i.
-rewrite almost_shadowlifting_dl2_and//.
-Qed.
+Corollary shadow_lifting_dl2_and :  shadow_lifting (@dl2_and R M.+1).
+Proof. by move=> p p0 i; rewrite shadowlifting_dl2_andE. Qed.
 
+End shadow_lifting_dl2_and.
 
 (* The ones below do not type check yet, need to check if we can extend to ereal *)
 (* Definition stl_a_min {R : fieldType} n (xs : 'rV[R]_n) : \bar R :=
@@ -1092,8 +1086,6 @@ rewrite /partial.
 admit. *)
 Admitted.
 *)
-
-End shadow.
 
 Section Lukasiewicz_lemmas.
 Local Open Scope ldl_scope.

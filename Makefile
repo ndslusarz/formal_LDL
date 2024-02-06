@@ -14,3 +14,6 @@ _CoqProject Makefile: ;
 	$(MAKE) -f Makefile.coq $@
 
 .PHONY: all clean
+
+doc:
+	../coq2html/coq2html -title "LDL" -d html/ -Q . LDL -coqlib https://coq.inria.fr/doc/V8.18.0/stdlib/ -external https://math-comp.github.io/htmldoc/ mathcomp.ssreflect -external https://math-comp.github.io/htmldoc/ mathcomp.algebra ./*.v ./*.glob
