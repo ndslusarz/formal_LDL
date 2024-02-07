@@ -1059,66 +1059,41 @@ Hypothesis M0 : M != 0%N.
 Definition min_dev {R : numDomainType} (x : \bar R) (xs : seq \bar R) : \bar R :=
   (x - minE xs) * (fine (minE xs))^-1%:E.
 
+Definition min_devR {R : realType} (x : R) (xs : seq R) : R :=
+  (x - minR xs) * (minR xs)^-1.
+
 Local Open Scope ereal_scope.
 
-Definition stl_and (xs : seq \bar R) : \bar R :=
+(*Natalia: will only consider >0 and <0 without edge cases, as to separate cases*)
+(* Definition stl_and (xs : seq \bar R) : \bar R :=
   if minE xs == +oo then +oo
   else if minE xs == -oo then -oo (*Check if needed*)
-  else if minE xs == 0 then 0
   else if minE xs < 0 then
     sumE (map (fun a => minE xs * expeR (min_dev a xs) * expeR (nu%:E * min_dev a xs)) xs) *
     (fine (sumE (map (fun a => expeR (nu%:E * min_dev a xs)) xs)))^-1%:E
   else if minE xs > 0 then
     sumE (map (fun a => a * expeR (-nu%:E * min_dev a xs)) xs) *
     (fine (sumE (map (fun a => expeR (nu%:E * min_dev a xs)) xs)))^-1%:E
-    else 0.
+    else 0. *)
 
 (*to do: change map to big operator probably*)
 
-Local Close Scope ereal_scope. 
+Local Close Scope ereal_scope.
 
-(* Definition stl_and_gt0 (xs : seq \bar R) : \bar R :=
-  sumE (map (fun a => a * expeR (-nu%:E * min_dev a xs)) xs) *
-    (fine (sumE (map (fun a => expeR (nu%:E * min_dev a xs)) xs)))^-1%:E. *)
-(* 
-and_E _ Es =>
-        let A := map (@stl_translation _) Es in
-        let a_min: \bar R := foldr mine (+oo) A in
-        let a'_i (a_i: \bar R) := (a_i - a_min) * (fine a_min)^-1%:E in
-        if a_min == +oo then +oo
-        else if a_min < 0 then
-          sumE (map (fun a => a_min * expeR (a'_i a) * expeR (nu%:E * a'_i a)) A) *
-          (fine (sumE (map (fun a => expeR (nu%:E * a'_i a)) A)))^-1%:E
-        else if a_min > 0 then
-          sumE (map (fun a => a * expeR (-nu%:E * a'_i a)) A) *
-          (fine (sumE (map (fun a => expeR (nu%:E * (a'_i a))) A)))^-1%:E
-             else 0
- *)
-(*Lemma shadow_lifting_product_and {R : realType} : @shadow_lifting R product_and.
-Proof.
-move=> Es i Es01.
-(*  rewrite lt_neqAle; apply/andP; split; last first.
-  apply: limr_ge.
-  - apply: (@monotonous_bounded_is_cvg _ _ false 0 (BRight 1) (* `]0, 1] *)).
-    + rewrite {1}/row_of_seq /err_vec.
-      admit.
-    + admit.
-    + admit.
-      (* rewrite -int_lbound_has_minimum.  *)
-  - near=> x.
-    rewrite mulr_ge0//.
-    + by rewrite invr_ge0.
-    + rewrite subr_ge0 /product_and ler_prod// => j _.
-(*      rewrite !ffunE !mxE; apply/andP; split.
-      * rewrite /tnth (set_nth_default (0:R))//.
-        by have /andP[/ltW] := Es01 j.
-      * by rewrite lerDl// mulr_ge0.*) admit.
-rewrite /partial.
-(*   rewrite /(-all_0_product_partial _).  *)
-admit. *)
-Admitted.
-*)
+Definition stl_and_gt0 (xs : seq R) : R :=
+  sumR (map (fun a => a * expR (-nu * min_devR a xs)) xs) *
+    (sumR (map (fun a => expR (nu * min_devR a xs)) xs))^-1.
+
+Definition stl_and_lt0 (xs : seq R) : R :=
+  sumR (map (fun a => a * expR (-nu * min_devR a xs)) xs) *
+    (sumR (map (fun a => expR (nu * min_devR a xs)) xs))^-1.
+
+(* Lemma shadowlifting_stl_and_gt0 p : p > 0 ->
+  forall i, ('d (@stl_and_gt0 _ M.+1) '/d i) (const_mx p) = 1 * M `^ -1. *)
+
+
 End shadow_lifting_stl_and.
+
 
 Section Lukasiewicz_lemmas.
 Local Open Scope ldl_scope.
