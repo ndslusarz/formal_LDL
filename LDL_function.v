@@ -1045,23 +1045,55 @@ Proof. by move=> p p0 i; rewrite shadowlifting_dl2_andE. Qed.
 
 End shadow_lifting_dl2_and.
 
+Section shadow_lifting_stl_and.
+Context {R : realType}.
+Variable nu : R.
+Variable M : nat.
+Hypothesis M0 : M != 0%N.
+(*add hypothesis nu>0 if needed*)
+
 (* The ones below do not type check yet, need to check if we can extend to ereal *)
-(* Definition stl_a_min {R : fieldType} n (xs : 'rV[R]_n) : \bar R :=
-  foldr mine (+oo)%E xs.
+(* Definition stl_a_min {R : numDomainType} (xs : seq \bar R) : \bar R :=
+  minE xs. *)
 
-Definition stl_a'_i {R : fieldType} n (xs : 'rV[R]_n) : \bar R :=
-  (a_i - a_min) * (fine a_min)^-1%:E.
+Definition min_dev {R : numDomainType} (x : \bar R) (xs : seq \bar R) : \bar R :=
+  (x - minE xs) * (fine (minE xs))^-1%:E.
 
-Definition stl_and {R : fieldType} n (xs : 'rV[R]_n) : R :=
-   if a_min == +oo then +oo
-   else if a_min < 0 then
-     sumE (map (fun a => a_min * expeR (a'_i a) * expeR (nu%:E * a'_i a)) A) *
-     (fine (sumE (map (fun a => expeR (nu%:E * a'_i a)) A)))^-1%:E
-   else if a_min > 0 then
-     sumE (map (fun a => a * expeR (-nu%:E * a'_i a)) A) *
-     (fine (sumE (map (fun a => expeR (nu%:E * (a'_i a))) A)))^-1%:E
-     else 0. *)
+Local Open Scope ereal_scope.
 
+Definition stl_and (xs : seq \bar R) : \bar R :=
+  if minE xs == +oo then +oo
+  else if minE xs == -oo then -oo (*Check if needed*)
+  else if minE xs == 0 then 0
+  else if minE xs < 0 then
+    sumE (map (fun a => minE xs * expeR (min_dev a xs) * expeR (nu%:E * min_dev a xs)) xs) *
+    (fine (sumE (map (fun a => expeR (nu%:E * min_dev a xs)) xs)))^-1%:E
+  else if minE xs > 0 then
+    sumE (map (fun a => a * expeR (-nu%:E * min_dev a xs)) xs) *
+    (fine (sumE (map (fun a => expeR (nu%:E * min_dev a xs)) xs)))^-1%:E
+    else 0.
+
+(*to do: change map to big operator probably*)
+
+Local Close Scope ereal_scope. 
+
+(* Definition stl_and_gt0 (xs : seq \bar R) : \bar R :=
+  sumE (map (fun a => a * expeR (-nu%:E * min_dev a xs)) xs) *
+    (fine (sumE (map (fun a => expeR (nu%:E * min_dev a xs)) xs)))^-1%:E. *)
+(* 
+and_E _ Es =>
+        let A := map (@stl_translation _) Es in
+        let a_min: \bar R := foldr mine (+oo) A in
+        let a'_i (a_i: \bar R) := (a_i - a_min) * (fine a_min)^-1%:E in
+        if a_min == +oo then +oo
+        else if a_min < 0 then
+          sumE (map (fun a => a_min * expeR (a'_i a) * expeR (nu%:E * a'_i a)) A) *
+          (fine (sumE (map (fun a => expeR (nu%:E * a'_i a)) A)))^-1%:E
+        else if a_min > 0 then
+          sumE (map (fun a => a * expeR (-nu%:E * a'_i a)) A) *
+          (fine (sumE (map (fun a => expeR (nu%:E * (a'_i a))) A)))^-1%:E
+             else 0
+ *)
 (*Lemma shadow_lifting_product_and {R : realType} : @shadow_lifting R product_and.
 Proof.
 move=> Es i Es01.
@@ -1086,6 +1118,7 @@ rewrite /partial.
 admit. *)
 Admitted.
 *)
+End shadow_lifting_stl_and.
 
 Section Lukasiewicz_lemmas.
 Local Open Scope ldl_scope.
