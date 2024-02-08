@@ -550,7 +550,7 @@ Fixpoint stl_translation t (e: expr t) : stl_type_translation t :=
 
     (*comparisons*)
     | E1 `== E2 => (- `| {[ E1 ]} - {[ E2 ]}|)%:E
-    | E1 `<= E2 => ({[ E1 ]} - {[ E2 ]})%:E(* (- maxr ({[ E1 ]} - {[ E2 ]}) 0)%:E *)
+    | E1 `<= E2 => ({[ E2 ]} - {[ E1 ]})%:E(* (- maxr ({[ E1 ]} - {[ E2 ]}) 0)%:E *)
 
     | net n m f => f
     | app_net n m f v => {[ f ]} {[ v ]}
@@ -2148,9 +2148,11 @@ dependent induction e using expr_ind'.
     have [i il0 <-] := xnth (Bool _ false).
     by apply/negPf; apply: H => //; rewrite ?h// -In_in mem_nth.
 - case: c.
-  admit. (* rewrite //=; rewrite -!stl_translations_Real_coincide;
-  set t1 := _ e1; set t2 := _ e2; case: b.  *)
-Admitted.
+  + by case: b; rewrite /is_stl/= ?lee_fin ?lte_fin ?ltNge subr_ge0 !stl_translations_Real_coincide// => /negbTE.
+  + case: b; rewrite /is_stl/= ?lee_fin ?lte_fin !stl_translations_Real_coincide.
+    by rewrite oppr_ge0 normr_le0 subr_eq0.
+    by rewrite oppr_lt0 normr_gt0 subr_eq0 => /negbTE.
+Qed.
 
 
 End stl_lemmas.
