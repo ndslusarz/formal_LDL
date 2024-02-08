@@ -114,12 +114,12 @@ case: uf => r fr; exists r => z/= [s].
 by rewrite in_itv/= => /andP[xs _] <-{z}; exact: fr.
 Qed.
 
-Inductive simple_type : Type :=
-| Bool_T : bool -> simple_type
-| Index_T : nat -> simple_type
-| Real_T : simple_type
-| Vector_T : nat -> simple_type
-| Network_T : nat -> nat -> simple_type.
+Inductive simple_type :=
+| Bool_T of bool
+| Index_T of nat
+| Real_T
+| Vector_T of nat
+| Network_T of nat & nat.
 
 Definition Bool_P := Bool_T false.
 Definition Bool_N := Bool_T true.
