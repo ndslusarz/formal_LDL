@@ -1594,14 +1594,16 @@ Qed.
 
 (*move to util once proven*)
 
-Lemma psume_eq0 (I : eqType) (r : seq I) (P : pred I) (F : I -> \bar R
-) :
+Lemma psume_eq0 (I : eqType) (r : seq I) (P : pred I) (F : I -> \bar R) :
     (forall i, P i -> 0 <= F i)%E ->
   (\sum_(i <- r | P i) (F i) == 0)%E = (all (fun i => (P i) ==> (F i == 0%E)) r).
 Proof.
 elim: r=> [|a r ihr hr] /=; rewrite (big_nil, big_cons); first by rewrite eqxx.
-case: ifP=> pa /=. (* rewrite ?paddr_eq0 ?ihr ?hr // sumr_ge0. *)
-Admitted.
+case: ifPn => pa /=; last exact: ihr.
+have [Fa0|Fa0/=] := eqVneq (F a) 0; first by rewrite Fa0 add0r/= ihr.
+by apply/negbTE; rewrite padde_eq0;
+  [rewrite negb_and Fa0|exact: hr|exact: sume_ge0].
+Qed.
 
 Lemma dl2_nary_inversion_andE1 (Es : seq (expr (Bool_P)) ) :
   [[ and_E  Es ]]_dl2 = 0%E -> (forall i, (i < size Es)%N -> [[ nth (Bool _ false) Es i ]]_dl2 = 0%E).
