@@ -1053,8 +1053,6 @@ Hypothesis M0 : M != 0%N.
 (*add hypothesis nu>0 if needed*)
 
 (* The ones below do not type check yet, need to check if we can extend to ereal *)
-(* Definition stl_a_min {R : numDomainType} (xs : seq \bar R) : \bar R :=
-  minE xs. *)
 
 Definition min_dev {R : numDomainType} (x : \bar R) (xs : seq \bar R) : \bar R :=
   (x - minE xs) * (fine (minE xs))^-1%:E.
@@ -1080,16 +1078,27 @@ Local Open Scope ereal_scope.
 
 Local Close Scope ereal_scope.
 
-Definition stl_and_gt0 (xs : seq R) : R :=
-  sumR (map (fun a => a * expR (-nu * min_devR a xs)) xs) *
-    (sumR (map (fun a => expR (nu * min_devR a xs)) xs))^-1.
+Definition stl_and_gt0 n (v : 'rV[R]_n)  :=
+  sumR (map (fun a => a * expR (-nu * min_devR a ( MatrixFormula.seq_of_rV v))) ( MatrixFormula.seq_of_rV v)) *
+  (sumR (map (fun a => expR (nu * min_devR a ( MatrixFormula.seq_of_rV v))) ( MatrixFormula.seq_of_rV v)))^-1.
 
-Definition stl_and_lt0 (xs : seq R) : R :=
-  sumR (map (fun a => a * expR (-nu * min_devR a xs)) xs) *
-    (sumR (map (fun a => expR (nu * min_devR a xs)) xs))^-1.
+Definition stl_and_lt0 n (v : 'rV[R]_n) :=
+  sumR (map (fun a => a * expR (-nu * min_devR a ( MatrixFormula.seq_of_rV v))) ( MatrixFormula.seq_of_rV v)) *
+    (sumR (map (fun a => expR (nu * min_devR a ( MatrixFormula.seq_of_rV v))) ( MatrixFormula.seq_of_rV v)))^-1.
 
-(* Lemma shadowlifting_stl_and_gt0 p : p > 0 ->
-  forall i, ('d (@stl_and_gt0 _ M.+1) '/d i) (const_mx p) = 1 * M `^ -1. *)
+
+ Search (_ `^ _).
+Lemma shadowlifting_stl_and_gt0 (p : R) : p > 0 ->
+  forall i, ('d (@stl_and_gt0 M.+1) '/d i) (const_mx p) = (M%:R) ^ -1.
+Proof.
+move=> p0 i.
+rewrite /partial.
+(* have /cvg_lim : h^-1 * (stl_and_gt0 (const_mx p + h *: err_vec i) -
+                        stl_and_gt0 (n:=M.+1) (const_mx p))
+       @[h --> (0:R)^'] --> ((M%:R)^ -1):R. *)
+
+
+Admitted.
 
 
 End shadow_lifting_stl_and.
