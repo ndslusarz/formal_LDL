@@ -1523,6 +1523,18 @@ rewrite big_cons; case: ifPn => Ph /=; last by rewrite ih.
 by rewrite mule_eq0 ih.
 Qed.
 
+(* TODO(rei): move to analysis *)
+Lemma nadde_lt0 {R : realFieldType} (x y : \bar R) :
+  (x <= 0)%E -> (y <= 0)%E -> (x + y < 0)%E -> ((x < 0) || (y < 0))%E.
+Proof.
+move: x y => [x| |] [y| |]//; rewrite ?lee_fin ?lte_fin.
+- move=> x0 y0; rewrite !ltNge -negb_and; apply: contra.
+  by move=> /andP[x0' y0']; rewrite addr_ge0.
+- by move=> x0 _ _; rewrite ltNyr orbT.
+- by move=> _ y0 _; rewrite ltNyr.
+- by move=> _ _ _; rewrite ltNy0.
+Qed.
+
 Section dl2_lemmas.
 Local Open Scope ldl_scope.
 Context {R : realType}.
@@ -1636,10 +1648,20 @@ rewrite adde_eq_ninfty => /orP[/eqP hoo|/eqP/ih[i /andP[Hi ti]]].
 by exists i.+1; rewrite /= Hi.
 Qed.
 
-Lemma dl2_nary_inversion_andE0' (Es : seq (expr (Bool_P)) ) :
-    ([[ and_E Es ]]_dl2 < 0)%E -> (exists (i : nat), (([[ nth (Bool _ false) Es i ]]_dl2 < 0)%E ) && (i < size Es)%nat).
+Lemma dl2_nary_inversion_andE0' (s : seq (expr (Bool_P))) :
+  ([[ and_E s ]]_dl2 < 0)%E ->
+  (exists i, (([[ nth (Bool _ false) s i ]]_dl2 < 0)%E) && (i < size s)%nat).
 Proof.
-Admitted.
+elim: s => //=; first by rewrite /sumE big_nil ltxx.
+move=> h t ih; rewrite /sumE big_cons.
+move=> /nadde_lt0 => /(_ (dl2_translation_le0 _)).
+have : (\sum_(j <- [seq [[i]]_dl2 | i <- t]) j <= 0)%E.
+  rewrite big_seq_cond; apply: sume_le0 => /= z.
+  by rewrite andbT => /mapP[/= e et ->]; exact: dl2_translation_le0.
+move=> /[swap] /[apply] /orP[H|/ih[j /andP[j0 jt]]].
+  by exists 0%N; rewrite /= H.
+by exists j.+1; rewrite /= j0.
+Qed.
 
 Lemma dl2_nary_inversion_orE1 (Es : seq (expr (Bool_P)) ) :
     [[ or_E Es ]]_dl2 = 0%E -> (exists i, ([[ nth (Bool _ false) Es i ]]_dl2 == 0%E) && (i < size Es)%nat).
