@@ -114,12 +114,12 @@ case: uf => r fr; exists r => z/= [s].
 by rewrite in_itv/= => /andP[xs _] <-{z}; exact: fr.
 Qed.
 
-Inductive simple_type : Type :=
-| Bool_T : bool -> simple_type
-| Index_T : nat -> simple_type
-| Real_T : simple_type
-| Vector_T : nat -> simple_type
-| Network_T : nat -> nat -> simple_type.
+Inductive simple_type :=
+| Bool_T of bool
+| Index_T of nat
+| Real_T
+| Vector_T of nat
+| Network_T of nat & nat.
 
 Definition Bool_P := Bool_T false.
 Definition Bool_N := Bool_T true.
@@ -1532,6 +1532,18 @@ rewrite big_cons; case: ifPn => Ph /=; last by rewrite ih.
 by rewrite mule_eq0 ih.
 Qed.
 
+(* TODO(rei): move to analysis *)
+Lemma nadde_lt0 {R : realFieldType} (x y : \bar R) :
+  (x <= 0)%E -> (y <= 0)%E -> (x + y < 0)%E -> ((x < 0) || (y < 0))%E.
+Proof.
+move: x y => [x| |] [y| |]//; rewrite ?lee_fin ?lte_fin.
+- move=> x0 y0; rewrite !ltNge -negb_and; apply: contra.
+  by move=> /andP[x0' y0']; rewrite addr_ge0.
+- by move=> x0 _ _; rewrite ltNyr orbT.
+- by move=> _ y0 _; rewrite ltNyr.
+- by move=> _ _ _; rewrite ltNy0.
+Qed.
+
 Section dl2_lemmas.
 Local Open Scope ldl_scope.
 Context {R : realType}.
@@ -1603,44 +1615,75 @@ Qed.
 
 (*move to util once proven*)
 
-Lemma psume_eq0 (I : eqType) (r : seq I) (P : pred I) (F : I -> \bar R
-) :
+Lemma psume_eq0 (I : eqType) (r : seq I) (P : pred I) (F : I -> \bar R) :
     (forall i, P i -> 0 <= F i)%E ->
   (\sum_(i <- r | P i) (F i) == 0)%E = (all (fun i => (P i) ==> (F i == 0%E)) r).
 Proof.
-elim: r=> [|a r ihr hr] /=; rewrite (big_nil, big_cons); first by rewrite eqxx.
-case: ifP=> pa /=. (* rewrite ?paddr_eq0 ?ihr ?hr // sumr_ge0. *)
-Admitted.
+elim: r => [|a r ihr hr] /=; rewrite (big_nil, big_cons); first by rewrite eqxx.
+case: ifPn => pa /=; last exact: ihr.
+have [Fa0|Fa0/=] := eqVneq (F a) 0; first by rewrite Fa0 add0r/= ihr.
+by apply/negbTE; rewrite padde_eq0;
+  [rewrite negb_and Fa0|exact: hr|exact: sume_ge0].
+Qed.
 
-Lemma dl2_nary_inversion_andE1 (Es : seq (expr (Bool_P)) ) :
-  [[ and_E  Es ]]_dl2 = 0%E -> (forall i, (i < size Es)%N -> [[ nth (Bool _ false) Es i ]]_dl2 = 0%E).
+Lemma dl2_nary_inversion_andE1 (s : seq (expr (Bool_P))) :
+  [[ and_E s ]]_dl2 = 0%E ->
+  (forall i, (i < size s)%N -> [[ nth (Bool _ false) s i ]]_dl2 = 0%E).
 Proof.
-have H := dl2_translation_le0. move: H.
-rewrite /=; move => H.
-move/eqP. rewrite /sumE eq_sym. move => H1 i i0.
-move: H => /(_ (nth (Bool _ false) Es i)). move: H1.
-rewrite eq_sym.
-rewrite psume_eq0. 
-move => /allP h iEs.
-apply/eqP.
+elim: s => //= h t ih H [_|]/=.
+  move: H; rewrite /sumE big_cons => /eqP.
+  rewrite nadde_eq0//.
+  - by move=> /andP[/eqP].
+  - exact: dl2_translation_le0.
+  - rewrite big_seq_cond; apply: sume_le0 => /= x.
+    by rewrite andbT => /mapP[/= e et] ->; exact: dl2_translation_le0.
+move=> n; rewrite ltnS => nt /=; apply: ih => //.
+move: H; rewrite /sumE big_cons => /eqP.
+rewrite nadde_eq0.
+- by move=> /andP[_ /eqP].
+- exact: dl2_translation_le0.
+- rewrite big_seq_cond; apply: sume_le0 => /= x.
+  by rewrite andbT => /mapP[/= e et] ->; exact: dl2_translation_le0.
+Qed.
 
-Admitted.
-
-Lemma dl2_nary_inversion_andE0 (Es : seq (expr (Bool_P)) ) :
-    [[ and_E Es ]]_dl2 = -oo%E -> (exists (i : nat), ([[ nth (Bool _ false) Es i ]]_dl2 == -oo%E ) && (i < size Es)%nat).
+Lemma dl2_nary_inversion_andE0 (s : seq (expr (Bool_P))) :
+  [[ and_E s ]]_dl2 = -oo%E ->
+  exists i, ([[ nth (Bool _ false) s i ]]_dl2 == -oo%E) && (i < size s)%nat.
 Proof.
+elim: s => /=; first by rewrite /sumE big_nil.
+move=> h t ih; rewrite /sumE big_cons => /eqP.
+rewrite adde_eq_ninfty => /orP[/eqP hoo|/eqP/ih[i /andP[Hi ti]]].
+  by exists O => /=; rewrite hoo eqxx.
+by exists i.+1; rewrite /= Hi.
+Qed.
 
-Admitted.
-
-Lemma dl2_nary_inversion_andE0' (Es : seq (expr (Bool_P)) ) :
-    ([[ and_E Es ]]_dl2 < 0)%E -> (exists (i : nat), (([[ nth (Bool _ false) Es i ]]_dl2 < 0)%E ) && (i < size Es)%nat).
+(* TODO: rename to avoid ' in the name *)
+Lemma dl2_nary_inversion_andE0' (s : seq (expr (Bool_P))) :
+  ([[ and_E s ]]_dl2 < 0)%E ->
+  (exists i, (([[ nth (Bool _ false) s i ]]_dl2 < 0)%E) && (i < size s)%nat).
 Proof.
-Admitted.
+elim: s => [|h t ih] //=; first by rewrite /sumE big_nil ltxx.
+rewrite /sumE big_cons => /nadde_lt0 => /(_ (dl2_translation_le0 _)).
+have : (\sum_(j <- [seq [[i]]_dl2 | i <- t]) j <= 0)%E.
+  rewrite big_seq_cond; apply: sume_le0 => /= z.
+  by rewrite andbT => /mapP[/= e et ->]; exact: dl2_translation_le0.
+move=> /[swap] /[apply] /orP[H|/ih[j /andP[j0 jt]]].
+  by exists 0%N; rewrite /= H.
+by exists j.+1; rewrite /= j0.
+Qed.
 
-Lemma dl2_nary_inversion_orE1 (Es : seq (expr (Bool_P)) ) :
-    [[ or_E Es ]]_dl2 = 0%E -> (exists i, ([[ nth (Bool _ false) Es i ]]_dl2 == 0%E) && (i < size Es)%nat).
+Lemma dl2_nary_inversion_orE1 (s : seq (expr (Bool_P))) : [[ or_E s ]]_dl2 = 0%E ->
+  exists i, ([[ nth (Bool _ false) s i ]]_dl2 == 0%E) && (i < size s)%nat.
 Proof.
-Admitted.
+elim: s => [|h t ih] /=.
+  rewrite big_nil mule1 expr1 EFinN => /eqe_oppLRP.
+  by rewrite oppe0 => /eqP; rewrite onee_eq0.
+move=> /eqP; rewrite mule_eq0 eqe signr_eq0/=.
+rewrite big_cons mule_eq0 => /orP[H|/eqP H].
+  by exists 0%N; rewrite /= H.
+have /ih[j /andP[Hj jt]] : [[or_E t]]_dl2 = 0 by rewrite /= H mule0.
+by exists j.+1; rewrite /= Hj.
+Qed.
 
 Lemma dl2_nary_inversion_orE0 (Es : seq (expr (Bool_P)) ) :
     [[ or_E Es ]]_dl2  = -oo%E -> (forall i, (i < size Es)%nat -> [[ nth (Bool _ false) Es i ]]_dl2 = -oo%E).
@@ -1970,5 +2013,174 @@ dependent induction e using expr_ind'.
 - by case: c; rewrite //=; rewrite -!stl_translations_Real_coincide;
   set t1 := _ e1; set t2 := _ e2; case: b.  
 Qed.
+
+
+Definition is_stl b (x : \bar R) := (if b then x >= 0 else x < 0)%E.
+
+
+Lemma mine_eqyP (T : eqType) (s : seq T) (P : pred T) (f : T -> \bar R) :
+  (\big[mine/+oo]_(i <- s | P i) f i = +oo <-> forall i, i \in s -> P i -> f i = +oo)%E.
+Proof.
+elim s=>[|a l IH].
+  by split; [move=> _ i; rewrite in_nil|move=>_; rewrite big_nil].
+split.
+- rewrite big_cons.
+  case: ifPn => [pa|npa]; last first.
+    move=> hlpoo i; rewrite inE => /orP[/eqP -> pa|il pi].
+      by rewrite pa in npa.
+    exact: IH.1 hlpoo i il pi.
+  rewrite {1}/mine; case: ifPn.
+    by move=>/[swap]->; rewrite lt_neqAle => /andP[]/[swap]; rewrite leye_eq => /eqP->; rewrite eq_refl.
+  rewrite -leNgt=>/[swap] hlpoo. rewrite hlpoo leye_eq => /eqP fapoo i.
+  rewrite inE => /orP[/eqP -> _|il pi]; first by rewrite fapoo.
+  exact: IH.1 hlpoo i il pi.
+- move=> hpoo.
+  rewrite big_cons.
+  case: ifPn => [pa|npa]; last first.
+    by apply: IH.2 => i il pi; apply: hpoo => //; rewrite inE il orbT.
+  rewrite {1}/mine; case: ifPn.
+    rewrite IH.2 ?hpoo ?lt_neqAle ?inE ?eq_refl// => i il pi.
+    by apply: hpoo=>//; rewrite inE il orbT.
+  rewrite -leNgt IH.2// => i il pi.
+  apply: hpoo => //.
+  by rewrite inE il orbT.
+Qed.
+
+Lemma mine_geP (T : eqType) (s : seq T) (P : pred T) (f : T -> \bar R) (x : \bar R) :
+  (x <= \big[mine/+oo]_(i <- s | P i) f i <-> forall i, i \in s -> P i -> x <= f i)%E.
+Proof.
+elim s=>[|a l IH].
+  by split; [move=> _ i; rewrite in_nil//|move=>h; rewrite big_nil leey].
+split.
+- rewrite big_cons.
+  case: ifPn => [pa|npa]; last first.
+    move=> hlpoo i; rewrite inE => /orP[/eqP -> pa|il pi].
+      by rewrite pa in npa.
+    exact: IH.1 hlpoo i il pi.
+  rewrite {1}/mine; case: ifPn.
+    move=>/[swap] le1 le2.
+    move: (le_lt_trans le1 le2).
+    rewrite lt_neqAle => /andP[] _.
+    move/IH=> h1 i.
+    rewrite inE => /orP[/eqP->//|il pi].
+    exact: h1.
+  rewrite -leNgt=>/[swap] hlpoo h2.
+  move: (le_trans hlpoo h2) => xlefa i.
+  rewrite inE => /orP[/eqP->//|il pi].
+  exact: IH.1.
+- move=> hpoo.
+  rewrite big_cons.
+  case: ifPn => [pa|npa]; last first.
+    by apply: IH.2 => i il pi; apply: hpoo => //; rewrite inE il orbT.
+  rewrite {1}/mine; case: ifPn => [_|].
+    by rewrite hpoo// inE eq_refl.
+  rewrite -leNgt IH.2// => i il pi.
+  by rewrite hpoo// inE il orbT.
+Qed.
+
+Lemma stl_nary_inversion_andE1' (Es : seq (expr Bool_N) ) :
+  is_stl true (nu.-[[ and_E Es ]]_stl) -> (forall i, (i < size Es)%N -> is_stl true (nu.-[[ nth (Bool _ false) Es i ]]_stl)).
+Proof.
+rewrite/is_stl/= foldrE.
+case: ifPn => [/eqP|hpoo].
+  rewrite big_map => min_apoo _.
+  move=> i isize.
+  move: ((mine_eqyP _ _ _).1 min_apoo (nth (Bool true false) Es i)).
+  by rewrite mem_nth// => ->.
+case: ifPn=>[hminle0|].
+  rewrite/sumE.
+  rewrite leNgt !big_map.
+  rewrite mule_lt0_gt0//; last first.
+  rewrite lte_fin invr_gt0 fine_gt0//.
+    admit. (* combine sumr_ge0 and psumr_eq0 *)
+  admit.
+rewrite -leNgt big_map mine_geP/= => h _ i isize.
+by apply: h => //; rewrite mem_nth.
+Admitted.
+
+Lemma stl_nary_inversion_andE0 (Es : seq (expr Bool_N) ) :
+  nu.-[[ and_E Es ]]_stl = -oo%E -> (exists (i : nat), (nu.-[[ nth (Bool _ false) Es i ]]_stl == -oo)%E && (i < size Es)%nat).
+Admitted.
+
+Lemma stl_nary_inversion_orE1 (Es : seq (expr Bool_N) ) :
+  nu.-[[ or_E Es ]]_stl = +oo%E -> (exists i, (nu.-[[ nth (Bool _ false) Es i ]]_stl == +oo)%E && (i < size Es)%nat).
+Admitted.
+
+Lemma stl_nary_inversion_orE0 (Es : seq (expr Bool_N) ) :
+    nu.-[[ or_E Es ]]_stl = -oo%E -> (forall i, (i < size Es)%nat -> nu.-[[ nth (Bool _ false) Es i ]]_stl = -oo%E).
+Admitted.
+
+Lemma stl_translations_Vector_coincide: forall n (e : @expr R (Vector_T n)),
+  nu.-[[ e ]]_stl = [[ e ]]b.
+Proof.
+dependent induction e => //=.
+dependent destruction e1.
+by rewrite (IHe2 _ _ e2 erefl JMeq_refl).
+Qed.
+
+Lemma stl_translations_Index_coincide: forall n (e : expr (Index_T n)),
+  nu.-[[ e ]]_stl = [[ e ]]b.
+Proof.
+dependent induction e => //=.
+Qed.
+
+Lemma stl_translations_Real_coincide (e : expr Real_T):
+  nu.-[[ e ]]_stl = [[ e ]]b.
+Proof.
+dependent induction e => //=;
+rewrite ?(IHe1 e1 erefl JMeq_refl) ?(IHe2 e2 erefl JMeq_refl) ?(IHe e erefl JMeq_refl) //=.
+by rewrite stl_translations_Vector_coincide stl_translations_Index_coincide.
+Qed.
+
+Lemma stl_soundness' (e : expr Bool_N) b :
+  is_stl b (nu.-[[ e ]]_stl) -> [[ e ]]b = b.
+Proof.
+dependent induction e using expr_ind'.
+- move: b b0 => [] [] //=.
+- rewrite List.Forall_forall in H.
+  move: b => []. rewrite /is_stl.
+  + move/stl_nary_inversion_andE1'.
+    rewrite [bool_translation (and_E l)]/= foldrE big_map big_seq big_all_cond => h.
+    apply: allT => x/=.
+    apply/implyP => /nthP xnth.
+    have [i il0 <-] := xnth (Bool _ false).
+    by apply: H => //; rewrite ?h// -In_in mem_nth.
+  + move/stl_nary_inversion_andE0.
+    rewrite [bool_translation (and_E l)]/= foldrE big_map big_all.
+    elim=>// i /andP[/eqP i0 isize].
+    apply/allPn; exists (nth (Bool _ false) l i); first by rewrite mem_nth.
+    apply/negPf; apply: H => //.
+    by rewrite -In_in mem_nth.
+- rewrite List.Forall_forall in H.
+  rewrite [ nu.-[[Bool _ b]]_stl]/=.
+  move: b => [].
+  + move/stl_nary_inversion_orE1.
+    rewrite [bool_translation (or_E l)]/= foldrE big_map big_has.
+    elim=>// i /andP[/eqP i0 isize].
+    apply/hasP; exists (nth (Bool _ false) l i); first by rewrite mem_nth.
+    apply: H => //.
+    by rewrite -In_in mem_nth.
+  + move/stl_nary_inversion_orE0.
+    rewrite [bool_translation (or_E l)]/= foldrE big_map big_has => h.
+    apply/hasPn => x.
+    move/nthP => xnth.
+    have [i il0 <-] := xnth (Bool _ false).
+    by apply/negPf; apply: H => //; rewrite ?h// -In_in mem_nth.
+(*- have /orP[isize|isize] := leqVgt (size l) i.
+    by rewrite !nth_default//=; case: b => ///eqP; rewrite lt_eqF ?ltr01.
+  rewrite List.Forall_forall in H => h.
+  by apply: H => //; rewrite -In_in mem_nth.*)
+- rewrite //=.
+  have {} IHe := IHe e erefl JMeq_refl.
+  case: b => h.
+  have: nu.-[[ e ]]_stl = -oo%E.
+    by move: h; rewrite /oppe; case: (nu.-[[e]]_stl).
+  by move/(IHe false) => ->.
+  have: nu.-[[ e ]]_stl = +oo%E.
+    by move: h; rewrite /oppe; case: (nu.-[[e]]_stl).
+  by move/(IHe true) => ->.
+- by case: c; rewrite //=; rewrite -!stl_translations_Real_coincide;
+  set t1 := _ e1; set t2 := _ e2; case: b.  
+
 
 End stl_lemmas.
