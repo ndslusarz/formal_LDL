@@ -1606,7 +1606,7 @@ by apply/negbTE; rewrite padde_eq0;
 Qed.
 
 Lemma dl2_nary_inversion_andE1 (s : seq (expr (Bool_P))) :
-  [[ and_E  s ]]_dl2 = 0%E ->
+  [[ and_E s ]]_dl2 = 0%E ->
   (forall i, (i < size s)%N -> [[ nth (Bool _ false) s i ]]_dl2 = 0%E).
 Proof.
 elim: s => //= h t ih H [_|]/=.
@@ -1625,11 +1625,16 @@ rewrite nadde_eq0.
   by rewrite andbT => /mapP[/= e et] ->; exact: dl2_translation_le0.
 Qed.
 
-Lemma dl2_nary_inversion_andE0 (Es : seq (expr (Bool_P)) ) :
-    [[ and_E Es ]]_dl2 = -oo%E -> (exists (i : nat), ([[ nth (Bool _ false) Es i ]]_dl2 == -oo%E ) && (i < size Es)%nat).
+Lemma dl2_nary_inversion_andE0 (s : seq (expr (Bool_P))) :
+  [[ and_E s ]]_dl2 = -oo%E ->
+  exists i, ([[ nth (Bool _ false) s i ]]_dl2 == -oo%E) && (i < size s)%nat.
 Proof.
-
-Admitted.
+elim: s => /=; first by rewrite /sumE big_nil.
+move=> h t ih; rewrite /sumE big_cons => /eqP.
+rewrite adde_eq_ninfty => /orP[/eqP hoo|/eqP/ih[i /andP[Hi ti]]].
+  by exists O => /=; rewrite hoo eqxx.
+by exists i.+1; rewrite /= Hi.
+Qed.
 
 Lemma dl2_nary_inversion_andE0' (Es : seq (expr (Bool_P)) ) :
     ([[ and_E Es ]]_dl2 < 0)%E -> (exists (i : nat), (([[ nth (Bool _ false) Es i ]]_dl2 < 0)%E ) && (i < size Es)%nat).
