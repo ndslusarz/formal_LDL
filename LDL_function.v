@@ -1598,26 +1598,32 @@ Lemma psume_eq0 (I : eqType) (r : seq I) (P : pred I) (F : I -> \bar R) :
     (forall i, P i -> 0 <= F i)%E ->
   (\sum_(i <- r | P i) (F i) == 0)%E = (all (fun i => (P i) ==> (F i == 0%E)) r).
 Proof.
-elim: r=> [|a r ihr hr] /=; rewrite (big_nil, big_cons); first by rewrite eqxx.
+elim: r => [|a r ihr hr] /=; rewrite (big_nil, big_cons); first by rewrite eqxx.
 case: ifPn => pa /=; last exact: ihr.
 have [Fa0|Fa0/=] := eqVneq (F a) 0; first by rewrite Fa0 add0r/= ihr.
 by apply/negbTE; rewrite padde_eq0;
   [rewrite negb_and Fa0|exact: hr|exact: sume_ge0].
 Qed.
 
-Lemma dl2_nary_inversion_andE1 (Es : seq (expr (Bool_P)) ) :
-  [[ and_E  Es ]]_dl2 = 0%E -> (forall i, (i < size Es)%N -> [[ nth (Bool _ false) Es i ]]_dl2 = 0%E).
+Lemma dl2_nary_inversion_andE1 (s : seq (expr (Bool_P))) :
+  [[ and_E  s ]]_dl2 = 0%E ->
+  (forall i, (i < size s)%N -> [[ nth (Bool _ false) s i ]]_dl2 = 0%E).
 Proof.
-have H := dl2_translation_le0. move: H.
-rewrite /=; move => H.
-move/eqP. rewrite /sumE eq_sym. move => H1 i i0.
-move: H => /(_ (nth (Bool _ false) Es i)). move: H1.
-rewrite eq_sym.
-rewrite psume_eq0. 
-move => /allP h iEs.
-apply/eqP.
-
-Admitted.
+elim: s => //= h t ih H [_|]/=.
+  move: H; rewrite /sumE big_cons => /eqP.
+  rewrite nadde_eq0//.
+  - by move=> /andP[/eqP].
+  - exact: dl2_translation_le0.
+  - rewrite big_seq_cond; apply: sume_le0 => /= x.
+    by rewrite andbT => /mapP[/= e et] ->; exact: dl2_translation_le0.
+move=> n; rewrite ltnS => nt /=; apply: ih => //.
+move: H; rewrite /sumE big_cons => /eqP.
+rewrite nadde_eq0.
+- by move=> /andP[_ /eqP].
+- exact: dl2_translation_le0.
+- rewrite big_seq_cond; apply: sume_le0 => /= x.
+  by rewrite andbT => /mapP[/= e et] ->; exact: dl2_translation_le0.
+Qed.
 
 Lemma dl2_nary_inversion_andE0 (Es : seq (expr (Bool_P)) ) :
     [[ and_E Es ]]_dl2 = -oo%E -> (exists (i : nat), ([[ nth (Bool _ false) Es i ]]_dl2 == -oo%E ) && (i < size Es)%nat).
