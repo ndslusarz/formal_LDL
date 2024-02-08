@@ -1648,13 +1648,13 @@ rewrite adde_eq_ninfty => /orP[/eqP hoo|/eqP/ih[i /andP[Hi ti]]].
 by exists i.+1; rewrite /= Hi.
 Qed.
 
+(* TODO: rename to avoid ' in the name *)
 Lemma dl2_nary_inversion_andE0' (s : seq (expr (Bool_P))) :
   ([[ and_E s ]]_dl2 < 0)%E ->
   (exists i, (([[ nth (Bool _ false) s i ]]_dl2 < 0)%E) && (i < size s)%nat).
 Proof.
-elim: s => //=; first by rewrite /sumE big_nil ltxx.
-move=> h t ih; rewrite /sumE big_cons.
-move=> /nadde_lt0 => /(_ (dl2_translation_le0 _)).
+elim: s => [|h t ih] //=; first by rewrite /sumE big_nil ltxx.
+rewrite /sumE big_cons => /nadde_lt0 => /(_ (dl2_translation_le0 _)).
 have : (\sum_(j <- [seq [[i]]_dl2 | i <- t]) j <= 0)%E.
   rewrite big_seq_cond; apply: sume_le0 => /= z.
   by rewrite andbT => /mapP[/= e et ->]; exact: dl2_translation_le0.
@@ -1663,10 +1663,18 @@ move=> /[swap] /[apply] /orP[H|/ih[j /andP[j0 jt]]].
 by exists j.+1; rewrite /= j0.
 Qed.
 
-Lemma dl2_nary_inversion_orE1 (Es : seq (expr (Bool_P)) ) :
-    [[ or_E Es ]]_dl2 = 0%E -> (exists i, ([[ nth (Bool _ false) Es i ]]_dl2 == 0%E) && (i < size Es)%nat).
+Lemma dl2_nary_inversion_orE1 (s : seq (expr (Bool_P))) : [[ or_E s ]]_dl2 = 0%E ->
+  exists i, ([[ nth (Bool _ false) s i ]]_dl2 == 0%E) && (i < size s)%nat.
 Proof.
-Admitted.
+elim: s => [|h t ih] /=.
+  rewrite big_nil mule1 expr1 EFinN => /eqe_oppLRP.
+  by rewrite oppe0 => /eqP; rewrite onee_eq0.
+move=> /eqP; rewrite mule_eq0 eqe signr_eq0/=.
+rewrite big_cons mule_eq0 => /orP[H|/eqP H].
+  by exists 0%N; rewrite /= H.
+have /ih[j /andP[Hj jt]] : [[or_E t]]_dl2 = 0 by rewrite /= H mule0.
+by exists j.+1; rewrite /= Hj.
+Qed.
 
 Lemma dl2_nary_inversion_orE0 (Es : seq (expr (Bool_P)) ) :
     [[ or_E Es ]]_dl2  = -oo%E -> (forall i, (i < size Es)%nat -> [[ nth (Bool _ false) Es i ]]_dl2 = -oo%E).
