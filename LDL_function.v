@@ -2098,7 +2098,7 @@ case: ifPn=>[hminle0|].
     apply/andP; split.
     admit. (* combine sumr_ge0 and psumr_eq0 *)
   admit.
-(* rewrite -leNgt big_map mine_geP/= => h _ i isize. *)
+(* rewrite -leNgt big_map mine_geP/= => h _ i isize. *) (*this errors out now?*)
 (* by apply: h => //; rewrite mem_nth. *)
 Admitted.
 
@@ -2116,17 +2116,23 @@ case: ifPn => [hgt0|].
 by rewrite lt_irreflexive.
 Admitted.
 
-Lemma stl_nary_inversion_orE1' (Es : seq (expr Bool_N) ) :
-  nu.-[[ or_E Es ]]_stl = +oo%E -> (exists i, (nu.-[[ nth (Bool _ false) Es i ]]_stl == +oo)%E && (i < size Es)%nat).
-Proof.
-rewrite/is_stl/= foldrE.
-Admitted.
-
 (* Lemma maxe_eqyP (T : eqType) (s : seq T) (P : pred T) (f : T -> \bar R) :
   (- (\big[maxe/+oo]_(i <- s | P i) f i) = -oo <-> exists i, i \in s -> P i -> f i = +oo)%E.
 Proof.
 elim s=>[|a l IH].
 Admitted. *)
+
+(*Natalia: I need the maxe_eqyP to match the goal in both or inversions - but can't come up
+  with anything from knowing max_apoo that would give -oo, if anything the only
+result is that there exists some value in Es that is +oo - does the inversion break?*)
+
+Lemma stl_nary_inversion_orE1' (Es : seq (expr Bool_N) ) :
+  nu.-[[ or_E Es ]]_stl = +oo%E -> (exists i, (nu.-[[ nth (Bool _ false) Es i ]]_stl == +oo)%E && (i < size Es)%nat).
+Proof.
+rewrite/is_stl/= foldrE !big_map.
+case: ifPn => [/eqP|hpoo].
+Admitted.
+
 
 Lemma stl_nary_inversion_orE0' (Es : seq (expr Bool_N) ) :
     nu.-[[ or_E Es ]]_stl = -oo%E -> (forall i, (i < size Es)%nat -> 
@@ -2136,9 +2142,7 @@ rewrite/is_stl/= foldrE.
 case: ifPn => [/eqP|hpoo].
   rewrite big_map => max_apoo _.
   move=> i isize. 
-(*Natalia: I need the maxe_eqyP to match the goal - but can't come up
-  with anything from knowing max_apoo that would give -oo, if anything the only
-result is that there exists some value in Es that is +oo - does the inversion break?*)
+
   (* move: ((maxe_eqyP _ _ _).1 max_apoo (nth (Bool true false) Es i)). *)
 
 Admitted.
