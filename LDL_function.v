@@ -2083,6 +2083,10 @@ case: ifPn=>[hminle0|].
   rewrite leNgt !big_map.
   rewrite mule_lt0_gt0//; last first.
   rewrite lte_fin invr_gt0 fine_gt0//.
+    rewrite lt_neqAle.
+    rewrite sume_ge0 ?andbT; last by move=> i _; exact: expeR_ge0.
+    rewrite eq_sym psume_eq0; last by move=> i _; exact: expeR_ge0.
+    apply/andP; split.
     admit. (* combine sumr_ge0 and psumr_eq0 *)
   admit.
 rewrite -leNgt big_map mine_geP/= => h _ i isize.
