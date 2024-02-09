@@ -2078,12 +2078,16 @@ split.
   by rewrite hpoo// inE il orbT.
 Qed.
 
+Lemma sume_gt0 (I : Type) (r : seq I) (P : pred I) (F : I -> \bar R) :
+  (forall i : I, P i -> 0 < F i)%E ->
+  (0 < \sum_(i <- r | P i) F i)%E.
+Admitted.
+
 Lemma stl_nary_inversion_andE1' (Es : seq (expr Bool_P) ) :
   is_stl true (nu.-[[ and_E Es ]]_stl) -> (forall i, (i < size Es)%N -> is_stl true (nu.-[[ nth (Bool false false) Es i ]]_stl)).
 Proof.
-rewrite/is_stl/= foldrE.
-case: ifPn => [/eqP|hpoo].
-  rewrite big_map => min_apoo _.
+rewrite/is_stl/= foldrE big_map.
+case: ifPn => [/eqP min_apoo _|hpoo].
   move=> i isize.
   move: ((mine_eqyP _ _ _).1 min_apoo (nth (Bool false false) Es i)).
   by rewrite mem_nth// => ->.
@@ -2092,11 +2096,20 @@ case: ifPn=>[hminle0|].
   rewrite leNgt !big_map.
   rewrite mule_lt0_gt0//; last first.
   rewrite lte_fin invr_gt0 fine_gt0//.
-    rewrite lt_neqAle.
-    rewrite sume_ge0 ?andbT; last by move=> i _; exact: expeR_ge0.
-    rewrite eq_sym psume_eq0; last by move=> i _; exact: expeR_ge0.
-    apply/andP; split.
-    admit. (* combine sumr_ge0 and psumr_eq0 *)
+    apply/andP;split.
+    rewrite big_seq_cond sume_gt0//.
+      move=> i /andP[iEs _]; apply: expeR_gt0.
+      rewrite ltNye !mule_eq_ninfty.
+      rewrite !negb_or !negb_and !negb_or !negb_and -!leNgt.
+      apply/andP; split; apply/orP.
+        right; apply/andP; split.
+          by apply/orP; right; apply/eqP.
+        apply/andP; split.
+          by apply/orP; right; apply/eqP.
+        apply/andP; split.
+          by apply/orP; right; rewrite lee_fin invr_le0 fine_le0 ?ltW.
+        apply/orP; left.
+          
   admit.
 (* rewrite -leNgt big_map mine_geP/= => h _ i isize. *) (*this errors out now?*)
 (* by apply: h => //; rewrite mem_nth. *)
@@ -2126,25 +2139,17 @@ Admitted. *)
   with anything from knowing max_apoo that would give -oo, if anything the only
 result is that there exists some value in Es that is +oo - does the inversion break?*)
 
+Lemma oppeey (x : \bar R) : ((- x == +oo) = (x == -oo))%E.
+Proof. by case: x. Qed.
+
 Lemma stl_nary_inversion_orE1' (Es : seq (expr Bool_N) ) :
-  nu.-[[ or_E Es ]]_stl = +oo%E -> (exists i, (nu.-[[ nth (Bool _ false) Es i ]]_stl == +oo)%E && (i < size Es)%nat).
+  is_stl true (nu.-[[ or_E Es ]]_stl) -> (exists i, is_stl true (nu.-[[ nth (Bool _ false) Es i ]]_stl) && (i < size Es)%nat).
 Proof.
 rewrite/is_stl/= foldrE !big_map.
-case: ifPn => [/eqP|hpoo].
-Admitted.
-
-
-Lemma stl_nary_inversion_orE0' (Es : seq (expr Bool_N) ) :
-    nu.-[[ or_E Es ]]_stl = -oo%E -> (forall i, (i < size Es)%nat -> 
-      nu.-[[ nth (Bool _ false) Es i ]]_stl = -oo%E).
-Proof.
-rewrite/is_stl/= foldrE.
-case: ifPn => [/eqP|hpoo].
-  rewrite big_map => max_apoo _.
-  move=> i isize. 
-
-  (* move: ((maxe_eqyP _ _ _).1 max_apoo (nth (Bool true false) Es i)). *)
-
+case: ifPn => [/eqP//|_].
+case: ifPn => [|].
+rewrite oppeey.
+case: h.
 Admitted.
 
 Lemma stl_nary_inversion_orE0' (Es : seq (expr Bool_P) ) :
