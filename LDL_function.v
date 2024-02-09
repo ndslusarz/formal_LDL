@@ -2078,6 +2078,7 @@ split.
   by rewrite hpoo// inE il orbT.
 Qed.
 
+
 Lemma stl_nary_inversion_andE1' (Es : seq (expr Bool_N) ) :
   is_stl true (nu.-[[ and_E Es ]]_stl) -> (forall i, (i < size Es)%N -> is_stl true (nu.-[[ nth (Bool _ false) Es i ]]_stl)).
 Proof.
@@ -2098,17 +2099,43 @@ rewrite -leNgt big_map mine_geP/= => h _ i isize.
 by apply: h => //; rewrite mem_nth.
 Admitted.
 
-Lemma stl_nary_inversion_andE0 (Es : seq (expr Bool_N) ) :
-  nu.-[[ and_E Es ]]_stl = -oo%E -> (exists (i : nat), (nu.-[[ nth (Bool _ false) Es i ]]_stl == -oo)%E && (i < size Es)%nat).
+Lemma stl_nary_inversion_andE0' (Es : seq (expr Bool_N) ) :
+  nu.-[[ and_E Es ]]_stl = -oo%E -> (exists (i : nat),
+   (nu.-[[ nth (Bool _ false) Es i ]]_stl == -oo)%E && (i < size Es)%nat).
+Proof.
+rewrite/is_stl/= foldrE.
+case: ifPn => [/eqP|hpoo].
+  rewrite big_map => min_apoo _.
+(*   move: ((mine_eqyP _ _ _).1 min_apoo (nth (Bool true false) Es i)). *)
+  
 Admitted.
 
-Lemma stl_nary_inversion_orE1 (Es : seq (expr Bool_N) ) :
+Lemma stl_nary_inversion_orE1' (Es : seq (expr Bool_N) ) :
   nu.-[[ or_E Es ]]_stl = +oo%E -> (exists i, (nu.-[[ nth (Bool _ false) Es i ]]_stl == +oo)%E && (i < size Es)%nat).
 Admitted.
 
-Lemma stl_nary_inversion_orE0 (Es : seq (expr Bool_N) ) :
-    nu.-[[ or_E Es ]]_stl = -oo%E -> (forall i, (i < size Es)%nat -> nu.-[[ nth (Bool _ false) Es i ]]_stl = -oo%E).
+(* Lemma maxe_eqyP (T : eqType) (s : seq T) (P : pred T) (f : T -> \bar R) :
+  (- (\big[maxe/+oo]_(i <- s | P i) f i) = -oo <-> exists i, i \in s -> P i -> f i = +oo)%E.
+Proof.
+elim s=>[|a l IH].
+Admitted. *)
+
+Lemma stl_nary_inversion_orE0' (Es : seq (expr Bool_N) ) :
+    nu.-[[ or_E Es ]]_stl = -oo%E -> (forall i, (i < size Es)%nat -> 
+      nu.-[[ nth (Bool _ false) Es i ]]_stl = -oo%E).
+Proof.
+rewrite/is_stl/= foldrE.
+case: ifPn => [/eqP|hpoo].
+  rewrite big_map => max_apoo _.
+  move=> i isize. 
+(*Natalia: I need the maxe_eqyP to match the goal - but can't come up
+  with anything from knowing max_apoo that would give -oo, if anything the only
+result is that there exists some value in Es that is +oo - does the inversion break?*)
+  (* move: ((maxe_eqyP _ _ _).1 max_apoo (nth (Bool true false) Es i)). *)
+
 Admitted.
+
+
 
 Lemma stl_translations_Vector_coincide: forall n (e : @expr R (Vector_T n)),
   nu.-[[ e ]]_stl = [[ e ]]b.
