@@ -2062,9 +2062,9 @@ Lemma mine_gt (I : Type) (r : seq I) (P : pred I) (f : I -> \bar R) x :
   -> forall i, P i -> (x < f i)%E.
 Admitted.
 
-Lemma mine_ge (I : Type) (r : seq I) (P : pred I) (f : I -> \bar R) x :
-  (x <= \big[mine/+oo]_(i <- r | P i) f i)%E
-  -> forall i, P i -> (x <= f i)%E.
+Lemma mine_eq (I : Type) (r : seq I) (P : pred I) (f : I -> \bar R) x :
+  (\big[mine/+oo]_(i <- r | P i) f i = x)%E
+  -> exists i, P i /\ (f i = x)%E.
 Admitted.
 
 Lemma expeR_lty (x : \bar R) : (x < +oo -> expeR x < +oo)%E.
@@ -2142,27 +2142,50 @@ case: ifPn=>[hminlt0|].
 rewrite -leNgt => hminge0.
 case: ifPn => [hmingt0 _ i isize|].
   have := hminge0.
-  by move/mine_ge; apply.
+  by move/mine_geP; apply => //; rewrite mem_nth.
 rewrite -leNgt => hminle0 _ i isize.
 have := hminge0.
 rewrite big_seq_cond.
-move/mine_ge; apply.
-by rewrite mem_nth.
+by move/mine_geP; apply; rewrite mem_nth.
 Qed.
 
 Lemma stl_nary_inversion_andE0' (Es : seq (expr Bool_P) ) :
   is_stl false (nu.-[[ and_E Es ]]_stl) -> (exists (i : nat), is_stl false (nu.-[[ nth (Bool false false) Es i ]]_stl)%E && (i < size Es)%nat).
 Proof.
 rewrite/is_stl/= foldrE !big_map.
+case: ifPn => [/eqP|hnoo].
+  rewrite big_seq_cond.
+  move/mine_eq => [x [/andP[xEs _] hxnoo]] _.
+  move: xEs.
+  exists (index x Es).
+  by rewrite nth_index// hxnoo ltNy0/= index_mem.
 case: ifPn => [/eqP|hpoo].
   by rewrite lt_neqAle leye_eq => _ /andP[_ /eqP].
 case: ifPn => [|].
-  (* move/bigmin_ltP. *) admit.
+  rewrite {1}big_seq_cond.
+  move/mine_lt => [x [/andP[xEs _] xlt0]] _.
+  exists (index x Es).
+  by rewrite nth_index// xlt0 index_mem.
 rewrite -leNgt => hge0.
 case: ifPn => [hgt0|].
-  (* sumE _ < 0 but it's positive *) admit.
+  apply: contraPP.
+  move/forallNP => h.
+  have {h} h : forall i : nat,
+      (i < size Es)%N ->
+      (0 <= nu.-[[nth (Bool false false) Es i]]_stl)%E.
+    move=> i iEs.
+    move: (h i) => /negP.
+    by rewrite negb_and -leNgt iEs/= orbF.  
+  apply/negP; rewrite -leNgt mule_ge0//.
+    rewrite /sumE !big_map big_seq_cond sume_ge0// => x /andP[xEs _].
+    rewrite mule_ge0//.
+      move: (h (index x Es)).
+      by rewrite index_mem xEs nth_index//; apply.
+    exact: expeR_ge0.
+  rewrite lee_fin invr_ge0 fine_ge0// /sumE !big_map sume_ge0// => x _.
+  exact: expeR_ge0.
 by rewrite lt_irreflexive.
-Admitted.
+Qed.
 
 (* Lemma maxe_eqyP (T : eqType) (s : seq T) (P : pred T) (f : T -> \bar R) :
   (- (\big[maxe/+oo]_(i <- s | P i) f i) = -oo <-> exists i, i \in s -> P i -> f i = +oo)%E.
