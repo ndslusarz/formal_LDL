@@ -1884,24 +1884,6 @@ case: ifPn => // ?.
 by rewrite addeCA.
 Qed.
 
-Lemma stl_nary_inversion_andE1 (Es : seq (expr Bool_N) ) :
-  nu.-[[ and_E Es ]]_stl = +oo%E -> (forall i, (i < size Es)%N -> nu.-[[ nth (Bool _ false) Es i ]]_stl = +oo%E).
-Proof.
-
-Admitted.
-
-Lemma stl_nary_inversion_andE0 (Es : seq (expr Bool_N) ) :
-  nu.-[[ and_E Es ]]_stl = -oo%E -> (exists (i : nat), (nu.-[[ nth (Bool _ false) Es i ]]_stl == -oo)%E && (i < size Es)%nat).
-Admitted.
-
-Lemma stl_nary_inversion_orE1 (Es : seq (expr Bool_N) ) :
-  nu.-[[ or_E Es ]]_stl = +oo%E -> (exists i, (nu.-[[ nth (Bool _ false) Es i ]]_stl == +oo)%E && (i < size Es)%nat).
-Admitted.
-
-Lemma stl_nary_inversion_orE0 (Es : seq (expr Bool_N) ) :
-    nu.-[[ or_E Es ]]_stl = -oo%E -> (forall i, (i < size Es)%nat -> nu.-[[ nth (Bool _ false) Es i ]]_stl = -oo%E).
-Admitted.
-
 Lemma stl_translations_Vector_coincide: forall n (e : @expr R (Vector_T n)),
   nu.-[[ e ]]_stl = [[ e ]]b.
 Proof.
@@ -1924,61 +1906,7 @@ rewrite ?(IHe1 e1 erefl JMeq_refl) ?(IHe2 e2 erefl JMeq_refl) ?(IHe e erefl JMeq
 by rewrite stl_translations_Vector_coincide stl_translations_Index_coincide.
 Qed.
 
-Lemma stl_soundness (e : expr Bool_N) b :
-  nu.-[[ e ]]_stl = nu.-[[ Bool _ b ]]_stl -> [[ e ]]b = b.
-Proof.
-dependent induction e using expr_ind'.
-- move: b b0 => [] [] //=.
-- rewrite List.Forall_forall in H.
-  rewrite [ nu.-[[Bool _ b]]_stl ]/=.  
-  move: b => [].
-  + move/stl_nary_inversion_andE1.
-    rewrite [bool_translation (and_E l)]/= foldrE big_map big_seq big_all_cond => h.
-    apply: allT => x/=.
-    apply/implyP => /nthP xnth.
-    have [i il0 <-] := xnth (Bool _ false).
-    by apply: H => //; rewrite ?h// -In_in mem_nth.
-  + move/stl_nary_inversion_andE0.
-    rewrite [bool_translation (and_E l)]/= foldrE big_map big_all.
-    elim=>// i /andP[/eqP i0 isize].
-    apply/allPn; exists (nth (Bool _ false) l i); first by rewrite mem_nth.
-    apply/negPf; apply: H => //.
-    by rewrite -In_in mem_nth.
-- rewrite List.Forall_forall in H.
-  rewrite [ nu.-[[Bool _ b]]_stl]/=.
-  move: b => [].
-  + move/stl_nary_inversion_orE1.
-    rewrite [bool_translation (or_E l)]/= foldrE big_map big_has.
-    elim=>// i /andP[/eqP i0 isize].
-    apply/hasP; exists (nth (Bool _ false) l i); first by rewrite mem_nth.
-    apply: H => //.
-    by rewrite -In_in mem_nth.
-  + move/stl_nary_inversion_orE0.
-    rewrite [bool_translation (or_E l)]/= foldrE big_map big_has => h.
-    apply/hasPn => x.
-    move/nthP => xnth.
-    have [i il0 <-] := xnth (Bool _ false).
-    by apply/negPf; apply: H => //; rewrite ?h// -In_in mem_nth.
-(*- have /orP[isize|isize] := leqVgt (size l) i.
-    by rewrite !nth_default//=; case: b => ///eqP; rewrite lt_eqF ?ltr01.
-  rewrite List.Forall_forall in H => h.
-  by apply: H => //; rewrite -In_in mem_nth.*)
-- rewrite //=.
-  have {} IHe := IHe e erefl JMeq_refl.
-  case: b => h.
-  have: nu.-[[ e ]]_stl = -oo%E.
-    by move: h; rewrite /oppe; case: (nu.-[[e]]_stl).
-  by move/(IHe false) => ->.
-  have: nu.-[[ e ]]_stl = +oo%E.
-    by move: h; rewrite /oppe; case: (nu.-[[e]]_stl).
-  by move/(IHe true) => ->.
-- by case: c; rewrite //=; rewrite -!stl_translations_Real_coincide;
-  set t1 := _ e1; set t2 := _ e2; case: b.  
-Qed.
-
-
 Definition is_stl b (x : \bar R) := (if b then x >= 0 else x < 0)%E.
-
 
 Lemma mine_eqyP (T : eqType) (s : seq T) (P : pred T) (f : T -> \bar R) :
   (\big[mine/+oo]_(i <- s | P i) f i = +oo <-> forall i, i \in s -> P i -> f i = +oo)%E.
@@ -2070,7 +1998,7 @@ Admitted.
 Lemma expeR_lty (x : \bar R) : (x < +oo -> expeR x < +oo)%E.
 Admitted.
 
-Lemma stl_nary_inversion_andE1' (Es : seq (expr Bool_P) ) :
+Lemma stl_nary_inversion_andE1 (Es : seq (expr Bool_P) ) :
   is_stl true (nu.-[[ and_E Es ]]_stl) -> (forall i, (i < size Es)%N -> is_stl true (nu.-[[ nth (Bool false false) Es i ]]_stl)).
 Proof.
 rewrite/is_stl/= foldrE big_map.
@@ -2149,7 +2077,7 @@ rewrite big_seq_cond.
 by move/mine_geP; apply; rewrite mem_nth.
 Qed.
 
-Lemma stl_nary_inversion_andE0' (Es : seq (expr Bool_P) ) :
+Lemma stl_nary_inversion_andE0 (Es : seq (expr Bool_P) ) :
   is_stl false (nu.-[[ and_E Es ]]_stl) -> (exists (i : nat), is_stl false (nu.-[[ nth (Bool false false) Es i ]]_stl)%E && (i < size Es)%nat).
 Proof.
 rewrite/is_stl/= foldrE !big_map.
@@ -2200,34 +2128,28 @@ result is that there exists some value in Es that is +oo - does the inversion br
 Lemma oppeey (x : \bar R) : ((- x == +oo) = (x == -oo))%E.
 Proof. by case: x. Qed.
 
-Lemma stl_nary_inversion_orE1' (Es : seq (expr Bool_N) ) :
+Lemma stl_nary_inversion_orE1 (Es : seq (expr Bool_N) ) :
   is_stl true (nu.-[[ or_E Es ]]_stl) -> (exists i, is_stl true (nu.-[[ nth (Bool _ false) Es i ]]_stl) && (i < size Es)%nat).
-Proof.
-rewrite/is_stl/= foldrE !big_map.
-case: ifPn => [/eqP//|_].
-case: ifPn => [|].
-rewrite oppeey.
-case: h.
 Admitted.
 
-Lemma stl_nary_inversion_orE0' (Es : seq (expr Bool_P) ) :
+Lemma stl_nary_inversion_orE0 (Es : seq (expr Bool_P) ) :
     is_stl false (nu.-[[ or_E Es ]]_stl) -> (forall i, (i < size Es)%nat -> is_stl false (nu.-[[ nth (Bool false false) Es i ]]_stl)).
 Admitted.
 
-Lemma stl_soundness' (e : expr Bool_P) b :
+Lemma stl_soundness (e : expr Bool_P) b :
   is_stl b (nu.-[[ e ]]_stl) -> [[ e ]]b = b.
 Proof.
 dependent induction e using expr_ind'.
 - move: b b0 => [] [] //=.
 - rewrite List.Forall_forall in H.
   move: b => []. rewrite /is_stl.
-  + move/stl_nary_inversion_andE1'.
+  + move/stl_nary_inversion_andE1.
     rewrite [bool_translation (and_E l)]/= foldrE big_map big_seq big_all_cond => h.
     apply: allT => x/=.
     apply/implyP => /nthP xnth.
     have [i il0 <-] := xnth (Bool _ false).
     by apply: H => //; rewrite ?h// -In_in mem_nth.
-  + move/stl_nary_inversion_andE0'.
+  + move/stl_nary_inversion_andE0.
     rewrite [bool_translation (and_E l)]/= foldrE big_map big_all.
     elim=>// i /andP[i0 isize].
     apply/allPn; exists (nth (Bool _ false) l i); first by rewrite mem_nth.
@@ -2235,13 +2157,13 @@ dependent induction e using expr_ind'.
     by rewrite -In_in mem_nth.
 - rewrite List.Forall_forall in H.
   move: b => [].
-  + move/stl_nary_inversion_orE1'.
+  + move/stl_nary_inversion_orE1.
     rewrite [bool_translation (or_E l)]/= foldrE big_map big_has.
     elim=>// i /andP[i0 isize].
     apply/hasP; exists (nth (Bool _ false) l i); first by rewrite mem_nth.
     apply: H => //.
     by rewrite -In_in mem_nth.
-  + move/stl_nary_inversion_orE0'.
+  + move/stl_nary_inversion_orE0.
     rewrite [bool_translation (or_E l)]/= foldrE big_map big_has => h.
     apply/hasPn => x.
     move/nthP => xnth.
