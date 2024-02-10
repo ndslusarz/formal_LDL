@@ -520,7 +520,8 @@ Fixpoint stl_translation t (e: expr t) : stl_type_translation t :=
         let A := map (@stl_translation _) Es in
         let a_min: \bar R := foldr mine (+oo) A in
         let a'_i (a_i: \bar R) := (a_i - a_min) * (fine a_min)^-1%:E in
-        if a_min == +oo then +oo
+        if a_min == -oo then -oo
+        else if a_min == +oo then +oo
         else if a_min < 0 then
           sumE (map (fun a => a_min * expeR (a'_i a) * expeR (nu%:E * a'_i a)) A) *
           (fine (sumE (map (fun a => expeR (nu%:E * a'_i a)) A)))^-1%:E
@@ -1790,6 +1791,7 @@ End dl2_lemmas.
 Section stl_lemmas.
 Context {R : realType}.
 Variables (nu : R).
+Hypothesis nu0 : 0 < nu.
 Local Open Scope ring_scope.
 Local Open Scope ldl_scope.
 
@@ -1799,15 +1801,6 @@ Proof.
 rewrite /=/sumE !big_cons !big_nil/=.
 have [->//|epoo] := eqVneq (nu.-[[e]]_stl) (+oo)%E.
 have [->//=|enoo] := eqVneq (nu.-[[e]]_stl) (-oo)%E.
-  rewrite /mine/=.
-  case: ifPn => [_|]; last by rewrite ltNyr. 
-  rewrite !invr0 !mule0 !expeR0 !mule1 !adde0 /=.
-  rewrite /adde /= mulNyr /Num.sg.
-  case: ifPn => [|_].
-    by rewrite invr_eq0 (_ : 1%R = 1%:R)// -natrD pnatr_eq0.
-  case: ifPn => [|_].
-    by rewrite invr_lt0 (_ : 1%R = 1%:R)// -natrD ltrn0.
-  by rewrite mul1e.
 set a_min := mine (nu.-[[e]]_stl) (mine (nu.-[[e]]_stl) +oo)%E.
 set a := ((nu.-[[e]]_stl - a_min) * ((fine a_min)^-1)%:E)%E.
 have a_min_e : a_min = nu.-[[e]]_stl.
@@ -1819,11 +1812,13 @@ have : ((nu.-[[e]]_stl + nu.-[[e]]_stl) * ((1 + 1)^-1)%:E)%E = nu.-[[e]]_stl.
   have -> : 1 + 1 = (2 : R) by lra.
   rewrite -(@fineK _ (nu.-[[e]]_stl)); last by rewrite fin_numE epoo enoo.
   by rewrite -EFinD -EFinM mulrDl -splitr.
-case: ifPn => [/eqP->//|_].
-case: ifPn => [_//|]; rewrite -leNgt => ege0.
-case: ifPn => [_//|]; rewrite -leNgt => ele0 _.
-by apply/eqP; rewrite eq_le ege0 ele0.
-Qed.
+case: ifPn => [/eqP h|_ ->]; first by rewrite !h.
+case: ifPn => [/eqP ->//|?].
+case: ifPn => //; rewrite -leNgt => ege0.
+case: ifPn => //; rewrite -leNgt => ele0.
+apply/eqP.
+admit.
+Admitted.
 
 Lemma andC_stl (e1 e2 : expr Bool_N) :
   nu.-[[e1 `/\ e2]]_stl = nu.-[[e2 `/\ e1]]_stl.
@@ -1837,6 +1832,7 @@ set a2 := ((nu.-[[e2]]_stl - a_min) * ((fine a_min)^-1)%:E)%E.
 set d1 := ((fine (expeR (nu%:E * a1) + (expeR (nu%:E * a2) + 0)))^-1)%:E.
 have -> : ((fine (expeR (nu%:E * a2) + (expeR (nu%:E * a1) + 0)))^-1)%:E = d1.
   by rewrite addeCA.
+case: ifPn => //.
 case: ifPn => //.
 case: ifPn => _; first by rewrite addeCA.
 by case: ifPn => _; first rewrite addeCA.
@@ -1911,7 +1907,7 @@ Lemma stl_translations_Vector_coincide: forall n (e : @expr R (Vector_T n)),
 Proof.
 dependent induction e => //=.
 dependent destruction e1.
-by rewrite (IHe2 _ _ e2 erefl JMeq_refl).
+by rewrite (IHe2 _ _ _ e2 erefl JMeq_refl).
 Qed.
 
 Lemma stl_translations_Index_coincide: forall n (e : expr (Index_T n)),
@@ -2045,47 +2041,45 @@ split.
 Qed.
 
 Lemma sume_gt0 (I : Type) (r : seq I) (P : pred I) (F : I -> \bar R) :
-  (forall i : I, P i -> 0 < F i)%E ->
+  (forall i : I, P i -> 0 <= F i)%E ->
+  (exists i : I, P i /\ 0 < F i)%E ->
   (0 < \sum_(i <- r | P i) F i)%E.
+Admitted.
+
+Lemma mine_lt (I : Type) (r : seq I) (P : pred I) (f : I -> \bar R) x :
+  (\big[mine/+oo]_(i <- r | P i) f i < x)%E
+  -> exists i, P i /\ (f i < x)%E.
 Admitted.
 
 Lemma stl_nary_inversion_andE1' (Es : seq (expr Bool_P) ) :
   is_stl true (nu.-[[ and_E Es ]]_stl) -> (forall i, (i < size Es)%N -> is_stl true (nu.-[[ nth (Bool false false) Es i ]]_stl)).
 Proof.
 rewrite/is_stl/= foldrE big_map.
+case: ifPn => [//|hnoo].
 case: ifPn => [/eqP min_apoo _|hpoo].
   move=> i isize.
   move: ((mine_eqyP _ _ _).1 min_apoo (nth (Bool false false) Es i)).
   by rewrite mem_nth// => ->.
-case: ifPn=>[hminle0|].
+case: ifPn=>[hminlt0|].
   rewrite/sumE.
   rewrite leNgt !big_map.
   rewrite mule_lt0_gt0//; last first.
   rewrite lte_fin invr_gt0 fine_gt0//.
     apply/andP;split.
       rewrite big_seq_cond sume_gt0//.
-      move=> i /andP[iEs _]; apply: expeR_gt0.
+      move=> i /andP[iEs _]; apply: expeR_ge0.
+      have := hminlt0; rewrite big_seq_cond.
+      move/mine_lt => [i [iEs]hilt0].
+      exists i; split.
+        exact: iEs.
+      rewrite expeR_gt0//.
       rewrite ltNye !mule_eq_ninfty.
-      rewrite !negb_or !negb_and !negb_or !negb_and -!leNgt.
-      apply/andP; split; apply/orP.
-        right; apply/andP; split.
-          by apply/orP; right; apply/eqP.
-        apply/andP; split.
-          by apply/orP; right; apply/eqP.
-        apply/andP; split.
-          by apply/orP; right; rewrite lee_fin invr_le0 fine_le0 ?ltW.
-        apply/orP; left. admit.
-      left; apply/orP; right.
-      rewrite mule_eq_pinfty.
-      rewrite !negb_or !negb_and -!leNgt.
-      apply/andP; split.
-        by apply/orP; right; apply/eqP.
-      apply/andP; split.
-        by apply/orP; right; apply/eqP.
-      apply/andP; split.
-        by apply/orP; right; rewrite lee_fin invr_le0 fine_le0// ltW.
-      apply/orP; left.
-      admit.
+      rewrite !lte_fin !nu0/=.
+      rewrite !negb_or !negb_and -!leNgt/= andbT !orbT/= (ltW nu0)/= -!big_seq_cond.
+      rewrite andbT invr_le0 invr_ge0 fine_le0 ?orbT ?(ltW hminlt0)//=.
+      rewrite -ltey lte_add_pinfty//.
+        by apply: lt_trans; first exact: hilt0.
+      by rewrite lte_oppl/= ltNye.
     apply: lte_sum_pinfty => i _.
     admit.
   admit.
