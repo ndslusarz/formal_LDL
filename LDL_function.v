@@ -1968,35 +1968,109 @@ split.
   by rewrite hpoo// inE il orbT.
 Qed.
 
-Lemma sume_gt0 (I : Type) (r : seq I) (P : pred I) (F : I -> \bar R) :
+Lemma sume_gt0 (I : eqType) (r : seq I) (P : pred I) (F : I -> \bar R) :
   (forall i : I, P i -> 0 <= F i)%E ->
-  (exists i : I, P i /\ 0 < F i)%E ->
+  (exists i : I, i \in r /\ P i /\ 0 < F i)%E ->
   (0 < \sum_(i <- r | P i) F i)%E.
-Admitted.
+Proof.
+elim: r; first by move=> _ [x[]]; rewrite in_nil.
+move=> a l IH h [x []].
+rewrite in_cons big_cons => /orP [/eqP ->[Pa Fa_gt0]|].
+  by rewrite Pa -{1}(adde0 0) lte_le_add//sume_ge0.
+move=> xl [Px Fx_gt0].
+case: ifPn => Pa.
+  rewrite -{1}(adde0 0) lee_lt_add// ?h//.
+all: by apply: IH => //; exists x.
+Qed.
 
-Lemma sume_lt0 (I : Type) (r : seq I) (P : pred I) (F : I -> \bar R) :
+Lemma sume_lt0 (I : eqType) (r : seq I) (P : pred I) (F : I -> \bar R) :
   (forall i : I, P i -> F i <= 0)%E ->
-  (exists i : I, P i /\ F i < 0)%E ->
+  (exists i : I, i \in r /\ P i /\ F i < 0)%E ->
   (\sum_(i <- r | P i) F i < 0)%E.
-Admitted.
+Proof.
+elim: r; first by move=> _ [x[]]; rewrite in_nil.
+move=> a l IH.
+have [->//|] := eqVneq (\sum_(i <- (a :: l) | P i) F i) -oo%E.
+rewrite !big_cons.
+case: ifPn => Pa sumnoo Fi_le0 [x []].
+  move: sumnoo; rewrite adde_eq_ninfty negb_or => /andP[Fanoo sumnoo].
+  rewrite in_cons => /orP[/eqP->[_ Fa0]|xl [Px Fxlt0]].
+    rewrite -{2}(adde0 0) lte_le_add ?Fa0 ?fin_numElt ?sume_le0//.
+    by rewrite ltNye sumnoo/= (le_lt_trans (sume_le0 _ _)).
+  rewrite -{2}(adde0 0) lee_lt_add ?Fi_le0 ?IH//.
+    by rewrite fin_numElt ltNye Fanoo (le_lt_trans (Fi_le0 _ _)).
+  by exists x; rewrite xl Px Fxlt0.
+rewrite in_cons => /orP[/eqP->[Pa'//]|xl[Px Fxlt0]]; first by rewrite Pa' in Pa.
+rewrite IH//.
+by exists x; rewrite xl Px Fxlt0.
+Qed.
 
-Lemma mine_lt (I : Type) (r : seq I) (P : pred I) (f : I -> \bar R) x :
+Lemma mine_lt (I : eqType) (r : seq I) (P : pred I) (f : I -> \bar R) x :
   (\big[mine/+oo]_(i <- r | P i) f i < x)%E
-  <-> exists i, P i /\ (f i < x)%E.
-Admitted.
+  <-> exists i, i \in r /\ P i /\ (f i < x)%E.
+Proof.
+elim: r.
+  rewrite big_nil; split; first by rewrite ltNge leey.
+  by move=> [i[]]; rewrite in_nil.
+move=> a l IH; rewrite big_cons; case: ifPn => Pa; last first.
+  split.
+    by move/IH => [i[il[Pi fi]]]; exists i; rewrite in_cons il Pi fi orbT.
+  move=> [i[]]; rewrite in_cons => /orP[/eqP->[Pa']|il[Pi fi]]; first by rewrite Pa' in Pa.
+  by rewrite IH; exists i; rewrite il Pi fi.
+rewrite {1}/mine.
+case: ifPn => [h|].
+  split; first by move=> h'; exists a; rewrite mem_head.
+  move=>[i[]]; rewrite in_cons => /orP[/eqP->[]//|il [Pi fi]].
+  rewrite (lt_trans h)//.
+  by rewrite IH; exists i.
+rewrite -leNgt => h.
+split.
+  by move/IH => [i[il [Pi fi]]]; exists i; rewrite in_cons il orbT Pi fi.
+move=> [i[]]; rewrite in_cons => /orP[/eqP->[_ faltx]|il [Pi fi]].
+  exact: (le_lt_trans h faltx).
+by rewrite IH; exists i; rewrite il Pi fi.
+Qed.
 
-Lemma mine_gt (I : Type) (r : seq I) (P : pred I) (f : I -> \bar R) x :
+Lemma mine_gt (I : eqType) (r : seq I) (P : pred I) (f : I -> \bar R) x :
   (x < \big[mine/+oo]_(i <- r | P i) f i)%E
-  -> forall i, P i -> (x < f i)%E.
-Admitted.
+  -> forall i, i \in r -> P i -> (x < f i)%E.
+Proof.
+elim: r; first by move=> _ i; rewrite in_nil.
+move=> a l IH.
+rewrite big_cons.
+case: ifPn => Pa; last first.
+  move/IH => h i; rewrite in_cons => /orP[/eqP->Pa'|]; first by rewrite Pa' in Pa.
+  exact: h.
+rewrite {1}/mine.
+case: ifPn => [h1 h2|].
+  move=> i. rewrite in_cons => /orP[/eqP->//|il Pi].
+  by rewrite IH// (lt_trans h2 h1).
+rewrite -leNgt=> h1 h2 i; rewrite in_cons => /orP[/eqP->_|il Pi].
+  by rewrite (lt_le_trans h2 h1).
+exact: IH.
+Qed.
 
-Lemma mine_eq (I : Type) (r : seq I) (P : pred I) (f : I -> \bar R) x :
+Lemma mine_eq (I : eqType) (r : seq I) (P : pred I) (f : I -> \bar R) x :
+  x \is a fin_num ->
   (\big[mine/+oo]_(i <- r | P i) f i = x)%E
-  -> exists i, P i /\ (f i = x)%E.
-Admitted.
+  -> exists i, i \in r /\ P i /\ (f i = x)%E.
+Proof.
+elim: r.
+  by rewrite big_nil => /[swap]<-; rewrite fin_numE eq_refl.
+move=> a l IH xfin.
+rewrite big_cons.
+case: ifPn => Pa.
+  rewrite {1}/mine.
+  case: ifPn => [h1 h2|_].
+    by exists a; rewrite mem_head Pa h2.
+  move/(IH xfin) => [b[bl [Pb fb]]].
+  by exists b; rewrite in_cons bl orbT.
+move/(IH xfin) => [b[bl [Pb fb]]].
+by exists b; rewrite in_cons bl orbT.
+Qed.
 
 Lemma expeR_lty (x : \bar R) : (x < +oo -> expeR x < +oo)%E.
-Admitted.
+Proof. by case: x => //=x; rewrite !ltry. Qed.
 
 Lemma stl_nary_inversion_andE1 (Es : seq (expr Bool_P) ) :
   is_stl true (nu.-[[ and_E Es ]]_stl) -> (forall i, (i < size Es)%N -> is_stl true (nu.-[[ nth (Bool false false) Es i ]]_stl)).
@@ -2016,10 +2090,9 @@ case: ifPn=>[hminlt0|].
       rewrite big_seq_cond sume_gt0//.
       move=> i /andP[iEs _]; apply: expeR_ge0.
       have := hminlt0; rewrite big_seq_cond.
-      move/mine_lt => [i [iEs]hilt0].
-      exists i; split.
-        exact: iEs.
-      rewrite expeR_gt0//.
+      move/mine_lt => [i[iEs[_ hilt0]]].
+      exists i; split; first exact: iEs.
+      rewrite expeR_gt0 ?iEs//.
       rewrite ltNye !mule_eq_ninfty.
       rewrite !lte_fin !nu0/=.
       rewrite !negb_or !negb_and -!leNgt/= andbT !orbT/= (ltW nu0)/= -!big_seq_cond.
@@ -2027,7 +2100,8 @@ case: ifPn=>[hminlt0|].
       rewrite -ltey lte_add_pinfty//.
         by apply: lt_trans; first exact: hilt0.
       by rewrite lte_oppl/= ltNye.
-    apply: lte_sum_pinfty => i _.
+    rewrite big_seq_cond.
+    apply: lte_sum_pinfty => i /andP[iEs _].
     apply: expeR_lty.
     rewrite ltey !mule_eq_pinfty/= !negb_or !negb_and !negb_or !negb_and.
     rewrite -!leNgt !lee_fin !(ltW nu0)/= !orbT !andbT/=.
@@ -2045,7 +2119,8 @@ case: ifPn=>[hminlt0|].
       by apply expeR_ge0.
     exact: ltW.
   have := hminlt0.
-  move/mine_lt => [i [_ hilt0]].
+  rewrite {1}big_seq_cond.
+  move/mine_lt => [i [iEs [_ hilt0]]].
   exists i; split => //.
   rewrite mule_lt0_gt0//; last first.
     rewrite expeR_gt0// ltNye !mule_eq_ninfty/= !negb_or !negb_and !negb_or !negb_and.
@@ -2083,7 +2158,7 @@ Proof.
 rewrite/is_stl/= foldrE !big_map.
 case: ifPn => [/eqP|hnoo].
   rewrite big_seq_cond.
-  move/mine_eq => [x [/andP[xEs _] hxnoo]] _.
+  move/mine_eq => [x [xEs [_ hxnoo]]].
   move: xEs.
   exists (index x Es).
   by rewrite nth_index// hxnoo ltNy0/= index_mem.
@@ -2091,7 +2166,7 @@ case: ifPn => [/eqP|hpoo].
   by rewrite lt_neqAle leye_eq => _ /andP[_ /eqP].
 case: ifPn => [|].
   rewrite {1}big_seq_cond.
-  move/mine_lt => [x [/andP[xEs _] xlt0]] _.
+  move/mine_lt => [x [xEs [_ xlt0]]].
   exists (index x Es).
   by rewrite nth_index// xlt0 index_mem.
 rewrite -leNgt => hge0.
