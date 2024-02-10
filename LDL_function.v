@@ -2046,14 +2046,25 @@ Lemma sume_gt0 (I : Type) (r : seq I) (P : pred I) (F : I -> \bar R) :
   (0 < \sum_(i <- r | P i) F i)%E.
 Admitted.
 
+Lemma sume_lt0 (I : Type) (r : seq I) (P : pred I) (F : I -> \bar R) :
+  (forall i : I, P i -> F i <= 0)%E ->
+  (exists i : I, P i /\ F i < 0)%E ->
+  (\sum_(i <- r | P i) F i < 0)%E.
+Admitted.
+
 Lemma mine_lt (I : Type) (r : seq I) (P : pred I) (f : I -> \bar R) x :
   (\big[mine/+oo]_(i <- r | P i) f i < x)%E
-  -> exists i, P i /\ (f i < x)%E.
+  <-> exists i, P i /\ (f i < x)%E.
 Admitted.
 
 Lemma mine_gt (I : Type) (r : seq I) (P : pred I) (f : I -> \bar R) x :
   (x < \big[mine/+oo]_(i <- r | P i) f i)%E
   -> forall i, P i -> (x < f i)%E.
+Admitted.
+
+Lemma mine_ge (I : Type) (r : seq I) (P : pred I) (f : I -> \bar R) x :
+  (x <= \big[mine/+oo]_(i <- r | P i) f i)%E
+  -> forall i, P i -> (x <= f i)%E.
 Admitted.
 
 Lemma expeR_lty (x : \bar R) : (x < +oo -> expeR x < +oo)%E.
@@ -2072,7 +2083,7 @@ case: ifPn=>[hminlt0|].
   rewrite/sumE.
   rewrite leNgt !big_map.
   rewrite mule_lt0_gt0//; last first.
-  rewrite lte_fin invr_gt0 fine_gt0//.
+    rewrite lte_fin invr_gt0 fine_gt0//.
     apply/andP;split.
       rewrite big_seq_cond sume_gt0//.
       move=> i /andP[iEs _]; apply: expeR_ge0.
@@ -2099,10 +2110,45 @@ case: ifPn=>[hminlt0|].
     have := hnoo; rewrite -ltNye.
     move/mine_gt; apply => //.
     by rewrite eqe_oppLR/=.
-  admit.
-(* rewrite -leNgt big_map mine_geP/= => h _ i isize. *) (*this errors out now?*)
-(* by apply: h => //; rewrite mem_nth. *)
-Admitted.
+  apply sume_lt0.
+    move=> i _.
+    rewrite !mule_le0_ge0//; last 2 first.
+      by apply expeR_ge0.
+      by apply expeR_ge0.
+    exact: ltW.
+  have := hminlt0.
+  move/mine_lt => [i [_ hilt0]].
+  exists i; split => //.
+  rewrite mule_lt0_gt0//; last first.
+    rewrite expeR_gt0// ltNye !mule_eq_ninfty/= !negb_or !negb_and !negb_or !negb_and.
+    rewrite -!leNgt !lee_fin/= (ltW nu0)/= !andbT !orbT/=.
+    rewrite invr_le0 fine_le0 ?(ltW hminlt0)// orbT/=.
+    rewrite adde_Neq_pinfty; last by rewrite eqe_oppLR/=.
+      rewrite eqe_oppLR/= hnoo andbT.
+      by rewrite -ltey (lt_trans hilt0)//= orbT.
+    rewrite -ltNye.
+    move: hnoo; rewrite -ltNye.
+    by move/mine_gt; apply.
+  rewrite mule_lt0 hminlt0/= {1}lt_eqF//= {1}gt_eqF//=.
+    by rewrite -leNgt expeR_ge0.
+  rewrite expeR_gt0// ltNye mule_eq_ninfty !negb_or !negb_and -!leNgt.
+  rewrite -!ltNye -!ltey !ltNyr !orbT/=.
+  rewrite lee_fin invr_le0 fine_le0 ?(ltW hminlt0)// orbT/=.
+  rewrite ltey adde_Neq_pinfty ?eqe_oppLR/= ?hpoo ?hnoo//.
+    by rewrite -ltey (lt_trans hilt0).
+  rewrite -ltNye.
+  move: hnoo; rewrite -ltNye.
+  by move/mine_gt; apply.
+rewrite -leNgt => hminge0.
+case: ifPn => [hmingt0 _ i isize|].
+  have := hminge0.
+  by move/mine_ge; apply.
+rewrite -leNgt => hminle0 _ i isize.
+have := hminge0.
+rewrite big_seq_cond.
+move/mine_ge; apply.
+by rewrite mem_nth.
+Qed.
 
 Lemma stl_nary_inversion_andE0' (Es : seq (expr Bool_P) ) :
   is_stl false (nu.-[[ and_E Es ]]_stl) -> (exists (i : nat), is_stl false (nu.-[[ nth (Bool false false) Es i ]]_stl)%E && (i < size Es)%nat).
