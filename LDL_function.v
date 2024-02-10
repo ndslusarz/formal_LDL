@@ -1816,9 +1816,8 @@ case: ifPn => [/eqP h|_ ->]; first by rewrite !h.
 case: ifPn => [/eqP ->//|?].
 case: ifPn => //; rewrite -leNgt => ege0.
 case: ifPn => //; rewrite -leNgt => ele0.
-apply/eqP.
-admit.
-Admitted.
+by apply le_anti_ereal; apply/andP; split.
+Qed.
 
 Lemma andC_stl (e1 e2 : expr Bool_N) :
   nu.-[[e1 `/\ e2]]_stl = nu.-[[e2 `/\ e1]]_stl.
@@ -2051,21 +2050,21 @@ exact: IH.
 Qed.
 
 Lemma mine_eq (I : eqType) (r : seq I) (P : pred I) (f : I -> \bar R) x :
-  x \is a fin_num ->
+  (x != +oo)%E ->
   (\big[mine/+oo]_(i <- r | P i) f i = x)%E
   -> exists i, i \in r /\ P i /\ (f i = x)%E.
 Proof.
 elim: r.
-  by rewrite big_nil => /[swap]<-; rewrite fin_numE eq_refl.
-move=> a l IH xfin.
+  by rewrite big_nil => /[swap]<-; rewrite eq_refl.
+move=> a l IH xltpoo.
 rewrite big_cons.
 case: ifPn => Pa.
   rewrite {1}/mine.
   case: ifPn => [h1 h2|_].
     by exists a; rewrite mem_head Pa h2.
-  move/(IH xfin) => [b[bl [Pb fb]]].
+  move/(IH xltpoo) => [b[bl [Pb fb]]].
   by exists b; rewrite in_cons bl orbT.
-move/(IH xfin) => [b[bl [Pb fb]]].
+move/(IH xltpoo) => [b[bl [Pb fb]]].
 by exists b; rewrite in_cons bl orbT.
 Qed.
 
@@ -2156,9 +2155,10 @@ Lemma stl_nary_inversion_andE0 (Es : seq (expr Bool_P) ) :
   is_stl false (nu.-[[ and_E Es ]]_stl) -> (exists (i : nat), is_stl false (nu.-[[ nth (Bool false false) Es i ]]_stl)%E && (i < size Es)%nat).
 Proof.
 rewrite/is_stl/= foldrE !big_map.
+have h0 : (-oo != +oo)%E by [].
 case: ifPn => [/eqP|hnoo].
   rewrite big_seq_cond.
-  move/mine_eq => [x [xEs [_ hxnoo]]].
+  move/(mine_eq (h0 _)) => [x [xEs [_ hxnoo]]].
   move: xEs.
   exists (index x Es).
   by rewrite nth_index// hxnoo ltNy0/= index_mem.
