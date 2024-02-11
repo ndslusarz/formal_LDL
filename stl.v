@@ -259,7 +259,7 @@ Admitted. *)
   with anything from knowing max_apoo that would give -oo, if anything the only
 result is that there exists some value in Es that is +oo - does the inversion break?*)
 
-Lemma stl_nary_inversion_orE1 (Es : seq (expr Bool_N) ) :
+Lemma stl_nary_inversion_orE1 (Es : seq (expr Bool_P) ) :
   is_stl true (nu.-[[ or_E Es ]]_stl) -> (exists i, is_stl true (nu.-[[ nth (Bool _ false) Es i ]]_stl) && (i < size Es)%nat).
 Admitted.
 
