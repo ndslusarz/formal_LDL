@@ -62,41 +62,39 @@ case: ifPn => _; first by rewrite addeCA.
 by case: ifPn => _; first rewrite addeCA.
 Qed.
 
-(* Lemma orI_stl (e : expr Bool_N) :
+Lemma orI_stl (e : expr Bool_N) :
   nu.-[[e `\/ e]]_stl = nu.-[[e]]_stl.
 Proof.
 rewrite /=/sumE !big_cons !big_nil/=.
 have [->//|enoo] := eqVneq (nu.-[[e]]_stl) (-oo)%E.
 have [->//=|epoo] := eqVneq (nu.-[[e]]_stl) (+oo)%E.
-- admit.
-set a_max := maxe (nu.-[[e]]_stl) (maxe (nu.-[[e]]_stl) +oo)%E.
-set a := (((- nu.-[[e]]_stl - - a_max) * ((fine (- a_max))^-1)%:E))%E.
+set a_max := maxe (nu.-[[e]]_stl) (maxe (nu.-[[e]]_stl) -oo)%E.
+set a := (((a_max - nu.-[[e]]_stl) * ((fine a_max)^-1)%:E))%E.
 have a_max_e : a_max = nu.-[[e]]_stl.
-  rewrite /a_max /maxe; repeat case: ifPn => //. (* rewrite -leNgt leye_eq => /eqP ->.
+  by rewrite /a_max /maxe; repeat case: ifPn; rewrite ltNge leNye.
 have -> : a = 0%E.
-  by rewrite /a a_min_e subee ?mul0e// fin_numE epoo enoo.
-rewrite !adde0 !mule0 expeR0 !mule1/= a_min_e.
-have : ((nu.-[[e]]_stl + nu.-[[e]]_stl) * ((1 + 1)^-1)%:E)%E = nu.-[[e]]_stl.
+  by rewrite /a a_max_e subee ?mul0e// fin_numE epoo enoo.
+rewrite !adde0 !mule0 expeR0 !mule1/= a_max_e.
+have -> : ((nu.-[[e]]_stl + nu.-[[e]]_stl) * ((1 + 1)^-1)%:E)%E = nu.-[[e]]_stl.
   have -> : 1 + 1 = (2 : R) by lra.
   rewrite -(@fineK _ (nu.-[[e]]_stl)); last by rewrite fin_numE epoo enoo.
   by rewrite -EFinD -EFinM mulrDl -splitr.
-case: ifPn => [/eqP->//|_].
-case: ifPn => [_//|]; rewrite -leNgt => ege0.
-case: ifPn => [_//|]; rewrite -leNgt => ele0 _.
-by apply/eqP; rewrite eq_le ege0 ele0. *)
-  (*seems to be contradition 
-- my fault or truly not idempotent?*)
-Admitted. *)
+case: ifPn => [/eqP->//|?].
+case: ifPn => [/eqP->//|?].
+case: ifPn => [//|]; rewrite -leNgt => ege0.
+case: ifPn => [//|]; rewrite -leNgt => ele0.
+by apply/eqP; rewrite eq_le ege0 ele0.
+Qed.
 
 Lemma orC_stl (e1 e2 : expr Bool_N) :
   nu.-[[e1 `\/ e2]]_stl  = nu.-[[e2 `\/ e1]]_stl.
 Proof.
 rewrite /=/sumE !big_cons !big_nil /=.
-set a_max := maxe (nu.-[[e1]]_stl) (maxe (nu.-[[e2]]_stl) +oo)%E.
-have -> : (maxe (nu.-[[e2]]_stl) (maxe (nu.-[[e1]]_stl) +oo))%E = a_max.
+set a_max := maxe (nu.-[[e1]]_stl) (maxe (nu.-[[e2]]_stl) -oo)%E.
+have -> : (maxe (nu.-[[e2]]_stl) (maxe (nu.-[[e1]]_stl) -oo))%E = a_max.
   by rewrite maxA [X in maxe X _]maxC -maxA.
-set a1 := ((- nu.-[[e1]]_stl - - a_max) * ((fine (- a_max))^-1)%:E)%E.
-set a2 := (((- nu.-[[e2]]_stl - - a_max) * ((fine (- a_max))^-1)%:E))%E.
+set a1 := ((a_max - nu.-[[e1]]_stl) * ((fine a_max)^-1)%:E)%E.
+set a2 := (((a_max - nu.-[[e2]]_stl) * ((fine a_max)^-1)%:E))%E.
 set d1 := ((fine (expeR (nu%:E * a1) + (expeR (nu%:E * a2) + 0)))^-1)%:E.
 have -> : ((fine (expeR (nu%:E * a2) + (expeR (nu%:E * a1) + 0)))^-1)%:E = d1.
   by rewrite addeCA.
@@ -260,9 +258,6 @@ Admitted. *)
 (*Natalia: I need the maxe_eqyP to match the goal in both or inversions - but can't come up
   with anything from knowing max_apoo that would give -oo, if anything the only
 result is that there exists some value in Es that is +oo - does the inversion break?*)
-
-Lemma oppeey (x : \bar R) : ((- x == +oo) = (x == -oo))%E.
-Proof. by case: x. Qed.
 
 Lemma stl_nary_inversion_orE1 (Es : seq (expr Bool_N) ) :
   is_stl true (nu.-[[ or_E Es ]]_stl) -> (exists i, is_stl true (nu.-[[ nth (Bool _ false) Es i ]]_stl) && (i < size Es)%nat).

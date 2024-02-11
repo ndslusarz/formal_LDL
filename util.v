@@ -677,4 +677,7 @@ Qed.
 Lemma expeR_lty (x : \bar R) : (x < +oo -> expeR x < +oo)%E.
 Proof. by case: x => //=x; rewrite !ltry. Qed.
 
+Lemma oppeey (x : \bar R) : ((- x == +oo) = (x == -oo))%E.
+Proof. by case: x. Qed.
+
 End stl_helpers.

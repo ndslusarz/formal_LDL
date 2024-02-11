@@ -366,8 +366,8 @@ Fixpoint stl_translation t (e: expr t) : stl_type_translation t :=
              else 0
     | or_E _ Es => (* TODO: double check *)
         let A := map (@stl_translation _) Es in
-        let a_max: \bar R := - (foldr maxe (+oo)%E A) in
-        let a'_i (a_i: \bar R) := (- a_i - a_max) * (fine a_max)^-1%:E  in
+        let a_max: \bar R := foldr maxe (-oo)%E A in
+        let a'_i (a_i: \bar R) := (a_max - a_i) * (fine a_max)^-1%:E  in
         if a_max == -oo then -oo
         else if a_max == +oo then +oo
         else if a_max < 0 then
