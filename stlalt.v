@@ -187,6 +187,16 @@ exists i.
 by rewrite !in_cons orbCA -in_cons ial orbT filex.
 Qed.
 
+Lemma maxrltx [I : eqType] x (f : I -> R) a l:
+  \big[maxr/f a]_(j <- l) f j < x -> forall i, i \in (a :: l) /\ f i < x.
+Proof.
+Admitted.
+
+Lemma maxrgex [I : eqType] x (f : I -> R) a l:
+  x <= \big[maxr/f a]_(j <- l) f j -> exists i, i \in (a :: l) /\ x <= f i.
+Proof.
+Admitted.
+
 Lemma seq_cons T1 T2 (f : T1 -> T2) a l : f a :: [seq f x | x <- l] = [seq f x | x <- a :: l].
 Proof. by []. Qed.
 
@@ -242,10 +252,35 @@ Qed.
 
 Lemma stl_nary_inversion_orE1 (Es : seq (expr Bool_P) ) :
   is_stl true (nu.-[[ or_E Es ]]_stl') -> (exists i, is_stl true (nu.-[[ nth (Bool _ false) Es i ]]_stl') && (i < size Es)%nat).
+Proof.
+case: Es => [|a l]; rewrite/is_stl/=.
+- by rewrite ler0N1.
+- rewrite foldrE big_map.
+  set a_max := \big[maxr/nu.-[[a]]_stl']_(j <- l) nu.-[[j]]_stl'.
+  case: ifPn=>[hmaxlt0 _|].
+  + 
+    admit.
+  + rewrite -leNgt => hmaxge0.
+    case: ifPn => [hmaxgt0 _|]; have [x [xmem hge0]] := maxrgex _ _ _ _ hmaxge0;
+      exists (index x (a :: l));
+      by rewrite nth_index ?xmem// hge0 index_mem xmem.
 Admitted.
 
 Lemma stl_nary_inversion_orE0 (Es : seq (expr Bool_P) ) :
     is_stl false (nu.-[[ or_E Es ]]_stl') -> (forall i, (i < size Es)%nat -> is_stl false (nu.-[[ nth (Bool false false) Es i ]]_stl')).
+Proof.
+case: Es => // a l.
+rewrite/is_stl/= foldrE big_map.
+set a_max := \big[maxr/nu.-[[a]]_stl']_(j <- l) nu.-[[j]]_stl'.
+case: ifPn=>[hmaxlt0 _|].
+- move=> i l0.
+  by apply (maxrltx _ _ _ _ hmaxlt0).
+- rewrite -leNgt => hmaxge0.
+  case: ifPn => [hmaxgt0 _|].
+  + move=> i l0. admit.
+  + rewrite -leNgt => hmaxle0.
+    move => _ i l0. admit.
+    
 Admitted.
 
 Lemma stl_soundness (e : expr Bool_P) b :
