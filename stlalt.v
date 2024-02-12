@@ -113,19 +113,82 @@ Qed.
 
 Definition is_stl b (x : R) := (if b then x >= 0 else x < 0).
 
-Lemma sumr_lt0:
-  forall [R : realType] [I : eqType] [r : seq I] 
-    [P : pred I] [F : I -> R],
-  (forall i : I, i \in r -> P i -> (F i < 0%R)) ->
+Lemma sumr_lt0 [I : eqType] [r : seq I]
+    [P : pred I] [F : I -> R] :
+  (forall i : I, i \in r -> P i -> (F i <= 0%R)) ->
+  (exists i : I, i \in r /\ P i /\ (F i < 0%R)) ->
   ((\sum_(i <- r | P i) F i)%R < 0%R).
-Admitted.
+Proof.
+elim: r => [h1 [x []]|]; first by rewrite in_nil.
+move=> a l IH h1 [x[]].
+rewrite in_cons => /orP[/eqP ->[Pa Fa0]|].
+  rewrite big_seq_cond big_cons.
+  case: ifPn; rewrite mem_head Pa// -{2}(addr0 0) ltr_leD//.
+  by rewrite sumr_le0// => i /andP[? Pi]; rewrite h1.
+move=> xl [Px Fx0].
+rewrite big_cons.
+case: ifPn => Pa.
+  rewrite -{2}(addr0 0) ler_ltD ?h1 ?mem_head// IH//.
+    by move=> i il Pi; rewrite h1// in_cons il orbT.
+  by exists x; rewrite xl Px Fx0.
+apply: IH.
+  by move=> i il Pi; rewrite h1// in_cons il orbT.
+by exists x; rewrite xl Px Fx0.
+Qed.
 
-Lemma sumr_gt0:
-  forall [R : realType] [I : eqType] [r : seq I] 
-    [P : pred I] [F : I -> R],
-  (forall i : I, i \in r -> P i -> (0 < F i)) ->
+Lemma sumr_gt0 [I : eqType] [r : seq I]
+    [P : pred I] [F : I -> R] :
+  (forall i : I, i \in r -> P i -> (0 <= F i)) ->
+  (exists i : I, i \in r /\ P i /\ (0 < F i)) ->
   (0 < \sum_(i <- r | P i) F i).
-Admitted.
+Proof.
+elim: r => [h1 [x []]|]; first by rewrite in_nil.
+move=> a l IH h1 [x[]].
+rewrite in_cons => /orP[/eqP ->[Pa Fa0]|].
+  rewrite big_seq_cond big_cons.
+  case: ifPn; rewrite mem_head Pa// -{1}(addr0 0) ltr_leD//.
+  by rewrite sumr_ge0// => i /andP[? Pi]; rewrite h1.
+move=> xl [Px Fx0].
+rewrite big_cons.
+case: ifPn => Pa.
+  rewrite -{1}(addr0 0) ler_ltD ?h1 ?mem_head// IH//.
+    by move=> i il Pi; rewrite h1// in_cons il orbT.
+  by exists x; rewrite xl Px Fx0.
+apply: IH.
+  by move=> i il Pi; rewrite h1// in_cons il orbT.
+by exists x; rewrite xl Px Fx0.
+Qed.
+
+Lemma minrgex [I : eqType] x (f : I -> R) a l:
+  x <= \big[minr/f a]_(j <- l) f j -> forall i, i \in (a :: l) -> x <= f i.
+Proof.
+elim: l; first by rewrite big_nil => xfa i; rewrite mem_seq1 => /eqP ->.
+move=> a' l IH h i.
+rewrite !in_cons => h'.
+have {h'} : i \in [:: a', a & l] by rewrite !in_cons orbCA.
+rewrite in_cons => /orP[/eqP ->|].
+  move: h. rewrite big_cons /minr. case: ifPn => //.
+  rewrite -leNgt => h1 h2.
+  exact: (le_trans h2 h1).
+apply: IH.
+move: h. rewrite big_cons /minr. case: ifPn => // h1 h2.
+exact: (le_trans h2 (ltW h1)).
+Qed.
+
+Lemma minrltx [I : eqType] x (f : I -> R) a l:
+  \big[minr/f a]_(j <- l) f j < x -> exists i, i \in (a :: l) /\ f i < x.
+Proof.
+elim: l; first by rewrite big_nil => fax; exists a; rewrite mem_seq1 eq_refl fax.
+move=> a' l IH.
+rewrite big_cons {1}/minr.
+case: ifPn => [_ fax|_]; first by exists a'; rewrite !in_cons eq_refl/= orbT fax.
+move/IH => [i[ial filex]].
+exists i.
+by rewrite !in_cons orbCA -in_cons ial orbT filex.
+Qed.
+
+Lemma seq_cons T1 T2 (f : T1 -> T2) a l : f a :: [seq f x | x <- l] = [seq f x | x <- a :: l].
+Proof. by []. Qed.
 
 Lemma stl_nary_inversion_andE1 (Es : seq (expr Bool_P) ) :
   is_stl true (nu.-[[ and_E Es ]]_stl') -> (forall i, (i < size Es)%N -> is_stl true (nu.-[[ nth (Bool false false) Es i ]]_stl')).
@@ -134,22 +197,48 @@ case: Es => // a l.
 rewrite/is_stl/= foldrE big_map.
 set a_min := \big[minr/nu.-[[a]]_stl']_(j <- l) nu.-[[j]]_stl'.
 case: ifPn=>[hminlt0|].
-  rewrite/sumR leNgt !big_cons !big_map pmulr_llt0 ?invr_gt0; last first.
-    set x := _ + _.
-    suff : 0 < x. lra.
-    by rewrite /x -{1}(addr0 0) ltrD// ?expR_gt0// sumr_gt0// => i _ _; rewrite expR_gt0.
-  set x := _ + _.
-  suff : x < 0. lra.
-  rewrite /x -{2}(addr0 0) ltrD//.
-    by rewrite mulr_lt0 lt_eqF nmulr_rlt0 ?gt_eqF//= ?expR_gt0// ?(ltNge (expR _)) ?expR_ge0.
-  apply sumr_lt0 => i _ _.
-  by rewrite mulr_lt0 lt_eqF nmulr_rlt0 ?gt_eqF//= ?expR_gt0// ?(ltNge (expR _)) ?expR_ge0.
-rewrite -leNgt => hminge0.
-Admitted.
+  have /=[y[ymem ylt0]] := minrltx _ _ _ _ hminlt0.
+  rewrite/sumR leNgt -!map_comp/=.
+  have -> : (a_min * expR ((nu.-[[a]]_stl' - a_min) / a_min) *
+                expR (nu * ((nu.-[[a]]_stl' - a_min) / a_min))) =
+               ((fun a0 : R =>
+                   a_min * expR ((a0 - a_min) / a_min) *
+                     expR (nu * ((a0 - a_min) / a_min))) \o
+                  stl_translation_alt nu (t:=Bool_T false)) a by [].
+  rewrite seq_cons big_map/=.
+  have -> : (expR (nu * ((nu.-[[a]]_stl' - a_min) / a_min))) =
+            ((fun a0 : R =>
+                expR (nu * ((a0 - a_min) / a_min))) \o
+               stl_translation_alt nu (t:=Bool_T false)) a by [].
+  rewrite seq_cons big_map/=.
+  rewrite pmulr_llt0 ?invr_gt0; last first.
+    rewrite sumr_gt0//=.
+      by move => i _ _; rewrite expR_ge0.
+    by exists y; rewrite ymem expR_gt0.
+  rewrite sumr_lt0//.
+    by move => i _ _; rewrite nmulr_rle0 ?expR_ge0// nmulr_rlt0// expR_gt0.
+  by exists y; rewrite !nmulr_rlt0 ?expR_gt0//.
+rewrite -leNgt; move/minrgex => h.
+by case: ifPn => _ _ i isize; rewrite h// mem_nth.
+Qed.
 
 Lemma stl_nary_inversion_andE0 (Es : seq (expr Bool_P) ) :
   is_stl false (nu.-[[ and_E Es ]]_stl') -> (exists (i : nat), is_stl false (nu.-[[ nth (Bool false false) Es i ]]_stl') && (i < size Es)%nat).
-Admitted.
+Proof.
+case: Es => [|a l]; first by rewrite /= ltr10.
+rewrite/is_stl/= foldrE big_map.
+set a_min := \big[minr/nu.-[[a]]_stl']_(j <- l) nu.-[[j]]_stl'.
+case: ifPn=>[hminlt0 _|].
+  have [x [xmem hlt0]] := minrltx _ _ _ _ hminlt0.
+  exists (index x (a :: l)).
+  by rewrite nth_index ?xmem// hlt0 index_mem xmem.
+rewrite -leNgt => hminge0.
+case: ifPn => _; last by rewrite lt_irreflexive.
+rewrite ltNge mulr_ge0// ?invr_ge0 /sumR big_cons !big_map big_seq_cond addr_ge0 ?mulr_ge0 ?expR_ge0 ?sumr_ge0//=.
+  by apply: (minrgex _ _ _ _ hminge0); rewrite mem_head.
+all: move=> i /andP[il _]; rewrite ?mulr_ge0 ?expR_ge0//.
+by apply: (minrgex _ _ _ _ hminge0); rewrite in_cons il orbT.
+Qed.
 
 Lemma stl_nary_inversion_orE1 (Es : seq (expr Bool_P) ) :
   is_stl true (nu.-[[ or_E Es ]]_stl') -> (exists i, is_stl true (nu.-[[ nth (Bool _ false) Es i ]]_stl') && (i < size Es)%nat).
