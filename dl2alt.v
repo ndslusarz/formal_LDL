@@ -130,75 +130,94 @@ dependent induction e using expr_ind' => /=.
   by rewrite oppr_le0 le_maxr lexx orbT.
 Qed.
 
-Definition is_dl2 b (x : \bar R) := (if b then x == 0 else x < 0)%E.
+Definition is_dl2 b (x : R) := (if b then x == 0 else x < 0).
 
 Lemma dl2_nary_inversion_andE1 (s : seq (expr (Bool_P))) :
-  is_dl2 true ([[ and_E s ]]_dl2) ->
-  (forall i, (i < size s)%N -> is_dl2 true ([[ nth (Bool _ false) s i ]]_dl2)).
+  is_dl2 true ([[ and_E s ]]_dl2') ->
+  (forall i, (i < size s)%N -> is_dl2 true ([[ nth (Bool _ false) s i ]]_dl2')).
 Proof.
 rewrite/is_dl2.
 elim: s => //= h t ih H [_|]/=.
-  move: H; rewrite /sumE big_cons.
-  rewrite nadde_eq0//.
+  move: H; rewrite /sumR big_cons.
+  rewrite naddr_eq0//.
   - by move=> /andP[->].
   - exact: dl2_translation_le0.
-  - rewrite big_seq_cond; apply: sume_le0 => /= x.
+  - rewrite big_seq_cond; apply: sumr_le0 => /= x.
     by rewrite andbT => /mapP[/= e et] ->; exact: dl2_translation_le0.
 move=> n; rewrite ltnS => nt /=; apply: ih => //.
-move: H; rewrite /sumE big_cons.
-rewrite nadde_eq0.
+move: H; rewrite /sumR big_cons.
+rewrite naddr_eq0.
 - by move=> /andP[_ ->].
 - exact: dl2_translation_le0.
-- rewrite big_seq_cond; apply: sume_le0 => /= x.
+- rewrite big_seq_cond; apply: sumr_le0 => /= x.
   by rewrite andbT => /mapP[/= e et] ->; exact: dl2_translation_le0.
 Qed.
 
+Lemma naddr_lt0 (x y : R) :
+  (x <= 0) -> (y <= 0) -> (x + y < 0) -> ((x < 0) || (y < 0)).
+Proof.
+move=> x0 y0; rewrite !ltNge -negb_and; apply: contra.
+by move=> /andP[x0' y0']; rewrite addr_ge0.
+Qed.
+
+Lemma prodr_le0 (A : Type) (l : seq A) (f: A -> R) :
+  (forall i, f i <= 0) ->
+  (((-1) ^+ (length l).+1) * \big[*%R/1]_(j <- l) f j <= 0).
+Proof.
+move=> fle0.
+elim: l => [|a l IH].
+  by rewrite /= big_nil mulr1 expr1 lerN10.
+rewrite /= big_cons exprS (mulrC (f a)) -mulrA mulN1r.
+by rewrite -!mulrN mulrA mulr_le0_ge0// oppr_ge0.
+Qed.
+
 Lemma dl2_nary_inversion_andE0 (s : seq (expr (Bool_P))) :
-  is_dl2 false ([[ and_E s ]]_dl2) ->
-  (exists i, (is_dl2 false ([[ nth (Bool _ false) s i ]]_dl2)) && (i < size s)%nat).
+  is_dl2 false ([[ and_E s ]]_dl2') ->
+  (exists i, (is_dl2 false ([[ nth (Bool _ false) s i ]]_dl2')) && (i < size s)%nat).
 Proof.
 rewrite/is_dl2.
-elim: s => [|h t ih] //=; first by rewrite /sumE big_nil ltxx.
-rewrite /sumE big_cons => /nadde_lt0 => /(_ (dl2_translation_le0 _)).
-have : (\sum_(j <- [seq [[i]]_dl2 | i <- t]) j <= 0)%E.
-  rewrite big_seq_cond; apply: sume_le0 => /= z.
+elim: s => [|h t ih] //=; first by rewrite /sumR big_nil ltxx.
+rewrite /sumR big_cons => /naddr_lt0 => /(_ (dl2_translation_le0 _)).
+have : (\sum_(j <- [seq [[i]]_dl2' | i <- t]) j <= 0).
+  rewrite big_seq_cond; apply: sumr_le0 => /= z.
   by rewrite andbT => /mapP[/= e et ->]; exact: dl2_translation_le0.
 move=> /[swap] /[apply] /orP[H|/ih[j /andP[j0 jt]]].
   by exists 0%N; rewrite /= H.
 by exists j.+1; rewrite /= j0.
 Qed.
 
-Lemma dl2_nary_inversion_orE1 (s : seq (expr (Bool_P))) : [[ or_E s ]]_dl2 = 0%E ->
-  exists i, ([[ nth (Bool _ false) s i ]]_dl2 == 0%E) && (i < size s)%nat.
+Lemma dl2_nary_inversion_orE1 (s : seq (expr (Bool_P))) :
+  is_dl2 true ([[ or_E s ]]_dl2') ->
+  exists i, ([[ nth (Bool _ false) s i ]]_dl2' == 0) && (i < size s)%nat.
 Proof.
 elim: s => [|h t ih] /=.
-  rewrite big_nil mule1 expr1 EFinN => /eqe_oppLRP.
-  by rewrite oppe0 => /eqP; rewrite onee_eq0.
-move=> /eqP; rewrite mule_eq0 eqe signr_eq0/=.
-rewrite big_cons mule_eq0 => /orP[H|/eqP H].
+  rewrite /prodR big_nil mulr1 expr1.
+  by rewrite lt_eqF//.
+rewrite mulf_eq0 signr_eq0/=.
+rewrite /prodR big_cons mulf_eq0 => /orP[H|/eqP H].
   by exists 0%N; rewrite /= H.
-have /ih[j /andP[Hj jt]] : [[or_E t]]_dl2 = 0 by rewrite /= H mule0.
+have /ih[j /andP[Hj jt]] : [[or_E t]]_dl2' == 0 by rewrite /= /prodR H mulr0.
 by exists j.+1; rewrite /= Hj.
 Qed.
 
 Lemma dl2_nary_inversion_orE0 (Es : seq (expr (Bool_P)) ) :
-    ([[ or_E Es ]]_dl2  < 0)%E  -> (forall i, (i < size Es)%nat -> ([[ nth (Bool _ false) Es i ]]_dl2 < 0)%E).
+    is_dl2 false ([[ or_E Es ]]_dl2')  -> (forall i, (i < size Es)%nat -> is_dl2 false ([[ nth (Bool _ false) Es i ]]_dl2')).
 Proof.
 elim: Es => //= a l IH.
-rewrite big_cons muleCA mule_lt0 => /andP[aneq0]/andP[]/[swap] _.
-rewrite exprS EFinM -muleA EFinN mulN1e oppe_eq0 => lneq0.
+rewrite /prodR big_cons mulrCA mulr_lt0 => /andP[aneq0]/andP[]/[swap] _.
+rewrite exprS -mulrA mulN1r oppr_eq0 => lneq0.
 have ale0 := dl2_translation_le0 a.
-have alt0 : ([[a]]_dl2 < 0)%E by rewrite lt_neqAle aneq0 ale0.
+have alt0 : ([[a]]_dl2' < 0) by rewrite lt_neqAle aneq0 ale0.
 elim => [_//=|i _].
 rewrite ltnS => isize.
 apply IH => //.
-rewrite lt_neqAle lneq0/= big_map.
-apply: prode_le0 => j.
+rewrite lt_neqAle lneq0/= /prodR big_map.
+apply: prodr_le0 => j.
 exact: dl2_translation_le0.
 Qed.
 
 Lemma dl2_translations_Vector_coincide: forall n (e : @expr R (Vector_T n)),
-  [[ e ]]_dl2 = [[ e ]]b.
+  [[ e ]]_dl2' = [[ e ]]b.
 Proof.
 dependent induction e => //=.
 dependent destruction e1.
@@ -206,25 +225,33 @@ by rewrite (IHe2 _ _ e2 erefl JMeq_refl).
 Qed.
 
 Lemma dl2_translations_Index_coincide: forall n (e : expr (Index_T n)),
-  [[ e ]]_dl2 = [[ e ]]b.
+  [[ e ]]_dl2' = [[ e ]]b.
 Proof.
 dependent induction e => //=.
 Qed.
 
 Lemma dl2_translations_Real_coincide (e : expr Real_T):
-  [[ e ]]_dl2 = [[ e ]]b.
+  [[ e ]]_dl2' = [[ e ]]b.
 Proof.
 dependent induction e => //=;
 rewrite ?(IHe1 e1 erefl JMeq_refl) ?(IHe2 e2 erefl JMeq_refl) ?(IHe e erefl JMeq_refl) //=.
 by rewrite dl2_translations_Vector_coincide dl2_translations_Index_coincide.
 Qed.
 
+Lemma maxr0_le :
+  forall x : R , (- maxr x 0) = 0 -> x <= 0.
+Proof.
+move => r.
+rewrite /maxr. case: ifP.
+- by lra.
+- by move => h; case; lra.
+Qed.
+
 Lemma dl2_soundness (e : expr Bool_P) b :
-  is_dl2 b ([[ e ]]_dl2) -> [[ e ]]b = b.
+  is_dl2 b ([[ e ]]_dl2') -> [[ e ]]b = b.
 Proof.
 dependent induction e using expr_ind'.
-- move: b b0 => [] [] //=.
-  by rewrite lt_irreflexive.
+- move: b b0 => [] [] //=; by rewrite ?lt_irreflexive ?lt_eqF ?ltrN10.
 - rewrite List.Forall_forall in H.
   move: b => [].
   + move/dl2_nary_inversion_andE1.
@@ -244,7 +271,7 @@ dependent induction e using expr_ind'.
       by rewrite eqb_id.
 - rewrite List.Forall_forall in H.
   move: b => [].
-  + rewrite/is_dl2=>/eqP; move/dl2_nary_inversion_orE1.
+  + move/dl2_nary_inversion_orE1.
     rewrite [bool_translation (or_E l)]/= foldrE big_map big_has.
     elim=>// i /andP[/eqP i0 isize].
     apply/hasP; exists (nth (Bool _ false) l i); first by rewrite mem_nth.
@@ -258,14 +285,14 @@ dependent induction e using expr_ind'.
     have [i il0 <-] := xnth (Bool _ false).
     apply/negPf; apply: H => //.
     * by rewrite ?h// -In_in mem_nth.
-    * by rewrite /is_dl2/= h.
+    * by rewrite h.
 - case: c; rewrite //=; rewrite -!dl2_translations_Real_coincide;
   set t1 := _ e1; set t2 := _ e2; case: b => //.
-  + by rewrite/is_dl2=>/eqP; move/maxr0_le; rewrite subr_le0.
-  + rewrite/is_dl2 lte_fin oppr_lt0 /maxr; case: ifPn; first by rewrite lt_irreflexive.
+  + by rewrite/is_dl2 => /eqP; move/maxr0_le; rewrite subr_le0.
+  + rewrite/is_dl2 oppr_lt0 /maxr; case: ifPn; first by rewrite lt_irreflexive.
     by rewrite subr_gt0 => _; move/lt_geF.
   + by rewrite/is_dl2=>/eqP; case=>/eqP; rewrite oppr_eq0 normr_eq0 subr_eq0.
-  + rewrite/is_dl2; rewrite lte_fin oppr_lt0 normr_gt0.
+  + rewrite/is_dl2; rewrite oppr_lt0 normr_gt0.
     by rewrite subr_eq0; move/eqP => h; apply/eqP.
 Qed.
 
