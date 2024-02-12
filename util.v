@@ -388,12 +388,13 @@ End product_dl_prod.
 
 
 
-Lemma prodrN1 {R : realDomainType} T (l : seq T) (f : T -> R) :
-  (forall e, f e < 0)%R ->
+Lemma prodrN1 {R : realDomainType} (T : eqType) (l : seq T) (f : T -> R) :
+  (forall e, e \in l -> f e < 0)%R ->
   sgr (\big[*%R/1%R]_(e <- l) f e) = (- 1) ^+ (size l).
 Proof.
-move=> f0; elim: l => [|h t ih]; first by rewrite big_nil/= expr0 sgr1.
-by rewrite big_cons sgrM ih/= exprS ltr0_sg.
+elim: l => [|a l ih h]; first by rewrite big_nil/= expr0 sgr1.
+rewrite big_cons sgrM ltr0_sg ?h ?mem_head//= exprS ih// => e el.
+by rewrite h// in_cons el orbT.
 Qed.
 
 Definition sge {R : numDomainType} (x : \bar R) : R :=

@@ -87,38 +87,47 @@ rewrite mulrCA.
 by rewrite !mulrA.
 Qed.
 
+Lemma prodr_seq_eq0 {I : Type} (r : seq I) (P : pred I)
+    (F : I -> R) :
+  (\big[*%R/1]_(i <- r | P i) F i == 0) = has (fun i => P i && (F i == 0)) r.
+Proof.
+elim: r => /= [|h t ih]; first by rewrite big_nil oner_eq0.
+rewrite big_cons; case: ifPn => Ph /=; last by rewrite ih.
+by rewrite mulf_eq0 ih.
+Qed.
+
 Lemma dl2_translation_le0 e :
-  ([[ e ]]_dl2' <= 0 :> dl2_type_translation Bool_P).
+  ([[ e ]]_dl2' <= 0 :> type_translation Bool_P).
 Proof.
 dependent induction e using expr_ind' => /=.
 - by case: b.
-- rewrite /sumE big_map big_seq sume_le0// => t tl.
+- rewrite /sumR big_map big_seq sumr_le0// => t tl.
   move/List.Forall_forall : H => /(_ t); apply => //.
   exact/In_in.
-- rewrite big_map big_seq; have [ol|ol] := boolP (odd (length l)).
-    rewrite exprS -signr_odd ol expr1 mulrN1 !EFinN oppeK mul1e.
-    have [l0|l0] := pselect (forall i, i \in l -> [[i]]_dl2 != 0)%E; last first.
+- rewrite /prodR big_map big_seq; have [ol|ol] := boolP (odd (length l)).
+    rewrite exprS -signr_odd ol expr1 mulrN1 opprK mul1r.
+    have [l0|l0] := pselect (forall i, i \in l -> [[i]]_dl2' != 0); last first.
       move/existsNP : l0 => [/= x /not_implyP[xl /negP/negPn/eqP x0]].
       rewrite le_eqVlt; apply/orP; left.
-      rewrite prode_seq_eq0; apply/hasP; exists x => //.
+      rewrite prodr_seq_eq0; apply/hasP; exists x => //.
       by rewrite xl x0 eqxx.
-    apply/ltW/sgeN1_lt0; rewrite -big_seq prodeN1.
+    apply/ltW; rewrite -sgr_cp0 -big_seq prodrN1.
       by rewrite -signr_odd ol expr1.
-    move=> e el; rewrite lt_neqAle l0//=.
+    move=> /=e el; rewrite lt_neqAle l0//.
     by move/List.Forall_forall : H => /(_ e); apply => //; exact/In_in.
   rewrite exprS -signr_odd (negbTE ol) expr0 mulN1r.
-  rewrite EFinN mulN1e oppe_le0.
-  have [l0|l0] := pselect (forall i, i \in l -> [[i]]_dl2 != 0)%E; last first.
+  rewrite mulN1r oppr_le0.
+  have [l0|l0] := pselect (forall i, i \in l -> [[i]]_dl2' != 0); last first.
     move/existsNP : l0 => [/= x /not_implyP[xl /negP/negPn/eqP x0]].
     rewrite le_eqVlt; apply/orP; left.
-    rewrite eq_sym prode_seq_eq0; apply/hasP; exists x => //.
+    rewrite eq_sym prodr_seq_eq0; apply/hasP; exists x => //.
     by rewrite xl x0 eqxx.
-  apply/ltW/sge1_gt0; rewrite -big_seq prodeN1.
+  apply/ltW; rewrite -sgr_gt0 -big_seq prodrN1.
     by rewrite -signr_odd (negbTE ol) expr0.
   move=> e el; rewrite lt_neqAle l0//=.
   by move/List.Forall_forall : H => /(_ e); apply => //; exact/In_in.
 - case: c => //=.
-  by rewrite lee_fin oppr_le0 le_maxr lexx orbT.
+  by rewrite oppr_le0 le_maxr lexx orbT.
 Qed.
 
 Definition is_dl2 b (x : \bar R) := (if b then x == 0 else x < 0)%E.
