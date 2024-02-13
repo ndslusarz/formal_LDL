@@ -250,6 +250,14 @@ all: move=> i /andP[il _]; rewrite ?mulr_ge0 ?expR_ge0//.
 by apply: (minrgex _ _ _ _ hminge0); rewrite in_cons il orbT.
 Qed.
 
+(*Nat: I'm sure this exists, couldn't find it quickly though*)
+Lemma lt_le_temporary {F : numFieldType} (x y : F):
+  x < y -> x <= y.
+Admitted.
+
+(* Search (_ <= _ && _ != _ -> _ < _). *)
+
+
 Lemma stl_nary_inversion_orE1 (Es : seq (expr Bool_P) ) :
   is_stl true (nu.-[[ or_E Es ]]_stl') -> (exists i, is_stl true (nu.-[[ nth (Bool _ false) Es i ]]_stl') && (i < size Es)%nat).
 Proof.
@@ -257,9 +265,19 @@ case: Es => [|a l]; rewrite/is_stl/=.
 - by rewrite ler0N1.
 - rewrite foldrE big_map.
   set a_max := \big[maxr/nu.-[[a]]_stl']_(j <- l) nu.-[[j]]_stl'.
-  case: ifPn=>[hmaxlt0 _|].
-  + 
-    admit.
+  case: ifPn=>[hmaxlt0 h1|].
+  + move: h1.
+    rewrite divr_ge0//. 
+    * move => _. 
+      admit.
+    * rewrite ?invr_ge0 /sumR big_cons !big_map big_seq_cond addr_ge0 ?mulr_ge0 ?expR_ge0 ?sumr_ge0//=.
+        - (*we get a direct contradition here?*) admit.
+        - move => i. rewrite andbT. move => i1.
+          rewrite ?mulr_ge0 ?expR_ge0 ?sumr_ge0//=.
+          (*we get a direct contradition here?*) admit.
+    * rewrite ?invr_ge0 /sumR big_cons !big_map big_seq_cond addr_ge0 ?mulr_ge0 ?expR_ge0 ?sumr_ge0//=.
+      move => i. rewrite andbT. move => i1.
+      rewrite ?expR_ge0//=.
   + rewrite -leNgt => hmaxge0.
     case: ifPn => [hmaxgt0 _|]; have [x [xmem hge0]] := maxrgex _ _ _ _ hmaxge0;
       exists (index x (a :: l));
