@@ -265,9 +265,8 @@ case: Es => [|a l]; rewrite/is_stl/=.
 - by rewrite ler0N1.
 - rewrite foldrE big_map.
   set a_max := \big[maxr/nu.-[[a]]_stl']_(j <- l) nu.-[[j]]_stl'.
-  case: ifPn=>[hmaxlt0 h1|].
-  + move: h1.
-    rewrite divr_ge0//. 
+  case: ifPn=>[hmaxlt0|].
+  + rewrite divr_ge0//. 
     * move => _. 
       admit.
     * rewrite ?invr_ge0 /sumR big_cons !big_map big_seq_cond addr_ge0 ?mulr_ge0 ?expR_ge0 ?sumr_ge0//=.

@@ -45,6 +45,7 @@ Reserved Notation "[[ e ]]_ l" (at level 10, format "[[ e ]]_ l").
 Reserved Notation "nu .-[[ e ]]_stl" (at level 10, format "nu .-[[ e ]]_stl").
 Reserved Notation "nu .-[[ e ]]_stl'" (at level 10, format "nu .-[[ e ]]_stl'").
 Reserved Notation "[[ e ]]_dl2" (at level 10, format "[[ e ]]_dl2").
+Reserved Notation "[[ e ]]_dl2'" (at level 10, format "[[ e ]]_dl2'").
 
 Inductive simple_type :=
 | Bool_T of bool
@@ -335,6 +336,43 @@ Fixpoint dl2_translation t (e : @expr R t) {struct e} : dl2_type_translation t :
 where "{[ e ]}" := (dl2_translation e).
 
 End dl2_translation.
+Notation "[[ e ]]_dl2" := (dl2_translation e) : ldl_scope.
+
+Section dl2_translation_alt.
+Local Open Scope ring_scope.
+Local Open Scope ldl_scope.
+Context {R : realType}.
+
+Fixpoint dl2_translation_alt t (e : @expr R t) {struct e} : type_translation t :=
+    match e in expr t return type_translation t with
+    | Bool _ true => 0
+    | Bool _ false => -1
+    | Real r => r
+    | Index n i => i
+    | Vector n t => t
+
+    | and_E _ Es => sumR (map (@dl2_translation_alt _) Es)
+    | or_E _ Es => ((- 1) ^+ (length Es).+1) *
+                     prodR (map (@dl2_translation_alt _) Es)
+    | `~ E1 => 0 (* FIX: this case is not covered by DL2 *)
+
+    (*simple arithmetic*)
+    | E1 `+ E2 => ({[ E1 ]} + {[ E2 ]})%R
+    | E1 `* E2 => ({[ E1 ]} * {[ E2 ]})%R
+    | `- E1 => (- {[ E1 ]})%R
+
+    (*comparisons*)
+    | E1 `== E2 => (- `| {[ E1 ]} - {[ E2 ]}|)
+    | E1 `<= E2 => (- maxr ({[ E1 ]} - {[ E2 ]}) 0)
+
+    | net n m f => f
+    | app_net n m f v => {[ f ]} {[ v ]}
+    | lookup_E n v i => tnth {[ v ]} {[ i ]}
+    end
+where "{[ e ]}" := (dl2_translation_alt e).
+
+End dl2_translation_alt.
+Notation "[[ e ]]_dl2'" := (dl2_translation_alt e) : ldl_scope.
 
 Section stl_translation.
 Local Open Scope ereal_scope.
@@ -398,7 +436,6 @@ where "{[ e ]}" := (stl_translation e).
 End stl_translation.
 
 Notation "nu .-[[ e ]]_stl" := (stl_translation nu e) : ldl_scope.
-Notation "[[ e ]]_dl2" := (dl2_translation e) : ldl_scope.
 
 
 Section stl_translation_alt.
