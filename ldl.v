@@ -473,10 +473,10 @@ Fixpoint stl_translation_alt t (e: expr t) : type_translation t :=
         let a0 := @stl_translation_alt _ e0 in
         let a_max: R := foldr maxr a0 A in
         let a'_i (a_i: R) := (a_max - a_i) * a_max^-1 in
-        if a_max < 0 then
+        if a_max > 0 then
           sumR (map (fun a => a_max * expR (a'_i a) * expR (nu * a'_i a)) (a0::A)) *
           (sumR (map (fun a => expR (nu * (a'_i a))) (a0::A)))^-1
-        else if a_max > 0 then
+        else if a_max < 0 then
           sumR (map (fun a => a * expR (-nu * (a'_i a))) (a0::A)) *
           (sumR (map (fun a => expR (nu * (a'_i a))) (a0::A)))^-1
              else 0
