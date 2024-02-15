@@ -190,22 +190,60 @@ Qed.
 Lemma maxrltx [I : eqType] x (f : I -> R) a l:
   \big[maxr/f a]_(j <- l) f j < x -> forall i, i \in (a :: l) -> f i < x.
 Proof.
-Admitted.
+elim: l; first by rewrite big_nil => fax i; rewrite mem_seq1 => /eqP ->.
+move=> a' l IH.
+rewrite big_cons {1}/maxr.
+case: ifPn => [fa'lt maxltx i|].
+  rewrite in_cons => /orP[/eqP ->|]; first by apply IH => //; rewrite mem_head.
+  rewrite in_cons => /orP[/eqP ->|il]; first exact: (lt_trans fa'lt maxltx).
+  by apply: IH => //; rewrite in_cons il orbT.
+rewrite -leNgt => fmaxltfa' fa'ltx i.
+rewrite in_cons => /orP[/eqP ->|].
+  by apply: IH; rewrite ?mem_head// (le_lt_trans fmaxltfa' fa'ltx).
+rewrite in_cons => /orP[/eqP ->//|il].
+by rewrite IH// ?(le_lt_trans fmaxltfa' fa'ltx)// in_cons il orbT.
+Qed.
 
 Lemma maxrlex [I : eqType] x (f : I -> R) a l:
-  \big[maxr/f a]_(j <- l) f j <= x -> forall i, i \in (a :: l) -> f i < x.
+  \big[maxr/f a]_(j <- l) f j <= x -> forall i, i \in (a :: l) -> f i <= x.
 Proof.
-Admitted.
+elim: l; first by rewrite big_nil => fax i; rewrite mem_seq1 => /eqP ->.
+move=> a' l IH.
+rewrite big_cons {1}/maxr.
+case: ifPn => [fa'lt maxltx i|].
+  rewrite in_cons => /orP[/eqP ->|]; first by apply IH => //; rewrite mem_head.
+  rewrite in_cons => /orP[/eqP ->|il]; first exact: (ltW (lt_le_trans fa'lt maxltx)).
+  by apply: IH => //; rewrite in_cons il orbT.
+rewrite -leNgt => fmaxltfa' fa'ltx i.
+rewrite in_cons => /orP[/eqP ->|].
+  by apply: IH; rewrite ?mem_head// (le_trans fmaxltfa' fa'ltx).
+rewrite in_cons => /orP[/eqP ->//|il].
+by rewrite IH// ?(le_trans fmaxltfa' fa'ltx)// in_cons il orbT.
+Qed.
 
 Lemma maxrgtx [I : eqType] x (f : I -> R) a l:
   x < \big[maxr/f a]_(j <- l) f j -> exists i, i \in (a :: l) /\ x < f i.
 Proof.
-Admitted.
+elim: l; first by rewrite big_nil => fax; exists a; rewrite mem_seq1 eq_refl fax.
+move=> a' l IH.
+rewrite big_cons {1}/maxr.
+case: ifPn => [_|_ fax]; last by exists a'; rewrite !in_cons eq_refl/= orbT fax.
+move/IH => [i[ial filex]].
+exists i.
+by rewrite !in_cons orbCA -in_cons ial orbT filex.
+Qed.
 
 Lemma maxrgex [I : eqType] x (f : I -> R) a l:
   x <= \big[maxr/f a]_(j <- l) f j -> exists i, i \in (a :: l) /\ x <= f i.
 Proof.
-Admitted.
+elim: l; first by rewrite big_nil => fax; exists a; rewrite mem_seq1 eq_refl fax.
+move=> a' l IH.
+rewrite big_cons {1}/maxr.
+case: ifPn => [_|_ fax]; last by exists a'; rewrite !in_cons eq_refl/= orbT fax.
+move/IH => [i[ial filex]].
+exists i.
+by rewrite !in_cons orbCA -in_cons ial orbT filex.
+Qed.
 
 Lemma seq_cons T1 T2 (f : T1 -> T2) a l : f a :: [seq f x | x <- l] = [seq f x | x <- a :: l].
 Proof. by []. Qed.
