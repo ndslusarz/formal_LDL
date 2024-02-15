@@ -408,7 +408,7 @@ Definition min_dev {R : numDomainType} (x : \bar R) (xs : seq \bar R) : \bar R :
   (x - minE xs) * (fine (minE xs))^-1%:E.
 
 Definition min_devR {R : realType} (x : R) (xs : seq R) : R :=
-  (x - minR xs) * (minR xs)^-1.
+  (x - \big[minr/(nth 0 xs 0)]_(i <- xs) i) * (\big[minr/(nth 0 xs 0)]_(i <- xs) i)^-1.
 
 
 (*Natalia: will only consider >0 and <0 without edge cases, as to separate cases*)
@@ -426,29 +426,87 @@ Definition min_devR {R : realType} (x : R) (xs : seq R) : R :=
 (*to do: change map to big operator probably*)
 
 
-Definition stl_and_gt0 {n} (v : 'rV[R]_n)  :=
+Definition stl_and_gt0 (v : seq R) :=
+  sumR (map (fun a => a * expR (-nu * min_devR a (v))) (v)) *
+  (sumR (map (fun a => expR (-nu * min_devR a (v))) (v)))^-1.
+
+(*Definition stl_and_gt0 {n} (v : 'rV[R]_n) :=
   sumR (map (fun a => a * expR (-nu * min_devR a ( MatrixFormula.seq_of_rV v))) ( MatrixFormula.seq_of_rV v)) *
-  (sumR (map (fun a => expR (-nu * min_devR a ( MatrixFormula.seq_of_rV v))) ( MatrixFormula.seq_of_rV v)))^-1.
+  (sumR (map (fun a => expR (-nu * min_devR a ( MatrixFormula.seq_of_rV v))) ( MatrixFormula.seq_of_rV v)))^-1.*)
+
 
 Definition stl_and_lt0 {n} (v : 'rV[R]_n) :=
   sumR (map (fun a => a * expR (-nu * min_devR a ( MatrixFormula.seq_of_rV v))) ( MatrixFormula.seq_of_rV v)) *
     (sumR (map (fun a => expR (-nu * min_devR a ( MatrixFormula.seq_of_rV v))) ( MatrixFormula.seq_of_rV v)))^-1.
 
 Lemma shadowlifting_stl_and_gt0 (p : R) : p > 0 ->
-  forall i, ('d (@stl_and_gt0 M.+1) '/d i) (const_mx p) = (M%:R) ^ -1.
+  forall i, ('d (stl_and_gt0 \o @MatrixFormula.seq_of_rV _ M.+1)  '/d i) (const_mx p) = M.+1%:R^-1.
 Proof.
 move=> p0 i.
 rewrite /partial.
-have /cvg_lim : h^-1 * (stl_and_gt0 (const_mx p + h *: err_vec i) -
-                        @stl_and_gt0 M.+1 (const_mx p))
-       @[h --> (0:R)^'] --> (M%:R^-1:R). 
-  rewrite /stl_and_gt0 /sumR.
-
-About big_map.
-
-
+have cpE : MatrixFormula.seq_of_rV (@const_mx _ _ M.+1 p) = nseq M.+1 p.
+  apply: (@eq_from_nth _ 0); first by rewrite MatrixFormula.size_seq_of_rV size_nseq.
+  move=> k; rewrite MatrixFormula.size_seq_of_rV => kM.
+  have -> := @MatrixFormula.nth_seq_of_rV R M.+1 0 (const_mx p) (Ordinal kM).
+  by rewrite mxE nth_nseq kM.
+have iter_minr k : iter k (minr p) p = p.
+  by elim: k => // k /= ->; rewrite /minr ltxx.
+have H1 : stl_and_gt0 (@MatrixFormula.seq_of_rV _ M.+1 (const_mx p)) = p.
+  rewrite /stl_and_gt0/= {1}/sumR big_map cpE big_nseq.
+  have K1 : min_devR p (nseq M.+1 p) = 0.
+    rewrite /min_devR.
+    rewrite big_nseq.
+    rewrite nth_nseq// ltnS leq0n.
+    by rewrite iter_minr subrr mul0r.
+  rewrite K1.
+  rewrite mulr0 expR0 mulr1.
+  rewrite iter_addr addr0.
+  rewrite /sumR big_map big_nseq.
+  rewrite K1 mulr0 expR0 iter_addr addr0.
+  by rewrite -(mulr_natr p) -mulrA divff ?mulr1.
+rewrite /= H1.
+have H2 h : h > 0 -> (stl_and_gt0 (@MatrixFormula.seq_of_rV _ M.+1 (const_mx p + h *: err_vec i))) =
+                     (p * M%:R + (p + h) * expR (- nu * (h / p))) / (M%:R + expR (- nu * (h / p))).
+  move=> h0.
+  rewrite /stl_and_gt0/= {1}/sumR big_map.
+  congr (_ / _).
+    rewrite big_map/= big_enum/= (bigD1 i)//=.
+    rewrite ffunE !mxE eqxx mulr1.
+    rewrite (_ : min_devR _ _ = h / p); last first.
+      rewrite /min_devR.
+      set mi := \big[_/_]_(_ <- _) _.
+      have -> : mi = p.
+        rewrite /mi.
+        admit.
+      by rewrite -addrA addrCA subrr addr0.
+    rewrite (eq_bigr (fun=> p)); last first.
+      move=> j ji.
+      rewrite ffunE !mxE eq_sym (negbTE ji) mulr0 addr0.
+      rewrite (_ : min_devR _ _ = 0); last admit.
+      by rewrite mulr0 expR0 mulr1.
+    rewrite big_const/= iter_addr addr0.
+    rewrite (_ : #|_| = M); last admit.
+    admit.
+  rewrite /sumR big_map.
+  admit.
+have H3 h : h < 0 -> (stl_and_gt0 (@MatrixFormula.seq_of_rV _ M.+1 (const_mx p + h *: err_vec i))) =
+                     (p * M%:R * expR (- nu * (- h / (p + h))) + (p + h))
+                     /
+                     (M%:R * expR (- nu * (- h / (p + h))) + 1).
+  move=> h0.
+  (* not sure *)
+  admit.
+have /cvg_lim : h^-1 * ((stl_and_gt0 (@MatrixFormula.seq_of_rV _ M.+1 (const_mx p + h *: err_vec i))) -
+                        (stl_and_gt0 (@MatrixFormula.seq_of_rV _ M.+1 (const_mx p))))
+       @[h --> (0:R)^'] --> (M%:R^-1:R).
+  apply/cvgrPdist_lt => /= e e0.
+  near=> h.
+  rewrite H1.
+  have : h != 0 by near: h; exact: nbhs_dnbhs_neq.
+  rewrite neq_lt => /orP[h0|h0].
+    rewrite /= H3//.
+    admit.
+  rewrite /= H2//.
 Admitted.
 
-
 End shadow_lifting_stl_and.
-
