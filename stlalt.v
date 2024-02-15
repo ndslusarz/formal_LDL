@@ -192,6 +192,11 @@ Lemma maxrltx [I : eqType] x (f : I -> R) a l:
 Proof.
 Admitted.
 
+Lemma maxrlex [I : eqType] x (f : I -> R) a l:
+  \big[maxr/f a]_(j <- l) f j <= x -> forall i, i \in (a :: l) -> f i < x.
+Proof.
+Admitted.
+
 Lemma maxrgtx [I : eqType] x (f : I -> R) a l:
   x < \big[maxr/f a]_(j <- l) f j -> exists i, i \in (a :: l) /\ x < f i.
 Proof.
@@ -264,10 +269,25 @@ case: ifPn=>[hmaxgt0 _|].
 rewrite -leNgt => hmaxle0.
 case: ifPn=>[hmaxlt0|].
 have /= := maxrltx _ _ _ _ hmaxlt0.
-admit.
+rewrite/sumR leNgt -!map_comp/=.
+  have -> : nu.-[[a]]_stl' * expR (- nu * ((a_max - nu.-[[a]]_stl') / a_max))
+              = ((fun a0 : R => a0 * expR (- nu * ((a_max - a0) / a_max))) \o
+                         stl_translation_alt nu (t:=Bool_T false)) a by [].
+  rewrite seq_cons big_map/=.
+  have -> : expR (nu * ((a_max - nu.-[[a]]_stl') / a_max))
+              = ((fun a0 : R => expR (nu * ((a_max - a0) / a_max))) \o
+                         stl_translation_alt nu (t:=Bool_T false)) a by [].
+  rewrite seq_cons big_map/=.
+  rewrite pmulr_llt0 ?invr_gt0; last first.
+    rewrite sumr_gt0//=.
+      by move => i _ _; rewrite expR_ge0.
+    admit. (* by exists y; rewrite ymem expR_gt0. *)
+  rewrite sumr_lt0//.
+    move => i _ _. rewrite nmulr_rle0 ?expR_ge0//. admit.
+  admit.
 (*  rewrite ltNge mulr_ge0// ?invr_ge0 /sumR big_cons !big_map big_seq_cond addr_ge0 ?mulr_ge0 ?expR_ge0 ?sumr_ge0//=.
   by apply: (minrgex _ _ _ _ hminge0); rewrite mem_head.*)
-admit.
+rewrite -leNgt. admit.
 (*all: move=> i /andP[il _]; rewrite ?mulr_ge0 ?expR_ge0//.
 by apply: (minrgex _ _ _ _ hminge0); rewrite in_cons il orbT.*)
 (*
@@ -330,23 +350,25 @@ case: ifPn=>[hmingt0|]. admit.
     by move => i _ _; rewrite nmulr_rle0 ?expR_ge0// nmulr_rlt0// expR_gt0.
   by exists y; rewrite !nmulr_rlt0 ?expR_gt0//. *)
 rewrite -leNgt => h. (*move/maxrlex => h.*)
-case: ifPn; last by rewrite ltxx. (*=> _ _ i isize; rewrite h// mem_nth.*)
-(*by rewrite ltxx.
-case: Es => // a l.
-rewrite/is_stl/= foldrE big_map.
-set a_max := \big[maxr/nu.-[[a]]_stl']_(j <- l) nu.-[[j]]_stl'.
-case: ifPn=>[hmaxlt0 _|].
-- move=> i l0.
-  by apply (maxrltx _ _ _ _ hmaxlt0).
-- rewrite -leNgt => hmaxge0.
-  case: ifPn => [hmaxgt0|].
-rewrite ltNge.
-rewrite ltNge mulr_ge0// ?invr_ge0 /sumR big_cons !big_map big_seq_cond addr_ge0 ?mulr_ge0 ?expR_ge0 ?sumr_ge0//=.
-  by apply: (maxrgex _ _ _ _ hmaxge0); rewrite mem_head.
-all: move=> i /andP[il _]; rewrite ?mulr_ge0 ?expR_ge0//.
-by apply: (minrgex _ _ _ _ hminge0); rewrite in_cons il orbT.
-  rewrite ltNge.
-*)
+case: ifPn; last by rewrite ltxx.
+move => hmaxlt0.
+rewrite/sumR -!map_comp.
+  have -> : nu.-[[a]]_stl' * expR (- nu * ((a_max - nu.-[[a]]_stl') / a_max))
+             = ((fun a0 : R => a0 * expR (- nu * ((a_max - a0) / a_max))) \o
+                        stl_translation_alt nu (t:=Bool_T false)) a by [].
+  rewrite seq_cons big_map/=.
+  have -> : expR (nu * ((a_max - nu.-[[a]]_stl') / a_max))
+             = ((fun a0 : R => expR (nu * ((a_max - a0) / a_max))) \o
+                        stl_translation_alt nu (t:=Bool_T false)) a by [].
+rewrite seq_cons big_map/=.
+  rewrite pmulr_llt0 ?invr_gt0; last first.
+    rewrite sumr_gt0//=.
+      by move => i _ _; rewrite expR_ge0.
+    admit. (* by exists y; rewrite ymem expR_gt0. *)
+  rewrite sumr_lt0//.
+    move => _ i _. 
+    apply: (maxrltx _ _ _ _ hmaxlt0). admit. 
+  admit.
 admit. (* all are < 0*)
 Admitted.
 
