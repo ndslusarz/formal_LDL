@@ -344,11 +344,16 @@ Qed.
 
 End translation_lemmas.
 
-(* Ale: disabled for now
 Section shadow_lifting_product_and.
 Context {R : realType}.
+Local Open Scope ring_scope.
+Local Open Scope classical_set_scope.
 Variable M : nat.
 Hypothesis M0 : M != 0%N.
+
+Definition product_and {R : fieldType} {n} (u : 'rV[R]_n) : R :=
+  \prod_(i < n) u ``_ i.
+
 
 Lemma shadowlifting_product_andE p : p > 0 ->
   forall i, ('d (@product_and R M.+1) '/d i) (const_mx p) = p ^+ M.
@@ -356,7 +361,7 @@ Proof.
 move=> p0 i.
 rewrite /partial.
 have /cvg_lim : h^-1 * (product_and (const_mx p + h *: err_vec i) -
-                        product_and (n:=M.+1) (const_mx p))
+                        @product_and _ M.+1 (const_mx p))
        @[h --> (0:R)^'] --> p ^+ M.
   rewrite /product_and.
   have H : forall h : R, h != 0 ->
@@ -392,7 +397,7 @@ by move=> p p0 i; rewrite shadowlifting_product_andE// exprn_gt0.
 Qed.
 
 End shadow_lifting_product_and.
-*)
+
 
 Section Lukasiewicz_lemmas.
 Local Open Scope ldl_scope.

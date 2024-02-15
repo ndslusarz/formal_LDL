@@ -415,8 +415,8 @@ Qed.
 
 End stl_lemmas.
 
-(* Ale: disabled for now
 Section shadow_lifting_stl_and.
+Local Open Scope ring_scope.
 Context {R : realType}.
 Variable nu : R.
 Variable M : nat.
@@ -457,8 +457,6 @@ Definition stl_and_lt0 n (v : 'rV[R]_n) :=
   sumR (map (fun a => a * expR (-nu * min_devR a ( MatrixFormula.seq_of_rV v))) ( MatrixFormula.seq_of_rV v)) *
     (sumR (map (fun a => expR (nu * min_devR a ( MatrixFormula.seq_of_rV v))) ( MatrixFormula.seq_of_rV v)))^-1.
 
-
- Search (_ `^ _).
 Lemma shadowlifting_stl_and_gt0 (p : R) : p > 0 ->
   forall i, ('d (@stl_and_gt0 M.+1) '/d i) (const_mx p) = (M%:R) ^ -1.
 Proof.
@@ -473,4 +471,4 @@ Admitted.
 
 
 End shadow_lifting_stl_and.
-*)
+

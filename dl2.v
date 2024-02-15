@@ -12,19 +12,27 @@ Import Num.Def Num.Theory GRing.Theory.
 Import Order.TTheory.
 Import numFieldTopology.Exports.
 
-(* Ale: disabled for now
 Section shadow_lifting_dl2_and.
+Local Open Scope ring_scope.
+Local Open Scope classical_set_scope.
 Context {R : realType}.
 Variable M : nat.
 Hypothesis M0 : M != 0%N.
+
+Locate "_ --> _".
+
+
+Definition dl2_and {R : fieldType} {n} (v : 'rV[R]_n) :=
+  \sum_(i < n) v ``_ i.
 
 Lemma shadowlifting_dl2_andE (p : R) : p > 0 ->
   forall i, ('d (@dl2_and _ M.+1) '/d i) (const_mx p) = 1.
 Proof.
 move=> p0 i.
 rewrite /partial.
+About dl2_and.
 have /cvg_lim : h^-1 * (dl2_and (const_mx p + h *: err_vec i) -
-                        dl2_and (n:=M.+1) (const_mx p))
+                        @dl2_and _ M.+1 (const_mx p))
        @[h --> (0:R)^'] --> (1:R)%R.
   rewrite /dl2_and.
   have H : forall h, h != 0 ->
@@ -50,7 +58,7 @@ Corollary shadow_lifting_dl2_and :  shadow_lifting (@dl2_and R M.+1).
 Proof. by move=> p p0 i; rewrite shadowlifting_dl2_andE. Qed.
 
 End shadow_lifting_dl2_and.
-*)
+
 
 Section dl2_lemmas.
 Local Open Scope ldl_scope.

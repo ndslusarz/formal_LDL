@@ -501,7 +501,8 @@ End stl_translation_alt.
 
 Notation "nu .-[[ e ]]_stl'" := (stl_translation_alt nu e) : ldl_scope.
 
-(* Ale: disabled for now
+ (* Ale: disabled for now *)
+
 
 (* this is already in MCA master *)
 #[global] Hint Extern 0 (Filter (nbhs _^'+)) =>
@@ -509,6 +510,9 @@ Notation "nu .-[[ e ]]_stl'" := (stl_translation_alt nu e) : ldl_scope.
 
 #[global] Hint Extern 0 (Filter (nbhs _^'-)) =>
   (apply: at_left_proper_filter) : typeclass_instances.
+
+Section shadow_lifting.
+Local Open Scope ring_scope.
 
 Definition shadow_lifting {R : realType} n (f : 'rV_n.+1 -> R) :=
   forall p, p > 0 -> forall i, ('d f '/d i) (const_mx p) > 0.
@@ -561,10 +565,7 @@ Definition weakly_smooth {R : realType} (n : nat) (f : 'rV[R]_n.+1 -> R) :=
   (forall a, {for a, continuous f}) /\
   (forall a, weakly_smooth_cond a -> {for a, continuous (gradient f)}).
 
-Definition product_and {R : fieldType} n (u : 'rV[R]_n) : R :=
-  \prod_(i < n) u ``_ i.
 
-Definition dl2_and {R : fieldType} n (v : 'rV[R]_n) :=
-  \sum_(i < n) v ``_ i.
 
-*)
+End shadow_lifting.
+
