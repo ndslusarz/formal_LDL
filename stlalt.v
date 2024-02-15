@@ -417,6 +417,7 @@ End stl_lemmas.
 
 Section shadow_lifting_stl_and.
 Local Open Scope ring_scope.
+Local Open Scope classical_set_scope.
 Context {R : realType}.
 Variable nu : R.
 Variable M : nat.
@@ -431,7 +432,6 @@ Definition min_dev {R : numDomainType} (x : \bar R) (xs : seq \bar R) : \bar R :
 Definition min_devR {R : realType} (x : R) (xs : seq R) : R :=
   (x - minR xs) * (minR xs)^-1.
 
-Local Open Scope ereal_scope.
 
 (*Natalia: will only consider >0 and <0 without edge cases, as to separate cases*)
 (* Definition stl_and (xs : seq \bar R) : \bar R :=
@@ -447,24 +447,26 @@ Local Open Scope ereal_scope.
 
 (*to do: change map to big operator probably*)
 
-Local Close Scope ereal_scope.
 
-Definition stl_and_gt0 n (v : 'rV[R]_n)  :=
+Definition stl_and_gt0 {n} (v : 'rV[R]_n)  :=
   sumR (map (fun a => a * expR (-nu * min_devR a ( MatrixFormula.seq_of_rV v))) ( MatrixFormula.seq_of_rV v)) *
-  (sumR (map (fun a => expR (nu * min_devR a ( MatrixFormula.seq_of_rV v))) ( MatrixFormula.seq_of_rV v)))^-1.
+  (sumR (map (fun a => expR (-nu * min_devR a ( MatrixFormula.seq_of_rV v))) ( MatrixFormula.seq_of_rV v)))^-1.
 
-Definition stl_and_lt0 n (v : 'rV[R]_n) :=
+Definition stl_and_lt0 {n} (v : 'rV[R]_n) :=
   sumR (map (fun a => a * expR (-nu * min_devR a ( MatrixFormula.seq_of_rV v))) ( MatrixFormula.seq_of_rV v)) *
-    (sumR (map (fun a => expR (nu * min_devR a ( MatrixFormula.seq_of_rV v))) ( MatrixFormula.seq_of_rV v)))^-1.
+    (sumR (map (fun a => expR (-nu * min_devR a ( MatrixFormula.seq_of_rV v))) ( MatrixFormula.seq_of_rV v)))^-1.
 
 Lemma shadowlifting_stl_and_gt0 (p : R) : p > 0 ->
   forall i, ('d (@stl_and_gt0 M.+1) '/d i) (const_mx p) = (M%:R) ^ -1.
 Proof.
 move=> p0 i.
 rewrite /partial.
-(* have /cvg_lim : h^-1 * (stl_and_gt0 (const_mx p + h *: err_vec i) -
-                        stl_and_gt0 (n:=M.+1) (const_mx p))
-       @[h --> (0:R)^'] --> ((M%:R)^ -1):R. *)
+have /cvg_lim : h^-1 * (stl_and_gt0 (const_mx p + h *: err_vec i) -
+                        @stl_and_gt0 M.+1 (const_mx p))
+       @[h --> (0:R)^'] --> (M%:R^-1:R). 
+  rewrite /stl_and_gt0 /sumR.
+
+About big_map.
 
 
 Admitted.
