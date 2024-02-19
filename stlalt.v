@@ -19,10 +19,13 @@ Context {R : realType}.
 Variables (nu : R).
 Hypothesis nu0 : 0 < nu.
 
+
 Lemma andI_stl (e : expr Bool_N) :
   nu.-[[e `/\ e]]_stl' = nu.-[[e]]_stl'.
 Proof.
-rewrite /=/sumR !big_cons !big_nil/=.
+rewrite /= /stl_and_gt0 /stl_and_lt0 /a'_min /sumR.
+  rewrite !big_cons !big_nil/=.
+rewrite !minrxxx.
 set a_min := minr (nu.-[[e]]_stl') (nu.-[[e]]_stl').
 set a := ((nu.-[[e]]_stl' - a_min) * a_min^-1).
 have a_min_e : a_min = nu.-[[e]]_stl'.
@@ -35,29 +38,35 @@ have -> : ((nu.-[[e]]_stl' + nu.-[[e]]_stl') * (1 + 1)^-1) = nu.-[[e]]_stl'.
   by rewrite mulrDl -splitr.
 case: ifPn => //h1.
 case: ifPn => //h2.
-by apply le_anti; rewrite !leNgt h1 h2.
+by apply le_anti; rewrite !leNgt; rewrite h1 h2.
 Qed.
 
 Lemma andC_stl (e1 e2 : expr Bool_N) :
   nu.-[[e1 `/\ e2]]_stl' = nu.-[[e2 `/\ e1]]_stl'.
 Proof.
-rewrite /=/sumR !big_cons !big_nil/= !addr0.
+rewrite /= /stl_and_gt0/stl_and_lt0 /a'_min
+/sumR !big_cons !big_nil/= !addr0/=.
+rewrite !minrxyx !minrxx. 
 set a_min := minr (nu.-[[e1]]_stl') (nu.-[[e2]]_stl').
 have -> : (minr (nu.-[[e2]]_stl') (nu.-[[e1]]_stl')) = a_min.
   by rewrite /a_min/minr; case: ifPn => h1; case: ifPn => h2//; lra.
+rewrite /stl_and_gt0.
 set a1 := ((nu.-[[e1]]_stl' - a_min) * a_min^-1).
 set a2 := ((nu.-[[e2]]_stl' - a_min) * a_min^-1).
 set d1 := (expR (nu * a1) + expR (nu * a2))%R.
 have -> : (expR (nu * a2) + expR (nu * a1))%R = d1.
   by rewrite addrC.
-case: ifPn; first by rewrite addrC.
-by case: ifPn; first by rewrite addrC.
+case: ifPn; first by rewrite addrC .
+by case: ifPn; first by rewrite addrC. 
 Qed.
+
 
 Lemma orI_stl (e : expr Bool_N) :
   nu.-[[e `\/ e]]_stl' = nu.-[[e]]_stl'.
 Proof.
-rewrite /=/sumR !big_cons !big_nil/= !addr0.
+rewrite /= /stl_or_gt0 /stl_or_lt0 /a'_max
+/sumR !big_cons !big_nil/= !addr0.
+rewrite !maxrxxx.
 set a_max := maxr (nu.-[[e]]_stl') (nu.-[[e]]_stl').
 set a :=  ((a_max - nu.-[[e]]_stl') / a_max).
 have a_max_e : a_max = nu.-[[e]]_stl'.
@@ -76,7 +85,9 @@ Qed.
 Lemma orC_stl (e1 e2 : expr Bool_N) :
   nu.-[[e1 `\/ e2]]_stl'  = nu.-[[e2 `\/ e1]]_stl'.
 Proof.
-rewrite /=/sumR !big_cons !big_nil/= !addr0.
+rewrite /=/stl_or_gt0 /stl_or_lt0 /a'_max
+/sumR !big_cons !big_nil/= !addr0.
+rewrite !maxrxyx !maxrxx.
 set a_max := maxr (nu.-[[e2]]_stl') (nu.-[[e1]]_stl').
 have -> : maxr (nu.-[[e1]]_stl') (nu.-[[e2]]_stl') = a_max.
   by rewrite /a_max/maxr; case: ifPn => //; case: ifPn => //; lra.
@@ -248,11 +259,14 @@ Qed.
 Lemma seq_cons T1 T2 (f : T1 -> T2) a l : f a :: [seq f x | x <- l] = [seq f x | x <- a :: l].
 Proof. by []. Qed.
 
+
+
 Lemma stl_nary_inversion_andE1 (Es : seq (expr Bool_P) ) :
   is_stl true (nu.-[[ and_E Es ]]_stl') -> (forall i, (i < size Es)%N -> is_stl true (nu.-[[ nth (Bool false false) Es i ]]_stl')).
 Proof.
 case: Es => // a l.
-rewrite/is_stl/= foldrE big_map.
+rewrite/is_stl/= /stl_and_gt0/stl_and_lt0 /a'_min !foldrE !big_map.
+rewrite big_cons/=.
 set a_min := \big[minr/nu.-[[a]]_stl']_(j <- l) nu.-[[j]]_stl'.
 case: ifPn=>[hminlt0|].
   have /=[y[ymem ylt0]] := minrltx _ _ _ _ hminlt0.
@@ -430,14 +444,18 @@ Definition stl_and_gt0 (v : seq R) :=
   sumR (map (fun a => a * expR (-nu * min_devR a (v))) (v)) *
   (sumR (map (fun a => expR (-nu * min_devR a (v))) (v)))^-1.
 
+Definition stl_and_lt0 (v : seq R) :=
+  sumR (map (fun a => a * expR (-nu * min_devR a (v))) (v)) *
+    (sumR (map (fun a => expR (-nu * min_devR a (v))) (v)))^-1.
+
 (*Definition stl_and_gt0 {n} (v : 'rV[R]_n) :=
   sumR (map (fun a => a * expR (-nu * min_devR a ( MatrixFormula.seq_of_rV v))) ( MatrixFormula.seq_of_rV v)) *
   (sumR (map (fun a => expR (-nu * min_devR a ( MatrixFormula.seq_of_rV v))) ( MatrixFormula.seq_of_rV v)))^-1.*)
 
 
-Definition stl_and_lt0 {n} (v : 'rV[R]_n) :=
+(* Definition stl_and_lt0 {n} (v : 'rV[R]_n) :=
   sumR (map (fun a => a * expR (-nu * min_devR a ( MatrixFormula.seq_of_rV v))) ( MatrixFormula.seq_of_rV v)) *
-    (sumR (map (fun a => expR (-nu * min_devR a ( MatrixFormula.seq_of_rV v))) ( MatrixFormula.seq_of_rV v)))^-1.
+    (sumR (map (fun a => expR (-nu * min_devR a ( MatrixFormula.seq_of_rV v))) ( MatrixFormula.seq_of_rV v)))^-1. *)
 
 Lemma shadowlifting_stl_and_gt0 (p : R) : p > 0 ->
   forall i, ('d (stl_and_gt0 \o @MatrixFormula.seq_of_rV _ M.+1)  '/d i) (const_mx p) = M.+1%:R^-1.

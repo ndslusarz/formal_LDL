@@ -226,6 +226,54 @@ repeat case: ifPn => //; rewrite -!leNgt => a b c d; apply/eqP; rewrite eq_le.
 - by rewrite c ltW.
 Qed.
 
+Lemma minrxx {R : realType} :
+   forall (x : R), minr x x = x.
+Proof.
+move => x.
+rewrite /minr.
+case: ifPn; lra.
+Qed.
+
+
+(*Nat: need new name*)
+Lemma minrxxx {R : realType} :
+   forall (x : R), minr x (minr x x) = minr x x.
+Proof.
+move => x.
+by rewrite !minrxx.
+Qed.
+
+Lemma minrxyx {R : realType} :
+   forall (x y : R), minr x (minr y x) = minr x y.
+Proof.
+move => x y.
+rewrite /minr.
+case: ifPn; case: ifPn; case: ifPn; lra.
+Qed.
+
+Lemma maxrxx {R : realType} :
+   forall (x : R), maxr x x = x.
+Proof.
+move => x.
+rewrite /maxr.
+case: ifPn; lra.
+Qed.
+
+Lemma maxrxxx {R : realType} :
+   forall (x : R), maxr x (maxr x x) = maxr x x.
+Proof.
+move => x.
+by rewrite !maxrxx.
+Qed.
+
+Lemma maxrxyx {R : realType} :
+   forall (x y : R), maxr x (maxr y x) = maxr y x.
+Proof.
+move => x y.
+rewrite /maxr.
+case: ifPn; case: ifPn; lra.
+Qed.
+
 Notation "u '``_' i" := (u 0%R i) : ring_scope.
 
 Section partial.
