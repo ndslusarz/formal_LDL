@@ -444,14 +444,13 @@ Definition min_devR {R : realType} (x : R) (xs : seq R) : R :=
 
 (*to do: change map to big operator probably*)
 
-
 Definition stl_and_gt0 (v : seq R) :=
-  sumR (map (fun a => a * expR (-nu * min_devR a (v))) (v)) *
-  (sumR (map (fun a => expR (-nu * min_devR a (v))) (v)))^-1.
+  sumR (map (fun a => a * expR (-nu * (a'_min a v))) (v)) *
+     (sumR (map (fun a => expR (nu * a'_min a v)) (v)))^-1.
 
 Definition stl_and_lt0 (v : seq R) :=
-  sumR (map (fun a => a * expR (-nu * min_devR a (v))) (v)) *
-    (sumR (map (fun a => expR (-nu * min_devR a (v))) (v)))^-1.
+  sumR (map (fun a => (foldr minr a (v)) * expR (a'_min a (v)) * expR (nu * a'_min a (v))) (v)) *
+    (sumR (map (fun a => expR (nu * a'_min a (v))) (v)))^-1.
 
 (*Definition stl_and_gt0 {n} (v : 'rV[R]_n) :=
   sumR (map (fun a => a * expR (-nu * min_devR a ( MatrixFormula.seq_of_rV v))) ( MatrixFormula.seq_of_rV v)) *
