@@ -446,30 +446,34 @@ Variables (p : R) (nu : R).
 Hypothesis p1 : (1 <= p)%R.
 Hypothesis nu0 : (0 < nu)%R.
 
-
-Definition a'_min {R : realType} (x : R) (xs : seq R) : R :=
-  (x - foldr minr x xs) * (foldr minr x xs)^-1.
+Definition min_dev {R : realType} (x : R) (s : seq R) : R :=
+  let r := \big[minr/x]_(i <- s) i in (x - r) * r^-1.
+(*  (x - foldr minr x s) * (foldr minr x s)^-1.*)
 (*  (x - \big[minr/(nth 0 xs 0)]_(i <- xs) i) * (\big[minr/(nth 0 xs 0)]_(i <- xs) i)^-1.  *)
 
-Definition a'_max {R : realType} (x : R) (xs : seq R) : R :=
-  (foldr maxr x xs - x ) * (foldr maxr x xs)^-1.
+Definition max_dev {R : realType} (x : R) (s : seq R) : R :=
+  let r := \big[maxr/x]_(i <- s) i in (r - x) * r^-1.
+  
+  (*(foldr maxr x xs - x) * (foldr maxr x xs)^-1.*)
 (*  (\big[maxr/(nth 0 xs 0)]_(i <- xs) i - x) * (\big[maxr/(nth 0 xs 0)]_(i <- xs) i)^-1.  *)
 
 Definition stl_and_gt0 (v : seq R) :=
-  sumR (map (fun a => a * expR (-nu * (a'_min a v))) (v)) *
-     (sumR (map (fun a => expR (nu * a'_min a v)) (v)))^-1.
+  sumR (map (fun a => a * expR (-nu * min_dev a v)) v) *
+     (sumR (map (fun a => expR (nu * min_dev a v)) v))^-1.
 
 Definition stl_and_lt0 (v : seq R) :=
-  sumR (map (fun a => (foldr minr a (v)) * expR (a'_min a (v)) * expR (nu * a'_min a (v))) (v)) *
-    (sumR (map (fun a => expR (nu * a'_min a (v))) (v)))^-1.
+  sumR (map (fun a => (\big[minr/a]_(i <- v) i) * expR (min_dev a v) * expR (nu * min_dev a v))
+            v) *
+    (sumR (map (fun a => expR (nu * min_dev a v)) v))^-1.
 
-Definition stl_or_gt0 (v : seq R) := 
-  sumR (map (fun a => (foldr maxr a (v)) * expR (a'_max a (v)) * expR (nu * a'_max a (v))) (v)) *
-    (sumR (map (fun a => expR (nu * a'_max a (v))) (v)))^-1.
+Definition stl_or_gt0 (v : seq R) :=
+  sumR (map (fun a => (\big[maxr/a]_(i <- v) i) * expR (max_dev a v) * expR (nu * max_dev a v))
+            v) *
+    (sumR (map (fun a => expR (nu * max_dev a v)) v))^-1.
 
-Definition stl_or_lt0 (v : seq R) := 
-  sumR (map (fun a => a * expR (-nu * (a'_max a v))) (v)) *
-     (sumR (map (fun a => expR (nu * a'_max a (v))) (v)))^-1 .
+Definition stl_or_lt0 (v : seq R) :=
+  sumR (map (fun a => a * expR (-nu * (max_dev a v))) v) *
+    (sumR (map (fun a => expR (nu * max_dev a (v))) v))^-1 .
 
 Fixpoint stl_translation_alt t (e: expr t) : type_translation t :=
     match e in expr t return type_translation t with
@@ -483,22 +487,22 @@ Fixpoint stl_translation_alt t (e: expr t) : type_translation t :=
     | and_E _ (e0::Es) =>
         let A := map (@stl_translation_alt _) Es in
         let a0 := @stl_translation_alt _ e0 in
-        let a_min: R := foldr minr a0 A in
+        let a_min: R := \big[minr/a0]_(i <- A) i in
         (* let a'_i (a_i: R) :=  (a_i - a_min) * a_min^-1  in  *)
         if a_min < 0 then
-            stl_and_lt0 (a0::A)  
+            stl_and_lt0 (a0::A)
           (* sumR (map (fun a => a_min * expR (a'_i a) * expR (nu * a'_i a)) (a0::A)) *
           (sumR (map (fun a => expR (nu * a'_i a)) (a0::A)))^-1 *)
         else if a_min > 0 then
-            stl_and_gt0 (a0::A)  
+            stl_and_gt0 (a0::A)
           (* sumR (map (fun a => a * expR (-nu * a'_i a)) (a0::A)) *
-          (sumR (map (fun a => expR (nu * (a'_i a))) (a0::A)))^-1  *)  
+          (sumR (map (fun a => expR (nu * (a'_i a))) (a0::A)))^-1  *)
              else 0
     | or_E _ [::] => -1
     | or_E _ (e0::Es) => (* TODO: double check *)
         let A := map (@stl_translation_alt _) Es in
         let a0 := @stl_translation_alt _ e0 in
-        let a_max: R := foldr maxr a0 A in
+        let a_max: R := \big[maxr/a0]_(i <- A) i in
         (* let a'_i (a_i: R) := (a_max - a_i) * a_max^-1 in *)
         if a_max > 0 then
           stl_or_gt0 (a0::A)

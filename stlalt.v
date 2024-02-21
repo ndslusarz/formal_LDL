@@ -19,12 +19,11 @@ Context {R : realType}.
 Variables (nu : R).
 Hypothesis nu0 : 0 < nu.
 
-
 Lemma andI_stl (e : expr Bool_N) :
   nu.-[[e `/\ e]]_stl' = nu.-[[e]]_stl'.
 Proof.
-rewrite /= /stl_and_gt0 /stl_and_lt0 /a'_min /sumR.
-  rewrite !big_cons !big_nil/=.
+rewrite /= /stl_and_gt0 /stl_and_lt0 /min_dev /sumR.
+rewrite !big_cons !big_nil/=.
 rewrite !minrxxx.
 set a_min := minr (nu.-[[e]]_stl') (nu.-[[e]]_stl').
 set a := ((nu.-[[e]]_stl' - a_min) * a_min^-1).
@@ -44,7 +43,7 @@ Qed.
 Lemma andC_stl (e1 e2 : expr Bool_N) :
   nu.-[[e1 `/\ e2]]_stl' = nu.-[[e2 `/\ e1]]_stl'.
 Proof.
-rewrite /= /stl_and_gt0/stl_and_lt0 /a'_min
+rewrite /= /stl_and_gt0/stl_and_lt0 /min_dev
 /sumR !big_cons !big_nil/= !addr0/=.
 rewrite !minrxyx !minrxx. 
 set a_min := minr (nu.-[[e1]]_stl') (nu.-[[e2]]_stl').
@@ -64,7 +63,7 @@ Qed.
 Lemma orI_stl (e : expr Bool_N) :
   nu.-[[e `\/ e]]_stl' = nu.-[[e]]_stl'.
 Proof.
-rewrite /= /stl_or_gt0 /stl_or_lt0 /a'_max
+rewrite /= /stl_or_gt0 /stl_or_lt0 /max_dev
 /sumR !big_cons !big_nil/= !addr0.
 rewrite !maxrxxx.
 set a_max := maxr (nu.-[[e]]_stl') (nu.-[[e]]_stl').
@@ -85,7 +84,7 @@ Qed.
 Lemma orC_stl (e1 e2 : expr Bool_N) :
   nu.-[[e1 `\/ e2]]_stl'  = nu.-[[e2 `\/ e1]]_stl'.
 Proof.
-rewrite /=/stl_or_gt0 /stl_or_lt0 /a'_max
+rewrite /=/stl_or_gt0 /stl_or_lt0 /max_dev
 /sumR !big_cons !big_nil/= !addr0.
 rewrite !maxrxyx !maxrxx.
 set a_max := maxr (nu.-[[e2]]_stl') (nu.-[[e1]]_stl').
@@ -259,17 +258,18 @@ Qed.
 Lemma seq_cons T1 T2 (f : T1 -> T2) a l : f a :: [seq f x | x <- l] = [seq f x | x <- a :: l].
 Proof. by []. Qed.
 
-Lemma big_min_cons (f : R -> R) a a0 l:
-   foldr minr (f a) [seq f i | i <- l] = 
-    foldr minr a0 (f a :: [seq f i | i <- l]).
+Lemma big_min_cons (f : R -> R) a a0 l :
+  foldr minr (f a) [seq f i | i <- l] =
+  foldr minr a0 (f a :: [seq f i | i <- l]).
 Proof.
-Admitted.
+elim: l f a a0 => //=.
+Abort.
 
 Lemma stl_nary_inversion_andE1 (Es : seq (expr Bool_P) ) :
   is_stl true (nu.-[[ and_E Es ]]_stl') -> (forall i, (i < size Es)%N -> is_stl true (nu.-[[ nth (Bool false false) Es i ]]_stl')).
 Proof.
 case: Es => // a l.
-rewrite/is_stl/= /stl_and_gt0/stl_and_lt0 /a'_min (* !foldrE *) (* !big_map *).
+rewrite/is_stl/= /stl_and_gt0/stl_and_lt0 /min_dev (* !foldrE *) (* !big_map *).
 (* rewrite -big_min_cons. *)
 (* set a_min := \big[minr/nu.-[[a]]_stl']_(j <- l) nu.-[[j]]_stl'.
 case: ifPn=>[hminlt0|].
@@ -303,7 +303,7 @@ Lemma stl_nary_inversion_andE0 (Es : seq (expr Bool_P) ) :
   is_stl false (nu.-[[ and_E Es ]]_stl') -> (exists (i : nat), is_stl false (nu.-[[ nth (Bool false false) Es i ]]_stl') && (i < size Es)%nat).
 Proof.
 case: Es => [|a l]; first by rewrite /= ltr10.
-rewrite/is_stl/= foldrE big_map.
+rewrite/is_stl/= big_map.
 set a_min := \big[minr/nu.-[[a]]_stl']_(j <- l) nu.-[[j]]_stl'.
 (* case: ifPn=>[hminlt0 _|].
   have [x [xmem hlt0]] := minrltx _ _ _ _ hminlt0.
@@ -322,7 +322,7 @@ Lemma stl_nary_inversion_orE1 (Es : seq (expr Bool_P) ) :
   is_stl true (nu.-[[ or_E Es ]]_stl') -> (exists i, is_stl true (nu.-[[ nth (Bool _ false) Es i ]]_stl') && (i < size Es)%nat).
 Proof.
 case: Es => [|a l]; first by rewrite /= ler0N1.
-rewrite/is_stl/= foldrE big_map.
+rewrite/is_stl/= big_map.
 set a_max := \big[maxr/nu.-[[a]]_stl']_(j <- l) nu.-[[j]]_stl'.
 case: ifPn=>[hmaxgt0 _|].
   have [x [xmem hgt0]] := maxrgtx _ _ _ _ hmaxgt0.
@@ -359,7 +359,7 @@ Lemma stl_nary_inversion_orE0 (Es : seq (expr Bool_P) ) :
     is_stl false (nu.-[[ or_E Es ]]_stl') -> (forall i, (i < size Es)%nat -> is_stl false (nu.-[[ nth (Bool false false) Es i ]]_stl')).
 Proof.
 case: Es => // a l.
-rewrite/is_stl/= foldrE big_map.
+rewrite/is_stl/= big_map.
 set a_max := \big[maxr/nu.-[[a]]_stl']_(j <- l) nu.-[[j]]_stl'.
 (* case: ifPn=>[hmingt0|].
   by rewrite ltNge mulr_ge0// /sumR ?invr_ge0 -!map_comp big_cons big_map addr_ge0// ?sumr_ge0// => [|i _/=||i _/=]; rewrite ?mulr_ge0// ?expR_ge0// ltW.
@@ -423,11 +423,16 @@ Hypothesis M0 : M != 0%N.
 
 (* The ones below do not type check yet, need to check if we can extend to ereal *)
 
+(* NB: not used since we moved to an STL version that does not use infinities
 Definition min_dev {R : numDomainType} (x : \bar R) (xs : seq \bar R) : \bar R :=
   (x - minE xs) * (fine (minE xs))^-1%:E.
+*)
 
+(* NB: use a'_min instead
 Definition min_devR {R : realType} (x : R) (xs : seq R) : R :=
-  (x - \big[minr/(nth 0 xs 0)]_(i <- xs) i) * (\big[minr/(nth 0 xs 0)]_(i <- xs) i)^-1.
+  (x - \big[minr/(nth 0 xs 0)]_(i <- xs) i) *
+    (\big[minr/(nth 0 xs 0)]_(i <- xs) i)^-1.
+*)
 
 
 (*Natalia: will only consider >0 and <0 without edge cases, as to separate cases*)
@@ -444,42 +449,32 @@ Definition min_devR {R : realType} (x : R) (xs : seq R) : R :=
 
 (*to do: change map to big operator probably*)
 
-Definition stl_and_gt0 (v : seq R) :=
-  sumR (map (fun a => a * expR (-nu * (a'_min a v))) (v)) *
-     (sumR (map (fun a => expR (nu * a'_min a v)) (v)))^-1.
+Local Notation seq_of_rV := (@MatrixFormula.seq_of_rV _ M.+1).
+Local Notation stl_and_gt0 := (stl_and_gt0 nu).
 
-Definition stl_and_lt0 (v : seq R) :=
-  sumR (map (fun a => (foldr minr a (v)) * expR (a'_min a (v)) * expR (nu * a'_min a (v))) (v)) *
-    (sumR (map (fun a => expR (nu * a'_min a (v))) (v)))^-1.
+Lemma iter_minr k p p' : k != 0%N -> p' >= p -> iter k (minr p) p' = p :> R.
+Proof.
+elim: k p p' => //= -[_ /= p' p _ p'p|k ih p p' _ pp'].
+  rewrite /minr; case: ifPn => //.
+  by rewrite -leNgt => pp'; apply/eqP; rewrite eq_le p'p pp'.
+by rewrite ih// minrxx.
+Qed.
 
-(*Definition stl_and_gt0 {n} (v : 'rV[R]_n) :=
-  sumR (map (fun a => a * expR (-nu * min_devR a ( MatrixFormula.seq_of_rV v))) ( MatrixFormula.seq_of_rV v)) *
-  (sumR (map (fun a => expR (-nu * min_devR a ( MatrixFormula.seq_of_rV v))) ( MatrixFormula.seq_of_rV v)))^-1.*)
-
-
-(* Definition stl_and_lt0 {n} (v : 'rV[R]_n) :=
-  sumR (map (fun a => a * expR (-nu * min_devR a ( MatrixFormula.seq_of_rV v))) ( MatrixFormula.seq_of_rV v)) *
-    (sumR (map (fun a => expR (-nu * min_devR a ( MatrixFormula.seq_of_rV v))) ( MatrixFormula.seq_of_rV v)))^-1. *)
-
-Lemma shadowlifting_stl_and_gt0 (p : R) : p > 0 ->
-  forall i, ('d (stl_and_gt0 \o @MatrixFormula.seq_of_rV _ M.+1)  '/d i) (const_mx p) = M.+1%:R^-1.
+Lemma shadowlifting_stl_and_gt0 (p : R) : p > 0 -> forall i,
+  ('d (stl_and_gt0 \o seq_of_rV) '/d i) (const_mx p) = M.+1%:R^-1.
 Proof.
 move=> p0 i.
 rewrite /partial.
-have cpE : MatrixFormula.seq_of_rV (@const_mx _ _ M.+1 p) = nseq M.+1 p.
-  apply: (@eq_from_nth _ 0); first by rewrite MatrixFormula.size_seq_of_rV size_nseq.
+have cpE : seq_of_rV (@const_mx _ _ M.+1 p) = nseq M.+1 p.
+  apply: (@eq_from_nth _ 0).
+    by rewrite MatrixFormula.size_seq_of_rV size_nseq.
   move=> k; rewrite MatrixFormula.size_seq_of_rV => kM.
   have -> := @MatrixFormula.nth_seq_of_rV R M.+1 0 (const_mx p) (Ordinal kM).
   by rewrite mxE nth_nseq kM.
-have iter_minr k : iter k (minr p) p = p.
-  by elim: k => // k /= ->; rewrite /minr ltxx.
-have H1 : stl_and_gt0 (@MatrixFormula.seq_of_rV _ M.+1 (const_mx p)) = p.
+have H1 : stl_and_gt0 (seq_of_rV (const_mx p)) = p.
   rewrite /stl_and_gt0/= {1}/sumR big_map cpE big_nseq.
-  have K1 : min_devR p (nseq M.+1 p) = 0.
-    rewrite /min_devR.
-    rewrite big_nseq.
-    rewrite nth_nseq// ltnS leq0n.
-    by rewrite iter_minr subrr mul0r.
+  have K1 : min_dev p (nseq M.+1 p) = 0.
+    by rewrite /min_dev big_nseq iter_minr// subrr mul0r.
   rewrite K1.
   rewrite mulr0 expR0 mulr1.
   rewrite iter_addr addr0.
@@ -487,39 +482,46 @@ have H1 : stl_and_gt0 (@MatrixFormula.seq_of_rV _ M.+1 (const_mx p)) = p.
   rewrite K1 mulr0 expR0 iter_addr addr0.
   by rewrite -(mulr_natr p) -mulrA divff ?mulr1.
 rewrite /= H1.
-have H2 h : h > 0 -> (stl_and_gt0 (@MatrixFormula.seq_of_rV _ M.+1 (const_mx p + h *: err_vec i))) =
-                     (p * M%:R + (p + h) * expR (- nu * (h / p))) / (M%:R + expR (- nu * (h / p))).
+have H2 h : h > 0 ->
+  stl_and_gt0 (seq_of_rV (const_mx p + h *: err_vec i)) =
+  (p * M%:R + (p + h) * expR (- nu * (h / p))) / (M%:R + expR (- nu * (h / p))).
   move=> h0.
   rewrite /stl_and_gt0/= {1}/sumR big_map.
   congr (_ / _).
     rewrite big_map/= big_enum/= (bigD1 i)//=.
     rewrite ffunE !mxE eqxx mulr1.
-    rewrite (_ : min_devR _ _ = h / p); last first.
-      rewrite /min_devR.
+    rewrite (_ : min_dev _ _ = h / p); last first.
+      rewrite /min_dev.
       set mi := \big[_/_]_(_ <- _) _.
       have -> : mi = p.
-        rewrite /mi.
-        admit.
+        rewrite /mi big_map/= big_enum/= (bigminD1 i)//.
+        rewrite ffunE !mxE eqxx mulr1.
+        rewrite (eq_bigr (fun=> p)); last first.
+          by move=> /= j ji; rewrite ffunE !mxE eq_sym (negbTE ji) mulr0 addr0.
+        rewrite big_const/= iter_minr//; last 2 first.
+          admit.
+          by rewrite lerDl// ltW.
+        by rewrite /minr ltNge lerDl (ltW h0)/=.
       by rewrite -addrA addrCA subrr addr0.
     rewrite (eq_bigr (fun=> p)); last first.
       move=> j ji.
       rewrite ffunE !mxE eq_sym (negbTE ji) mulr0 addr0.
-      rewrite (_ : min_devR _ _ = 0); last admit.
+      rewrite (_ : min_dev _ _ = 0); last admit.
       by rewrite mulr0 expR0 mulr1.
     rewrite big_const/= iter_addr addr0.
     rewrite (_ : #|_| = M); last admit.
     admit.
   rewrite /sumR big_map.
   admit.
-have H3 h : h < 0 -> (stl_and_gt0 (@MatrixFormula.seq_of_rV _ M.+1 (const_mx p + h *: err_vec i))) =
+have H3 h : h < 0 -> (stl_and_gt0 (seq_of_rV  (const_mx p + h *: err_vec i))) =
                      (p * M%:R * expR (- nu * (- h / (p + h))) + (p + h))
                      /
                      (M%:R * expR (- nu * (- h / (p + h))) + 1).
   move=> h0.
   (* not sure *)
   admit.
-have /cvg_lim : h^-1 * ((stl_and_gt0 (@MatrixFormula.seq_of_rV _ M.+1 (const_mx p + h *: err_vec i))) -
-                        (stl_and_gt0 (@MatrixFormula.seq_of_rV _ M.+1 (const_mx p))))
+have /cvg_lim : h^-1 * ((stl_and_gt0 (seq_of_rV (const_mx p + h *: err_vec i))) -
+                        (stl_and_gt0 (seq_of_rV (const_mx p))))
        @[h --> (0:R)^'] --> (M%:R^-1:R).
   apply/cvgrPdist_lt => /= e e0.
   near=> h.

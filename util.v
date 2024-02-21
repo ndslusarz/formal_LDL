@@ -55,7 +55,9 @@ Definition minR (Es : seq R) : R := \big[minr/1]_(i <- Es) i.
 Definition maxR (Es : seq R) : R := \big[maxr/0]_(i <- Es) i.
 
 Definition sumE (Es : seq \bar R) : \bar R := \sum_(i <- Es) i.
+(* NB: this was used in the previous version of STL
 Definition minE (Es : seq \bar R) : \bar R := \big[mine/+oo%E]_(i <- Es) i.
+*)
 
 End nameme.
 
