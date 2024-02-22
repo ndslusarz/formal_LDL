@@ -110,16 +110,16 @@ dependent induction e using expr_ind'.
 Qed.
 
 Lemma nary_inversion_andE1 (Es : seq (expr (Bool_N)) ) :
-  [[ and_E  Es ]]_ l = 1 -> (forall i, (i < size Es)%N -> [[ nth (Bool _ false) Es i ]]_ l = 1).
+  [[ ldl_and Es ]]_ l = 1 -> (forall i, (i < size Es)%N -> [[ nth (ldl_bool _ false) Es i ]]_ l = 1).
 Proof.
 have H := translate_Bool_T_01 l. move: H.
 case: l => /=; move => H.
 - move/eqP. rewrite maxr01 /sumR eq_sym -subr_eq subrr eq_sym subr_eq0.
   move/eqP; rewrite big_map psumr_eqsize.
   + move => h i iEs.
-    move: h => /(_ (nth (Bool _ false) Es i)).
+    move: h => /(_ (nth (ldl_bool _ false) Es i)).
     apply.
-    apply/(nthP (Bool _ false)).
+    apply/(nthP (ldl_bool _ false)).
     by exists i.
   + move => i //=.
     move: (H i); set a := [[i]]_ _; lra.
@@ -128,10 +128,10 @@ case: l => /=; move => H.
   + rewrite /sumR big_map psumr_eq0.
     move => /allP h i iEs.
     apply/eqP.
-    move: h => /(_ (nth (Bool _ false) Es i)).
+    move: h => /(_ (nth (ldl_bool _ false) Es i)).
     rewrite implyTb powR_eq0 subr_eq0 eq_sym (gt_eqF (lt_le_trans _ p1))// ?andbT.
     apply.
-    apply/(nthP (Bool _ false)).
+    apply/(nthP (ldl_bool _ false)).
     by exists i.
   + move => i //=.
     move: (H i). rewrite le_pow_01.
@@ -153,7 +153,7 @@ Qed.
 
 Lemma nary_inversion_andE0 (Es : seq (expr (Bool_N)) ) :
   l <> Lukasiewicz -> l <> Yager ->
-    [[ and_E Es ]]_ l = 0 -> (exists (i : nat), ([[ nth (Bool _ false) Es i ]]_ l == 0) && (i < size Es)%nat).
+    [[ ldl_and Es ]]_ l = 0 -> (exists (i : nat), ([[ nth (ldl_bool _ false) Es i ]]_ l == 0) && (i < size Es)%nat).
 Proof.
 have H := translate_Bool_T_01. move: H.
 have p0 := lt_le_trans ltr01 p1.
@@ -169,13 +169,13 @@ case: l => //=; move => H.
     by exists i.+1.
 - move=> l1 l2 /eqP.
   rewrite /prodR big_map prodf_seq_eq0 => /hasP[e eEs/= /eqP e0].
-  move/(nthP (Bool _ false)) : eEs => [i iEs ie].
+  move/(nthP (ldl_bool _ false)) : eEs => [i iEs ie].
   by exists i; rewrite ie e0 eqxx.
 Qed.
 
 Lemma nary_inversion_orE1 (Es : seq (expr (Bool_N)) ) :
   l <> Lukasiewicz -> l <> Yager ->
-    [[ or_E Es ]]_ l = 1 -> (exists i, ([[ nth (Bool _ false) Es i ]]_ l == 1) && (i < size Es)%nat).
+    [[ ldl_or Es ]]_ l = 1 -> (exists i, ([[ nth (ldl_bool _ false) Es i ]]_ l == 1) && (i < size Es)%nat).
 Proof.
 have H := translate_Bool_T_01 l. move: H.
 have p0 := lt_le_trans ltr01 p1.
@@ -203,7 +203,7 @@ case: l => //=; move => H.
 Qed.
 
 Lemma nary_inversion_orE0 (Es : seq (expr (Bool_N)) ) :
-    [[ or_E Es ]]_ l  = 0 -> (forall i, (i < size Es)%nat -> [[ nth (Bool _ false) Es i ]]_ l = 0).
+    [[ ldl_or Es ]]_ l  = 0 -> (forall i, (i < size Es)%nat -> [[ nth (ldl_bool _ false) Es i ]]_ l = 0).
 Proof.
 have H := translate_Bool_T_01 l. move: H.
 have p0 := lt_le_trans ltr01 p1.
@@ -219,12 +219,12 @@ case: l => //=; move => H.
   rewrite big_seq big_map psumr_eq0=>[|i]; last by rewrite powR_ge0.
   move/allP => h _ i iEs.
   apply/eqP.
-  suff: ([[nth (Bool _ false) Es i]]_Yager == 0) && (p != 0).
+  suff: ([[nth (ldl_bool _ false) Es i]]_Yager == 0) && (p != 0).
     by move/andP=>[].
   rewrite -powR_eq0.
-  apply: (implyP (h (nth (Bool _ false) Es i) _)).
+  apply: (implyP (h (nth (ldl_bool _ false) Es i) _)).
     by rewrite mem_nth.
-  apply/mapP; exists (nth (Bool _ false) Es i) => //.
+  apply/mapP; exists (nth (ldl_bool _ false) Es i) => //.
     by rewrite mem_nth.
 - rewrite /maxR/product_dl_prodR.
   elim: Es => [h i|a l0 IH h]; first by rewrite nth_nil.
@@ -253,39 +253,39 @@ Qed.
 
 Lemma soundness (e : expr (Bool_N)) b :
   l <> Lukasiewicz -> l <> Yager ->
-    [[ e ]]_ l = [[ Bool _ b ]]_ l -> [[ e ]]b = b.
+    [[ e ]]_ l = [[ ldl_bool _ b ]]_ l -> [[ e ]]b = b.
 Proof.
 dependent induction e using expr_ind' => ll ly.
 - move: b b0 => [] [] //=; lra.
 - rewrite List.Forall_forall in H.
-  rewrite [ [[Bool _ b]]_l ]/=.
+  rewrite [ [[ldl_bool _ b]]_l ]/=.
   move: b => [].
   + move/nary_inversion_andE1.
-    rewrite [bool_translation (and_E l0)]/= foldrE big_map big_seq big_all_cond => h.
+    rewrite [bool_translation (ldl_and l0)]/= foldrE big_map big_seq big_all_cond => h.
     apply: allT => x/=.
     apply/implyP => /nthP xnth.
-    have [i il0 <-] := xnth (Bool _ false).
+    have [i il0 <-] := xnth (ldl_bool _ false).
     by apply: H  => //; rewrite ?h// -In_in mem_nth.
   + move/nary_inversion_andE0.
-    rewrite [bool_translation (and_E l0)]/= foldrE big_map big_all.
+    rewrite [bool_translation (ldl_and l0)]/= foldrE big_map big_all.
     elim=>// i /andP[/eqP i0 isize].
-    apply/allPn; exists (nth (Bool _ false) l0 i); first by rewrite mem_nth.
+    apply/allPn; exists (nth (ldl_bool _ false) l0 i); first by rewrite mem_nth.
     apply/negPf; apply: H => //.
     by rewrite -In_in mem_nth.
 - rewrite List.Forall_forall in H.
-  rewrite [ [[Bool _ b]]_l]/=.
+  rewrite [ [[ldl_bool _ b]]_l]/=.
   move: b => [].
   + move/nary_inversion_orE1.
-    rewrite [bool_translation (or_E l0)]/= foldrE big_map big_has.
+    rewrite [bool_translation (ldl_or l0)]/= foldrE big_map big_has.
     elim=>// i /andP[/eqP i0 isize].
-    apply/hasP; exists (nth (Bool _ false) l0 i); first by rewrite mem_nth.
+    apply/hasP; exists (nth (ldl_bool _ false) l0 i); first by rewrite mem_nth.
     apply: H => //.
     by rewrite -In_in mem_nth.
   + move/nary_inversion_orE0.
-    rewrite [bool_translation (or_E l0)]/= foldrE big_map big_has => h.
+    rewrite [bool_translation (ldl_or l0)]/= foldrE big_map big_has => h.
     apply/hasPn => x.
     move/nthP => xnth.
-    have [i il0 <-] := xnth (Bool _ false).
+    have [i il0 <-] := xnth (ldl_bool _ false).
     by apply/negPf; apply: H => //; rewrite ?h// -In_in mem_nth.
 - move=>/=h; rewrite (IHe e erefl JMeq_refl (~~ b) ll ly) ?negbK//.
   move: h; case: b => /=; lra.

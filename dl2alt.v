@@ -133,8 +133,8 @@ Qed.
 Definition is_dl2 b (x : R) := (if b then x == 0 else x < 0).
 
 Lemma dl2_nary_inversion_andE1 (s : seq (expr (Bool_P))) :
-  is_dl2 true ([[ and_E s ]]_dl2') ->
-  (forall i, (i < size s)%N -> is_dl2 true ([[ nth (Bool _ false) s i ]]_dl2')).
+  is_dl2 true ([[ ldl_and s ]]_dl2') ->
+  (forall i, (i < size s)%N -> is_dl2 true ([[ nth (ldl_bool _ false) s i ]]_dl2')).
 Proof.
 rewrite/is_dl2.
 elim: s => //= h t ih H [_|]/=.
@@ -172,8 +172,8 @@ by rewrite -!mulrN mulrA mulr_le0_ge0// oppr_ge0.
 Qed.
 
 Lemma dl2_nary_inversion_andE0 (s : seq (expr (Bool_P))) :
-  is_dl2 false ([[ and_E s ]]_dl2') ->
-  (exists i, (is_dl2 false ([[ nth (Bool _ false) s i ]]_dl2')) && (i < size s)%nat).
+  is_dl2 false ([[ ldl_and s ]]_dl2') ->
+  (exists i, (is_dl2 false ([[ nth (ldl_bool _ false) s i ]]_dl2')) && (i < size s)%nat).
 Proof.
 rewrite/is_dl2.
 elim: s => [|h t ih] //=; first by rewrite /sumR big_nil ltxx.
@@ -187,8 +187,8 @@ by exists j.+1; rewrite /= j0.
 Qed.
 
 Lemma dl2_nary_inversion_orE1 (s : seq (expr (Bool_P))) :
-  is_dl2 true ([[ or_E s ]]_dl2') ->
-  exists i, ([[ nth (Bool _ false) s i ]]_dl2' == 0) && (i < size s)%nat.
+  is_dl2 true ([[ ldl_or s ]]_dl2') ->
+  exists i, ([[ nth (ldl_bool _ false) s i ]]_dl2' == 0) && (i < size s)%nat.
 Proof.
 elim: s => [|h t ih] /=.
   rewrite /prodR big_nil mulr1 expr1.
@@ -196,12 +196,12 @@ elim: s => [|h t ih] /=.
 rewrite mulf_eq0 signr_eq0/=.
 rewrite /prodR big_cons mulf_eq0 => /orP[H|/eqP H].
   by exists 0%N; rewrite /= H.
-have /ih[j /andP[Hj jt]] : [[or_E t]]_dl2' == 0 by rewrite /= /prodR H mulr0.
+have /ih[j /andP[Hj jt]] : [[ldl_or t]]_dl2' == 0 by rewrite /= /prodR H mulr0.
 by exists j.+1; rewrite /= Hj.
 Qed.
 
 Lemma dl2_nary_inversion_orE0 (Es : seq (expr (Bool_P)) ) :
-    is_dl2 false ([[ or_E Es ]]_dl2')  -> (forall i, (i < size Es)%nat -> is_dl2 false ([[ nth (Bool _ false) Es i ]]_dl2')).
+    is_dl2 false ([[ ldl_or Es ]]_dl2')  -> (forall i, (i < size Es)%nat -> is_dl2 false ([[ nth (ldl_bool _ false) Es i ]]_dl2')).
 Proof.
 elim: Es => //= a l IH.
 rewrite /prodR big_cons mulrCA mulr_lt0 => /andP[aneq0]/andP[]/[swap] _.
@@ -255,16 +255,16 @@ dependent induction e using expr_ind'.
 - rewrite List.Forall_forall in H.
   move: b => [].
   + move/dl2_nary_inversion_andE1.
-    rewrite [bool_translation (and_E l)]/= foldrE big_map big_seq big_all_cond => h.
+    rewrite [bool_translation (ldl_and l)]/= foldrE big_map big_seq big_all_cond => h.
     apply: allT => x/=.
     apply/implyP => /nthP xnth.
-    have [i il0 <-] := xnth (Bool _ false).
+    have [i il0 <-] := xnth (ldl_bool _ false).
     apply: H => //. rewrite ?h// -In_in mem_nth//.
     by rewrite h.
   + move/dl2_nary_inversion_andE0.
-    rewrite [bool_translation (and_E l)]/= foldrE big_map big_all.
+    rewrite [bool_translation (ldl_and l)]/= foldrE big_map big_all.
     elim=>// i /andP[/eqP i0 isize].
-    apply/allPn; exists (nth (Bool _ false) l i); first by rewrite mem_nth.
+    apply/allPn; exists (nth (ldl_bool _ false) l i); first by rewrite mem_nth.
     apply/negPf; apply: H => //.
     * by rewrite -In_in mem_nth.
     * rewrite /is_dl2/=. move: i0.
@@ -272,17 +272,17 @@ dependent induction e using expr_ind'.
 - rewrite List.Forall_forall in H.
   move: b => [].
   + move/dl2_nary_inversion_orE1.
-    rewrite [bool_translation (or_E l)]/= foldrE big_map big_has.
+    rewrite [bool_translation (ldl_or l)]/= foldrE big_map big_has.
     elim=>// i /andP[/eqP i0 isize].
-    apply/hasP; exists (nth (Bool _ false) l i); first by rewrite mem_nth.
+    apply/hasP; exists (nth (ldl_bool _ false) l i); first by rewrite mem_nth.
     apply: H => //.
     by rewrite -In_in mem_nth.
     rewrite /is_dl2/=. by rewrite i0.
   + move/dl2_nary_inversion_orE0.
-    rewrite [bool_translation (or_E l)]/= foldrE big_map big_has => h.
+    rewrite [bool_translation (ldl_or l)]/= foldrE big_map big_has => h.
     apply/hasPn => x.
     move/nthP => xnth.
-    have [i il0 <-] := xnth (Bool _ false).
+    have [i il0 <-] := xnth (ldl_bool _ false).
     apply/negPf; apply: H => //.
     * by rewrite ?h// -In_in mem_nth.
     * by rewrite h.
