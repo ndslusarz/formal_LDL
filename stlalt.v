@@ -258,35 +258,45 @@ Qed.
 Lemma seq_cons T1 T2 (f : T1 -> T2) a l : f a :: [seq f x | x <- l] = [seq f x | x <- a :: l].
 Proof. by []. Qed.
 
-Lemma big_min_cons (f : R -> R) a a0 l :
-  foldr minr (f a) [seq f i | i <- l] =
-  foldr minr a0 (f a :: [seq f i | i <- l]).
+Lemma minrAC : forall (x y z : R), minr x (minr y z) = minr y (minr x z).
+Proof. move=> x y z; rewrite/minr; repeat case: ifPn; lra. Qed.
+
+Lemma big_min_cons (f : R -> R) a0 l :
+  forall a, a \in (a0 :: l) ->
+             \big[minr/f a0]_(j <- l) f j
+             = \big[minr/f a]_(j <- (a0 :: l)) f j.
 Proof.
-elim: l f a a0 => //=.
-Abort.
+elim: l.
+  by move=> a; rewrite mem_seq1 => /eqP ->; rewrite big_cons !big_nil minrxx.
+move => a l IH a1.
+have h a' : minr (f a') (\big[minr/f a']_(j <- l) f j) = \big[minr/f a']_(j <- (a'::l)) f j by rewrite big_cons.
+rewrite in_cons => /orP[/eqP ->|].
+  by rewrite !big_cons minrAC h -IH// mem_head.
+rewrite in_cons => /orP[/eqP <-|]. 
+  rewrite !big_cons.
+  rewrite h.
+Admitted.
 
 Lemma stl_nary_inversion_andE1 (Es : seq (expr Bool_P) ) :
   is_stl true (nu.-[[ ldl_and Es ]]_stl') -> (forall i, (i < size Es)%N -> is_stl true (nu.-[[ nth (ldl_bool pos false) Es i ]]_stl')).
 Proof.
 case: Es => // a l.
 rewrite/is_stl/= /stl_and_gt0/stl_and_lt0 /min_dev (* !foldrE *) (* !big_map *).
-(* rewrite -big_min_cons. *)
-(* set a_min := \big[minr/nu.-[[a]]_stl']_(j <- l) nu.-[[j]]_stl'.
+rewrite /sumR !seq_cons !big_map.
+set a_min := \big[minr/nu.-[[a]]_stl']_(j <- l) nu.-[[j]]_stl'.
 case: ifPn=>[hminlt0|].
   have /=[y[ymem ylt0]] := minrltx _ _ _ _ hminlt0.
-  rewrite/sumR leNgt -!map_comp/=.
-  have -> : (a_min * expR ((nu.-[[a]]_stl' - a_min) / a_min) *
-                expR (nu * ((nu.-[[a]]_stl' - a_min) / a_min))) =
-               ((fun a0 : R =>
-                   a_min * expR ((a0 - a_min) / a_min) *
-                     expR (nu * ((a0 - a_min) / a_min))) \o
-                  stl_translation_alt nu (t:=Bool_T false)) a by [].
-  rewrite seq_cons big_map/=.
-  have -> : (expR (nu * ((nu.-[[a]]_stl' - a_min) / a_min))) =
-            ((fun a0 : R =>
-                expR (nu * ((a0 - a_min) / a_min))) \o
-               stl_translation_alt nu (t:=Bool_T false)) a by [].
-  rewrite seq_cons big_map/=.
+  under eq_bigr => i _.
+    rewrite seq_cons big_map.
+    have -> : \big[minr/nu.-[[i]]_stl']_(j <- (a :: l)) nu.-[[j]]_stl' = a_min.
+      admit.
+    over.
+  under [X in _ / X]eq_bigr => i _.
+    rewrite seq_cons big_map.
+    have -> : \big[minr/nu.-[[i]]_stl']_(j <- (a :: l)) nu.-[[j]]_stl' = a_min.
+      admit.
+    over.
+  rewrite/= leNgt.
   rewrite pmulr_llt0 ?invr_gt0; last first.
     rewrite sumr_gt0//=.
       by move => i _ _; rewrite expR_ge0.
@@ -295,7 +305,7 @@ case: ifPn=>[hminlt0|].
     by move => i _ _; rewrite nmulr_rle0 ?expR_ge0// nmulr_rlt0// expR_gt0.
   by exists y; rewrite !nmulr_rlt0 ?expR_gt0//.
 rewrite -leNgt; move/minrgex => h.
-by case: ifPn => _ _ i isize; rewrite h// mem_nth. *)
+by case: ifPn => _ _ i isize; rewrite h// mem_nth.
 Admitted.
 
 
@@ -305,7 +315,7 @@ Proof.
 case: Es => [|a l]; first by rewrite /= ltr10.
 rewrite/is_stl/= big_map.
 set a_min := \big[minr/nu.-[[a]]_stl']_(j <- l) nu.-[[j]]_stl'.
-(* case: ifPn=>[hminlt0 _|].
+case: ifPn=>[hminlt0 _|].
   have [x [xmem hlt0]] := minrltx _ _ _ _ hminlt0.
   exists (index x (a :: l)).
   by rewrite nth_index ?xmem// hlt0 index_mem xmem.
@@ -314,15 +324,14 @@ case: ifPn => _; last by rewrite lt_irreflexive.
 rewrite ltNge mulr_ge0// ?invr_ge0 /sumR big_cons !big_map big_seq_cond addr_ge0 ?mulr_ge0 ?expR_ge0 ?sumr_ge0//=.
   by apply: (minrgex _ _ _ _ hminge0); rewrite mem_head.
 all: move=> i /andP[il _]; rewrite ?mulr_ge0 ?expR_ge0//.
-by apply: (minrgex _ _ _ _ hminge0); rewrite in_cons il orbT. *)
-Admitted.
-
+by apply: (minrgex _ _ _ _ hminge0); rewrite in_cons il orbT.
+Qed.
 
 Lemma stl_nary_inversion_orE1 (Es : seq (expr Bool_P) ) :
   is_stl true (nu.-[[ ldl_or Es ]]_stl') -> (exists i, is_stl true (nu.-[[ nth (ldl_bool _ false) Es i ]]_stl') && (i < size Es)%nat).
 Proof.
 case: Es => [|a l]; first by rewrite /= ler0N1.
-rewrite/is_stl/= big_map.
+rewrite/is_stl/= /stl_or_gt0/stl_or_lt0/max_dev /sumR !seq_cons !big_map.
 set a_max := \big[maxr/nu.-[[a]]_stl']_(j <- l) nu.-[[j]]_stl'.
 case: ifPn=>[hmaxgt0 _|].
   have [x [xmem hgt0]] := maxrgtx _ _ _ _ hmaxgt0.
@@ -331,16 +340,17 @@ case: ifPn=>[hmaxgt0 _|].
 rewrite -leNgt => hmaxle0.
 case: ifPn=>[hmaxlt0|].
 have /= := maxrltx _ _ _ _ hmaxlt0.
-(* rewrite/sumR leNgt -!map_comp/=.
-  have -> : nu.-[[a]]_stl' * expR (- nu * ((a_max - nu.-[[a]]_stl') / a_max))
-              = ((fun a0 : R => a0 * expR (- nu * ((a_max - a0) / a_max))) \o
-                         stl_translation_alt nu (t:=Bool_T false)) a by [].
-  rewrite seq_cons big_map/=.
-  have -> : expR (nu * ((a_max - nu.-[[a]]_stl') / a_max))
-              = ((fun a0 : R => expR (nu * ((a_max - a0) / a_max))) \o
-                         stl_translation_alt nu (t:=Bool_T false)) a by [].
-  rewrite seq_cons big_map/=.
-  move=> hilt0.
+  under eq_bigr => i _.
+    rewrite seq_cons big_map.
+    have -> : \big[maxr/nu.-[[i]]_stl']_(j <- (a :: l)) nu.-[[j]]_stl' = a_max.
+      admit.
+    over.
+  under [X in _ / X]eq_bigr => i _.
+    rewrite seq_cons big_map.
+    have -> : \big[maxr/nu.-[[i]]_stl']_(j <- (a :: l)) nu.-[[j]]_stl' = a_max.
+      admit.
+    over.
+  rewrite leNgt=> hilt0.
   rewrite pmulr_llt0 ?invr_gt0; last first.
     rewrite sumr_gt0//=.
       by move => i _ _; rewrite expR_ge0.
@@ -352,7 +362,7 @@ have /= := maxrltx _ _ _ _ hmaxlt0.
 rewrite -leNgt => hmaxge0 _.
 have /=[x [xmem hxge0]] := maxrgex _ _ _ _ hmaxge0.
 exists (index x (a :: l)).
-by rewrite nth_index ?xmem// hxge0 index_mem xmem. *)
+by rewrite nth_index ?xmem// hxge0 index_mem xmem.
 Admitted.
 
 Lemma stl_nary_inversion_orE0 (Es : seq (expr Bool_P) ) :
@@ -361,12 +371,13 @@ Proof.
 case: Es => // a l.
 rewrite/is_stl/= big_map.
 set a_max := \big[maxr/nu.-[[a]]_stl']_(j <- l) nu.-[[j]]_stl'.
-(* case: ifPn=>[hmingt0|].
-  by rewrite ltNge mulr_ge0// /sumR ?invr_ge0 -!map_comp big_cons big_map addr_ge0// ?sumr_ge0// => [|i _/=||i _/=]; rewrite ?mulr_ge0// ?expR_ge0// ltW.
+case: ifPn=>[hmingt0|].
+  admit.
+  (* by rewrite ltNge mulr_ge0// /sumR ?invr_ge0 -!map_comp big_cons big_map addr_ge0// ?sumr_ge0// => [|i _/=||i _/=]; rewrite ?mulr_ge0// ?expR_ge0// ltW. *)
 rewrite -leNgt => h.
 case: ifPn; last by rewrite ltxx.
 move => hmaxlt0 _ i isize.
-by apply: (maxrltx _ _ _ _ hmaxlt0); rewrite mem_nth. *)
+by apply: (maxrltx _ _ _ _ hmaxlt0); rewrite mem_nth.
 Admitted.
 
 Lemma stl_soundness (e : expr Bool_P) b :
