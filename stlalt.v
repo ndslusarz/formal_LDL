@@ -261,6 +261,24 @@ Proof. by []. Qed.
 Lemma minrAC : forall (x y z : R), minr x (minr y z) = minr y (minr x z).
 Proof. move=> x y z; rewrite/minr; repeat case: ifPn; lra. Qed.
 
+Lemma minrC : forall (x y : R), minr x y = minr y x.
+Proof. rewrite /minr=>x y. case: ifPn; case: ifPn; lra. Qed.
+
+Lemma big_min_helper (T : eqType) (f : T -> R) a l :
+  \big[minr/f a]_(j <- (a :: l)) f j =
+    \big[minr/f a]_(j <- l) f j.
+Proof.
+elim: l; first by rewrite big_cons big_nil minrxx.
+by move=> a0 l; rewrite !big_cons => IH; rewrite minrAC IH.
+Qed.
+
+Lemma big_min_helper2 (T : eqType) (f : T -> R) a a0 l :
+  minr (f a) (\big[minr/f a0]_(j <- l) f j) = minr (f a0) (\big[minr/f a]_(j <- l) f j).
+Proof.
+elim: l; first by rewrite !big_nil minrC.
+by move=> a1 l ih; rewrite !big_cons minrAC ih minrAC.
+Qed.
+
 Lemma big_min_cons (T : eqType) (f : T -> R) (a : T) l :
   forall i, i \in (a :: l) ->
         \big[minr/f i]_(j <- (a :: l)) f j =
@@ -270,17 +288,47 @@ elim: l.
   by move=> i; rewrite mem_seq1 => /eqP ->; rewrite big_cons !big_nil minrxx.
 move=> a0 l ih i.
 have h a' : minr (f a') (\big[minr/f a']_(j <- l) f j) = \big[minr/f a']_(j <- (a'::l)) f j by rewrite big_cons.
-rewrite in_cons => /orP[/eqP ->|].
-  admit. (* rewrite !big_cons minrAC h' -ih// mem_head. *)
-rewrite in_cons => /orP[/eqP <-|]. 
-  rewrite !big_cons h.
-Admitted.
+have h' : minr (f a) (\big[minr/f i]_(j <- l) f j) = (\big[minr/f i]_(j <- (a::l)) f j) by rewrite big_cons.
+rewrite in_cons => /orP[/eqP ->|]; first by rewrite big_min_helper.
+rewrite in_cons => /orP[/eqP ->|il]; first by rewrite !big_cons h big_min_helper big_min_helper2.
+by rewrite !big_cons minrAC h' ih// in_cons il orbT.
+Qed.
+
+Lemma maxrAC : forall (x y z : R), maxr x (maxr y z) = maxr y (maxr x z).
+Proof. move=> x y z; rewrite/maxr; repeat case: ifPn; lra. Qed.
+
+Lemma maxrC : forall (x y : R), maxr x y = maxr y x.
+Proof. rewrite /maxr=>x y. case: ifPn; case: ifPn; lra. Qed.
+
+Lemma big_max_helper (T : eqType) (f : T -> R) a l :
+  \big[maxr/f a]_(j <- (a :: l)) f j =
+    \big[maxr/f a]_(j <- l) f j.
+Proof.
+elim: l; first by rewrite big_cons big_nil maxrxx.
+by move=> a0 l; rewrite !big_cons => IH; rewrite maxrAC IH.
+Qed.
+
+Lemma big_max_helper2 (T : eqType) (f : T -> R) a a0 l :
+  maxr (f a) (\big[maxr/f a0]_(j <- l) f j) = maxr (f a0) (\big[maxr/f a]_(j <- l) f j).
+Proof.
+elim: l; first by rewrite !big_nil maxrC.
+by move=> a1 l ih; rewrite !big_cons maxrAC ih maxrAC.
+Qed.
 
 Lemma big_max_cons (T : eqType) (f : T -> R) (a : T) l :
   forall i, i \in (a :: l) ->
         \big[maxr/f i]_(j <- (a :: l)) f j =
           \big[maxr/f a]_(j <- l) f j.
-Proof. Admitted.
+Proof.
+elim: l.
+  by move=> i; rewrite mem_seq1 => /eqP ->; rewrite big_cons !big_nil maxrxx.
+move=> a0 l ih i.
+have h a' : maxr (f a') (\big[maxr/f a']_(j <- l) f j) = \big[maxr/f a']_(j <- (a'::l)) f j by rewrite big_cons.
+have h' : maxr (f a) (\big[maxr/f i]_(j <- l) f j) = (\big[maxr/f i]_(j <- (a::l)) f j) by rewrite big_cons.
+rewrite in_cons => /orP[/eqP ->|]; first by rewrite big_max_helper.
+rewrite in_cons => /orP[/eqP ->|il]; first by rewrite !big_cons h big_max_helper big_max_helper2.
+by rewrite !big_cons maxrAC h' ih// in_cons il orbT.
+Qed.
 
 Lemma stl_nary_inversion_andE1 (Es : seq (expr Bool_P) ) :
   is_stl true (nu.-[[ ldl_and Es ]]_stl') -> (forall i, (i < size Es)%N -> is_stl true (nu.-[[ nth (ldl_bool pos false) Es i ]]_stl')).
