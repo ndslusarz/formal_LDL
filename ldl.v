@@ -452,7 +452,7 @@ Definition max_dev {R : realType} (x : R) (s : seq R) : R :=
 
 Definition stl_and_gt0 (v : seq R) :=
   sumR (map (fun a => a * expR (-nu * min_dev a v)) v) *
-     (sumR (map (fun a => expR (nu * min_dev a v)) v))^-1.
+     (sumR (map (fun a => expR (-nu * min_dev a v)) v))^-1.
 
 Definition stl_and_lt0 (v : seq R) :=
   sumR (map (fun a => (\big[minr/a]_(i <- v) i) * expR (min_dev a v) * expR (nu * min_dev a v))

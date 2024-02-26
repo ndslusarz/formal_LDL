@@ -49,14 +49,14 @@ rewrite !minrxyx !minrxx.
 set a_min := minr (nu.-[[e1]]_stl') (nu.-[[e2]]_stl').
 have -> : (minr (nu.-[[e2]]_stl') (nu.-[[e1]]_stl')) = a_min.
   by rewrite /a_min/minr; case: ifPn => h1; case: ifPn => h2//; lra.
-rewrite /stl_and_gt0.
 set a1 := ((nu.-[[e1]]_stl' - a_min) * a_min^-1).
 set a2 := ((nu.-[[e2]]_stl' - a_min) * a_min^-1).
 set d1 := (expR (nu * a1) + expR (nu * a2))%R.
 have -> : (expR (nu * a2) + expR (nu * a1))%R = d1.
   by rewrite addrC.
 case: ifPn; first by rewrite addrC .
-by case: ifPn; first by rewrite addrC. 
+case: ifPn; first by rewrite addrC (addrC (expR (- nu * a1)) (expR (- nu * a2))) .
+lra. 
 Qed.
 
 
@@ -471,36 +471,9 @@ Variable M : nat.
 Hypothesis M0 : M != 0%N.
 (*add hypothesis nu>0 if needed*)
 
-(* The ones below do not type check yet, need to check if we can extend to ereal *)
-
-(* NB: not used since we moved to an STL version that does not use infinities
-Definition min_dev {R : numDomainType} (x : \bar R) (xs : seq \bar R) : \bar R :=
-  (x - minE xs) * (fine (minE xs))^-1%:E.
-*)
-
-(* NB: use a'_min instead
-Definition min_devR {R : realType} (x : R) (xs : seq R) : R :=
-  (x - \big[minr/(nth 0 xs 0)]_(i <- xs) i) *
-    (\big[minr/(nth 0 xs 0)]_(i <- xs) i)^-1.
-*)
-
-
-(*Natalia: will only consider >0 and <0 without edge cases, as to separate cases*)
-(* Definition stl_and (xs : seq \bar R) : \bar R :=
-  if minE xs == +oo then +oo
-  else if minE xs == -oo then -oo (*Check if needed*)
-  else if minE xs < 0 then
-    sumE (map (fun a => minE xs * expeR (min_dev a xs) * expeR (nu%:E * min_dev a xs)) xs) *
-    (fine (sumE (map (fun a => expeR (nu%:E * min_dev a xs)) xs)))^-1%:E
-  else if minE xs > 0 then
-    sumE (map (fun a => a * expeR (-nu%:E * min_dev a xs)) xs) *
-    (fine (sumE (map (fun a => expeR (nu%:E * min_dev a xs)) xs)))^-1%:E
-    else 0. *)
-
-(*to do: change map to big operator probably*)
-
 Local Notation seq_of_rV := (@MatrixFormula.seq_of_rV _ M.+1).
 Local Notation stl_and_gt0 := (stl_and_gt0 nu).
+Local Notation stl_and_lt0 := (stl_and_lt0 nu).
 
 Lemma iter_minr k p p' : k != 0%N -> p' >= p -> iter k (minr p) p' = p :> R.
 Proof.
@@ -542,7 +515,7 @@ have cardM : #|(fun j : 'I_M.+1 => j != i)| = M.
   by move=> /andP[xi _].
 have H2 h : h > 0 ->
   stl_and_gt0 (seq_of_rV (const_mx p + h *: err_vec i)) =
-  (p * M%:R + (p + h) * expR (- nu * (h / p))) / (M%:R + expR (nu * (h / p))).
+  (p * M%:R + (p + h) * expR (- nu * (h / p))) / (M%:R + expR (-nu * (h / p))).
   move=> h0.
   have mip :
       \big[minr/(p + h)%E]_(i <- seq_of_rV (const_mx p + h *: err_vec i)%R) i = p.
@@ -615,6 +588,43 @@ have /cvg_lim : h^-1 * ((stl_and_gt0 (seq_of_rV (const_mx p + h *: err_vec i))) 
     rewrite /= H3//.
     admit.
   rewrite /= H2//.
+Admitted.
+
+Lemma shadowlifting_stl_and_lt0 (p : R) : p > 0 -> forall i,
+  ('d (stl_and_lt0 \o seq_of_rV) '/d i) (const_mx p) = M.+1%:R^-1.
+Proof.
+move=> p0 i.
+rewrite /partial.
+have cpE : seq_of_rV (@const_mx _ _ M.+1 p) = nseq M.+1 p.
+  apply: (@eq_from_nth _ 0).
+    by rewrite MatrixFormula.size_seq_of_rV size_nseq.
+  move=> k; rewrite MatrixFormula.size_seq_of_rV => kM.
+  have -> := @MatrixFormula.nth_seq_of_rV R M.+1 0 (const_mx p) (Ordinal kM).
+  by rewrite mxE nth_nseq kM.
+have H1 : stl_and_lt0 (seq_of_rV (const_mx p)) = p.
+  rewrite /stl_and_lt0/= {1}/sumR big_map cpE big_nseq.
+  have K1 : min_dev p (nseq M.+1 p) = 0.
+    by rewrite /min_dev big_nseq iter_minr// subrr mul0r.
+  rewrite K1.
+  rewrite mulr0 expR0 !mulr1.
+  rewrite iter_addr addr0.
+  rewrite /sumR big_map !big_nseq.
+  rewrite K1 mulr0 expR0 iter_addr addr0.
+  rewrite iter_minr.
+    by rewrite -(mulr_natr p) -mulrA divff ?mulr1.
+    admit. (*simple*)
+    lra.
+rewrite /= H1.
+have cardM : #|(fun j : 'I_M.+1 => j != i)| = M.
+  have := card_ord M.+1.
+  rewrite (cardD1 i) inE add1n => -[] hM.
+  rewrite -[RHS]hM.
+  apply: eq_card => x.
+  rewrite inE; apply/idP/idP.
+    by rewrite inE andbT.
+  by move=> /andP[xi _].
+
+
 Admitted.
 
 End shadow_lifting_stl_and.
