@@ -624,6 +624,65 @@ have cardM : #|(fun j : 'I_M.+1 => j != i)| = M.
     by rewrite inE andbT.
   by move=> /andP[xi _].
 
+have H2 h : h > 0 ->
+  stl_and_lt0 (seq_of_rV (const_mx p + h *: err_vec i)) =
+  (p * expR (nu * (h / p))) / 1(* / (M%:R + expR (nu * (h / p))) *).
+  move=> h0.
+  have mip :
+      \big[minr/(p + h)%E]_(i <- seq_of_rV (const_mx p + h *: err_vec i)%R) i = p.
+    rewrite big_map/= big_enum/= (bigminD1 i)//.
+    rewrite ffunE !mxE eqxx mulr1.
+    rewrite (eq_bigr (fun=> p)); last first.
+      by move=> /= j ji; rewrite ffunE !mxE eq_sym (negbTE ji) mulr0 addr0.
+    rewrite big_const/=.
+    rewrite iter_minr//; last 2 first.
+      by rewrite cardM.
+      by rewrite lerDl// ltW.
+    by rewrite /minr ltNge lerDl (ltW h0)/=. 
+  have mip' : \big[minr/p]_(i0 <- seq_of_rV (const_mx p + h *: err_vec i)%E) i0 = p.
+    rewrite big_map/= big_enum/= (bigminD1 i)//.
+    rewrite ffunE !mxE eqxx mulr1.
+    rewrite (eq_bigr (fun=> p)); last first.
+      by move=> /= j ji; rewrite ffunE !mxE eq_sym (negbTE ji) mulr0 addr0.
+    rewrite big_const/=.
+    rewrite iter_minr//; last first.
+      by rewrite cardM.
+    by rewrite /minr ltNge lerDl (ltW h0).
+  rewrite /stl_and_lt0/= {1}/sumR big_map.
+  congr (_ / _).
+    rewrite big_map/= big_enum/= (bigD1 i)//=.
+    rewrite ffunE !mxE eqxx mulr1.
+    rewrite (_ : min_dev _ _ = h / p); last first.
+      rewrite /min_dev.
+      rewrite mip.
+      by rewrite -addrA addrCA subrr addr0.
+    About eq_bigr. (*might be problem above? or just shouldnt use eq_bigr*)
+    (* rewrite (eq_bigr (fun=> p)); last first. *) (*
+      move=> j ji.
+      rewrite ffunE !mxE eq_sym (negbTE ji) mulr0 addr0.
+      rewrite (_ : min_dev _ _ = 0); last first.
+        rewrite /min_dev.
+        by rewrite mip' subrr mul0r.
+      by rewrite mulr0 expR0 mulr1.
+    rewrite big_const/= iter_addr addr0 cardM.
+    by rewrite addrC mulr_natr.
+  rewrite /sumR !big_map/= -enumT /= big_enum/= (bigD1 i)//=.
+  rewrite ffunE !mxE eqxx mulr1.
+  rewrite (_ : min_dev _ _ = h / p); last first.
+    rewrite /min_dev.
+    rewrite mip.
+    by rewrite -addrA addrCA subrr addr0.
+  rewrite (eq_bigr (fun=> 1)); last first.
+    move=> j ji.
+    rewrite ffunE !mxE eq_sym (negbTE ji) mulr0 addr0.
+    rewrite (_ : min_dev _ _ = 0); last first.
+      rewrite /min_dev.
+      by rewrite mip' subrr mul0r.
+    by rewrite mulr0 expR0.
+  rewrite big_const/= iter_addr addr0 cardM.
+  by rewrite [LHS]addrC.*)
+  admit.
+
 
 Admitted.
 
