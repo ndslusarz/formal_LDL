@@ -626,9 +626,10 @@ have cardM : #|(fun j : 'I_M.+1 => j != i)| = M.
 
 have H2 h : h > 0 ->
   stl_and_lt0 (seq_of_rV (const_mx p + h *: err_vec i)) =
-  ((M%:R - 1) * p + (p + h) * expR (h/p) * expR (nu * (h / p))) /
-  (M%:R - 1 + expR (nu * (h / p))).
-  (*(p * expR (nu * (h / p))) / 1 / (M%:R + expR (nu * (h / p))) *)
+  (M%:R  * p + (p + h) * expR (h/p) * expR (nu * (h / p))) /
+  (M%:R + expR (nu * (h / p))).
+ (*did the above on paper but might double check if it doesn't look
+correct later*)
   move=> h0.
   have mip :
       \big[minr/(p + h)%E]_(i <- seq_of_rV (const_mx p + h *: err_vec i)%R) i = p.
@@ -667,23 +668,11 @@ have H2 h : h > 0 ->
         by rewrite mip' subrr mul0r.
       by rewrite mip' mulr0 expR0 !mulr1. 
     rewrite big_const/= iter_addr addr0 cardM.
-    rewrite addrC. mulr_natr. 
-(*   rewrite /sumR !big_map/= -enumT /= big_enum/= (bigD1 i)//=.
-  rewrite ffunE !mxE eqxx mulr1.
-  rewrite (_ : min_dev _ _ = h / p); last first.
-    rewrite /min_dev.
-    rewrite mip.
-    by rewrite -addrA addrCA subrr addr0.
-  rewrite (eq_bigr (fun=> 1)); last first.
-    move=> j ji.
-    rewrite ffunE !mxE eq_sym (negbTE ji) mulr0 addr0.
-    rewrite (_ : min_dev _ _ = 0); last first.
-      rewrite /min_dev.
-      by rewrite mip' subrr mul0r.
-    by rewrite mulr0 expR0.
-  rewrite big_const/= iter_addr addr0 cardM.
-  by rewrite [LHS]addrC.*)
-  admit. *)
+    rewrite addrC. rewrite (mulrC M%:R p) mulr_natr. 
+ (*N: Doesn't look right, There is one too many h...
+ mistake somewhere up above. 
+pretty sure H2 is correct - H1?*)
+
 
 
 Admitted.
