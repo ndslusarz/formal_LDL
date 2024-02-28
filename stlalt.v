@@ -462,6 +462,8 @@ Qed.
 
 End stl_lemmas.
 
+From mathcomp Require Import realfun.
+
 Section shadow_lifting_stl_and.
 Local Open Scope ring_scope.
 Local Open Scope classical_set_scope.
@@ -575,19 +577,15 @@ have H3 h : h < 0 -> (stl_and_gt0 (seq_of_rV  (const_mx p + h *: err_vec i))) =
                      /
                      (M%:R * expR (- nu * (- h / (p + h))) + 1).
   move=> h0.
-  (* not sure *)
+  rewrite /stl_and_gt0/= /sumR/= !big_map -enumT !big_enum/=.
+  congr (_ / _).
+    admit.
   admit.
+  (* not sure *)
 have /cvg_lim : h^-1 * ((stl_and_gt0 (seq_of_rV (const_mx p + h *: err_vec i))) -
                         (stl_and_gt0 (seq_of_rV (const_mx p))))
        @[h --> (0:R)^'] --> (M%:R^-1:R).
-  apply/cvgrPdist_lt => /= e e0.
-  near=> h.
-  rewrite H1.
-  have : h != 0 by near: h; exact: nbhs_dnbhs_neq.
-  rewrite neq_lt => /orP[h0|h0].
-    rewrite /= H3//.
-    admit.
-  rewrite /= H2//.
+  admit.
 Admitted.
 
 Lemma shadowlifting_stl_and_lt0 (p : R) : p > 0 -> forall i,
@@ -612,7 +610,7 @@ have H1 : stl_and_lt0 (seq_of_rV (const_mx p)) = p.
   rewrite K1 mulr0 expR0 iter_addr addr0.
   rewrite iter_minr.
     by rewrite -(mulr_natr p) -mulrA divff ?mulr1.
-    admit. (*simple*)
+    done.
     lra.
 rewrite /= H1.
 have cardM : #|(fun j : 'I_M.+1 => j != i)| = M.
@@ -626,7 +624,7 @@ have cardM : #|(fun j : 'I_M.+1 => j != i)| = M.
 
 have H2 h : h > 0 ->
   stl_and_lt0 (seq_of_rV (const_mx p + h *: err_vec i)) =
-  (M%:R  * p + (p + h) * expR (h/p) * expR (nu * (h / p))) /
+  (M%:R  * p + (p (*+ h*)) * expR (h/p) * expR (nu * (h / p))) /
   (M%:R + expR (nu * (h / p))).
  (*did the above on paper but might double check if it doesn't look
 correct later*)
@@ -668,12 +666,24 @@ correct later*)
         by rewrite mip' subrr mul0r.
       by rewrite mip' mulr0 expR0 !mulr1. 
     rewrite big_const/= iter_addr addr0 cardM.
-    rewrite addrC. rewrite (mulrC M%:R p) mulr_natr. 
+    rewrite addrC.
+    by rewrite (mulrC M%:R p) mulr_natr.
+  admit.
+have /cvg_lim : h^-1 * ((stl_and_lt0 (seq_of_rV (const_mx p + h *: err_vec i))) -
+                        (stl_and_lt0 (seq_of_rV (const_mx p))))
+       @[h --> (0:R)^'] --> (M%:R^-1:R).
+  apply/cvg_at_right_left_dnbhs.
+    rewrite -(mulr1 M%:R^-1).
+    rewrite -(mulr1 (M%:R^-1 * 1)).
+    rewrite /stl_and_lt0.
+    (* TODO: use apply: cvgM. *)
+    (* this is property 4 in https://arxiv.org/pdf/2003.06041.pdf *)
+    admit.
+  admit.
+
  (*N: Doesn't look right, There is one too many h...
  mistake somewhere up above. 
 pretty sure H2 is correct - H1?*)
-
-
 
 Admitted.
 
