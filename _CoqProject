@@ -8,6 +8,10 @@
 -arg -w -arg -redundant-canonical-projection
 -arg -w -arg -projection-no-head-constant
 
-LDL_util.v
-LDL_function.v
-#Test.v
+util.v
+ldl.v
+goedel.v
+dl2.v
+dl2alt.v
+stl.v
+stlalt.v
