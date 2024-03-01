@@ -572,15 +572,80 @@ have H2 h : h > 0 ->
     by rewrite mulr0 expR0.
   rewrite big_const/= iter_addr addr0 cardM.
   by rewrite [LHS]addrC.
+
 have H3 h : h < 0 -> (stl_and_gt0 (seq_of_rV  (const_mx p + h *: err_vec i))) =
                      (p * M%:R * expR (- nu * (- h / (p + h))) + (p + h))
                      /
-                     (M%:R * expR (- nu * (- h / (p + h))) + 1).
+                     (M%:R * expR (- nu * (- h / (p + h))) + 1). 
   move=> h0.
-  rewrite /stl_and_gt0/= /sumR/= !big_map -enumT !big_enum/=.
-  congr (_ / _).
+  have mip :
+      \big[minr/(p + h)%E]_(i <- seq_of_rV (const_mx p + h *: err_vec i)%R) i = p + h.
+    rewrite big_map/= big_enum/= (bigminD1 i)//.
+    rewrite ffunE !mxE eqxx mulr1.
+    rewrite (eq_bigr (fun=> p)); last first.
+      by move=> /= j ji; rewrite ffunE !mxE eq_sym (negbTE ji) mulr0 addr0.
+    rewrite big_const/=. (* rewrite (minrC p (p + h)). *)
+    admit. (*this is ture - just need to upack minr
+and iter properly, can't use iter_minr, helper lemma maybe?*)
+    (* rewrite /minr. case: ifP.
+      done. *)
+have mip' : \big[minr/p]_(i0 <- seq_of_rV (const_mx p + h *: err_vec i)%E) i0 = p + h.
+    (* NB: almost the same proof as above *)
+    rewrite big_map/= big_enum/= (bigminD1 i)//.
+    rewrite ffunE !mxE eqxx mulr1.
+    rewrite (eq_bigr (fun=> p)); last first.
+      by move=> /= j ji; rewrite ffunE !mxE eq_sym (negbTE ji) mulr0 addr0.
+    rewrite big_const/=.
     admit.
-  admit.
+    (*same issue, can't use iter_minr*)
+  rewrite /stl_and_gt0/= /sumR/= !big_map -enumT !big_enum/= (bigD1 i)//=.
+  congr (_ / _).
+    (* rewrite big_map/= big_enum/= (bigD1 i)//=. *)
+    rewrite ffunE !mxE eqxx mulr1.
+    rewrite (_ : min_dev _ _ = 0); last first.
+      rewrite /min_dev.
+      rewrite mip.
+      lra.
+    Search "eq_bigr".
+    rewrite mulr0 expR0 mulr1 addrC.
+    rewrite (eq_bigr (fun=> p * expR (- nu * (- h / (p + h)%E)))); last first.
+      move=> j ji.
+      rewrite ffunE !mxE eq_sym (negbTE ji) mulr0 addr0.
+      rewrite (_ : min_dev _ _ = -h/(p+h)); last first.
+        rewrite /min_dev.
+        rewrite mip'. lra.
+      done.
+    rewrite big_const/= iter_addr addr0 cardM. 
+    (* rewrite mulr_natr. *)
+    admit.
+    (*true - just need to find the right version of mulrC/muleC to make it pass,
+  I keep running into type errors*)
+(*   rewrite ffunE !mxE eqxx mulr1.
+  rewrite (_ : min_dev _ _ = h / p); last first.
+    rewrite /min_dev.
+    rewrite mip.
+    by rewrite -addrA addrCA subrr addr0.
+  rewrite (eq_bigr (fun=> 1)); last first.
+    move=> j ji.
+    rewrite ffunE !mxE eq_sym (negbTE ji) mulr0 addr0.
+    rewrite (_ : min_dev _ _ = 0); last first.
+      rewrite /min_dev.
+      by rewrite mip' subrr mul0r.
+    by rewrite mulr0 expR0.
+  rewrite big_const/= iter_addr addr0 cardM.
+  by rewrite [LHS]addrC.  *)
+
+
+
+
+
+    admit.
+
+(*have H4 h : h^-1 * ((stl_and_gt0 (seq_of_rV (const_mx p + h *: err_vec i))) -
+                        (stl_and_gt0 (seq_of_rV (const_mx p)))) =
+                (expR (- nu * (h / p )))
+                /
+                (M%:R + expR (- nu * (h / p ))).*)
   (* not sure *)
 have /cvg_lim : h^-1 * ((stl_and_gt0 (seq_of_rV (const_mx p + h *: err_vec i))) -
                         (stl_and_gt0 (seq_of_rV (const_mx p))))
