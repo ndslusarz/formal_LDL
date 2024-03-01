@@ -620,26 +620,27 @@ have mip' : \big[minr/p]_(i0 <- seq_of_rV (const_mx p + h *: err_vec i)%E) i0 = 
     admit.
     (*true - just need to find the right version of mulrC/muleC to make it pass,
   I keep running into type errors*)
-(*   rewrite ffunE !mxE eqxx mulr1.
-  rewrite (_ : min_dev _ _ = h / p); last first.
+  rewrite /= (bigD1 i)//=.
+  rewrite ffunE !mxE eqxx mulr1.
+  rewrite (_ : min_dev _ _ = 0); last first.
     rewrite /min_dev.
     rewrite mip.
-    by rewrite -addrA addrCA subrr addr0.
-  rewrite (eq_bigr (fun=> 1)); last first.
+    lra.
+  rewrite (eq_bigr (fun=> (expR (- nu * (- h / (p + h)%E))))); last first.
     move=> j ji.
     rewrite ffunE !mxE eq_sym (negbTE ji) mulr0 addr0.
-    rewrite (_ : min_dev _ _ = 0); last first.
+    rewrite (_ : min_dev _ _ = -h/(p+h)); last first.
       rewrite /min_dev.
-      by rewrite mip' subrr mul0r.
-    by rewrite mulr0 expR0.
+      rewrite mip'. lra.
+    done.
   rewrite big_const/= iter_addr addr0 cardM.
-  by rewrite [LHS]addrC.  *)
-
-
-
-
-
+  rewrite mulr0 expR0 addrC.
+  (* rewrite mulr_natr. *)
     admit.
+    (*same problem as above
+ - just need to find the right version of mulrC/muleC to make it pass,
+  I keep running into type errors*)
+
 
 (*have H4 h : h^-1 * ((stl_and_gt0 (seq_of_rV (const_mx p + h *: err_vec i))) -
                         (stl_and_gt0 (seq_of_rV (const_mx p)))) =
