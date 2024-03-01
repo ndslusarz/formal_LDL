@@ -584,8 +584,8 @@ have H3 h : h < 0 -> (stl_and_gt0 (seq_of_rV  (const_mx p + h *: err_vec i))) =
     rewrite ffunE !mxE eqxx mulr1.
     rewrite (eq_bigr (fun=> p)); last first.
       by move=> /= j ji; rewrite ffunE !mxE eq_sym (negbTE ji) mulr0 addr0.
-    rewrite big_const/=. (* rewrite (minrC p (p + h)). *)
-    admit. (*this is ture - just need to upack minr
+    rewrite big_const/=. (*N: rewrite (minrC p (p + h)). *)
+    admit. (*N: this is ture - just need to upack minr
 and iter properly, can't use iter_minr, helper lemma maybe?*)
     (* rewrite /minr. case: ifP.
       done. *)
@@ -597,16 +597,14 @@ have mip' : \big[minr/p]_(i0 <- seq_of_rV (const_mx p + h *: err_vec i)%E) i0 = 
       by move=> /= j ji; rewrite ffunE !mxE eq_sym (negbTE ji) mulr0 addr0.
     rewrite big_const/=.
     admit.
-    (*same issue, can't use iter_minr*)
+    (*N: same issue, can't use iter_minr*)
   rewrite /stl_and_gt0/= /sumR/= !big_map -enumT !big_enum/= (bigD1 i)//=.
   congr (_ / _).
-    (* rewrite big_map/= big_enum/= (bigD1 i)//=. *)
     rewrite ffunE !mxE eqxx mulr1.
     rewrite (_ : min_dev _ _ = 0); last first.
       rewrite /min_dev.
       rewrite mip.
       lra.
-    Search "eq_bigr".
     rewrite mulr0 expR0 mulr1 addrC.
     rewrite (eq_bigr (fun=> p * expR (- nu * (- h / (p + h)%E)))); last first.
       move=> j ji.
@@ -618,7 +616,8 @@ have mip' : \big[minr/p]_(i0 <- seq_of_rV (const_mx p + h *: err_vec i)%E) i0 = 
     rewrite big_const/= iter_addr addr0 cardM. 
     (* rewrite mulr_natr. *)
     admit.
-    (*true - just need to find the right version of mulrC/muleC to make it pass,
+    (*N: true - just need to find the right version of mulrC/muleC before
+mulr_natr to make it pass,
   I keep running into type errors*)
   rewrite /= (bigD1 i)//=.
   rewrite ffunE !mxE eqxx mulr1.
@@ -637,21 +636,24 @@ have mip' : \big[minr/p]_(i0 <- seq_of_rV (const_mx p + h *: err_vec i)%E) i0 = 
   rewrite mulr0 expR0 addrC.
   (* rewrite mulr_natr. *)
     admit.
-    (*same problem as above
+    (*N: same problem as above
  - just need to find the right version of mulrC/muleC to make it pass,
   I keep running into type errors*)
+(* 
 
-
-(*have H4 h : h^-1 * ((stl_and_gt0 (seq_of_rV (const_mx p + h *: err_vec i))) -
+have H4 h : h != 0 -> h^-1 * ((stl_and_gt0 (seq_of_rV (const_mx p + h *: err_vec i))) -
                         (stl_and_gt0 (seq_of_rV (const_mx p)))) =
                 (expR (- nu * (h / p )))
                 /
-                (M%:R + expR (- nu * (h / p ))).*)
-  (* not sure *)
+                (M%:R + expR (- nu * (h / p ))).
+  rewrite H1.
+  admit. *)
 have /cvg_lim : h^-1 * ((stl_and_gt0 (seq_of_rV (const_mx p + h *: err_vec i))) -
                         (stl_and_gt0 (seq_of_rV (const_mx p))))
        @[h --> (0:R)^'] --> (M%:R^-1:R).
-  admit.
+  apply/cvg_at_right_left_dnbhs; rewrite H1.
+    (* rewrite H2. *)
+     Search ( _ --> _^'+ ).
 Admitted.
 
 Lemma shadowlifting_stl_and_lt0 (p : R) : p > 0 -> forall i,
