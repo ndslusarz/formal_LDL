@@ -644,8 +644,10 @@ have /cvg_lim : h^-1 * ((stl_and_gt0 (seq_of_rV (const_mx p + h *: err_vec i))) 
                         (stl_and_gt0 (seq_of_rV (const_mx p))))
        @[h --> (0:R)^'] --> (M%:R^-1:R).
   apply/cvg_at_right_left_dnbhs; rewrite H1.
-    (* rewrite H2. *)
-     Search ( _ --> _^'+ ).
+    apply/cvgrPdist_le => /= e e0.
+    near=> t.
+    rewrite H2//=.
+    admit.
 Admitted.
 
 Lemma shadowlifting_stl_and_lt0 (p : R) : p > 0 -> forall i,
