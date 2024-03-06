@@ -656,12 +656,16 @@ have /cvg_lim : h^-1 * ((stl_and_gt0 (seq_of_rV (const_mx p + h *: err_vec i))) 
     rewrite !mulrA mulVf// mul1r -(mul1r ((_ + _)^-1)).
     have -> : expR (- nu * t / p) / (M%:R + expR (- nu * t / p))%E = ((fun t => expR (- nu * t / p)) \* (fun t => (M%:R + expR (- nu * t / p))%E ^-1)) t by [].
     near: t; move: e e0; apply/cvgrPdist_le.
-    apply: cvgM.
-      admit.
+    have exp0 : expR (- nu * t / p) @[t --> nbhs 0^'+] --> (1:R)%R.
+      rewrite -expR0; apply: continuous_cvg; first exact: continuous_expR.
+      rewrite -[X in _ --> X](mulr0 (- nu / p)).
+      under eq_fun do rewrite -mulrAC.
+      apply: cvgM; first exact: cvg_cst.
+      exact/cvg_at_right_filter/cvg_id.
+    apply: cvgM; first exact exp0.
     apply: cvgV; first by rewrite lt0r_neq0.
     apply: cvgD; first exact: cvg_cst.
-    admit.
-
+    exact: exp0.
   apply/cvgrPdist_le => /= e e0.
     admit. (* similar *)
 rewrite H1 natr1.
