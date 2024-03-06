@@ -7,6 +7,7 @@ From mathcomp Require Import reals ereal signed.
 From mathcomp Require Import topology derive normedtype sequences
  exp measure lebesgue_measure lebesgue_integral hoelder.
 Require Import util ldl.
+Require Import lhopital.
 
 Import Num.Def Num.Theory GRing.Theory.
 Import Order.TTheory.
@@ -730,14 +731,41 @@ correct later*)
     rewrite big_const/= iter_addr addr0 cardM.
     rewrite addrC.
     by rewrite (mulrC M%:R p) mulr_natr.
-  admit.
+  rewrite /sumR !big_map/= -enumT big_enum/= (bigD1 i)//=.
+  rewrite ffunE !mxE eqxx mulr1.
+  rewrite (_ : min_dev _ _ = h / p); last first.
+    rewrite /min_dev.
+    rewrite mip.
+    by rewrite -addrA addrCA subrr addr0.
+  rewrite addrC; congr (_ + _).
+  rewrite (eq_bigr (fun=> 1)).
+    by rewrite big_const/= cardM iter_addr addr0.
+  move=> j ji; rewrite ffunE !mxE eq_sym (negbTE ji) mulr0 addr0.
+  rewrite (_ : min_dev _ _ = 0); last first.
+    rewrite /min_dev.
+    by rewrite mip' subrr mul0r.
+  by rewrite mulr0 expR0.
 have /cvg_lim : h^-1 * ((stl_and_lt0 (seq_of_rV (const_mx p + h *: err_vec i))) -
                         (stl_and_lt0 (seq_of_rV (const_mx p))))
        @[h --> (0:R)^'] --> (M%:R^-1:R).
   apply/cvg_at_right_left_dnbhs.
+    rewrite H1.
+    rewrite [X in X @ _ --> _](_ : _ =
+      fun t =>       (M%:R + expR (nu * (t / p)))^-1 *
+      expR (nu * (t / p)) *
+      ((expR (t / p) - 1) / (t / p))); last first.
+      admit.
     rewrite -(mulr1 M%:R^-1).
     rewrite -(mulr1 (M%:R^-1 * 1)).
-    rewrite /stl_and_lt0.
+    apply: cvgM.
+      apply: cvgM.
+        admit.
+      admit.
+    have := @lhopital R (fun x => expR (x / p) - 1)
+                        (fun x => p^-1 * expR (x / p))
+                        (fun x => x / p)
+                        (fun=> p^-1) 0 (-1)%R 1%R.
+    apply.
     (* TODO: use apply: cvgM. *)
     (* this is property 4 in https://arxiv.org/pdf/2003.06041.pdf *)
     admit.
