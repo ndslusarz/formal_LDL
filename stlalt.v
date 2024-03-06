@@ -633,14 +633,6 @@ have mip' : \big[minr/p]_(i0 <- seq_of_rV (const_mx p + h *: err_vec i)%E) i0 = 
     done.
   rewrite big_const/= iter_addr addr0 cardM.
   by rewrite mulr0 expR0 addrC -[in LHS]mulr_natr mulrC.
-(* 
-have H4 h : h != 0 -> h^-1 * ((stl_and_gt0 (seq_of_rV (const_mx p + h *: err_vec i))) -
-                        (stl_and_gt0 (seq_of_rV (const_mx p)))) =
-                (expR (- nu * (h / p )))
-                /
-                (M%:R + expR (- nu * (h / p ))).
-  rewrite H1.
-  admit. *)
 have /cvg_lim : h^-1 * ((stl_and_gt0 (seq_of_rV (const_mx p + h *: err_vec i))) -
                         (stl_and_gt0 (seq_of_rV (const_mx p))))
        @[h --> (0:R)^'] --> ((M%:R + 1)^-1:R).
@@ -654,7 +646,8 @@ have /cvg_lim : h^-1 * ((stl_and_gt0 (seq_of_rV (const_mx p + h *: err_vec i))) 
     rewrite (mulrAC _ (_^-1) p) -mulrBl.
     have -> : ((p * M%:R)%R + ((p + t)%E * expR (- nu * (t / p)))%R)%E - (M%:R + expR (- nu * (t / p)))%E * p = t * expR (- nu * (t / p)) by lra.
     rewrite !mulrA mulVf// mul1r -(mul1r ((_ + _)^-1)).
-    have -> : expR (- nu * t / p) / (M%:R + expR (- nu * t / p))%E = ((fun t => expR (- nu * t / p)) \* (fun t => (M%:R + expR (- nu * t / p))%E ^-1)) t by [].
+    have -> : expR (- nu * t / p) / (M%:R + expR (- nu * t / p))%E = 
+((fun t => expR (- nu * t / p)) \* (fun t => (M%:R + expR (- nu * t / p))%E ^-1)) t by [].
     near: t; move: e e0; apply/cvgrPdist_le.
     have exp0 : expR (- nu * t / p) @[t --> nbhs 0^'+] --> (1:R)%R.
       rewrite -expR0; apply: continuous_cvg; first exact: continuous_expR.
@@ -667,6 +660,30 @@ have /cvg_lim : h^-1 * ((stl_and_gt0 (seq_of_rV (const_mx p + h *: err_vec i))) 
     apply: cvgD; first exact: cvg_cst.
     exact: exp0.
   apply/cvgrPdist_le => /= e e0.
+  near=> t.
+  rewrite H3//=.
+  rewrite -[X in (_ / _ - X)](mul1r p).
+  rewrite -[X in (_ / _ - X * _)](@divff _ (M%:R * expR (- nu * (- t / (p + t))) + 1)); last first.
+    rewrite lt0r_neq0// addr_gt0// ?expR_gt0// mulr_gt0//.
+      by rewrite ltr0n lt0n.
+      by rewrite expR_gt0.
+    rewrite (mulrAC _ (_^-1) p) -mulrBl.
+    have -> : (((p * M%:R * expR (- nu * (- t / (p + t)%E)))%R + (p + t))%E -
+     ((M%:R * expR (- nu * (- t / (p + t)%E)))%R + 1%R)%E * p) = t by lra.
+    have -> : t^-1 * (t / ((M%:R * expR (- nu * (- t / (p + t)%E)))%R + 1%R)%E) = 
+      1 / ((M%:R * expR (- nu * (- t / (p + t)%E)))%R + 1%R).
+    
+      admit.
+    (* have -> : 1 / ((M%:R * expR (- nu * (- t / (p + t)%E)))%R + 1%R) = 
+      ((fun t => (expR (- nu * (t / (p + t)%E)))) \* 
+      (fun t => (M + (expR ( nu * (- t / (p + t)%E)))))) t. *)
+
+    near: t; move: e e0; apply/cvgrPdist_le.
+    About cvgV.
+    have exp0 : expR (- nu * (- t / (p + t)%E)) @[t --> nbhs 0^'-] --> (1:R)%R.
+      rewrite -expR0; apply: continuous_cvg; first exact: continuous_expR.
+      (* rewrite -[X in _ --> X](addr0 (mulr0 (- nu / p))). *)
+      admit.
     admit. (* similar *)
 rewrite H1 natr1.
 apply. exact: Rhausdorff.
@@ -711,8 +728,6 @@ have H2 h : h > 0 ->
   stl_and_lt0 (seq_of_rV (const_mx p + h *: err_vec i)) =
   (M%:R  * p + (p (*+ h*)) * expR (h/p) * expR (nu * (h / p))) /
   (M%:R + expR (nu * (h / p))).
- (*did the above on paper but might double check if it doesn't look
-correct later*)
   move=> h0.
   have mip :
       \big[minr/(p + h)%E]_(i <- seq_of_rV (const_mx p + h *: err_vec i)%R) i = p.
@@ -767,9 +782,64 @@ correct later*)
     rewrite /min_dev.
     by rewrite mip' subrr mul0r.
   by rewrite mulr0 expR0.
+
+
+have H3 h : h < 0 ->
+  stl_and_lt0 (seq_of_rV (const_mx p + h *: err_vec i)) =
+  (((p+h) * M%:R * expR (- h / (p + h)) * expR (nu * (- h / (p+h))) + p + h)/
+  (M%:R * expR (nu * (- h / (p+h))) + 1)).
+  move=> h0.
+    have mip :
+      \big[minr/(p + h)%E]_(i <- seq_of_rV (const_mx p + h *: err_vec i)%R) i = p + h.
+    rewrite big_map/= big_enum/= (bigminD1 i)//.
+    rewrite ffunE !mxE eqxx mulr1.
+    rewrite (eq_bigr (fun=> p)); last first.
+      by move=> /= j ji; rewrite ffunE !mxE eq_sym (negbTE ji) mulr0 addr0.
+    by rewrite big_const/= cardM iter_minr' ?minxx//gerDl ltW.
+    have mip' : \big[minr/p]_(i0 <- seq_of_rV (const_mx p + h *: err_vec i)%E) i0 = p + h.
+    rewrite big_map/= big_enum/= (bigminD1 i)//.
+    rewrite ffunE !mxE eqxx mulr1.
+    rewrite (eq_bigr (fun=> p)); last first.
+      by move=> /= j ji; rewrite ffunE !mxE eq_sym (negbTE ji) mulr0 addr0.
+    by rewrite big_const/= cardM iter_minr'// /minr ifT// gtrDl.
+    rewrite /stl_and_lt0/= /sumR/= !big_map -enumT !big_enum/= (bigD1 i)//=.
+  congr (_ / _).
+    rewrite ffunE !mxE eqxx mulr1.
+    rewrite (_ : min_dev _ _ = 0); last first.
+      rewrite /min_dev.
+      rewrite mip.
+      lra.
+    rewrite mulr0 expR0 !mulr1 addrC.
+    rewrite (eq_bigr (fun=> (p + h) * expR (- h / (p + h)) * expR (nu * (- h / (p+h))))); last first.
+      move=> j ji.
+      rewrite ffunE !mxE eq_sym (negbTE ji) mulr0 addr0.
+      rewrite (_ : min_dev _ _ = -h/(p+h)); last first.
+        rewrite /min_dev.
+        rewrite mip'. lra.
+      rewrite mip'.
+      done.
+    rewrite big_const/= iter_addr addr0 cardM mip.
+    admit. (*simple, just need to reorder things and exact*)
+    (* by rewrite -[in LHS]mulr_natr mulrAC. *)
+  rewrite /= (bigD1 i)//=.
+  rewrite ffunE !mxE eqxx mulr1.
+  rewrite (_ : min_dev _ _ = 0); last first.
+    rewrite /min_dev.
+    rewrite mip.
+    lra.
+  rewrite (eq_bigr (fun=> (expR (nu * (- h / (p + h)%E))))); last first.
+    move=> j ji.
+    rewrite ffunE !mxE eq_sym (negbTE ji) mulr0 addr0.
+    rewrite (_ : min_dev _ _ = -h/(p+h)); last first.
+      rewrite /min_dev.
+      rewrite mip'. lra.
+    done.
+  rewrite big_const/= iter_addr addr0 cardM.
+  by rewrite mulr0 expR0 addrC -[in LHS]mulr_natr mulrC.
+
 have /cvg_lim : h^-1 * ((stl_and_lt0 (seq_of_rV (const_mx p + h *: err_vec i))) -
                         (stl_and_lt0 (seq_of_rV (const_mx p))))
-       @[h --> (0:R)^'] --> (M%:R^-1:R).
+       @[h --> (0:R)^'] --> (M.+1%:R^-1:R).
   apply/cvg_at_right_left_dnbhs.
     rewrite H1.
     rewrite [X in X @ _ --> _](_ : _ =
@@ -777,8 +847,8 @@ have /cvg_lim : h^-1 * ((stl_and_lt0 (seq_of_rV (const_mx p + h *: err_vec i))) 
       expR (nu * (t / p)) *
       ((expR (t / p) - 1) / (t / p))); last first.
       admit.
-    rewrite -(mulr1 M%:R^-1).
-    rewrite -(mulr1 (M%:R^-1 * 1)).
+    rewrite -(mulr1 M.+1%:R^-1).
+    rewrite -(mulr1 (M.+1%:R^-1 * 1)).
     apply: cvgM.
       apply: cvgM.
         admit.
@@ -788,14 +858,32 @@ have /cvg_lim : h^-1 * ((stl_and_lt0 (seq_of_rV (const_mx p + h *: err_vec i))) 
                         (fun x => x / p)
                         (fun=> p^-1) 0 (-1)%R 1%R.
     apply.
+    (*any admit with annotation simple
+    just needs some reordering of terms etc. or finding the
+    right lemma, didn't want to get stuck on them until
+    I take care of the bigger ones*)
+      lra.
+      admit.
+      admit.
+      admit. (*simple*)
+      lra.
+      admit. (*simple*)
+      admit.
+      admit.
+      Search (_ * (_ / _)).
+      admit. (*simple*)
+      
+      
     (* TODO: use apply: cvgM. *)
     (* this is property 4 in https://arxiv.org/pdf/2003.06041.pdf *)
-    admit.
-  admit.
 
- (*N: Doesn't look right, There is one too many h...
- mistake somewhere up above. 
-pretty sure H2 is correct - H1?*)
+    rewrite 
+
+
+    admit. (*this is a spot for -> 0- case*)
+rewrite H1.
+apply. exact: Rhausdorff.
+Unshelve. all: end_near.
 
 Admitted.
 
