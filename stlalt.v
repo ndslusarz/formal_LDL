@@ -643,12 +643,30 @@ have H4 h : h != 0 -> h^-1 * ((stl_and_gt0 (seq_of_rV (const_mx p + h *: err_vec
   admit. *)
 have /cvg_lim : h^-1 * ((stl_and_gt0 (seq_of_rV (const_mx p + h *: err_vec i))) -
                         (stl_and_gt0 (seq_of_rV (const_mx p))))
-       @[h --> (0:R)^'] --> (M%:R^-1:R).
+       @[h --> (0:R)^'] --> ((M%:R + 1)^-1:R).
   apply/cvg_at_right_left_dnbhs; rewrite H1.
     apply/cvgrPdist_le => /= e e0.
     near=> t.
     rewrite H2//=.
+    rewrite -[X in (_ / _ - X)](mul1r p).
+    rewrite -[X in (_ / _ - X * _)](@divff _ (M%:R + expR (- nu * (t / p)))); last first.
+      by rewrite lt0r_neq0// addr_gt0// ?expR_gt0// ltr0n lt0n.
+    rewrite (mulrAC _ (_^-1) p) -mulrBl.
+    have -> : ((p * M%:R)%R + ((p + t)%E * expR (- nu * (t / p)))%R)%E - (M%:R + expR (- nu * (t / p)))%E * p = t * expR (- nu * (t / p)) by lra.
+    rewrite !mulrA mulVf// mul1r -(mul1r ((_ + _)^-1)).
+    have -> : expR (- nu * t / p) / (M%:R + expR (- nu * t / p))%E = ((fun t => expR (- nu * t / p)) \* (fun t => (M%:R + expR (- nu * t / p))%E ^-1)) t by [].
+    near: t; move: e e0; apply/cvgrPdist_le.
+    apply: cvgM.
+      admit.
+    apply: cvgV; first by rewrite lt0r_neq0.
+    apply: cvgD; first exact: cvg_cst.
     admit.
+
+  apply/cvgrPdist_le => /= e e0.
+    admit. (* similar *)
+rewrite H1 natr1.
+apply. exact: Rhausdorff.
+Unshelve. all: end_near.
 Admitted.
 
 Lemma shadowlifting_stl_and_lt0 (p : R) : p > 0 -> forall i,
