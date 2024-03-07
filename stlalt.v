@@ -850,11 +850,28 @@ have /cvg_lim : h^-1 * ((stl_and_lt0 (seq_of_rV (const_mx p + h *: err_vec i))) 
        @[h --> (0:R)^'] --> (M.+1%:R^-1:R).
   apply/cvg_at_right_left_dnbhs.
     rewrite H1.
-    rewrite [X in X @ _ --> _](_ : _ =
-      fun t =>       (M%:R + expR (nu * (t / p)))^-1 *
-      expR (nu * (t / p)) *
-      ((expR (t / p) - 1) / (t / p))); last first.
-      admit.
+    apply/cvgrPdist_le => /= eps eps0.
+    near=> x.
+    rewrite [X in normr (_ - X)](_ : _ =
+      (M%:R + expR (nu * (x / p)))^-1 *
+      expR (nu * (x / p)) *
+      ((expR (x / p) - 1) / (x / p))); last first.
+      rewrite H2//.
+      set a := expR (x / p).
+      set b := expR (nu * (x / p)).
+      rewrite invf_div !mulrA mulrC.
+      congr (_ / _).
+      rewrite -[X in _ - X](mulr1 p).
+      rewrite -[X in _ - (_ * X)](@mulVf _ ((M%:R + b)%E)).
+
+      rewrite mulrCA mulrC -mulrBr -!mulrA.
+      congr (_ * _).
+      rewrite -mulrC -mulrDr -mulrBr.
+      nra.
+      by rewrite gt_eqF// addr_gt0// ?ltr0n ?lt0n// expR_gt0.
+    near: x.
+  move: eps eps0.
+  apply/cvgrPdist_le.
     rewrite -(mulr1 M.+1%:R^-1).
     rewrite -(mulr1 (M.+1%:R^-1 * 1)).
     apply: cvgM.
