@@ -829,8 +829,7 @@ have H3 h : h < 0 ->
       rewrite mip'.
       done.
     rewrite big_const/= iter_addr addr0 cardM mip.
-    admit. (*simple, just need to reorder things and exact*)
-    (* by rewrite -[in LHS]mulr_natr mulrAC. *)
+    by rewrite -[in LHS]mulr_natl !mulrA (mulrC (M%:R)) addrA.
   rewrite /= (bigD1 i)//=.
   rewrite ffunE !mxE eqxx mulr1.
   rewrite (_ : min_dev _ _ = 0); last first.
