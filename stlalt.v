@@ -897,10 +897,6 @@ have /cvg_lim : h^-1 * ((stl_and_lt0 (seq_of_rV (const_mx p + h *: err_vec i))) 
                         (fun x => x / p)
                         (fun=> p^-1) 0 (-1)%R 1%R.
     apply.
-    (*any admit with annotation simple
-    just needs some reordering of terms etc. or finding the
-    right lemma, didn't want to get stuck on them until
-    I take care of the bigger ones*)
       lra.
       move=> x; rewrite !in_itv/= => N1x1.
       rewrite -[X in is_derive _ _ _ X]subr0.
@@ -919,6 +915,16 @@ have /cvg_lim : h^-1 * ((stl_and_lt0 (seq_of_rV (const_mx p + h *: err_vec i))) 
     apply: cvgM; last exact: cvg_cst.
     exact/cvg_at_right_filter/cvg_id.
   rewrite H1.
+  apply/cvgrPdist_le => /= eps eps0.
+    near=> x.
+
+    rewrite [X in normr (_ - X)](_ : _ =
+      x^-1 * ((p + x) * M%:R * expR (- x / (p + x)) + x - p * M%:R 
+      *  expR (nu * (- x / (p + x))) * expR (nu * (- x / (p + x))) ) /
+       (M%:R * expR (nu * (- x / (p + x))) + 1)); last first.
+      (* N: above needs to be the part that's factorised (what is here is
+      true, just not broken up enough to make the proof go through easily*)
+      
   admit. (*this is a spot for -> 0- case*)
 rewrite H1.
 apply. exact: Rhausdorff.
