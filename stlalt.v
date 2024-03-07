@@ -494,6 +494,14 @@ elim: k p p' => //= -[_ /= p p' _ p'p|n ih p p' _ p'p].
 by rewrite ih// /minr ltNge p'p.
 Qed.
 
+Let exp0 K : expR (K * t) @[t --> nbhs 0^'+] --> (1:R)%R.
+Proof.
+rewrite -expR0; apply: continuous_cvg; first exact: continuous_expR.
+rewrite -[X in _ --> X](mulr0 K).
+apply: cvgM; first exact: cvg_cst.
+exact/cvg_at_right_filter/cvg_id.
+Qed.
+
 Lemma shadowlifting_stl_and_gt0 (p : R) : p > 0 -> forall i,
   ('d (stl_and_gt0 \o seq_of_rV) '/d i) (const_mx p) = M.+1%:R^-1.
 Proof.
@@ -636,12 +644,6 @@ have mip' : \big[minr/p]_(i0 <- seq_of_rV (const_mx p + h *: err_vec i)%E) i0 = 
 have /cvg_lim : h^-1 * ((stl_and_gt0 (seq_of_rV (const_mx p + h *: err_vec i))) -
                         (stl_and_gt0 (seq_of_rV (const_mx p))))
        @[h --> (0:R)^'] --> ((M%:R + 1)^-1:R).
-  have exp0 : expR (- nu * t / p) @[t --> nbhs 0^'+] --> (1:R)%R.
-    rewrite -expR0; apply: continuous_cvg; first exact: continuous_expR.
-    rewrite -[X in _ --> X](mulr0 (- nu / p)).
-    under eq_fun do rewrite -mulrAC.
-    apply: cvgM; first exact: cvg_cst.
-    exact/cvg_at_right_filter/cvg_id.
   apply/cvg_at_right_left_dnbhs; rewrite H1.
     apply/cvgrPdist_le => /= e e0.
     near=> t.
@@ -655,10 +657,11 @@ have /cvg_lim : h^-1 * ((stl_and_gt0 (seq_of_rV (const_mx p + h *: err_vec i))) 
     have -> : expR (- nu * t / p) / (M%:R + expR (- nu * t / p))%E = 
 ((fun t => expR (- nu * t / p)) \* (fun t => (M%:R + expR (- nu * t / p))%E ^-1)) t by [].
     near: t; move: e e0; apply/cvgrPdist_le.
-    apply: cvgM; first exact exp0.
+    apply: cvgM.
+      by under eq_fun do rewrite mulrAC; exact: exp0.
     apply: cvgV; first by rewrite lt0r_neq0.
     apply: cvgD; first exact: cvg_cst.
-    exact: exp0.
+    by under eq_fun do rewrite mulrAC; exact: exp0.
   apply/cvgrPdist_le => /= e e0.
   near=> t.
   rewrite H3//=.
@@ -734,7 +737,7 @@ have cardM : #|(fun j : 'I_M.+1 => j != i)| = M.
     by rewrite inE andbT.
   by move=> /andP[xi _].
 
-have _ : forall h, h > 0 ->
+have H2 : forall h, h > 0 ->
   stl_and_lt0 (seq_of_rV (const_mx p + h *: err_vec i)) =
   (M%:R  * p + (p (*+ h*)) * expR (h/p) * expR (nu * (h / p))) /
   (M%:R + expR (nu * (h / p))).
@@ -876,8 +879,12 @@ have /cvg_lim : h^-1 * ((stl_and_lt0 (seq_of_rV (const_mx p + h *: err_vec i))) 
     rewrite -(mulr1 (M.+1%:R^-1 * 1)).
     apply: cvgM.
       apply: cvgM.
-        admit.
-      admit.
+        apply: cvgV => //.
+        rewrite -natr1.
+        apply: cvgD => //.
+          exact: cvg_cst.
+        by under eq_fun do rewrite mulrCA mulrC; exact: exp0.
+      by under eq_fun do rewrite mulrCA mulrC; exact: exp0.
     have L1 : forall x : R, x \in `](-1), 1[%R -> is_derive x 1 ( *%R^~ p^-1) p^-1.
       move=> x N1x1.
       rewrite [X in is_derive _ _ X _](_ : _ = p^-1 *: id); last first.
@@ -916,7 +923,6 @@ have /cvg_lim : h^-1 * ((stl_and_lt0 (seq_of_rV (const_mx p + h *: err_vec i))) 
 rewrite H1.
 apply. exact: Rhausdorff.
 Unshelve. all: end_near.
-
 Admitted.
 
 End shadow_lifting_stl_and.
