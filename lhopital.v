@@ -78,10 +78,9 @@ Hypotheses (fdf : forall x, x \in `]u, v[%R -> is_derive x 1 f (df x))
 Hypotheses (fa0 : f a = 0) (ga0 : g a = 0)
            (cdg : \forall x \near a^', dg x != 0).
 
-Lemma lhopital (l : R) : derivable_at_right f a 1 -> derivable_at_right g a 1 ->
+Lemma lhopital (l : R) :
   df x / dg x @[x --> a^'+] --> l -> f x / g x @[x --> a^'+] --> l.
 Proof.
-move=> fa ga.
 case/andP: uav => ua av.
 case: cdg => r/= r0 cdg'.
 near a^'+ => b.

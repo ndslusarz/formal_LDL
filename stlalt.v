@@ -734,11 +734,11 @@ have cardM : #|(fun j : 'I_M.+1 => j != i)| = M.
     by rewrite inE andbT.
   by move=> /andP[xi _].
 
-have H2 h : h > 0 ->
+have _ : forall h, h > 0 ->
   stl_and_lt0 (seq_of_rV (const_mx p + h *: err_vec i)) =
   (M%:R  * p + (p (*+ h*)) * expR (h/p) * expR (nu * (h / p))) /
   (M%:R + expR (nu * (h / p))).
-  move=> h0.
+  move=> h h0.
   have mip :
       \big[minr/(p + h)%E]_(i <- seq_of_rV (const_mx p + h *: err_vec i)%R) i = p.
     rewrite big_map/= big_enum/= (bigminD1 i)//.
@@ -792,7 +792,6 @@ have H2 h : h > 0 ->
     rewrite /min_dev.
     by rewrite mip' subrr mul0r.
   by rewrite mulr0 expR0.
-
 
 have H3 h : h < 0 ->
   stl_and_lt0 (seq_of_rV (const_mx p + h *: err_vec i)) =
@@ -862,6 +861,13 @@ have /cvg_lim : h^-1 * ((stl_and_lt0 (seq_of_rV (const_mx p + h *: err_vec i))) 
       apply: cvgM.
         admit.
       admit.
+    have L1 : forall x : R, x \in `](-1), 1[%R -> is_derive x 1 ( *%R^~ p^-1) p^-1.
+      move=> x N1x1.
+      rewrite [X in is_derive _ _ X _](_ : _ = p^-1 *: id); last first.
+        by apply/funext => y /=; rewrite mulrC.
+      rewrite [X in is_derive _ _ _ X](_ : _ = p^-1 *: (1:R^o))//.
+        exact: is_deriveZ.
+      by rewrite /GRing.scale/= mulr1.
     have := @lhopital R (fun x => expR (x / p) - 1)
                         (fun x => p^-1 * expR (x / p))
                         (fun x => x / p)
@@ -872,24 +878,24 @@ have /cvg_lim : h^-1 * ((stl_and_lt0 (seq_of_rV (const_mx p + h *: err_vec i))) 
     right lemma, didn't want to get stuck on them until
     I take care of the bigger ones*)
       lra.
-      admit.
-      admit.
-      admit. (*simple*)
-      lra.
-      admit. (*simple*)
-      admit.
-      admit.
-      Search (_ * (_ / _)).
-      admit. (*simple*)
-      
-      
-    (* TODO: use apply: cvgM. *)
-    (* this is property 4 in https://arxiv.org/pdf/2003.06041.pdf *)
-
-    rewrite 
-
-
-    admit. (*this is a spot for -> 0- case*)
+      move=> x; rewrite !in_itv/= => N1x1.
+      rewrite -[X in is_derive _ _ _ X]subr0.
+      apply: is_deriveB => /=.
+      rewrite mulrC.
+      apply: is_derive1_comp.
+      exact: L1.
+      by rewrite mul0r expR0 subrr.
+      by rewrite mul0r.
+      by near=> t; rewrite gt_eqF// invr_gt0.
+    under eq_fun.
+      move=> x; rewrite mulrAC divff ?gt_eqF ?invr_gt0// mul1r.
+      over.
+    rewrite -expR0; apply: continuous_cvg; first exact: continuous_expR.
+    rewrite -[X in _ --> X](mul0r p^-1).
+    apply: cvgM; last exact: cvg_cst.
+    exact/cvg_at_right_filter/cvg_id.
+  rewrite H1.
+  admit. (*this is a spot for -> 0- case*)
 rewrite H1.
 apply. exact: Rhausdorff.
 Unshelve. all: end_near.
