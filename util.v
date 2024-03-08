@@ -44,24 +44,26 @@ Reserved Notation "u '``_' i" (at level 3, i at level 2,
 Reserved Notation "'d f '/d i" (at level 10, f, i at next level,
   format "''d'  f  ''/d'  i").
 
-Section nameme.
+Section alias_for_bigops.
 Context {R : numDomainType}.
+Implicit Types s : seq R.
 
-Definition sumR (Es : seq R) : R := \sum_(i <- Es) i.
-Definition prodR (Es : seq R) : R := \prod_(i <- Es) i.
-Definition product_dl_prod : R -> R -> R := (fun a1 a2 => a1 + a2 - a1 * a2).
-Definition product_dl_prodR (Es : seq R) : R := \big[product_dl_prod/0]_(i <- Es) i.
-Definition minR (Es : seq R) : R := \big[minr/1]_(i <- Es) i.
-Definition maxR (Es : seq R) : R := \big[maxr/0]_(i <- Es) i.
+Definition sumR s := \sum_(i <- s) i.
+Definition prodR s := \prod_(i <- s) i.
+Definition product_dl_mul (a b : R) := a + b - a * b.
+Definition product_dl_prod s := \big[product_dl_mul/0]_(i <- s) i.
+Definition minR s : R := \big[minr/1]_(i <- s) i.
+Definition maxR s : R := \big[maxr/0]_(i <- s) i.
 
 Definition sumE (Es : seq \bar R) : \bar R := \sum_(i <- Es) i.
+Definition prodE (Es : seq \bar R) : \bar R := \big[*%E/1%E]_(i <- Es) i.
 (* NB: this was used in the previous version of STL
 Definition minE (Es : seq \bar R) : \bar R := \big[mine/+oo%E]_(i <- Es) i.
 *)
 
-End nameme.
+End alias_for_bigops.
 
-Lemma sum_01{R : numDomainType} (I : eqType) (s : seq I) (f : I -> R) :
+Lemma sum_01 {R : numDomainType} (I : eqType) (s : seq I) (f : I -> R) :
   (forall i, i \in s -> f i <= 1) -> \sum_(i <- s) f i <= (size s)%:R.
 Proof.
 move=> s01; rewrite -sum1_size natr_sum big_seq [leRHS]big_seq.
@@ -171,7 +173,7 @@ move=> r0 x y; rewrite !in_itv/= !andbT !le_eqVlt => /predU1P[<-|x0].
   move=> /predU1P[<-|y0 _]; first by rewrite ltxx//.
   by rewrite powR0 ?(gt_eqF r0)// powR_gt0.
 move=> /predU1P[<-|y0]; first rewrite ltNge ltW//.
-by rewrite /powR !gt_eqF// ltr_expR ltr_pmul2l// ltr_ln.
+by rewrite /powR !gt_eqF// ltr_expR ltr_pM2l// ltr_ln.
 Qed.
 
 Lemma prod1_01 {R : realFieldType} :
@@ -338,36 +340,37 @@ case: uf => r fr; exists r => z/= [s].
 by rewrite in_itv/= => /andP[xs _] <-{z}; exact: fr.
 Qed.
 
-
-Section product_dl_prod.
+Section product_dl_mul.
 Context {R : realType}.
 
-Lemma product_dl_prod_01 : forall (x y : R), 0 <= x <= 1 -> 0 <= y <= 1 -> 0 <= product_dl_prod x y <= 1.
-Proof. by move => x y; rewrite /product_dl_prod; nra. Qed.
+Local Notation "x * y" := (product_dl_mul x y).
 
-Lemma product_dl_prod_seq_01 (T : eqType) (f : T -> R) (l0 : seq T) :
-  (forall i, i \in l0 -> 0 <= f i <= 1) -> (0 <= \big[product_dl_prod/0]_(i <- l0) f i <= 1).
+Lemma product_dl_mul_01 (x y : R) : 0 <= x <= 1 -> 0 <= y <= 1 -> 0 <= x * y <= 1.
+Proof. by rewrite /product_dl_mul; nra. Qed.
+
+Lemma product_dl_mul_seq_01 (T : eqType) (f : T -> R) (l0 : seq T) :
+  (forall i, i \in l0 -> 0 <= f i <= 1) -> (0 <= \big[product_dl_mul/0]_(i <- l0) f i <= 1).
 Proof.
 elim: l0.
 - by rewrite big_nil lexx ler01.
 - move=> a l0 IH h.
-  rewrite big_cons product_dl_prod_01 ?h ?mem_head//.
+  rewrite big_cons product_dl_mul_01 ?h ?mem_head//.
   apply: IH => i il0; apply: h.
   by rewrite in_cons il0 orbT.
 Qed.
 
-Lemma product_dl_prod_inv (x y : R) :
-  (0 <= x <= 1) -> (0 <= y <= 1) ->
-    reflect (x = 1 \/ y = 1) (product_dl_prod x y == 1).
+Lemma product_dl_mul_inv (x y : R) :
+  0 <= x <= 1 -> 0 <= y <= 1 ->
+  reflect (x = 1 \/ y = 1) (x * y == 1).
 Proof.
-move=> x01 y01; apply: (iffP eqP); rewrite /product_dl_prod; nra.
+by move=> x01 y01; apply: (iffP eqP); rewrite /product_dl_mul; nra.
 Qed.
 
 Lemma product_dl_prod_inv0 (x y : R) :
-  (0 <= x <= 1) -> (0 <= y <= 1) ->
-    reflect (x = 0 /\ y = 0) (product_dl_prod x y == 0).
+  0 <= x <= 1 -> 0 <= y <= 1 ->
+  reflect (x = 0 /\ y = 0) (x * y == 0).
 Proof.
-move=> x01 y01; apply: (iffP eqP); rewrite /product_dl_prod; nra.
+by move=> x01 y01; apply: (iffP eqP); rewrite /product_dl_mul; nra.
 Qed.
 
 Lemma bigsum_0x (T : eqType) f :
@@ -433,14 +436,11 @@ apply: (iffP idP).
   exact: mem_head.
 Qed.
 
-End product_dl_prod.
-
-
-
+End product_dl_mul.
 
 Lemma prodrN1 {R : realDomainType} (T : eqType) (l : seq T) (f : T -> R) :
   (forall e, e \in l -> f e < 0)%R ->
-  sgr (\big[*%R/1%R]_(e <- l) f e) = (- 1) ^+ (size l).
+  sgr (\prod_(e <- l) f e) = (- 1) ^+ (size l).
 Proof.
 elim: l => [|a l ih h]; first by rewrite big_nil/= expr0 sgr1.
 rewrite big_cons sgrM ltr0_sg ?h ?mem_head//= exprS ih// => e el.

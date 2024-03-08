@@ -19,9 +19,6 @@ Context {R : realType}.
 Variable M : nat.
 Hypothesis M0 : M != 0%N.
 
-Locate "_ --> _".
-
-
 Definition dl2_and {R : fieldType} {n} (v : 'rV[R]_n) :=
   \sum_(i < n) v ``_ i.
 
@@ -82,18 +79,15 @@ Qed.
 Lemma dl2_orC (e1 e2 : expr Bool_P) :
  [[ e1 `\/ e2 ]]_dl2 = [[ e2 `\/ e1 ]]_dl2.
 Proof.
-rewrite /= !big_cons big_nil !mule1; congr *%E.
+rewrite /= /prodE !big_cons big_nil !mule1; congr *%E.
 by rewrite muleC.
 Qed.
 
 Lemma dl2_orA (e1 e2 e3 : expr Bool_P) :
   [[ e1 `\/ (e2 `\/ e3) ]]_dl2 = [[ (e1 `\/ e2) `\/ e3 ]]_dl2.
 Proof.
-rewrite /=.
-rewrite !big_cons big_nil !mule1.
-congr (_ * _)%E.
-rewrite muleCA.
-by rewrite !muleA.
+rewrite /= /prodE !big_cons big_nil !mule1; congr (_ * _)%E.
+by rewrite muleCA !muleA.
 Qed.
 
 Lemma dl2_translation_le0 e :
@@ -104,7 +98,7 @@ dependent induction e using expr_ind' => /=.
 - rewrite /sumE big_map big_seq sume_le0// => t tl.
   move/List.Forall_forall : H => /(_ t); apply => //.
   exact/In_in.
-- rewrite big_map big_seq; have [ol|ol] := boolP (odd (length l)).
+- rewrite /prodE big_map big_seq; have [ol|ol] := boolP (odd (length l)).
     rewrite exprS -signr_odd ol expr1 mulrN1 !EFinN oppeK mul1e.
     have [l0|l0] := pselect (forall i, i \in l -> [[i]]_dl2 != 0)%E; last first.
       move/existsNP : l0 => [/= x /not_implyP[xl /negP/negPn/eqP x0]].
@@ -172,12 +166,12 @@ Lemma dl2_nary_inversion_orE1 (s : seq (expr (Bool_P))) : [[ ldl_or s ]]_dl2 = 0
   exists i, ([[ nth (ldl_bool _ false) s i ]]_dl2 == 0%E) && (i < size s)%nat.
 Proof.
 elim: s => [|h t ih] /=.
-  rewrite big_nil mule1 expr1 EFinN => /eqe_oppLRP.
+  rewrite /prodE big_nil mule1 expr1 EFinN => /eqe_oppLRP.
   by rewrite oppe0 => /eqP; rewrite onee_eq0.
 move=> /eqP; rewrite mule_eq0 eqe signr_eq0/=.
-rewrite big_cons mule_eq0 => /orP[H|/eqP H].
+rewrite /prodE big_cons mule_eq0 => /orP[H|/eqP H].
   by exists 0%N; rewrite /= H.
-have /ih[j /andP[Hj jt]] : [[ldl_or t]]_dl2 = 0 by rewrite /= H mule0.
+have /ih[j /andP[Hj jt]] : [[ldl_or t]]_dl2 = 0 by rewrite /= /prodE H mule0.
 by exists j.+1; rewrite /= Hj.
 Qed.
 
@@ -185,14 +179,14 @@ Lemma dl2_nary_inversion_orE0 (Es : seq (expr (Bool_P)) ) :
     ([[ ldl_or Es ]]_dl2  < 0)%E  -> (forall i, (i < size Es)%nat -> ([[ nth (ldl_bool _ false) Es i ]]_dl2 < 0)%E).
 Proof.
 elim: Es => //= a l IH.
-rewrite big_cons muleCA mule_lt0 => /andP[aneq0]/andP[]/[swap] _.
+rewrite /prodE big_cons muleCA mule_lt0 => /andP[aneq0]/andP[]/[swap] _.
 rewrite exprS EFinM -muleA EFinN mulN1e oppe_eq0 => lneq0.
 have ale0 := dl2_translation_le0 a.
 have alt0 : ([[a]]_dl2 < 0)%E by rewrite lt_neqAle aneq0 ale0.
 elim => [_//=|i _].
 rewrite ltnS => isize.
 apply IH => //.
-rewrite lt_neqAle lneq0/= big_map.
+rewrite /prodE lt_neqAle lneq0/= big_map.
 apply: prode_le0 => j.
 exact: dl2_translation_le0.
 Qed.
@@ -228,14 +222,13 @@ dependent induction e using expr_ind'.
 - rewrite List.Forall_forall in H.
   move: b => [].
   + move/dl2_nary_inversion_andE1.
-    rewrite [bool_translation (ldl_and l)]/= foldrE big_map big_seq big_all_cond => h.
+    rewrite /= big_map big_seq big_all_cond => h.
     apply: allT => x/=.
     apply/implyP => /nthP xnth.
     have [i il0 <-] := xnth (ldl_bool _ false).
-    apply: H => //. rewrite ?h// -In_in mem_nth//.
-    by rewrite h.
+    by apply: H => //=; rewrite ?h// -In_in mem_nth.
   + move/dl2_nary_inversion_andE0.
-    rewrite [bool_translation (ldl_and l)]/= foldrE big_map big_all.
+    rewrite /= big_map big_all.
     elim=>// i /andP[/eqP i0 isize].
     apply/allPn; exists (nth (ldl_bool _ false) l i); first by rewrite mem_nth.
     apply/negPf; apply: H => //.
@@ -245,14 +238,14 @@ dependent induction e using expr_ind'.
 - rewrite List.Forall_forall in H.
   move: b => [].
   + rewrite/is_dl2=>/eqP; move/dl2_nary_inversion_orE1.
-    rewrite [bool_translation (ldl_or l)]/= foldrE big_map big_has.
+    rewrite /= big_map big_has.
     elim=>// i /andP[/eqP i0 isize].
     apply/hasP; exists (nth (ldl_bool _ false) l i); first by rewrite mem_nth.
     apply: H => //.
     by rewrite -In_in mem_nth.
     rewrite /is_dl2/=. by rewrite i0.
   + move/dl2_nary_inversion_orE0.
-    rewrite [bool_translation (ldl_or l)]/= foldrE big_map big_has => h.
+    rewrite /= big_map big_has => h.
     apply/hasPn => x.
     move/nthP => xnth.
     have [i il0 <-] := xnth (ldl_bool _ false).

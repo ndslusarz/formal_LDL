@@ -26,6 +26,7 @@ Proof.
 rewrite /=/sumE !big_cons !big_nil/=.
 have [->//|epoo] := eqVneq (nu.-[[e]]_stl) (+oo)%E.
 have [->//=|enoo] := eqVneq (nu.-[[e]]_stl) (-oo)%E.
+rewrite /mine_dev.
 set a_min := mine (nu.-[[e]]_stl) (mine (nu.-[[e]]_stl) +oo)%E.
 set a := ((nu.-[[e]]_stl - a_min) * ((fine a_min)^-1)%:E)%E.
 have a_min_e : a_min = nu.-[[e]]_stl.
@@ -66,6 +67,7 @@ Lemma orI_stl (e : expr Bool_N) :
   nu.-[[e `\/ e]]_stl = nu.-[[e]]_stl.
 Proof.
 rewrite /=/sumE !big_cons !big_nil/=.
+rewrite /maxe_dev.
 have [->//|enoo] := eqVneq (nu.-[[e]]_stl) (-oo)%E.
 have [->//=|epoo] := eqVneq (nu.-[[e]]_stl) (+oo)%E.
 set a_max := maxe (nu.-[[e]]_stl) (maxe (nu.-[[e]]_stl) -oo)%E.
@@ -275,13 +277,13 @@ dependent induction e using expr_ind'.
 - rewrite List.Forall_forall in H.
   move: b => []. rewrite /is_stl.
   + move/stl_nary_inversion_andE1.
-    rewrite [bool_translation (ldl_and l)]/= foldrE big_map big_seq big_all_cond => h.
+    rewrite [bool_translation (ldl_and l)]/= big_map big_seq big_all_cond => h.
     apply: allT => x/=.
     apply/implyP => /nthP xnth.
     have [i il0 <-] := xnth (ldl_bool _ false).
     by apply: H => //; rewrite ?h// -In_in mem_nth.
   + move/stl_nary_inversion_andE0.
-    rewrite [bool_translation (ldl_and l)]/= foldrE big_map big_all.
+    rewrite [bool_translation (ldl_and l)]/= big_map big_all.
     elim=>// i /andP[i0 isize].
     apply/allPn; exists (nth (ldl_bool _ false) l i); first by rewrite mem_nth.
     apply/negPf; apply: H => //.
@@ -289,13 +291,13 @@ dependent induction e using expr_ind'.
 - rewrite List.Forall_forall in H.
   move: b => [].
   + move/stl_nary_inversion_orE1.
-    rewrite [bool_translation (ldl_or l)]/= foldrE big_map big_has.
+    rewrite [bool_translation (ldl_or l)]/= big_map big_has.
     elim=>// i /andP[i0 isize].
     apply/hasP; exists (nth (ldl_bool _ false) l i); first by rewrite mem_nth.
     apply: H => //.
     by rewrite -In_in mem_nth.
   + move/stl_nary_inversion_orE0.
-    rewrite [bool_translation (ldl_or l)]/= foldrE big_map big_has => h.
+    rewrite [bool_translation (ldl_or l)]/= big_map big_has => h.
     apply/hasPn => x.
     move/nthP => xnth.
     have [i il0 <-] := xnth (ldl_bool _ false).

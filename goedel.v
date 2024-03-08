@@ -93,7 +93,7 @@ dependent induction e using expr_ind'.
       by rewrite /maxr; case: ifPn; lra.
     * rewrite bigmax_le ?ler01// => i il0.
       by apply: (andP (H _ _ _ _ _)).2 => //; rewrite -In_in.
-  + rewrite /product_dl_prodR big_map product_dl_prod_seq_01=> //i il0.
+  + rewrite /product_dl_prod big_map product_dl_mul_seq_01=> //i il0.
     by apply: H => //; rewrite -In_in.
 (*- move/List.Forall_forall in H.
   have [il0|il0] := ltP i (size l0).
@@ -190,14 +190,14 @@ case: l => //=; move => H.
     rewrite big_seq; move/IH => [i i1].
     by exists i.+1.
 - move => l1 l2 /eqP.
-  rewrite /product_dl_prodR big_map big_seq.
+  rewrite /product_dl_prod big_map big_seq.
   elim: Es.
   + by rewrite big_nil eq_sym oner_eq0.
   + move=> a l0 IH.
-    rewrite -big_seq big_cons {1}/product_dl_prod.
-    move/product_dl_prod_inv => [|||/eqP].
+    rewrite -big_seq big_cons {1}/product_dl_mul.
+    move/product_dl_mul_inv => [|||/eqP].
     * exact: H.
-    * by apply: product_dl_prod_seq_01.
+    * by apply: product_dl_mul_seq_01.
     * by exists 0%nat; rewrite a0 eq_refl ltn0Sn.
     * by rewrite big_seq; move/IH => [x ?]; exists x.+1.
 Qed.
@@ -226,7 +226,7 @@ case: l => //=; move => H.
     by rewrite mem_nth.
   apply/mapP; exists (nth (ldl_bool _ false) Es i) => //.
     by rewrite mem_nth.
-- rewrite /maxR/product_dl_prodR.
+- rewrite /maxR/product_dl_prod.
   elim: Es => [h i|a l0 IH h]; first by rewrite nth_nil.
   elim => /=[_|].
   + move: h.
@@ -238,17 +238,16 @@ case: l => //=; move => H.
     move: h; rewrite !big_map big_cons {1}/maxr.
     case: ifPn => // /[swap] ->; rewrite -leNgt => bigle0.
     by apply/eqP; rewrite eq_le bigle0 bigmax_idl le_maxr lexx.
-- rewrite /product_dl_prodR.
-  rewrite big_map.
+- rewrite /product_dl_prod big_map.
   elim: Es => // a l0 IH.
   rewrite big_cons => /eqP /product_dl_prod_inv0 h.
   case => /=[_|i].
   + apply: (h _ _).1 => //.
-    exact: product_dl_prod_seq_01.
+    exact: product_dl_mul_seq_01.
   + rewrite ltnS => isize.
     apply: IH =>//.
     apply: (h _ _).2 => //.
-    exact: product_dl_prod_seq_01.
+    exact: product_dl_mul_seq_01.
 Qed.
 
 Lemma soundness (e : expr (Bool_N)) b :
@@ -261,13 +260,13 @@ dependent induction e using expr_ind' => ll ly.
   rewrite [ [[ldl_bool _ b]]_l ]/=.
   move: b => [].
   + move/nary_inversion_andE1.
-    rewrite [bool_translation (ldl_and l0)]/= foldrE big_map big_seq big_all_cond => h.
+    rewrite /= big_map big_seq big_all_cond => h.
     apply: allT => x/=.
     apply/implyP => /nthP xnth.
     have [i il0 <-] := xnth (ldl_bool _ false).
     by apply: H  => //; rewrite ?h// -In_in mem_nth.
   + move/nary_inversion_andE0.
-    rewrite [bool_translation (ldl_and l0)]/= foldrE big_map big_all.
+    rewrite /= big_map big_all.
     elim=>// i /andP[/eqP i0 isize].
     apply/allPn; exists (nth (ldl_bool _ false) l0 i); first by rewrite mem_nth.
     apply/negPf; apply: H => //.
@@ -276,13 +275,13 @@ dependent induction e using expr_ind' => ll ly.
   rewrite [ [[ldl_bool _ b]]_l]/=.
   move: b => [].
   + move/nary_inversion_orE1.
-    rewrite [bool_translation (ldl_or l0)]/= foldrE big_map big_has.
+    rewrite /= big_map big_has.
     elim=>// i /andP[/eqP i0 isize].
     apply/hasP; exists (nth (ldl_bool _ false) l0 i); first by rewrite mem_nth.
     apply: H => //.
     by rewrite -In_in mem_nth.
   + move/nary_inversion_orE0.
-    rewrite [bool_translation (ldl_or l0)]/= foldrE big_map big_has => h.
+    rewrite /= big_map big_has => h.
     apply/hasPn => x.
     move/nthP => xnth.
     have [i il0 <-] := xnth (ldl_bool _ false).
@@ -438,7 +437,7 @@ Proof.
 have := translate_Bool_T_01 p Lukasiewicz e1.
 have := translate_Bool_T_01 p Lukasiewicz e2.
 have := translate_Bool_T_01 p Lukasiewicz e3.
-rewrite /=/sumR/maxR/minR/product_dl_prodR ?big_cons ?big_nil.
+rewrite /=/sumR/maxR/minR/product_dl_prod ?big_cons ?big_nil.
 set t1 := _ e1.
 set t2 := _ e2.
 set t3 := _ e3.
@@ -479,7 +478,7 @@ have ? : p != 0 by exact: lt0r_neq0.
 have := translate_Bool_T_01 p Yager e1.
 have := translate_Bool_T_01 p Yager e2.
 have := translate_Bool_T_01 p Yager e3.
-rewrite /=/sumR/maxR/minR/product_dl_prodR ?big_cons ?big_nil.
+rewrite /=/sumR/maxR/minR/product_dl_prod ?big_cons ?big_nil.
 rewrite ![in _ + _]addr0 addr0 addr0.
 set t1 := _ e1.
 set t2 := _ e2.
@@ -542,7 +541,7 @@ have pneq0 : p != 0 by exact: lt0r_neq0.
 have := translate_Bool_T_01 p Yager e1.
 have := translate_Bool_T_01 p Yager e2.
 have := translate_Bool_T_01 p Yager e3.
-rewrite /=/sumR/maxR/minR/product_dl_prodR ?big_cons ?big_nil.
+rewrite /=/sumR/maxR/minR/product_dl_prod ?big_cons ?big_nil.
 set t1 := _ e1.
 set t2 := _ e2.
 set t3 := _ e3.
@@ -729,22 +728,22 @@ Qed.
 Lemma product_orC (e1 e2 : expr Bool_N) :
   [[ e1 `\/ e2 ]]_product = [[ e2 `\/ e1 ]]_product.
 Proof.
-rewrite /=/sumR/maxR/product_dl_prodR ?big_cons ?big_nil.
-by rewrite /=/product_dl_prod addr0 addr0 mulr0 mulr0 subr0 subr0 mulrC -(addrC (_ e2)).
+rewrite /=/sumR/maxR/product_dl_prod ?big_cons ?big_nil.
+by rewrite /=/product_dl_mul addr0 addr0 mulr0 mulr0 subr0 subr0 mulrC -(addrC (_ e2)).
 Qed.
 
 Lemma product_orA (e1 e2 e3 : expr Bool_N) :
   [[ (e1 `\/ (e2 `\/ e3)) ]]_product = [[ ((e1 `\/ e2) `\/ e3) ]]_product.
 Proof.
-rewrite /=/sumR/product_dl_prodR ?big_cons ?big_nil.
-rewrite /product_dl_prod !addr0 !mulr0 !subr0.
+rewrite /=/sumR/product_dl_prod ?big_cons ?big_nil.
+rewrite /product_dl_mul !addr0 !mulr0 !subr0.
 lra.
 Qed.
 
 Theorem product_andA (e1 e2 e3 : expr Bool_N) : (0 < p) ->
   [[ (e1 `/\ e2) `/\ e3]]_product = [[ e1 `/\ (e2 `/\ e3) ]]_product.
 Proof.
-rewrite /=/sumR/maxR/minR/product_dl_prodR ?big_cons ?big_nil.
+rewrite /=/sumR/maxR/minR/product_dl_prod ?big_cons ?big_nil.
 set t1 := _ e1.
 set t2 := _ e2.
 set t3 := _ e3.

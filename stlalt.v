@@ -428,13 +428,13 @@ dependent induction e using expr_ind'.
 - rewrite List.Forall_forall in H.
   move: b => []. rewrite /is_stl.
   + move/stl_nary_inversion_andE1.
-    rewrite [bool_translation (ldl_and l)]/= foldrE big_map big_seq big_all_cond => h.
+    rewrite [bool_translation (ldl_and l)]/= big_map big_seq big_all_cond => h.
     apply: allT => x/=.
     apply/implyP => /nthP xnth.
     have [i il0 <-] := xnth (ldl_bool _ false).
     by apply: H => //; rewrite ?h// -In_in mem_nth.
   + move/stl_nary_inversion_andE0.
-    rewrite [bool_translation (ldl_and l)]/= foldrE big_map big_all.
+    rewrite [bool_translation (ldl_and l)]/= big_map big_all.
     elim=>// i /andP[i0 isize].
     apply/allPn; exists (nth (ldl_bool _ false) l i); first by rewrite mem_nth.
     apply/negPf; apply: H => //.
@@ -442,13 +442,13 @@ dependent induction e using expr_ind'.
 - rewrite List.Forall_forall in H.
   move: b => [|].
   + move/stl_nary_inversion_orE1.
-    rewrite [bool_translation (ldl_or l)]/= foldrE big_map big_has.
+    rewrite [bool_translation (ldl_or l)]/= big_map big_has.
     elim=>// i /andP[i0 isize].
     apply/hasP; exists (nth (ldl_bool _ false) l i); first by rewrite mem_nth.
     apply: H => //.
     by rewrite -In_in mem_nth.
   + move/stl_nary_inversion_orE0.
-    rewrite [bool_translation (ldl_or l)]/= foldrE big_map big_has => h.
+    rewrite [bool_translation (ldl_or l)]/= big_map big_has => h.
     apply/hasPn => x.
     move/nthP => xnth.
     have [i il0 <-] := xnth (ldl_bool _ false).
@@ -916,16 +916,16 @@ have /cvg_lim : h^-1 * ((stl_and_lt0 (seq_of_rV (const_mx p + h *: err_vec i))) 
     exact/cvg_at_right_filter/cvg_id.
   rewrite H1.
   apply/cvgrPdist_le => /= eps eps0.
-    near=> x.
+  near=> x.
 
-    rewrite [X in normr (_ - X)](_ : _ =
-      x^-1 * ((p + x) * M%:R * expR (- x / (p + x)) + x - p * M%:R 
-      *  expR (nu * (- x / (p + x))) * expR (nu * (- x / (p + x))) ) /
-       (M%:R * expR (nu * (- x / (p + x))) + 1)); last first.
-      (* N: above needs to be the part that's factorised (what is here is
-      true, just not broken up enough to make the proof go through easily*)
-      
-  admit. (*this is a spot for -> 0- case*)
+  rewrite [X in normr (_ - X)](_ : _ =
+    x^-1 * ((p + x) * M%:R * expR (- x / (p + x)) + x - p * M%:R 
+    *  expR (nu * (- x / (p + x))) * expR (nu * (- x / (p + x))) ) /
+     (M%:R * expR (nu * (- x / (p + x))) + 1)); last first.
+    (* N: above needs to be the part that's factorised (what is here is
+    true, just not broken up enough to make the proof go through easily*)
+    admit. (*this is a spot for -> 0- case*)
+  admit.
 rewrite H1.
 apply. exact: Rhausdorff.
 Unshelve. all: end_near.
