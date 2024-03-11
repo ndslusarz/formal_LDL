@@ -922,12 +922,21 @@ have /cvg_lim : h^-1 * ((stl_and_lt0 (seq_of_rV (const_mx p + h *: err_vec i))) 
   rewrite [X in normr (_ - X)](_ : _ =
     x^-1 * (x / (M%:R + (expR (nu * (- x / (p + x))))^-1))
     + (num x / den x)); last first.
+    rewrite H3//.
+    rewrite /den /num.
+    set a := expR (- x / (p + x)%E).
+    set b := expR (nu * (- x / (p + x)%E)).
+    rewrite -invf_div !mulrA mulrC.
+      
+    Search (_/_/_).
+(*       congr (_ / _). *)
     admit.
   near: x.
   move: eps eps0.
   apply/cvgrPdist_le.
   rewrite -[X in _ --> X]addr0.
   apply: cvgD.
+  rewrite -div1r.
     admit.
   pose num' (x : R) : R := M%:R * expR (- x / (p + x)) +
                            expR (- x / (p + x)) * x * M%:R * (x / (x + p)^+2 - (x + p)^-1) +
