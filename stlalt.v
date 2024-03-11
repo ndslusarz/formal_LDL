@@ -917,15 +917,37 @@ have /cvg_lim : h^-1 * ((stl_and_lt0 (seq_of_rV (const_mx p + h *: err_vec i))) 
   rewrite H1.
   apply/cvgrPdist_le => /= eps eps0.
   near=> x.
-
+  pose num (x : R) : R := M%:R * p * expR (- x / (p + x)) + M%:R * x * expR (- x / (p + x)) - M%:R * p.
+  pose den (x : R) : R := x * (M%:R + (expR (nu * (- x / (p + x))))^-1).
   rewrite [X in normr (_ - X)](_ : _ =
-    x^-1 * ((p + x) * M%:R * expR (- x / (p + x)) + x - p * M%:R 
-    *  expR (nu * (- x / (p + x))) * expR (nu * (- x / (p + x))) ) /
-     (M%:R * expR (nu * (- x / (p + x))) + 1)); last first.
-    (* N: above needs to be the part that's factorised (what is here is
-    true, just not broken up enough to make the proof go through easily*)
-    admit. (*this is a spot for -> 0- case*)
-  admit.
+    x^-1 * (x / (M%:R + (expR (nu * (- x / (p + x))))^-1))
+    + (num x / den x)); last first.
+    admit.
+  near: x.
+  move: eps eps0.
+  apply/cvgrPdist_le.
+  rewrite -[X in _ --> X]addr0.
+  apply: cvgD.
+    admit.
+  pose num' (x : R) : R := M%:R * expR (- x / (p + x)) +
+                           expR (- x / (p + x)) * x * M%:R * (x / (x + p)^+2 - (x + p)^-1) +
+                           expR (- x / (p + x)) * M%:R * p * (x / (x + p)^+2 - (x + p)^-1).
+  pose den' (x : R) : R := expR (nu * (x / (x + p))) +
+                           M%:R +
+                           expR (nu * (x / (x + p))) * x * (- x * nu / (x + p)^+2 + nu / (x + p)).
+  have := @lhopital_at_left R num
+                      num'
+                      den
+                      den'
+                      0 (-1)%R 1%R.
+  apply.
+    lra.
+    admit.
+    admit.
+    by rewrite /num oppr0 mul0r expR0 mulr0 mul0r addr0 mulr1 subrr.
+    by rewrite /den mul0r.
+    admit.
+    admit.
 rewrite H1.
 apply. exact: Rhausdorff.
 Unshelve. all: end_near.

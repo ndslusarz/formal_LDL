@@ -196,3 +196,19 @@ have bv : b < v.
 Unshelve. all: by end_near. Qed.
 
 End lhopital.
+
+Section lhopital_at_left.
+Context {R : realType}.
+Variables (f df g dg : R -> R) (a u v : R).
+Hypothesis uav : u < a < v.
+Hypotheses (fdf : forall x, x \in `]u, v[%R -> is_derive x 1 f (df x))
+           (gdg : forall x, x \in `]u, v[%R -> is_derive x 1 g (dg x)).
+Hypotheses (fa0 : f a = 0) (ga0 : g a = 0)
+           (cdg : \forall x \near a^', dg x != 0).
+
+Lemma lhopital_at_left (l : R) :
+  df x / dg x @[x --> a^'-] --> l -> f x / g x @[x --> a^'-] --> l.
+Proof.
+Admitted.
+
+End lhopital_at_left.
