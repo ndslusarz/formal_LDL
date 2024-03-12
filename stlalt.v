@@ -889,20 +889,17 @@ have /cvg_lim : h^-1 * ((stl_and_lt0 (seq_of_rV (const_mx p + h *: err_vec i))) 
           exact: cvg_cst.
         by under eq_fun do rewrite mulrCA mulrC; exact: exp0.
       by under eq_fun do rewrite mulrCA mulrC; exact: exp0.
-    have L1 : forall x : R, x \in `](-1), 1[%R -> is_derive x 1 ( *%R^~ p^-1) p^-1.
-      move=> x N1x1.
+    have L1 : forall x : R, x \in (ball 0 1 : set R^o) -> is_derive x 1 ( *%R^~ p^-1) p^-1.
+      move=> x _.
       rewrite [X in is_derive _ _ X _](_ : _ = p^-1 *: id); last first.
         by apply/funext => y /=; rewrite mulrC.
       rewrite [X in is_derive _ _ _ X](_ : _ = p^-1 *: (1:R^o))//.
         exact: is_deriveZ.
       by rewrite /GRing.scale/= mulr1.
-    have := @lhopital R (fun x => expR (x / p) - 1)
-                        (fun x => p^-1 * expR (x / p))
-                        (fun x => x / p)
-                        (fun=> p^-1) 0 (-1)%R 1%R.
-    apply.
-      lra.
-      move=> x; rewrite !in_itv/= => N1x1.
+    apply: (@lhopital_right R (fun x => expR (x / p) - 1)
+        (fun x => p^-1 * expR (x / p)) (fun x => x / p) (fun=> p^-1) 0 _
+        (nbhsx_ballx _ _ ltr01)).
+      move=> x xU.
       rewrite -[X in is_derive _ _ _ X]subr0.
       apply: is_deriveB => /=.
       rewrite mulrC.
@@ -956,17 +953,11 @@ have /cvg_lim : h^-1 * ((stl_and_lt0 (seq_of_rV (const_mx p + h *: err_vec i))) 
   pose den' (x : R) : R := expR (nu * (x / (x + p))) +
                            M%:R +
                            expR (nu * (x / (x + p))) * x * (- x * nu / (x + p)^+2 + nu / (x + p)).
-  have := @lhopital_at_left R num
-                      num'
-                      den
-                      den'
-                      0 (-1)%R 1%R.
-  apply.
-    lra.
+  apply: (@lhopital_left R _ num' _ den' 0 _ (nbhsx_ballx _ _ ltr01)).
     admit.
     admit.
-    by rewrite /num oppr0 mul0r expR0 mulr0 mul0r addr0 mulr1 subrr.
-    by rewrite /den mul0r.
+    by rewrite oppr0 mul0r expR0 mulr1 addr0 subrr.
+    by rewrite mul0r.
     admit.
     admit.
 rewrite H1.
