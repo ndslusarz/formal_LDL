@@ -703,6 +703,10 @@ apply. exact: Rhausdorff.
 Unshelve. all: end_near.
 Qed.
 
+Lemma invrM' (x y : R) : x != 0 -> (x * y)^-1 = x^-1 * y^-1.
+Proof. nra. Qed.
+
+
 Lemma shadowlifting_stl_and_lt0 (p : R) : p > 0 -> forall i,
   ('d (stl_and_lt0 \o seq_of_rV) '/d i) (const_mx p) = M.+1%:R^-1.
 Proof.
@@ -916,22 +920,29 @@ have /cvg_lim : h^-1 * ((stl_and_lt0 (seq_of_rV (const_mx p + h *: err_vec i))) 
     exact/cvg_at_right_filter/cvg_id.
   rewrite H1.
   apply/cvgrPdist_le => /= eps eps0.
-  near=> x.
-  pose num (x : R) : R := M%:R * p * expR (- x / (p + x)) + M%:R * x * expR (- x / (p + x)) - M%:R * p.
-  pose den (x : R) : R := x * (M%:R + (expR (nu * (- x / (p + x))))^-1).
+  near=> h.
+  set a := expR (nu * - h / (p + h)%E).
+  set b := expR (- h / (p + h)).
+  pose num (h : R) : R := M%:R * (p + h) * b - M%:R * p.
+  pose den (h : R) : R := h * (M%:R + a^-1).
+  have ? : a != 0 by rewrite ?gt_eqF ?expR_gt0.
+  have ? : ((M%:R * a)%R + 1%R)%E != 0 by rewrite gt_eqF// addr_gt0// mulr_gt0// ?expR_gt0// ltr0n// lt0n.
   rewrite [X in normr (_ - X)](_ : _ =
-    x^-1 * (x / (M%:R + (expR (nu * (- x / (p + x))))^-1))
-    + (num x / den x)); last first.
-    rewrite H3//.
-    rewrite /den /num.
-    set a := expR (- x / (p + x)%E).
-    set b := expR (nu * (- x / (p + x)%E)).
-    rewrite -invf_div !mulrA mulrC.
-      
-    Search (_/_/_).
-(*       congr (_ / _). *)
-    admit.
-  near: x.
+    h^-1 * (h / (a * (M%:R + a^-1))) + (num h / den h)); last first.
+    rewrite H3// mulrA -/a -/b.
+    rewrite -[X in _ - X](mul1r p) -[X in _ - (X * p)](@mulfV _ (((M%:R * a)%R + 1%R)))//.
+    rewrite -(mulrAC _ p) -mulrBl (mulrDl _ _ p) mul1r opprD !addrA.
+    rewrite [X in _ * (X / _)](_ : _ = (p + h) * M%:R * b * a + h - M%:R * a * p); last by lra.
+    rewrite (_ : _ / _ = (a * ((p + h) * M%:R * b + h * a^-1 - M%:R * p) / (a * (M%:R + a^-1)))); last first.
+      congr (_ / _); last by rewrite mulrDr mulfV// mulrC.
+      by rewrite !mulrDr (mulrC a (_ / _)) -(mulrA h) (@mulVf _ a)// mulr1; lra.
+    rewrite -addrAC mulrDr (mulrC a (_ / _)) -(mulrA h) (@mulVf _ a)// mulr1.
+    rewrite mulrA (mulrDr (h^-1)) mulrDl addrC.
+    congr (_ + _); first nra.
+    rewrite !invrM'// (mulrC a) !mulrA; congr(_/_).
+    rewrite -mulrA mulfV// mulr1 mulrC; congr(_/_).
+    by rewrite /num; nra.
+  near: h.
   move: eps eps0.
   apply/cvgrPdist_le.
   rewrite -[X in _ --> X]addr0.
