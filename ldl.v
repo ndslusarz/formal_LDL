@@ -55,7 +55,7 @@ Inductive simple_type :=
 | Index_T of nat
 | Real_T
 | Vector_T of nat
-| Network_T of nat & nat.
+| Fun_T of nat & nat.
 
 Definition Bool_P := Bool_T pos.
 Definition Bool_N := Bool_T neg.
@@ -63,43 +63,45 @@ Definition Bool_N := Bool_T neg.
 Inductive comparison : Type := cmp_le | cmp_eq.
 
 Section expr.
-Context {Real : realType}.
+Context {R : realType}.
 
 Inductive expr : simple_type -> Type :=
   (* base expressions *)
-  | ldl_real : Real -> expr Real_T
+  | ldl_real : R -> expr Real_T
   | ldl_bool : forall p, bool -> expr (Bool_T p)
   | ldl_idx : forall n, 'I_n -> expr (Index_T n)
-  | ldl_vec : forall n, n.-tuple Real -> expr (Vector_T n)
+  | ldl_vec : forall n, n.-tuple R -> expr (Vector_T n)
   (* connectives *)
   | ldl_and : forall x, seq (expr (Bool_T x)) -> expr (Bool_T x)
   | ldl_or : forall x, seq (expr (Bool_T x)) -> expr (Bool_T x)
   | ldl_not : expr Bool_N -> expr Bool_N
-  (* arithmetic ops *)
-  | ldl_add : expr Real_T -> expr Real_T -> expr Real_T
-  | ldl_mul : expr Real_T -> expr Real_T -> expr Real_T
-  | ldl_opp : expr Real_T -> expr Real_T
   (* comparisons *)
   | ldl_cmp : forall x, comparison -> expr Real_T -> expr Real_T -> expr (Bool_T x)
   (* networks and applications *)
-  | ldl_net : forall n m, (n.-tuple Real -> m.-tuple Real) -> expr (Network_T n m)
-  | ldl_app : forall n m, expr (Network_T n m) -> expr (Vector_T n) -> expr (Vector_T m)
+  | ldl_fun : forall n m, (n.-tuple R -> m.-tuple R) -> expr (Fun_T n m)
+  | ldl_app : forall n m, expr (Fun_T n m) -> expr (Vector_T n) -> expr (Vector_T m)
   | ldl_lookup : forall n, expr (Vector_T n) -> expr (Index_T n) -> expr Real_T.
 
 End expr.
 
-HB.instance Definition _ (Real : realType) b :=
-  @gen_eqMixin (@expr Real (Bool_T b)).
+HB.instance Definition _ (R : realType) b :=
+  @gen_eqMixin (@expr R (Bool_T b)).
 
 Declare Scope ldl_scope.
+Context {R : realType}.
 
 Notation "a `/\ b" := (ldl_and [:: a; b]) (at level 45).
 Notation "a `\/ b" := (ldl_or [:: a; b]) (at level 45).
 Notation "a `=> b" := (ldl_or [:: (ldl_not a); b]) (at level 55).
 Notation "`~ a"    := (ldl_not a) (at level 75).
-Notation "a `+ b"  := (ldl_add a b) (at level 50).
-Notation "a `* b"  := (ldl_mul a b) (at level 40).
-Notation "`- a"    := (ldl_opp a) (at level 45).
+Let ldl_add := ldl_fun (fun (t : (2.-tuple (R))) => ([tuple [tnth t 0] + [tnth t 1] ])%R).
+Let ldl_mul := ldl_fun (fun (t : (2.-tuple (R))) => ([tuple [tnth t 0] * [tnth t 1] ])%R).
+Let ldl_sub := ldl_fun (fun (t : (2.-tuple (R))) => ([tuple [tnth t 0] - [tnth t 1] ])%R).
+Let ldl_opp := ldl_fun (fun (t : (1.-tuple (R))) => ([tuple -[tnth t 0] ])%R).
+Notation "a `+ b"  := (ldl_lookup (ldl_app ldl_add [tuple a b]) 0) (at level 50).
+Notation "a `- b"  := (ldl_lookup (ldl_app ldl_sub [tuple a b]) 0) (at level 45).
+Notation "a `* b"  := (ldl_lookup (ldl_app ldl_mul [tuple a b]) 0) (at level 40).
+Notation "`- a"    := (ldl_lookup (ldl_app ldl_opp [tuple a]) 0) (at level 45).
 
 Local Open Scope ldl_scope.
 
