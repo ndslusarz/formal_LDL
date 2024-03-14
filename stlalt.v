@@ -1200,11 +1200,26 @@ have /cvg_lim : h^-1 * ((stl_and_lt0 (seq_of_rV (const_mx p + h *: err_vec i))) 
       exact/cvg_at_left_filter/cvg_id.
     rewrite /num'.
     pose c x := expR (nu * (x / (x + p)%E)).
+    rewrite -{2}(mulr0 (M%:R * b 0 / (0 + p))).
     under eq_fun=> x.
       rewrite -/(b x) -/(c x).
+      rewrite -addrA -mulrDl -mulrA.
+      rewrite (mulrC x) mulrA -mulrDr.
+      rewrite -mulrA mulrDr mulrN mulfV; last first.
+        rewrite gt_eqF//. admit.
+      rewrite mulrDr mulrN1 addrCA (mulrC _ (M%:R)) subrr addr0.
+      rewrite mulrA (mulrC x) expr2 invrM'; last first. admit.
+      rewrite !mulrA -(mulrA _ (x + p)) mulfV; last first. admit.
+      rewrite mulr1.
       over.
-    apply/cvgrPdist_le => eps eps0.
-    near=> x.
+    apply: cvgM; last admit.
+    apply: cvgM; last first. apply: cvgV. admit. apply: cvgD. admit. exact: cvg_cst.
+    apply: cvgM. exact: cvg_cst.
+    apply: continuous_cvg; first exact: continuous_expR.
+    apply: cvgM; first by apply: cvgN; exact/cvg_at_left_filter/cvg_id.
+    apply: cvgV. admit.
+    apply: cvgD; first exact: cvg_cst.
+    exact/cvg_at_left_filter/cvg_id.
     admit.
 rewrite H1.
 apply. exact: Rhausdorff.
