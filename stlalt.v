@@ -1273,26 +1273,34 @@ have /cvg_lim : h^-1 * ((stl_and_lt0 (seq_of_rV (const_mx p + h *: err_vec i))) 
     rewrite /num'.
     pose c x := expR (nu * (x / (x + p)%E)).
     rewrite -{2}(mulr0 (M%:R * b 0 / (0 + p))).
-    under eq_fun=> x.
+    apply: cvg_trans.
+    apply: (@near_eq_cvg _ _ _ _ (fun (x : R) => M%:R * b x / (x + p)%E * x)).
+    near=> x.
+      have Hint14: p + x != 0.
+        apply: px_neq0. rewrite inE/ball/= sub0r normrN ltr0_norm// ltrNl.
+        near: x.
+        apply: nbhs_left_gt.
+        by rewrite ltrNl oppr0.
+      apply/esym.
       rewrite -/(b x) -/(c x).
       rewrite -addrA -mulrDl -mulrA.
       rewrite (mulrC x) mulrA -mulrDr.
-      rewrite -mulrA mulrDr mulrN mulfV; last first.
-        rewrite gt_eqF//. admit.
+      rewrite -mulrA mulrDr mulrN mulfV; last by rewrite addrC Hint14.
       rewrite mulrDr mulrN1 addrCA (mulrC _ (M%:R)) subrr addr0.
-      rewrite mulrA (mulrC x) expr2 invrM'; last first. admit.
-      rewrite !mulrA -(mulrA _ (x + p)) mulfV; last first. admit.
-      rewrite mulr1.
-      over.
-    apply: cvgM; last admit.
-    apply: cvgM; last first. apply: cvgV. admit. apply: cvgD. admit. exact: cvg_cst.
-    apply: cvgM. exact: cvg_cst.
+      rewrite mulrA (mulrC x) expr2 invrM'; last by rewrite addrC Hint14.
+      rewrite !mulrA -(mulrA _ (x + p)) mulfV; last by rewrite addrC Hint14.
+      by rewrite mulr1.
+    apply: cvgM; last first. exact/cvg_at_left_filter/cvg_id.
+    apply: cvgM; last first.
+      apply: cvgV; first by rewrite gt_eqF ?add0r.
+      apply: cvgD; first exact/cvg_at_left_filter/cvg_id.
+      exact: cvg_cst.
+    apply: cvgM; first exact: cvg_cst.
     apply: continuous_cvg; first exact: continuous_expR.
     apply: cvgM; first by apply: cvgN; exact/cvg_at_left_filter/cvg_id.
-    apply: cvgV. admit.
+    apply: cvgV; first by rewrite gt_eqF ?addr0.
     apply: cvgD; first exact: cvg_cst.
     exact/cvg_at_left_filter/cvg_id.
-    admit.
 rewrite H1.
 apply. exact: Rhausdorff.
 Unshelve. all: end_near.
