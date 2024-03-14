@@ -105,7 +105,7 @@ Notation "`- a"    := (ldl_lookup (ldl_app ldl_opp [tuple a]) 0) (at level 45).
 
 Let ldl_norm_infty n := ldl_fun (fun (t : (n.+1).-tuple R) => [tuple \big[maxr/[tnth t 0] ]_(i <- t) i ])%R.
 Notation "`|| t ||" := (ldl_lookup (ldl_norm_infty t) 0).
-Notation "`| t |_ n" := (ldl_lookup t n) (at level 55).
+Notation "t `! n" := (ldl_lookup t n) (at level 55).
 
 Local Open Scope ldl_scope.
 
