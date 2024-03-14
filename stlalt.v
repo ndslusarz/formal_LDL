@@ -1189,7 +1189,22 @@ have /cvg_lim : h^-1 * ((stl_and_lt0 (seq_of_rV (const_mx p + h *: err_vec i))) 
     by rewrite /GRing.scale/= mulr1.
     by rewrite oppr0 mul0r expR0 mulr1 addr0 subrr.
     by rewrite mul0r.
-    admit.
+    near=> x.
+      rewrite /den'.
+      admit.
+    rewrite -{2}(mul0r ((den' 0)^-1)).
+    apply: cvgM; last first.
+      apply: cvgV.
+        by rewrite /den' !mul0r !mulr0 !mul0r addr0 gt_eqF// addr_gt0// ?expR_gt0 ?ltr0n ?lt0n.
+      apply: continuous_cvg. admit.
+      exact/cvg_at_left_filter/cvg_id.
+    rewrite /num'.
+    pose c x := expR (nu * (x / (x + p)%E)).
+    under eq_fun=> x.
+      rewrite -/(b x) -/(c x).
+      over.
+    apply/cvgrPdist_le => eps eps0.
+    near=> x.
     admit.
 rewrite H1.
 apply. exact: Rhausdorff.
