@@ -94,14 +94,17 @@ Notation "a `/\ b" := (ldl_and [:: a; b]) (at level 45).
 Notation "a `\/ b" := (ldl_or [:: a; b]) (at level 45).
 Notation "a `=> b" := (ldl_or [:: (ldl_not a); b]) (at level 55).
 Notation "`~ a"    := (ldl_not a) (at level 75).
-Let ldl_add := ldl_fun (fun (t : (2.-tuple (R))) => ([tuple [tnth t 0] + [tnth t 1] ])%R).
-Let ldl_mul := ldl_fun (fun (t : (2.-tuple (R))) => ([tuple [tnth t 0] * [tnth t 1] ])%R).
-Let ldl_sub := ldl_fun (fun (t : (2.-tuple (R))) => ([tuple [tnth t 0] - [tnth t 1] ])%R).
-Let ldl_opp := ldl_fun (fun (t : (1.-tuple (R))) => ([tuple -[tnth t 0] ])%R).
+Let ldl_add := ldl_fun (fun (t : 2.-tuple R) => [tuple [tnth t 0] + [tnth t 1] ])%R.
+Let ldl_mul := ldl_fun (fun (t : 2.-tuple R) => [tuple [tnth t 0] * [tnth t 1] ])%R.
+Let ldl_sub := ldl_fun (fun (t : 2.-tuple R) => [tuple [tnth t 0] - [tnth t 1] ])%R.
+Let ldl_opp := ldl_fun (fun (t : 1.-tuple R) => [tuple -[tnth t 0] ])%R.
 Notation "a `+ b"  := (ldl_lookup (ldl_app ldl_add [tuple a b]) 0) (at level 50).
 Notation "a `- b"  := (ldl_lookup (ldl_app ldl_sub [tuple a b]) 0) (at level 45).
 Notation "a `* b"  := (ldl_lookup (ldl_app ldl_mul [tuple a b]) 0) (at level 40).
 Notation "`- a"    := (ldl_lookup (ldl_app ldl_opp [tuple a]) 0) (at level 45).
+
+Let ldl_norm_infty n := ldl_fun (fun (t : (n.+1).-tuple R) => [tuple \big[maxr/[tnth t 0] ]_(i <- t) i ])%R.
+Notation "`|| t ||" := (ldl_norm_infty t).
 
 Local Open Scope ldl_scope.
 
