@@ -1189,9 +1189,81 @@ have /cvg_lim : h^-1 * ((stl_and_lt0 (seq_of_rV (const_mx p + h *: err_vec i))) 
     by rewrite /GRing.scale/= mulr1.
     by rewrite oppr0 mul0r expR0 mulr1 addr0 subrr.
     by rewrite mul0r.
-    near=> x.
-      rewrite /den'.
-      admit.
+
+    have Htmp : (expR (nu * (x / (x + p)%E)) + M%:R +
+      (expR (nu * (x / (x + p)%E)) * x * (- x * nu / (x + p)%E ^+ 2 + nu / (x + p)%E)%E)%R)%E @[x --> (0:R)^'] --> ((1:R)%R + M%:R).
+      rewrite -[X in _ --> X]addr0.
+      have Htmp : nu * (x0 / (x0 + p)%E) @[x0 --> 0^'] --> 0.
+        rewrite -[X in _ --> X](mulr0 nu).
+        apply: cvgM.
+          exact: cvg_cst.
+        rewrite -[X in _ --> X](mul0r p^-1).
+        apply: cvgM.
+          apply/continuous_withinNx.
+          exact: cvg_id.
+        apply: cvgV.
+          by rewrite gt_eqF.
+        rewrite -[X in _ --> X](add0r p).
+        apply: cvgD.
+          apply/continuous_withinNx.
+          exact: cvg_id.
+        exact: cvg_cst.
+      apply: cvgD.
+        apply: cvgD.
+          rewrite -[X in _ --> X]expR0.
+          apply: continuous_cvg.
+            exact: continuous_expR.
+          exact: Htmp.
+        exact: cvg_cst.
+      rewrite [X in _ --> X](_ : _ = 1 * 0 * (nu / p)); last first.
+        by rewrite mulr0 mul0r.
+      apply: cvgM.
+        apply: cvgM.
+          rewrite -expR0.
+          apply: continuous_cvg.
+          exact: continuous_expR.
+        exact: Htmp.
+      apply/continuous_withinNx.
+      exact: cvg_id.
+        rewrite -[X in _ --> X]add0r.
+        apply: cvgD.
+          rewrite [X in _ --> X](_ : _ = (- 0) * nu / (0 + p) ^+ 2); last first.
+            by rewrite oppr0 mul0r mul0r.
+          apply: cvgM.
+            apply: cvgM.
+              apply: cvgN.
+              apply/continuous_withinNx.
+              exact: cvg_id.
+            exact: cvg_cst.
+          apply: continuous_cvg.
+          apply: continuousV.
+          by rewrite add0r sqrf_eq0 gt_eqF.
+        exact: cvg_id.
+      rewrite expr2.
+      under eq_fun do rewrite expr2.
+      apply: cvgM.
+        apply: cvgD.
+        apply/continuous_withinNx.
+        exact: cvg_id.
+        exact: cvg_cst.
+      apply: cvgD.
+      apply/continuous_withinNx.
+      exact: cvg_id.
+      exact: cvg_cst.
+      apply: cvgM.
+        exact: cvg_cst.
+      apply: cvgV.
+        by rewrite gt_eqF.
+      rewrite -[X in _ --> X](add0r p).
+      apply: cvgD.
+        apply/continuous_withinNx.
+        exact: cvg_id.
+      exact: cvg_cst.
+    (* end Htmp *)
+    apply: cvgr_neq0.
+    exact: Htmp.
+    by rewrite gt_eqF//.
+
     rewrite -{2}(mul0r ((den' 0)^-1)).
     apply: cvgM; last first.
       apply: cvgV.
