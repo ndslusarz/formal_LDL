@@ -976,13 +976,27 @@ have /cvg_lim : h^-1 * ((stl_and_lt0 (seq_of_rV (const_mx p + h *: err_vec i))) 
   near: x.
   move: eps eps0.
   apply/cvgrPdist_le.
+  have ? : a x @[x --> nbhs 0^'-] --> (1:R).
+    rewrite /a -expR0; apply: continuous_cvg; first apply: continuous_expR.
+    rewrite -[X in _ --> X](mul0r p^-1).
+    apply: cvgM; last first.
+    apply: cvgV; first by rewrite gt_eqF.
+      rewrite -{2}(addr0 p).
+      apply: cvgD; first exact: cvg_cst.
+      exact/cvg_at_left_filter/cvg_id.
+    rewrite -{2}(mulr0 nu) -{2}oppr0.
+    apply: cvgM; first exact: cvg_cst.
+    apply: cvgN.
+    exact/cvg_at_left_filter/cvg_id.
   rewrite -[X in _ --> X]addr0.
   apply: cvgD.
     apply: cvgV => //.
     rewrite -(mul1r (M.+1%:R)).
-    apply: cvgM.
-      admit.
-    admit.
+    apply: cvgM => //.
+    rewrite -natr1.
+    apply: cvgD; first exact: cvg_cst.
+    rewrite -invr1 /a.
+    exact: cvgV.
   rewrite /num/den/a/b.
   pose num' (x : R) : R := M%:R * expR (- x / (p + x)) +
                            expR (- x / (p + x)) * x * M%:R * (x / (x + p)^+2 - (x + p)^-1) +
