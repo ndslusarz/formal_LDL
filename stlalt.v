@@ -918,35 +918,41 @@ have /cvg_lim : h^-1 * ((stl_and_lt0 (seq_of_rV (const_mx p + h *: err_vec i))) 
   rewrite H1.
   apply/cvgrPdist_le => /= eps eps0.
   near=> x.
-  pose a := expR (nu * - x / (p + x)%E).
-  pose b := expR (- x / (p + x)).
-  pose num := M%:R * (p + x) * b - M%:R * p.
-  pose den := x * (M%:R + a^-1).
-  have ? : a != 0 by rewrite ?gt_eqF ?expR_gt0.
-  have ? : ((M%:R * a)%R + 1%R)%E != 0 by rewrite gt_eqF// addr_gt0// mulr_gt0// ?expR_gt0// ltr0n// lt0n.
+  pose a x := expR (nu * - x / (p + x)%E).
+  pose b x := expR (- x / (p + x)).
+  pose num x := M%:R * (p + x) * b x - M%:R * p.
+  pose den x := x * (M%:R + (a x)^-1).
+  have ? : a x != 0 by rewrite ?gt_eqF ?expR_gt0.
+  have ? : ((M%:R * a x)%R + 1%R)%E != 0 by rewrite gt_eqF// addr_gt0// mulr_gt0// ?expR_gt0// ltr0n// lt0n.
   rewrite [X in normr (_ - X)](_ : _ =
-    x^-1 * (x / (a * (M%:R + a^-1))) + (num / den)); last first.
-    rewrite H3// mulrA -/a -/b.
-    rewrite -[X in _ - X](mul1r p) -[X in _ - (X * p)](@mulfV _ (((M%:R * a)%R + 1%R)))//.
+    (a x * (M%:R + (a x)^-1))^-1 + num x / den x); last first.
+    rewrite /= H3// mulrA -/(b x) -/(a x).
+    rewrite -[X in _ - X](mul1r p) -[X in _ - (X * p)](@mulfV _ (((M%:R * a x)%R + 1%R)))//.
     rewrite -(mulrAC _ p) -mulrBl (mulrDl _ _ p) mul1r opprD !addrA.
-    rewrite [X in _ * (X / _)](_ : _ = (p + x) * M%:R * b * a + x - M%:R * a * p); last by lra.
-    rewrite (_ : _ / _ = (a * ((p + x) * M%:R * b + x * a^-1 - M%:R * p) / (a * (M%:R + a^-1)))); last first.
+    rewrite [X in _ * (X / _)](_ : _ = (p + x) * M%:R * b x * a x + x - M%:R * a x * p); last first.
+      by rewrite -!addrA !(addrC p) -!addrA (addrC (-p)) subrr addr0.
+    rewrite (_ : _ / _ = (a x * ((p + x) * M%:R * b x + x * (a x)^-1 - M%:R * p) / (a x * (M%:R + (a x)^-1)))); last first.
       congr (_ / _); last by rewrite mulrDr mulfV// mulrC.
-      by rewrite !mulrDr (mulrC a (_ / _)) -(mulrA x) (@mulVf _ a)// mulr1; lra.
-    rewrite -addrAC mulrDr (mulrC a (_ / _)) -(mulrA x) (@mulVf _ a)// mulr1.
+      rewrite !mulrDr (mulrC (a x) (_ / _)) -(mulrA x) (@mulVf _ (a x))// mulr1.
+      by rewrite !mulrN {1}(mulrC (a x)) [in RHS](mulrC (a x)) -!mulrA (mulrC p).
+    rewrite -addrAC mulrDr (mulrC (a x) (_ / _)) -(mulrA x) (@mulVf _ (a x))// mulr1.
     rewrite mulrA (mulrDr (x^-1)) mulrDl addrC.
-    congr (_ + _); first nra.
-    rewrite !invrM'// (mulrC a) !mulrA; congr(_/_).
+    congr (_ + _).
+      by rewrite mulVf// mul1r.
+    rewrite !invrM'// (mulrC (a x)) !mulrA; congr(_/_).
     rewrite -mulrA mulfV// mulr1 mulrC; congr(_/_).
-    by rewrite /num; nra.
-  rewrite/num/den/a/b.
+    by rewrite /num [in RHS](mulrC (M%:R)).
   near: x.
   move: eps eps0.
   apply/cvgrPdist_le.
   rewrite -[X in _ --> X]addr0.
   apply: cvgD.
-  rewrite -div1r.
+    apply: cvgV => //.
+    rewrite -(mul1r (M.+1%:R)).
+    apply: cvgM.
+      admit.
     admit.
+  rewrite /num/den/a/b.
   pose num' (x : R) : R := M%:R * expR (- x / (p + x)) +
                            expR (- x / (p + x)) * x * M%:R * (x / (x + p)^+2 - (x + p)^-1) +
                            expR (- x / (p + x)) * M%:R * p * (x / (x + p)^+2 - (x + p)^-1).
