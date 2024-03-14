@@ -121,14 +121,14 @@ Lemma expr_ind' (Real : realType) :
     (forall b (l : seq (expr (Bool_T b))), List.Forall (fun x => P (Bool_T b) x) l -> P (Bool_T b) (ldl_and l)) ->
     (forall b (l : seq (expr (Bool_T b))), List.Forall (fun x => P (Bool_T b) x) l -> P (Bool_T b) (ldl_or l)) ->
     (forall e : expr Bool_N, P Bool_N e -> P Bool_N (`~ e)) ->
-    (forall e : expr Real_T,
-     P Real_T e -> forall e0 : expr Real_T, P Real_T e0 -> P Real_T (e `+ e0)) ->
-    (forall e : expr Real_T,
-     P Real_T e -> forall e0 : expr Real_T, P Real_T e0 -> P Real_T (e `* e0)) ->
-    (forall e : expr Real_T, P Real_T e -> P Real_T (`- e)) ->
-    (forall (n m : nat) (t : n.-tuple Real -> m.-tuple Real), P (Network_T n m) (ldl_net t)) ->
-    (forall (n m : nat) (e : expr (Network_T n m)),
-     P (Network_T n m) e ->
+    (* (forall e : expr Real_T, *)
+    (*  P Real_T e -> forall e0 : expr Real_T, P Real_T e0 -> P Real_T (e `+ e0)) -> *)
+    (* (forall e : expr Real_T, *)
+    (*  P Real_T e -> forall e0 : expr Real_T, P Real_T e0 -> P Real_T (e `* e0)) -> *)
+    (* (forall e : expr Real_T, P Real_T e -> P Real_T (`- e)) -> *)
+    (forall (n m : nat) (t : n.-tuple Real -> m.-tuple Real), P (Fun_T n m) (ldl_fun t)) ->
+    (forall (n m : nat) (e : expr (Fun_T n m)),
+     P (Fun_T n m) e ->
      forall e0 : expr (Vector_T n), P (Vector_T n) e0 -> P (Vector_T m) (ldl_app e e0)) ->
     (forall (n : nat) (e : expr (Vector_T n)),
      P (Vector_T n) e ->
@@ -137,7 +137,7 @@ Lemma expr_ind' (Real : realType) :
      P Real_T e -> forall e0 : expr Real_T, P Real_T e0 -> P (Bool_T b) (ldl_cmp b c e e0)) ->
     forall (s : simple_type) (e : expr s), P s e.
 Proof.
-move => P H H0 H1 H2 H3 H4 H7 H8 H9 H10 H11 H12 H13 H14 s e.
+move => P H H0 H1 H2 H3 H4 H7 H11 H12 H13 H14 s e.
 revert e.
 revert s.
 fix F1 2.
@@ -162,9 +162,6 @@ destruct e.
       - apply F1.
       - apply IHl.
   * apply H7; eauto.
-  * apply H8; eauto.
-  * apply H9; eauto.
-  * apply H10; eauto.
   * apply H14; eauto.
   * apply H11.
   * apply H12; eauto.
@@ -184,7 +181,7 @@ Definition type_translation (t : simple_type) : Type:=
   | Real_T => Real
   | Vector_T n => n.-tuple Real
   | Index_T n => 'I_n
-  | Network_T n m => n.-tuple Real -> m.-tuple Real
+  | Fun_T n m => n.-tuple Real -> m.-tuple Real
 end.
 
 Definition bool_type_translation (t : simple_type) : Type:=
@@ -193,7 +190,7 @@ Definition bool_type_translation (t : simple_type) : Type:=
   | Real_T => Real
   | Vector_T n => n.-tuple Real
   | Index_T n => 'I_n
-  | Network_T n m => n.-tuple Real -> m.-tuple Real
+  | Fun_T n m => n.-tuple Real -> m.-tuple Real
   end.
 
 Definition dl2_type_translation (t : simple_type) : Type :=
@@ -202,7 +199,7 @@ Definition dl2_type_translation (t : simple_type) : Type :=
   | Real_T => Real
   | Vector_T n => n.-tuple Real
   | Index_T n => 'I_n
-  | Network_T n m => n.-tuple Real -> m.-tuple Real
+  | Fun_T n m => n.-tuple Real -> m.-tuple Real
 end.
 
 Definition stl_type_translation (t : simple_type) : Type :=
@@ -211,7 +208,7 @@ Definition stl_type_translation (t : simple_type) : Type :=
   | Real_T => Real
   | Vector_T n => n.-tuple Real
   | Index_T n => 'I_n
-  | Network_T n m => n.-tuple Real -> m.-tuple Real
+  | Fun_T n m => n.-tuple Real -> m.-tuple Real
 end.
 
 End type_translation.
@@ -232,15 +229,10 @@ Fixpoint bool_translation {t} (e : @expr Real t) : bool_type_translation t :=
   | ldl_or b Es => \big[orb/false]_(i <- map bool_translation Es) i
   | `~ E1 => ~~ << E1 >>
 
-  (* arith *)
-  | E1 `+ E2 => << E1 >> + << E2 >>
-  | E1 `* E2 => << E1 >> * << E2 >>
-  | `- E1 => - << E1 >>
-
   (*comparisons*)
   | E1 `== E2 => << E1 >> == << E2 >>
   | E1 `<= E2 => << E1 >> <= << E2 >>
-  | ldl_net n m f => f
+  | ldl_fun n m f => f
   | ldl_app n m f v => << f >> << v >>
   | ldl_lookup n v i => tnth << v >> << i >>
   end
@@ -281,16 +273,11 @@ Fixpoint translation {t} (e : @expr R t) {struct e} : type_translation t :=
 
     | `~ E1 => 1 - {[ E1 ]}
 
-    (*simple arithmetic*)
-    | E1 `+ E2 => {[ E1 ]} + {[ E2 ]}
-    | E1 `* E2 => {[ E1 ]} * {[ E2 ]}
-    | `- E1 => - {[ E1 ]}
-
     (*comparisons*)
     | E1 `== E2 => if {[ E1 ]} == -{[ E2 ]} then ({[ E1 ]} == {[ E2 ]})%:R else maxr (1 - `|({[ E1 ]} - {[ E2 ]}) / ({[ E1 ]} + {[ E2 ]})|) 0
     | E1 `<= E2 => if {[ E1 ]} == -{[ E2 ]} then ({[ E1 ]} <= {[ E2 ]})%R%:R else maxr (1 - maxr (({[ E1 ]} - {[ E2 ]}) / `|{[ E1 ]} + {[ E2 ]}|) 0) 0
 
-    | ldl_net n m f => f
+    | ldl_fun n m f => f
     | ldl_app n m f v => (translation f) (translation v)
     | ldl_lookup n v i => tnth (translation v) (translation i)
     end
@@ -315,16 +302,11 @@ Fixpoint dl2_translation {t} (e : @expr R t) {struct e} : dl2_type_translation t
   | ldl_or _ Es => ((- 1) ^+ (size Es).+1)%:E * prodE (map dl2_translation Es)
   | `~ E1 => +oo (* default value, all lemmas are for negation-free formulas *)
 
-  (*simple arithmetic*)
-  | E1 `+ E2 => ({[ E1 ]} + {[ E2 ]})%R
-  | E1 `* E2 => ({[ E1 ]} * {[ E2 ]})%R
-  | `- E1 => (- {[ E1 ]})%R
-
   (*comparisons*)
   | E1 `== E2 => (- `| {[ E1 ]} - {[ E2 ]}|)%:E
   | E1 `<= E2 => (- maxr ({[ E1 ]} - {[ E2 ]}) 0)%:E
 
-  | ldl_net n m f => f
+  | ldl_fun n m f => f
   | ldl_app n m f v => {[ f ]} {[ v ]}
   | ldl_lookup n v i => tnth {[ v ]} {[ i ]}
   end
@@ -350,16 +332,11 @@ Fixpoint dl2_translation_alt {t} (e : @expr R t) {struct e} : type_translation t
   | ldl_or _ s => (- 1) ^+ (size s).+1 * prodR (map dl2_translation_alt s)
   | `~ E1 => 0 (* default value, all lemmas are for negation-free formulas *)
 
-  (*simple arithmetic*)
-  | E1 `+ E2 => ({[ E1 ]} + {[ E2 ]})%R
-  | E1 `* E2 => ({[ E1 ]} * {[ E2 ]})%R
-  | `- E1 => (- {[ E1 ]})%R
-
   (*comparisons*)
   | E1 `== E2 => (- `| {[ E1 ]} - {[ E2 ]}|)
   | E1 `<= E2 => (- maxr ({[ E1 ]} - {[ E2 ]}) 0)
 
-  | ldl_net n m f => f
+  | ldl_fun n m f => f
   | ldl_app n m f v => {[ f ]} {[ v ]}
   | ldl_lookup n v i => tnth {[ v ]} {[ i ]}
 end
@@ -418,16 +395,11 @@ Fixpoint stl_translation {t} (e : expr t) : stl_type_translation t :=
         else 0
   | `~ E1 => - {[ E1 ]}
 
-  (*simple arithmetic*)
-  | E1 `+ E2 => ({[ E1 ]} + {[ E2 ]})%R
-  | E1 `* E2 => ({[ E1 ]} * {[ E2 ]})%R
-  | `- E1 => (- {[ E1 ]})%R
-
   (*comparisons*)
   | E1 `== E2 => (- `| {[ E1 ]} - {[ E2 ]}|)%:E
   | E1 `<= E2 => ({[ E2 ]} - {[ E1 ]})%:E(* (- maxr ({[ E1 ]} - {[ E2 ]}) 0)%:E *)
 
-  | ldl_net n m f => f
+  | ldl_fun n m f => f
   | ldl_app n m f v => {[ f ]} {[ v ]}
   | ldl_lookup n v i => tnth {[ v ]} {[ i ]}
     end
@@ -499,16 +471,11 @@ Fixpoint stl_translation_alt {t} (e : expr t) : type_translation t :=
       else 0
   | `~ E1 => - {[ E1 ]}
 
-  (*simple arithmetic*)
-  | E1 `+ E2 => ({[ E1 ]} + {[ E2 ]})%R
-  | E1 `* E2 => ({[ E1 ]} * {[ E2 ]})%R
-  | `- E1 => (- {[ E1 ]})%R
-
   (*comparisons*)
   | E1 `== E2 => - `| {[ E1 ]} - {[ E2 ]}|
   | E1 `<= E2 => {[ E2 ]} - {[ E1 ]}
 
-  | ldl_net n m f => f
+  | ldl_fun n m f => f
   | ldl_app n m f v => {[ f ]} {[ v ]}
   | ldl_lookup n v i => tnth {[ v ]} {[ i ]}
   end

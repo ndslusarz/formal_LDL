@@ -22,7 +22,7 @@ Hypothesis p1 : 1 <= p.
 Local Notation "[[ e ]]_ l" := (@translation R l p _ e).
 
 Lemma translations_Network_coincide:
-  forall n m (e : expr (Network_T n m)), [[ e ]]_l = [[ e ]]b.
+  forall n m (e : expr (Fun_T n m)), [[ e ]]_l = [[ e ]]b.
 Proof.
 dependent induction e => //=.
 Qed.
