@@ -1004,42 +1004,41 @@ have /cvg_lim : h^-1 * ((stl_and_lt0 (seq_of_rV (const_mx p + h *: err_vec i))) 
   pose den' (x : R) : R := expR (nu * (x / (x + p))) +
                            M%:R +
                            expR (nu * (x / (x + p))) * x * (- x * nu / (x + p)^+2 + nu / (x + p)).
+
+  have Hint6 (x : R) : derivable -%R x 1.
+    by apply: derivableN; exact: derivable_id.
+  have px_neq0 (x : R) : x \in (ball 0 p : set R^o) -> (p + x)%R != 0.
+    rewrite inE /ball/= sub0r normrN lter_norml => /andP[Npx xp].
+    by rewrite gt_eqF// -ltrBlDl sub0r.
+  have Hint3 (x : R) : derivable (+%R p) x 1.
+    by apply: derivableD; [exact: derivable_cst|exact: derivable_id].
+  have Hint4 (x : R) : x \in (ball 0 p : set R^o) ->
+    derivable (fun x0 => (p + x0)%E^-1) x 1.
+    by move=> x0p; apply: derivableV; [exact: px_neq0|exact: Hint3].
+  have Hint5 (x : R) : x \in (ball 0 p : set R^o) ->
+      derivable (fun x0 : R^o => - x0 / (p + x0)%E) x 1.
+    move=> x0p; apply: derivableM; last exact: Hint4.
+    by apply: derivableN; exact: derivable_id.
+  have Hint2 (x : R) : x \in (ball 0 p : set R^o) ->
+    derivable (fun x0 : R => expR (- x0 / (p + x0)%E)) x 1.
+    move=> x0p.
+    by apply: derivable_comp; [exact: derivable_expR|exact: Hint5].
   apply: (@lhopital_left R _ num' _ den' 0 _ (nbhsx_ballx _ _ p0)).
-    move=> x x01.
+    move=> x x0p.
     rewrite /num'.
     rewrite -[X in is_derive _ _ _ X]subr0.
-
-    have px_neq0 : (p + x)%R != 0.
-      rewrite gt_eqF//.
-      move: x01.
-      rewrite inE /ball/= sub0r normrN lter_norml => /andP[Npx xp].
-      by rewrite -ltrBlDl sub0r.
-    have Hint6 : derivable -%R x 1.
-      by apply: derivableN; exact: derivable_id.
-    have Hint3 : derivable (+%R p) x 1.
-      by apply: derivableD; [exact: derivable_cst|exact: derivable_id].
-    have Hint4 : derivable (fun x0 => (p + x0)%E^-1) x 1.
-      apply: derivableV.
-        exact: px_neq0.
-      exact: Hint3.
-    have Hint5 : derivable (fun x0 : R^o => - x0 / (p + x0)%E) x 1.
-      apply: derivableM; last exact: Hint4.
-      by apply: derivableN; exact: derivable_id.
     apply: is_deriveB.
-    move=> [:H1 H2].
+    move=> [:H1].
     apply: DeriveDef.
       apply: derivableM.
         abstract: H1.
         apply: derivableM; first exact: derivable_cst.
         apply: derivableD; first exact: derivable_cst.
         exact: derivable_id.
-      abstract: H2.
-      apply: derivable_comp.
-        exact: derivable_expR.
-      exact: Hint5.
+      exact: Hint2.
     rewrite deriveM; last 2 first.
       exact: H1.
-      exact: H2.
+      exact: Hint2.
     rewrite deriveM; last 2 first.
       exact: derivable_cst.
       exact: Hint3.
@@ -1098,7 +1097,96 @@ have /cvg_lim : h^-1 * ((stl_and_lt0 (seq_of_rV (const_mx p + h *: err_vec i))) 
     rewrite scaleNr.
     rewrite -mulrN.
     by rewrite opprK.
-    admit.
+
+    move=> x x0p.
+    move=> [:H1].
+    apply: DeriveDef.
+      apply: derivableM.
+        exact: derivable_id.
+      apply: derivableD.
+        exact: derivable_cst.
+      apply: derivableV.
+        by rewrite expR_eq0.
+      abstract: H1.
+      apply: derivable_comp.
+        exact: derivable_expR.
+      apply: derivableM.
+        apply: derivableM.
+          exact: derivable_cst.
+        exact: Hint6.
+      exact: Hint4.
+    rewrite /den' deriveM; last 2 first.
+      exact: derivable_id.
+      apply: derivableD.
+        exact: derivable_cst.
+      apply: derivableV.
+        by rewrite expR_eq0.
+      exact: H1.
+    rewrite deriveD; last 2 first.
+      exact: derivable_cst.
+      apply: derivableV.
+        by rewrite expR_eq0.
+      exact: H1.
+    rewrite derive_cst add0r/=.
+    rewrite deriveV/=; last 2 first.
+      by rewrite expR_eq0.
+      exact: H1.
+    rewrite derive_comp; last 2 first.
+      under eq_fun.
+        move=> z.
+        rewrite -mulrA.
+        over.
+      apply: derivableM.
+        exact: derivable_cst.
+      exact: Hint5.
+      exact: derivable_expR.
+    rewrite (_ : 'D_1 expR (nu * - x / (p + x)%E) = expR (nu * - x / (p + x)%E)); last first.
+      by rewrite -[in RHS](@derive_expR R).
+    rewrite deriveM; last 2 first.
+      apply: derivableM.
+        exact: derivable_cst.
+      exact: Hint6.
+      exact: Hint4.
+    rewrite deriveV; last 2 first.
+      exact: px_neq0.
+      exact: Hint3.
+    rewrite deriveM; last 2 first.
+      exact: derivable_cst.
+      exact: Hint6.
+    rewrite derive_cst scaler0 addr0.
+    rewrite deriveN; last first.
+      exact: derivable_id.
+    rewrite deriveD; last 2 first.
+      exact: derivable_cst.
+      exact: derivable_id.
+    rewrite derive_id derive_cst add0r.
+    rewrite scalerN1.
+    rewrite [X in _ + X = _]/GRing.scale/= mulr1.
+    rewrite addrCA.
+    rewrite -[RHS]addrA [RHS]addrCA.
+    congr (_ + _).
+    rewrite [LHS]addrC.
+    congr (_ + _).
+      rewrite -expRN mulrN mulNr opprK (addrC p).
+      by rewrite mulrA.
+    rewrite -[RHS]mulrA.
+    rewrite [RHS]mulrCA.
+    congr (_ * _).
+    rewrite [in LHS]scaleNr.
+    rewrite [X in - X]mulrA.
+    rewrite -[in LHS]mulrN.
+    congr (_ * _).
+      rewrite !(mulrN,mulNr) !expRN.
+      rewrite -exprVn invrK expr2.
+      rewrite -[LHS]mulrA divff ?mulr1//.
+      rewrite (addrC p)//.
+      by rewrite mulrA.
+      by rewrite expR_eq0.
+    rewrite !(mulrN,mulNr,scaleNr,scalerN,opprK) opprB.
+    rewrite [RHS]addrC; congr (_ - _).
+      by rewrite [LHS]mulrC (addrC p).
+    rewrite (mulrC nu) scalerA (addrC p).
+    by rewrite /GRing.scale/= mulr1.
     by rewrite oppr0 mul0r expR0 mulr1 addr0 subrr.
     by rewrite mul0r.
     admit.
