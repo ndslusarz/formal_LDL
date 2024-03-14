@@ -706,6 +706,37 @@ Qed.
 Lemma invrM' (x y : R) : x != 0 -> (x * y)^-1 = x^-1 * y^-1.
 Proof. nra. Qed.
 
+Lemma scalerN1 (p : R^o) : p *: -1 = - p.
+Proof. by transitivity (p * -1) => //; rewrite mulrN1. Qed.
+
+Lemma derive_cst (p x : R) : 'D_1 (fun=> p) x = 0.
+Proof. by rewrite -derive1E derive1_cst. Qed.
+
+Lemma derive_id (v : R^o) (x : R) : 'D_v id x = v :> R.
+Proof. exact: derive_val. Qed.
+
+Lemma derive_comp (R' : realFieldType) (f g : R'^o -> R'^o) x :
+  derivable f x 1 -> derivable g (f x) 1 ->
+  'D_1 (g \o f) x = 'D_1 g (f x) * 'D_1 f x.
+Proof.
+move=> fx1 gfx1.
+rewrite -derive1E.
+rewrite derive1_comp; last 2 first.
+  exact: fx1.
+  exact: gfx1.
+by rewrite !derive1E.
+Qed.
+
+Lemma derivable_comp (f g : R^o -> R^o) (x : R^o) :
+  derivable f (g x) 1 -> derivable g x 1 -> derivable (f \o g) x 1.
+Proof.
+move=> fgx1 gx1.
+apply: ex_derive.
+apply: is_derive1_comp.
+  apply/derivableP.
+  exact: fgx1.
+exact/derivableP.
+Qed.
 
 Lemma shadowlifting_stl_and_lt0 (p : R) : p > 0 -> forall i,
   ('d (stl_and_lt0 \o seq_of_rV) '/d i) (const_mx p) = M.+1%:R^-1.
@@ -959,8 +990,100 @@ have /cvg_lim : h^-1 * ((stl_and_lt0 (seq_of_rV (const_mx p + h *: err_vec i))) 
   pose den' (x : R) : R := expR (nu * (x / (x + p))) +
                            M%:R +
                            expR (nu * (x / (x + p))) * x * (- x * nu / (x + p)^+2 + nu / (x + p)).
-  apply: (@lhopital_left R _ num' _ den' 0 _ (nbhsx_ballx _ _ ltr01)).
-    admit.
+  apply: (@lhopital_left R _ num' _ den' 0 _ (nbhsx_ballx _ _ p0)).
+    move=> x x01.
+    rewrite /num'.
+    rewrite -[X in is_derive _ _ _ X]subr0.
+
+    have px_neq0 : (p + x)%R != 0.
+      rewrite gt_eqF//.
+      move: x01.
+      rewrite inE /ball/= sub0r normrN lter_norml => /andP[Npx xp].
+      by rewrite -ltrBlDl sub0r.
+    have Hint6 : derivable -%R x 1.
+      by apply: derivableN; exact: derivable_id.
+    have Hint3 : derivable (+%R p) x 1.
+      by apply: derivableD; [exact: derivable_cst|exact: derivable_id].
+    have Hint4 : derivable (fun x0 => (p + x0)%E^-1) x 1.
+      apply: derivableV.
+        exact: px_neq0.
+      exact: Hint3.
+    have Hint5 : derivable (fun x0 : R^o => - x0 / (p + x0)%E) x 1.
+      apply: derivableM; last exact: Hint4.
+      by apply: derivableN; exact: derivable_id.
+    apply: is_deriveB.
+    move=> [:H1 H2].
+    apply: DeriveDef.
+      apply: derivableM.
+        abstract: H1.
+        apply: derivableM; first exact: derivable_cst.
+        apply: derivableD; first exact: derivable_cst.
+        exact: derivable_id.
+      abstract: H2.
+      apply: derivable_comp.
+        exact: derivable_expR.
+      exact: Hint5.
+    rewrite deriveM; last 2 first.
+      exact: H1.
+      exact: H2.
+    rewrite deriveM; last 2 first.
+      exact: derivable_cst.
+      exact: Hint3.
+    rewrite derive_comp; last 2 first.
+      exact: Hint5.
+      exact: derivable_expR.
+    rewrite (_ : 'D_1 expR (- x / (p + x)%E) = expR (- x / (p + x)%E)); last first.
+      by rewrite -[in RHS](@derive_expR R).
+    rewrite deriveD; last 2 first.
+      exact: derivable_cst.
+      exact: derivable_id.
+    rewrite derive_cst add0r.
+    rewrite derive_id.
+    set tmp := GRing.scale (GRing.natmul (V:=R) (GRing.one R) M) (GRing.one R).
+    rewrite (_ : tmp = M%:R)//; last first.
+      rewrite /tmp.
+      rewrite /GRing.scale/=.
+      by rewrite mulr1.
+    rewrite {tmp}.
+    rewrite derive_cst scaler0 addr0.
+    rewrite deriveM/=; last 2 first.
+      exact: Hint6.
+      exact: Hint4.
+    rewrite deriveV; last 2 first.
+      exact: px_neq0.
+      exact: Hint3.
+    rewrite deriveD; last 2 first.
+      exact: derivable_cst.
+      exact: derivable_id.
+    rewrite derive_cst add0r.
+    rewrite derive_id.
+    set tmp := (X in - x *: X).
+    rewrite (_ : tmp = (- (p + x)%E ^- 2))//; last first.
+      rewrite /tmp.
+      rewrite /GRing.scale/=.
+      by rewrite mulr1.
+    rewrite deriveN; last first.
+      exact: derivable_id.
+    rewrite derive_id.
+    rewrite scalerN1.
+    rewrite [X in X + _ = _]scalerAl.
+    rewrite scalerCA.
+    rewrite -[LHS]mulrDr.
+    rewrite [X in _ = X + _ + _]mulrC.
+    rewrite -!mulrA.
+    rewrite -2!mulrDr.
+    congr (_ * _).
+    rewrite [in LHS]addrC.
+    rewrite -!addrA; congr (_ + _).
+    rewrite mulrCA -mulrDr.
+    rewrite -[LHS]mulrA.
+    congr (M%:R * _).
+    rewrite -mulrDl (addrC p).
+    congr (_ * _).
+    congr (_ - _).
+    rewrite scaleNr.
+    rewrite -mulrN.
+    by rewrite opprK.
     admit.
     by rewrite oppr0 mul0r expR0 mulr1 addr0 subrr.
     by rewrite mul0r.
