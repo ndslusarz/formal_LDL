@@ -1023,6 +1023,26 @@ have /cvg_lim : h^-1 * ((stl_and_lt0 (seq_of_rV (const_mx p + h *: err_vec i))) 
     derivable (fun x0 : R => expR (- x0 / (p + x0)%E)) x 1.
     move=> x0p.
     by apply: derivable_comp; [exact: derivable_expR|exact: Hint5].
+
+    have Hint45 :  - x * nu / (x + p)%E ^+ 2 @[x --> 0] --> - 0 * nu / (0%R + p)%E ^+ 2.
+      apply: cvgM.
+            apply: cvgM.
+              apply: cvgN.
+              exact: cvg_id.
+            exact: cvg_cst.
+          apply: continuous_cvg.
+          apply: continuousV.
+          by rewrite add0r sqrf_eq0 gt_eqF.
+        exact: cvg_id.
+      rewrite expr2.
+      under eq_fun do rewrite expr2.
+      apply: cvgM.
+        apply: cvgD.
+        exact: cvg_id.
+        exact: cvg_cst.
+      apply: cvgD.
+      exact: cvg_id.
+      exact: cvg_cst.
   apply: (@lhopital_left R _ num' _ den' 0 _ (nbhsx_ballx _ _ p0)).
     move=> x x0p.
     rewrite /num'.
@@ -1100,6 +1120,7 @@ have /cvg_lim : h^-1 * ((stl_and_lt0 (seq_of_rV (const_mx p + h *: err_vec i))) 
 
     move=> x x0p.
     move=> [:H1].
+
     apply: DeriveDef.
       apply: derivableM.
         exact: derivable_id.
@@ -1229,27 +1250,8 @@ have /cvg_lim : h^-1 * ((stl_and_lt0 (seq_of_rV (const_mx p + h *: err_vec i))) 
         apply: cvgD.
           rewrite [X in _ --> X](_ : _ = (- 0) * nu / (0 + p) ^+ 2); last first.
             by rewrite oppr0 mul0r mul0r.
-          apply: cvgM.
-            apply: cvgM.
-              apply: cvgN.
-              apply/continuous_withinNx.
-              exact: cvg_id.
-            exact: cvg_cst.
-          apply: continuous_cvg.
-          apply: continuousV.
-          by rewrite add0r sqrf_eq0 gt_eqF.
-        exact: cvg_id.
-      rewrite expr2.
-      under eq_fun do rewrite expr2.
-      apply: cvgM.
-        apply: cvgD.
-        apply/continuous_withinNx.
-        exact: cvg_id.
-        exact: cvg_cst.
-      apply: cvgD.
-      apply/continuous_withinNx.
-      exact: cvg_id.
-      exact: cvg_cst.
+            apply: cvg_within_filter.
+            exact: Hint45.
       apply: cvgM.
         exact: cvg_cst.
       apply: cvgV.
@@ -1265,11 +1267,32 @@ have /cvg_lim : h^-1 * ((stl_and_lt0 (seq_of_rV (const_mx p + h *: err_vec i))) 
     by rewrite gt_eqF//.
 
     rewrite -{2}(mul0r ((den' 0)^-1)).
+    have Hint32 : expR (nu * (x / (x + p)%E)) @[x --> 0^'-] --> expR (nu * (0 / (0%R + p)%E)).
+      apply: continuous_cvg; first exact: continuous_expR.
+      apply: cvgM. exact: cvg_cst.
+      apply: cvgM. exact/cvg_at_left_filter/cvg_id.
+      apply: cvgV.
+        by rewrite add0r gt_eqF.
+      apply: cvgD. exact/cvg_at_left_filter/cvg_id.
+      exact: cvg_cst.
     apply: cvgM; last first.
       apply: cvgV.
         by rewrite /den' !mul0r !mulr0 !mul0r addr0 gt_eqF// addr_gt0// ?expR_gt0 ?ltr0n ?lt0n.
-      apply: continuous_cvg. admit.
+      apply: cvgD.
+      apply: cvgD. exact: Hint32.
+      exact: cvg_cst.
+      apply: cvgM.
+      apply: cvgM. exact: Hint32.
       exact/cvg_at_left_filter/cvg_id.
+      apply: cvgD.
+        apply: cvg_at_left_filter.
+        exact: Hint45.
+      apply: cvgM.
+      exact: cvg_cst.
+      apply: cvgV. rewrite add0r gt_eqF//.
+      apply: cvgD.
+      exact/cvg_at_left_filter/cvg_id.
+      exact: cvg_cst.
     rewrite /num'.
     pose c x := expR (nu * (x / (x + p)%E)).
     rewrite -{2}(mulr0 (M%:R * b 0 / (0 + p))).
@@ -1304,6 +1327,6 @@ have /cvg_lim : h^-1 * ((stl_and_lt0 (seq_of_rV (const_mx p + h *: err_vec i))) 
 rewrite H1.
 apply. exact: Rhausdorff.
 Unshelve. all: end_near.
-Admitted.
+Qed.
 
 End shadow_lifting_stl_and.
