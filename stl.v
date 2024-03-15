@@ -6,7 +6,12 @@ From mathcomp Require Import all_classical.
 From mathcomp Require Import reals ereal signed.
 From mathcomp Require Import topology derive normedtype sequences
  exp measure lebesgue_measure lebesgue_integral hoelder.
-Require Import util ldl.
+Require Import mathcomp_extra analysis_extra ldl.
+
+(**md**************************************************************************)
+(* # STL                                                                      *)
+(*                                                                            *)
+(******************************************************************************)
 
 Import Num.Def Num.Theory GRing.Theory.
 Import Order.TTheory.

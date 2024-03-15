@@ -2,11 +2,15 @@ From HB Require Import structures.
 Require Import Coq.Program.Equality.
 From mathcomp Require Import all_ssreflect all_algebra.
 From mathcomp Require Import lra.
-From mathcomp Require Import all_classical.
-From mathcomp Require Import reals ereal signed.
-From mathcomp Require Import topology derive normedtype sequences
- exp measure lebesgue_measure lebesgue_integral hoelder.
-Require Import util ldl.
+From mathcomp Require Import all_classical reals ereal signed topology derive.
+From mathcomp Require Import normedtype sequences exp measure lebesgue_measure.
+From mathcomp Require Import lebesgue_integral hoelder.
+Require Import mathcomp_extra analysis_extra ldl.
+
+(**md**************************************************************************)
+(* # Goedel                                                                   *)
+(*                                                                            *)
+(******************************************************************************)
 
 Import Num.Def Num.Theory GRing.Theory.
 Import Order.TTheory.
@@ -560,7 +564,7 @@ have powRle1 : forall x, 0 <= x -> x `^ p^-1 <= 1 -> x <= 1.
 have powRgt1 : forall x, 0 <= x -> 1 < x `^ p^-1 -> 1 < x.
   move=> x x0; rewrite {1}powRpinv.
   move/(@gt0_ltr_powR _ p p0).
-  by rewrite -!powRrM !mulVf// powR1 powRr1//; apply; rewrite in_itv/= ?ler01 ?powR_ge0.
+  by rewrite -!powRrM !mulVf// powR1 powRr1//; apply; rewrite inE/= in_itv/= ?ler01 ?powR_ge0.
 have se_ge0 r := @addr_ge0 R _ _ (@powR_ge0 _ _ r) (@powR_ge0 _ _ r).
 rewrite {2}/maxr=> ht3 ht2 ht1.
 case: ifPn; rewrite addr0 subr_lt0.
@@ -740,7 +744,7 @@ rewrite /product_dl_mul !addr0 !mulr0 !subr0.
 lra.
 Qed.
 
-Theorem product_andA (e1 e2 e3 : expr Bool_N) : (0 < p) ->
+Theorem product_andA (e1 e2 e3 : expr Bool_N) : 0 < p ->
   [[ (e1 `/\ e2) `/\ e3]]_product = [[ e1 `/\ (e2 `/\ e3) ]]_product.
 Proof.
 rewrite /=/sumR/maxR/minR/product_dl_prod ?big_cons ?big_nil.

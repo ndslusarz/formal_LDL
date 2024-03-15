@@ -6,16 +6,12 @@ From mathcomp Require Import all_classical.
 From mathcomp Require Import reals ereal signed.
 From mathcomp Require Import topology derive normedtype sequences
  exp measure lebesgue_measure lebesgue_integral hoelder.
-Require Import util.
+Require Import mathcomp_extra analysis_extra.
 
 (**md**************************************************************************)
 (* # Logics                                                                   *)
 (*                                                                            *)
 (* ## Definitions                                                             *)
-(* - err_vec i with i : 'I_n.+1                                               *)
-(*   a vector $\delta_i$ with $1$ at index $i$ and $0$ elsewhere              *)
-(* - ('d f '/d i) a with f : rV[R]_n.+1 -> R                                  *)
-(*   $\lim_{h\to 0, h\neq 0} \frac{f(a + h\delta_i) - f(a)}{h}$               *)
 (* - shadow_lifting f with f : rV[R]_n.+1 -> R                                *)
 (*   $\forall p, p > 0 \to \forall i, \frac{d\,f}{d\,x_i} [p; \cdots; p] > 0$ *)
 (* - product_and v with v : 'rV_n                                             *)
@@ -525,9 +521,6 @@ Qed.
 *)
 (*
 About realfun.left_right_continuousP. *)
-
-Definition row_of_seq {R : numDomainType} (s : seq R) : 'rV[R]_(size s) :=
-  (\row_(i < size s) tnth (in_tuple s) i).
 
 Definition dotmul {R : ringType} n (u v : 'rV[R]_n) : R := (u *m v^T)``_0.
 Reserved Notation "u *d w" (at level 40).

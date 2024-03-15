@@ -6,8 +6,12 @@ From mathcomp Require Import all_classical.
 From mathcomp Require Import reals ereal signed.
 From mathcomp Require Import topology derive normedtype sequences
  exp measure lebesgue_measure lebesgue_integral hoelder.
-Require Import util ldl.
-Require Import lhopital.
+Require Import mathcomp_extra analysis_extra ldl.
+
+(**md**************************************************************************)
+(* # STL alternative                                                          *)
+(*                                                                            *)
+(******************************************************************************)
 
 Import Num.Def Num.Theory GRing.Theory.
 Import Order.TTheory.
@@ -46,7 +50,7 @@ Lemma andC_stl (e1 e2 : expr Bool_N) :
 Proof.
 rewrite /= /stl_and_gt0/stl_and_lt0 /min_dev
 /sumR !big_cons !big_nil/= !addr0/=.
-rewrite !minrxyx !minrxx. 
+rewrite !minrxyx !minrxx.
 set a_min := minr (nu.-[[e1]]_stl') (nu.-[[e2]]_stl').
 have -> : (minr (nu.-[[e2]]_stl') (nu.-[[e1]]_stl')) = a_min.
   by rewrite /a_min/minr; case: ifPn => h1; case: ifPn => h2//; lra.
@@ -478,6 +482,16 @@ Local Notation seq_of_rV := (@MatrixFormula.seq_of_rV _ M.+1).
 Local Notation stl_and_gt0 := (stl_and_gt0 nu).
 Local Notation stl_and_lt0 := (stl_and_lt0 nu).
 
+(* TODO: mv to mathcomp_extra.v *)
+Lemma seq_of_rV_const (p : R) : seq_of_rV (@const_mx _ _ M.+1 p) = nseq M.+1 p.
+Proof.
+apply: (@eq_from_nth _ 0).
+  by rewrite MatrixFormula.size_seq_of_rV size_nseq.
+move=> k; rewrite MatrixFormula.size_seq_of_rV => kM.
+have -> := @MatrixFormula.nth_seq_of_rV R M.+1 0 (const_mx p) (Ordinal kM).
+by rewrite mxE nth_nseq kM.
+Qed.
+
 Lemma iter_minr k p p' : k != 0%N -> p' >= p -> iter k (minr p) p' = p :> R.
 Proof.
 elim: k p p' => //= -[_ /= p' p _ p'p|k ih p p' _ pp'].
@@ -502,28 +516,26 @@ apply: cvgM; first exact: cvg_cst.
 exact/cvg_at_right_filter/cvg_id.
 Qed.
 
+Lemma min_dev_nseq (p : R) : min_dev p (nseq M.+1 p) = 0.
+Proof. by rewrite /min_dev big_nseq iter_minr// subrr mul0r. Qed.
+
+Lemma stl_and_gt0_const (p : R) : stl_and_gt0 (seq_of_rV (const_mx p)) = p.
+Proof.
+rewrite /stl_and_gt0/= {1}/sumR big_map seq_of_rV_const big_nseq.
+rewrite min_dev_nseq.
+rewrite mulr0 expR0 mulr1.
+rewrite iter_addr addr0.
+rewrite /sumR big_map big_nseq.
+rewrite min_dev_nseq mulr0 expR0 iter_addr addr0.
+by rewrite -(mulr_natr p) -mulrA divff ?mulr1.
+Qed.
+
 Lemma shadowlifting_stl_and_gt0 (p : R) : p > 0 -> forall i,
   ('d (stl_and_gt0 \o seq_of_rV) '/d i) (const_mx p) = M.+1%:R^-1.
 Proof.
 move=> p0 i.
 rewrite /partial.
-have cpE : seq_of_rV (@const_mx _ _ M.+1 p) = nseq M.+1 p.
-  apply: (@eq_from_nth _ 0).
-    by rewrite MatrixFormula.size_seq_of_rV size_nseq.
-  move=> k; rewrite MatrixFormula.size_seq_of_rV => kM.
-  have -> := @MatrixFormula.nth_seq_of_rV R M.+1 0 (const_mx p) (Ordinal kM).
-  by rewrite mxE nth_nseq kM.
-have H1 : stl_and_gt0 (seq_of_rV (const_mx p)) = p.
-  rewrite /stl_and_gt0/= {1}/sumR big_map cpE big_nseq.
-  have K1 : min_dev p (nseq M.+1 p) = 0.
-    by rewrite /min_dev big_nseq iter_minr// subrr mul0r.
-  rewrite K1.
-  rewrite mulr0 expR0 mulr1.
-  rewrite iter_addr addr0.
-  rewrite /sumR big_map big_nseq.
-  rewrite K1 mulr0 expR0 iter_addr addr0.
-  by rewrite -(mulr_natr p) -mulrA divff ?mulr1.
-rewrite /= H1.
+rewrite /= stl_and_gt0_const.
 have cardM : #|(fun j : 'I_M.+1 => j != i)| = M.
   have := card_ord M.+1.
   rewrite (cardD1 i) inE add1n => -[] hM.
@@ -593,7 +605,7 @@ have H2 h : h > 0 ->
 have H3 h : h < 0 -> (stl_and_gt0 (seq_of_rV  (const_mx p + h *: err_vec i))) =
                      (p * M%:R * expR (- nu * (- h / (p + h))) + (p + h))
                      /
-                     (M%:R * expR (- nu * (- h / (p + h))) + 1). 
+                     (M%:R * expR (- nu * (- h / (p + h))) + 1).
   move=> h0.
   have mip :
       \big[minr/(p + h)%E]_(i <- seq_of_rV (const_mx p + h *: err_vec i)%R) i = p + h.
@@ -644,7 +656,7 @@ have mip' : \big[minr/p]_(i0 <- seq_of_rV (const_mx p + h *: err_vec i)%E) i0 = 
 have /cvg_lim : h^-1 * ((stl_and_gt0 (seq_of_rV (const_mx p + h *: err_vec i))) -
                         (stl_and_gt0 (seq_of_rV (const_mx p))))
        @[h --> (0:R)^'] --> ((M%:R + 1)^-1:R).
-  apply/cvg_at_right_left_dnbhs; rewrite H1.
+  apply/cvg_at_right_left_dnbhs; rewrite stl_and_gt0_const.
     apply/cvgrPdist_le => /= e e0.
     near=> t.
     rewrite H2//=.
@@ -654,7 +666,7 @@ have /cvg_lim : h^-1 * ((stl_and_gt0 (seq_of_rV (const_mx p + h *: err_vec i))) 
     rewrite (mulrAC _ (_^-1) p) -mulrBl.
     have -> : ((p * M%:R)%R + ((p + t)%E * expR (- nu * (t / p)))%R)%E - (M%:R + expR (- nu * (t / p)))%E * p = t * expR (- nu * (t / p)) by lra.
     rewrite !mulrA mulVf// mul1r -(mul1r ((_ + _)^-1)).
-    have -> : expR (- nu * t / p) / (M%:R + expR (- nu * t / p))%E = 
+    have -> : expR (- nu * t / p) / (M%:R + expR (- nu * t / p))%E =
 ((fun t => expR (- nu * t / p)) \* (fun t => (M%:R + expR (- nu * t / p))%E ^-1)) t by [].
     near: t; move: e e0; apply/cvgrPdist_le.
     apply: cvgM.
@@ -698,10 +710,9 @@ have /cvg_lim : h^-1 * ((stl_and_gt0 (seq_of_rV (const_mx p + h *: err_vec i))) 
       exact: cvg_cst.
     apply: cvg_at_left_filter.
     exact: cvg_id.
-rewrite H1 natr1.
+rewrite stl_and_gt0_const natr1.
 apply. exact: Rhausdorff.
-Unshelve. all: end_near.
-Qed.
+Unshelve. all: end_near. Qed.
 
 Lemma invrM' (x y : R) : x != 0 -> (x * y)^-1 = x^-1 * y^-1.
 Proof. nra. Qed.
@@ -719,9 +730,7 @@ Lemma derive_comp (R' : realFieldType) (f g : R'^o -> R'^o) x :
   derivable f x 1 -> derivable g (f x) 1 ->
   'D_1 (g \o f) x = 'D_1 g (f x) * 'D_1 f x.
 Proof.
-move=> fx1 gfx1.
-rewrite -derive1E.
-rewrite derive1_comp; last 2 first.
+move=> fx1 gfx1; rewrite -derive1E derive1_comp; last 2 first.
   exact: fx1.
   exact: gfx1.
 by rewrite !derive1E.
@@ -733,9 +742,30 @@ Proof.
 move=> fgx1 gx1.
 apply: ex_derive.
 apply: is_derive1_comp.
-  apply/derivableP.
-  exact: fgx1.
+  by apply/derivableP; exact: fgx1.
 exact/derivableP.
+Qed.
+
+Let num' (p x : R) : R := M%:R * expR (- x / (p + x)) +
+  expR (- x / (p + x)) * x * M%:R * (x / (x + p)^+2 - (x + p)^-1) +
+  expR (- x / (p + x)) * M%:R * p * (x / (x + p)^+2 - (x + p)^-1).
+
+Let den' (p x : R) : R := expR (nu * (x / (x + p))) +
+  M%:R +
+  expR (nu * (x / (x + p))) * x * (- x * nu / (x + p)^+2 + nu / (x + p)).
+
+Lemma stl_and_lt0_const (p : R) : stl_and_lt0 (seq_of_rV (const_mx p)) = p.
+Proof.
+rewrite /stl_and_lt0/= {1}/sumR big_map seq_of_rV_const big_nseq.
+rewrite min_dev_nseq.
+rewrite mulr0 expR0 !mulr1.
+rewrite iter_addr addr0.
+rewrite /sumR big_map !big_nseq.
+rewrite min_dev_nseq mulr0 expR0 iter_addr addr0.
+rewrite iter_minr.
+by rewrite -(mulr_natr p) -mulrA divff ?mulr1.
+by [].
+lra.
 Qed.
 
 Lemma shadowlifting_stl_and_lt0 (p : R) : p > 0 -> forall i,
@@ -743,26 +773,7 @@ Lemma shadowlifting_stl_and_lt0 (p : R) : p > 0 -> forall i,
 Proof.
 move=> p0 i.
 rewrite /partial.
-have cpE : seq_of_rV (@const_mx _ _ M.+1 p) = nseq M.+1 p.
-  apply: (@eq_from_nth _ 0).
-    by rewrite MatrixFormula.size_seq_of_rV size_nseq.
-  move=> k; rewrite MatrixFormula.size_seq_of_rV => kM.
-  have -> := @MatrixFormula.nth_seq_of_rV R M.+1 0 (const_mx p) (Ordinal kM).
-  by rewrite mxE nth_nseq kM.
-have H1 : stl_and_lt0 (seq_of_rV (const_mx p)) = p.
-  rewrite /stl_and_lt0/= {1}/sumR big_map cpE big_nseq.
-  have K1 : min_dev p (nseq M.+1 p) = 0.
-    by rewrite /min_dev big_nseq iter_minr// subrr mul0r.
-  rewrite K1.
-  rewrite mulr0 expR0 !mulr1.
-  rewrite iter_addr addr0.
-  rewrite /sumR big_map !big_nseq.
-  rewrite K1 mulr0 expR0 iter_addr addr0.
-  rewrite iter_minr.
-    by rewrite -(mulr_natr p) -mulrA divff ?mulr1.
-    done.
-    lra.
-rewrite /= H1.
+rewrite /= stl_and_lt0_const.
 have cardM : #|(fun j : 'I_M.+1 => j != i)| = M.
   have := card_ord M.+1.
   rewrite (cardD1 i) inE add1n => -[] hM.
@@ -887,7 +898,7 @@ have /cvg_lim : h^-1 * ((stl_and_lt0 (seq_of_rV (const_mx p + h *: err_vec i))) 
                         (stl_and_lt0 (seq_of_rV (const_mx p))))
        @[h --> (0:R)^'] --> (M.+1%:R^-1:R).
   apply/cvg_at_right_left_dnbhs.
-    rewrite H1.
+    rewrite stl_and_lt0_const.
     apply/cvgrPdist_le => /= eps eps0.
     near=> x.
     rewrite [X in normr (_ - X)](_ : _ =
@@ -946,7 +957,7 @@ have /cvg_lim : h^-1 * ((stl_and_lt0 (seq_of_rV (const_mx p + h *: err_vec i))) 
     rewrite -[X in _ --> X](mul0r p^-1).
     apply: cvgM; last exact: cvg_cst.
     exact/cvg_at_right_filter/cvg_id.
-  rewrite H1.
+  rewrite stl_and_lt0_const.
   apply/cvgrPdist_le => /= eps eps0.
   near=> x.
   pose a x := expR (nu * - x / (p + x)%E).
@@ -998,12 +1009,6 @@ have /cvg_lim : h^-1 * ((stl_and_lt0 (seq_of_rV (const_mx p + h *: err_vec i))) 
     rewrite -invr1 /a.
     exact: cvgV.
   rewrite /num/den/a/b.
-  pose num' (x : R) : R := M%:R * expR (- x / (p + x)) +
-                           expR (- x / (p + x)) * x * M%:R * (x / (x + p)^+2 - (x + p)^-1) +
-                           expR (- x / (p + x)) * M%:R * p * (x / (x + p)^+2 - (x + p)^-1).
-  pose den' (x : R) : R := expR (nu * (x / (x + p))) +
-                           M%:R +
-                           expR (nu * (x / (x + p))) * x * (- x * nu / (x + p)^+2 + nu / (x + p)).
 
   have Hint6 (x : R) : derivable -%R x 1.
     by apply: derivableN; exact: derivable_id.
@@ -1043,7 +1048,7 @@ have /cvg_lim : h^-1 * ((stl_and_lt0 (seq_of_rV (const_mx p + h *: err_vec i))) 
       apply: cvgD.
       exact: cvg_id.
       exact: cvg_cst.
-  apply: (@lhopital_left R _ num' _ den' 0 _ (nbhsx_ballx _ _ p0)).
+  apply: (@lhopital_left R _ (num' p) _ (den' p) 0 _ (nbhsx_ballx _ _ p0)).
     move=> x x0p.
     rewrite /num'.
     rewrite -[X in is_derive _ _ _ X]subr0.
@@ -1266,7 +1271,7 @@ have /cvg_lim : h^-1 * ((stl_and_lt0 (seq_of_rV (const_mx p + h *: err_vec i))) 
     exact: Htmp.
     by rewrite gt_eqF//.
 
-    rewrite -{2}(mul0r ((den' 0)^-1)).
+    rewrite -{2}(mul0r ((den' p 0)^-1)).
     have Hint32 : expR (nu * (x / (x + p)%E)) @[x --> 0^'-] --> expR (nu * (0 / (0%R + p)%E)).
       apply: continuous_cvg; first exact: continuous_expR.
       apply: cvgM. exact: cvg_cst.
@@ -1324,9 +1329,8 @@ have /cvg_lim : h^-1 * ((stl_and_lt0 (seq_of_rV (const_mx p + h *: err_vec i))) 
     apply: cvgV; first by rewrite gt_eqF ?addr0.
     apply: cvgD; first exact: cvg_cst.
     exact/cvg_at_left_filter/cvg_id.
-rewrite H1.
+rewrite stl_and_lt0_const.
 apply. exact: Rhausdorff.
-Unshelve. all: end_near.
-Qed.
+Unshelve. all: end_near. Qed.
 
 End shadow_lifting_stl_and.

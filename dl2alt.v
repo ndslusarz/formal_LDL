@@ -6,12 +6,17 @@ From mathcomp Require Import all_classical.
 From mathcomp Require Import reals ereal signed.
 From mathcomp Require Import topology derive normedtype sequences
  exp measure lebesgue_measure lebesgue_integral hoelder.
-Require Import util ldl.
+Require Import mathcomp_extra analysis_extra ldl.
+
+(**md**************************************************************************)
+(* # DL2 alternative                                                          *)
+(*                                                                            *)
+(* - dl2_and v == $\sum_{i < n} v_i$                                          *)
+(******************************************************************************)
 
 Import Num.Def Num.Theory GRing.Theory.
 Import Order.TTheory.
 Import numFieldTopology.Exports.
-
 
 Section shadow_lifting_dl2_and.
 Local Open Scope ring_scope.
@@ -19,8 +24,6 @@ Local Open Scope classical_set_scope.
 Context {R : realType}.
 Variable M : nat.
 Hypothesis M0 : M != 0%N.
-
-Locate "_ --> _".
 
 Definition dl2_and {R : fieldType} {n} (v : 'rV[R]_n) :=
   \sum_(i < n) v ``_ i.
@@ -93,17 +96,7 @@ rewrite mulrCA.
 by rewrite !mulrA.
 Qed.
 
-Lemma prodr_seq_eq0 {I : Type} (r : seq I) (P : pred I)
-    (F : I -> R) :
-  (\big[*%R/1]_(i <- r | P i) F i == 0) = has (fun i => P i && (F i == 0)) r.
-Proof.
-elim: r => /= [|h t ih]; first by rewrite big_nil oner_eq0.
-rewrite big_cons; case: ifPn => Ph /=; last by rewrite ih.
-by rewrite mulf_eq0 ih.
-Qed.
-
-Lemma dl2_translation_le0 e :
-  ([[ e ]]_dl2' <= 0 :> type_translation Bool_P).
+Lemma dl2_translation_le0 e : [[ e ]]_dl2' <= 0 :> type_translation Bool_P.
 Proof.
 dependent induction e using expr_ind' => /=.
 - by case: b.
@@ -136,7 +129,7 @@ dependent induction e using expr_ind' => /=.
   by rewrite oppr_le0 le_maxr lexx orbT.
 Qed.
 
-Definition is_dl2 b (x : R) := (if b then x == 0 else x < 0).
+Definition is_dl2 b (x : R) := if b then x == 0 else x < 0.
 
 Lemma dl2_nary_inversion_andE1 (s : seq (expr (Bool_P))) :
   is_dl2 true ([[ ldl_and s ]]_dl2') ->
@@ -157,24 +150,6 @@ rewrite naddr_eq0.
 - exact: dl2_translation_le0.
 - rewrite big_seq_cond; apply: sumr_le0 => /= x.
   by rewrite andbT => /mapP[/= e et] ->; exact: dl2_translation_le0.
-Qed.
-
-Lemma naddr_lt0 (x y : R) :
-  (x <= 0) -> (y <= 0) -> (x + y < 0) -> ((x < 0) || (y < 0)).
-Proof.
-move=> x0 y0; rewrite !ltNge -negb_and; apply: contra.
-by move=> /andP[x0' y0']; rewrite addr_ge0.
-Qed.
-
-Lemma prodr_le0 (A : Type) (l : seq A) (f: A -> R) :
-  (forall i, f i <= 0) ->
-  (((-1) ^+ (length l).+1) * \big[*%R/1]_(j <- l) f j <= 0).
-Proof.
-move=> fle0.
-elim: l => [|a l IH].
-  by rewrite /= big_nil mulr1 expr1 lerN10.
-rewrite /= big_cons exprS (mulrC (f a)) -mulrA mulN1r.
-by rewrite -!mulrN mulrA mulr_le0_ge0// oppr_ge0.
 Qed.
 
 Lemma dl2_nary_inversion_andE0 (s : seq (expr (Bool_P))) :
@@ -244,15 +219,6 @@ rewrite ?(IHe1 e1 erefl JMeq_refl) ?(IHe2 e2 erefl JMeq_refl) ?(IHe e erefl JMeq
 by rewrite dl2_translations_Vector_coincide dl2_translations_Index_coincide.
 Qed.
 
-Lemma maxr0_le :
-  forall x : R , (- maxr x 0) = 0 -> x <= 0.
-Proof.
-move => r.
-rewrite /maxr. case: ifP.
-- by lra.
-- by move => h; case; lra.
-Qed.
-
 Lemma dl2_soundness (e : expr Bool_P) b :
   is_dl2 b ([[ e ]]_dl2') -> [[ e ]]b = b.
 Proof.
@@ -294,12 +260,12 @@ dependent induction e using expr_ind'.
     * by rewrite h.
 - case: c; rewrite //=; rewrite -!dl2_translations_Real_coincide;
   set t1 := _ e1; set t2 := _ e2; case: b => //.
-  + by rewrite/is_dl2 => /eqP; move/maxr0_le; rewrite subr_le0.
+  + by rewrite /is_dl2 => /eqP/maxr0_le; rewrite subr_le0.
   + rewrite/is_dl2 oppr_lt0 /maxr; case: ifPn; first by rewrite lt_irreflexive.
     by rewrite subr_gt0 => _; move/lt_geF.
-  + by rewrite/is_dl2=>/eqP; case=>/eqP; rewrite oppr_eq0 normr_eq0 subr_eq0.
+  + by rewrite /is_dl2 oppr_eq0 normr_eq0 subr_eq0.
   + rewrite/is_dl2; rewrite oppr_lt0 normr_gt0.
-    by rewrite subr_eq0; move/eqP => h; apply/eqP.
+    by rewrite subr_eq0 => /eqP h; apply/eqP.
 Qed.
 
 End dl2_lemmas.

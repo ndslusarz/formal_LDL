@@ -6,7 +6,12 @@ From mathcomp Require Import all_classical.
 From mathcomp Require Import reals ereal signed.
 From mathcomp Require Import topology derive normedtype sequences
  exp measure lebesgue_measure lebesgue_integral hoelder.
-Require Import util ldl.
+Require Import mathcomp_extra analysis_extra ldl.
+
+(**md**************************************************************************)
+(* # DL2                                                                      *)
+(*                                                                            *)
+(******************************************************************************)
 
 Import Num.Def Num.Theory GRing.Theory.
 Import Order.TTheory.
@@ -217,8 +222,7 @@ Lemma dl2_soundness (e : expr Bool_P) b :
   is_dl2 b ([[ e ]]_dl2) -> [[ e ]]b = b.
 Proof.
 dependent induction e using expr_ind'.
-- move: b b0 => [] [] //=.
-  by rewrite lt_irreflexive.
+- by move: b b0 => [] [] //=; rewrite ltxx.
 - rewrite List.Forall_forall in H.
   move: b => [].
   + move/dl2_nary_inversion_andE1.
@@ -254,8 +258,8 @@ dependent induction e using expr_ind'.
     * by rewrite /is_dl2/= h.
 - case: c; rewrite //=; rewrite -!dl2_translations_Real_coincide;
   set t1 := _ e1; set t2 := _ e2; case: b => //.
-  + by rewrite/is_dl2=>/eqP; move/maxr0_le; rewrite subr_le0.
-  + rewrite/is_dl2 lte_fin oppr_lt0 /maxr; case: ifPn; first by rewrite lt_irreflexive.
+  + by rewrite /is_dl2 => /eqP[] /maxr0_le; rewrite subr_le0.
+  + rewrite/is_dl2 lte_fin oppr_lt0 /maxr; case: ifPn; first by rewrite ltxx.
     by rewrite subr_gt0 => _; move/lt_geF.
   + by rewrite/is_dl2=>/eqP; case=>/eqP; rewrite oppr_eq0 normr_eq0 subr_eq0.
   + rewrite/is_dl2; rewrite lte_fin oppr_lt0 normr_gt0.

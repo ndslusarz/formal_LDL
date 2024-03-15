@@ -8,11 +8,11 @@
 -arg -w -arg -redundant-canonical-projection
 -arg -w -arg -projection-no-head-constant
 
-util.v
+mathcomp_extra.v
+analysis_extra.v
 ldl.v
 goedel.v
 dl2.v
 dl2alt.v
 stl.v
-lhopital.v
 stlalt.v
