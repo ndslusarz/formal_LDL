@@ -11,6 +11,10 @@ Require Import mathcomp_extra analysis_extra ldl.
 (**md**************************************************************************)
 (* # DL2                                                                      *)
 (*                                                                            *)
+(* ## Definitions                                                             *)
+(* - dl2_and v with v : 'rV_n                                                 *)
+(*   $\sum_{i < n} v_i$                                                       *)
+(*                                                                            *)
 (******************************************************************************)
 
 Import Num.Def Num.Theory GRing.Theory.

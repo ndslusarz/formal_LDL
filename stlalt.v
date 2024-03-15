@@ -536,14 +536,6 @@ Proof.
 move=> p0 i.
 rewrite /partial.
 rewrite /= stl_and_gt0_const.
-have cardM : #|(fun j : 'I_M.+1 => j != i)| = M.
-  have := card_ord M.+1.
-  rewrite (cardD1 i) inE add1n => -[] hM.
-  rewrite -[RHS]hM.
-  apply: eq_card => x.
-  rewrite inE; apply/idP/idP.
-    by rewrite inE andbT.
-  by move=> /andP[xi _].
 have H2 h : h > 0 ->
   stl_and_gt0 (seq_of_rV (const_mx p + h *: err_vec i)) =
   (p * M%:R + (p + h) * expR (- nu * (h / p))) / (M%:R + expR (-nu * (h / p))).
@@ -556,7 +548,7 @@ have H2 h : h > 0 ->
       by move=> /= j ji; rewrite ffunE !mxE eq_sym (negbTE ji) mulr0 addr0.
     rewrite big_const/=.
     rewrite iter_minr//; last 2 first.
-      by rewrite cardM.
+      by rewrite card_ordS.
       by rewrite lerDl// ltW.
     by rewrite /minr ltNge lerDl (ltW h0)/=.
   have mip' : \big[minr/p]_(i0 <- seq_of_rV (const_mx p + h *: err_vec i)%E) i0 = p.
@@ -567,7 +559,7 @@ have H2 h : h > 0 ->
       by move=> /= j ji; rewrite ffunE !mxE eq_sym (negbTE ji) mulr0 addr0.
     rewrite big_const/=.
     rewrite iter_minr//; last first.
-      by rewrite cardM.
+      by rewrite card_ordS.
     by rewrite /minr ltNge lerDl (ltW h0).
   rewrite /stl_and_gt0/= {1}/sumR big_map.
   congr (_ / _).
@@ -584,7 +576,7 @@ have H2 h : h > 0 ->
         rewrite /min_dev.
         by rewrite mip' subrr mul0r.
       by rewrite mulr0 expR0 mulr1.
-    rewrite big_const/= iter_addr addr0 cardM.
+    rewrite big_const/= iter_addr addr0 card_ordS.
     by rewrite addrC mulr_natr.
   rewrite /sumR !big_map/= -enumT /= big_enum/= (bigD1 i)//=.
   rewrite ffunE !mxE eqxx mulr1.
@@ -599,7 +591,7 @@ have H2 h : h > 0 ->
       rewrite /min_dev.
       by rewrite mip' subrr mul0r.
     by rewrite mulr0 expR0.
-  rewrite big_const/= iter_addr addr0 cardM.
+  rewrite big_const/= iter_addr addr0 card_ordS.
   by rewrite [LHS]addrC.
 
 have H3 h : h < 0 -> (stl_and_gt0 (seq_of_rV  (const_mx p + h *: err_vec i))) =
@@ -613,14 +605,14 @@ have H3 h : h < 0 -> (stl_and_gt0 (seq_of_rV  (const_mx p + h *: err_vec i))) =
     rewrite ffunE !mxE eqxx mulr1.
     rewrite (eq_bigr (fun=> p)); last first.
       by move=> /= j ji; rewrite ffunE !mxE eq_sym (negbTE ji) mulr0 addr0.
-    by rewrite big_const/= cardM iter_minr' ?minxx//(*NB: why %E?!*) gerDl ltW.
+    by rewrite big_const/= card_ordS iter_minr' ?minxx//(*NB: why %E?!*) gerDl ltW.
 have mip' : \big[minr/p]_(i0 <- seq_of_rV (const_mx p + h *: err_vec i)%E) i0 = p + h.
     (* NB: almost the same proof as above *)
     rewrite big_map/= big_enum/= (bigminD1 i)//.
     rewrite ffunE !mxE eqxx mulr1.
     rewrite (eq_bigr (fun=> p)); last first.
       by move=> /= j ji; rewrite ffunE !mxE eq_sym (negbTE ji) mulr0 addr0.
-    by rewrite big_const/= cardM iter_minr'// /minr ifT// gtrDl.
+    by rewrite big_const/= card_ordS iter_minr'// /minr ifT// gtrDl.
   rewrite /stl_and_gt0/= /sumR/= !big_map -enumT !big_enum/= (bigD1 i)//=.
   congr (_ / _).
     rewrite ffunE !mxE eqxx mulr1.
@@ -636,7 +628,7 @@ have mip' : \big[minr/p]_(i0 <- seq_of_rV (const_mx p + h *: err_vec i)%E) i0 = 
         rewrite /min_dev.
         rewrite mip'. lra.
       done.
-    rewrite big_const/= iter_addr addr0 cardM.
+    rewrite big_const/= iter_addr addr0 card_ordS.
     by rewrite -[in LHS]mulr_natr mulrAC.
   rewrite /= (bigD1 i)//=.
   rewrite ffunE !mxE eqxx mulr1.
@@ -651,7 +643,7 @@ have mip' : \big[minr/p]_(i0 <- seq_of_rV (const_mx p + h *: err_vec i)%E) i0 = 
       rewrite /min_dev.
       rewrite mip'. lra.
     done.
-  rewrite big_const/= iter_addr addr0 cardM.
+  rewrite big_const/= iter_addr addr0 card_ordS.
   by rewrite mulr0 expR0 addrC -[in LHS]mulr_natr mulrC.
 have /cvg_lim : h^-1 * ((stl_and_gt0 (seq_of_rV (const_mx p + h *: err_vec i))) -
                         (stl_and_gt0 (seq_of_rV (const_mx p))))
@@ -774,20 +766,11 @@ Proof.
 move=> p0 i.
 rewrite /partial.
 rewrite /= stl_and_lt0_const.
-have cardM : #|(fun j : 'I_M.+1 => j != i)| = M.
-  have := card_ord M.+1.
-  rewrite (cardD1 i) inE add1n => -[] hM.
-  rewrite -[RHS]hM.
-  apply: eq_card => x.
-  rewrite inE; apply/idP/idP.
-    by rewrite inE andbT.
-  by move=> /andP[xi _].
-
-have H2 : forall h, h > 0 ->
+have positive_part h : h > 0 ->
   stl_and_lt0 (seq_of_rV (const_mx p + h *: err_vec i)) =
-  (M%:R  * p + (p (*+ h*)) * expR (h/p) * expR (nu * (h / p))) /
+  (M%:R  * p + p * expR (h / p) * expR (nu * (h / p))) /
   (M%:R + expR (nu * (h / p))).
-  move=> h h0.
+  move=> h0.
   have mip :
       \big[minr/(p + h)%E]_(i <- seq_of_rV (const_mx p + h *: err_vec i)%R) i = p.
     rewrite big_map/= big_enum/= (bigminD1 i)//.
@@ -796,9 +779,9 @@ have H2 : forall h, h > 0 ->
       by move=> /= j ji; rewrite ffunE !mxE eq_sym (negbTE ji) mulr0 addr0.
     rewrite big_const/=.
     rewrite iter_minr//; last 2 first.
-      by rewrite cardM.
+      by rewrite card_ordS.
       by rewrite lerDl// ltW.
-    by rewrite /minr ltNge lerDl (ltW h0)/=. 
+    by rewrite /minr ltNge lerDl (ltW h0)/=.
   have mip' : \big[minr/p]_(i0 <- seq_of_rV (const_mx p + h *: err_vec i)%E) i0 = p.
     rewrite big_map/= big_enum/= (bigminD1 i)//.
     rewrite ffunE !mxE eqxx mulr1.
@@ -806,7 +789,7 @@ have H2 : forall h, h > 0 ->
       by move=> /= j ji; rewrite ffunE !mxE eq_sym (negbTE ji) mulr0 addr0.
     rewrite big_const/=.
     rewrite iter_minr//; last first.
-      by rewrite cardM.
+      by rewrite card_ordS.
     by rewrite /minr ltNge lerDl (ltW h0).
   rewrite /stl_and_lt0/= {1}/sumR big_map.
   congr (_ / _).
@@ -817,14 +800,14 @@ have H2 : forall h, h > 0 ->
       rewrite mip.
       by rewrite -addrA addrCA subrr addr0.
       rewrite mip.
-    rewrite (eq_bigr (fun=> p)); last first. 
+    rewrite (eq_bigr (fun=> p)); last first.
       move=> j ji.
       rewrite ffunE !mxE eq_sym (negbTE ji) mulr0 addr0.
       rewrite (_ : min_dev _ _ = 0); last first.
         rewrite /min_dev.
         by rewrite mip' subrr mul0r.
-      by rewrite mip' mulr0 expR0 !mulr1. 
-    rewrite big_const/= iter_addr addr0 cardM.
+      by rewrite mip' mulr0 expR0 !mulr1.
+    rewrite big_const/= iter_addr addr0 card_ordS.
     rewrite addrC.
     by rewrite (mulrC M%:R p) mulr_natr.
   rewrite /sumR !big_map/= -enumT big_enum/= (bigD1 i)//=.
@@ -835,17 +818,16 @@ have H2 : forall h, h > 0 ->
     by rewrite -addrA addrCA subrr addr0.
   rewrite addrC; congr (_ + _).
   rewrite (eq_bigr (fun=> 1)).
-    by rewrite big_const/= cardM iter_addr addr0.
+    by rewrite big_const/= card_ordS iter_addr addr0.
   move=> j ji; rewrite ffunE !mxE eq_sym (negbTE ji) mulr0 addr0.
   rewrite (_ : min_dev _ _ = 0); last first.
     rewrite /min_dev.
     by rewrite mip' subrr mul0r.
   by rewrite mulr0 expR0.
-
-have H3 h : h < 0 ->
+have negative_part h : h < 0 ->
   stl_and_lt0 (seq_of_rV (const_mx p + h *: err_vec i)) =
-  (((p+h) * M%:R * expR (- h / (p + h)) * expR (nu * (- h / (p+h))) + p + h)/
-  (M%:R * expR (nu * (- h / (p+h))) + 1)).
+  (((p + h) * M%:R * expR (- h / (p + h)) * expR (nu * (- h / (p + h))) + p + h)/
+  (M%:R * expR (nu * (- h / (p + h))) + 1)).
   move=> h0.
     have mip :
       \big[minr/(p + h)%E]_(i <- seq_of_rV (const_mx p + h *: err_vec i)%R) i = p + h.
@@ -853,19 +835,18 @@ have H3 h : h < 0 ->
     rewrite ffunE !mxE eqxx mulr1.
     rewrite (eq_bigr (fun=> p)); last first.
       by move=> /= j ji; rewrite ffunE !mxE eq_sym (negbTE ji) mulr0 addr0.
-    by rewrite big_const/= cardM iter_minr' ?minxx//gerDl ltW.
+    by rewrite big_const/= card_ordS iter_minr' ?minxx//gerDl ltW.
     have mip' : \big[minr/p]_(i0 <- seq_of_rV (const_mx p + h *: err_vec i)%E) i0 = p + h.
     rewrite big_map/= big_enum/= (bigminD1 i)//.
     rewrite ffunE !mxE eqxx mulr1.
     rewrite (eq_bigr (fun=> p)); last first.
       by move=> /= j ji; rewrite ffunE !mxE eq_sym (negbTE ji) mulr0 addr0.
-    by rewrite big_const/= cardM iter_minr'// /minr ifT// gtrDl.
+    by rewrite big_const/= card_ordS iter_minr'// /minr ifT// gtrDl.
     rewrite /stl_and_lt0/= /sumR/= !big_map -enumT !big_enum/= (bigD1 i)//=.
   congr (_ / _).
     rewrite ffunE !mxE eqxx mulr1.
     rewrite (_ : min_dev _ _ = 0); last first.
-      rewrite /min_dev.
-      rewrite mip.
+      rewrite /min_dev mip.
       lra.
     rewrite mulr0 expR0 !mulr1 addrC.
     rewrite (eq_bigr (fun=> (p + h) * expR (- h / (p + h)) * expR (nu * (- h / (p+h))))); last first.
@@ -874,15 +855,13 @@ have H3 h : h < 0 ->
       rewrite (_ : min_dev _ _ = -h/(p+h)); last first.
         rewrite /min_dev.
         rewrite mip'. lra.
-      rewrite mip'.
-      done.
-    rewrite big_const/= iter_addr addr0 cardM mip.
+      by rewrite mip'.
+    rewrite big_const/= iter_addr addr0 card_ordS mip.
     by rewrite -[in LHS]mulr_natl !mulrA (mulrC (M%:R)) addrA.
   rewrite /= (bigD1 i)//=.
   rewrite ffunE !mxE eqxx mulr1.
   rewrite (_ : min_dev _ _ = 0); last first.
-    rewrite /min_dev.
-    rewrite mip.
+    rewrite /min_dev mip.
     lra.
   rewrite (eq_bigr (fun=> (expR (nu * (- h / (p + h)%E))))); last first.
     move=> j ji.
@@ -890,8 +869,8 @@ have H3 h : h < 0 ->
     rewrite (_ : min_dev _ _ = -h/(p+h)); last first.
       rewrite /min_dev.
       rewrite mip'. lra.
-    done.
-  rewrite big_const/= iter_addr addr0 cardM.
+    by [].
+  rewrite big_const/= iter_addr addr0 card_ordS.
   by rewrite mulr0 expR0 addrC -[in LHS]mulr_natr mulrC.
 
 have /cvg_lim : h^-1 * ((stl_and_lt0 (seq_of_rV (const_mx p + h *: err_vec i))) -
@@ -905,7 +884,7 @@ have /cvg_lim : h^-1 * ((stl_and_lt0 (seq_of_rV (const_mx p + h *: err_vec i))) 
       (M%:R + expR (nu * (x / p)))^-1 *
       expR (nu * (x / p)) *
       ((expR (x / p) - 1) / (x / p))); last first.
-      rewrite H2//.
+      rewrite positive_part//.
       set a := expR (x / p).
       set b := expR (nu * (x / p)).
       rewrite invf_div !mulrA mulrC.
@@ -919,8 +898,8 @@ have /cvg_lim : h^-1 * ((stl_and_lt0 (seq_of_rV (const_mx p + h *: err_vec i))) 
       nra.
       by rewrite gt_eqF// addr_gt0// ?ltr0n ?lt0n// expR_gt0.
     near: x.
-  move: eps eps0.
-  apply/cvgrPdist_le.
+    move: eps eps0.
+    apply/cvgrPdist_le.
     rewrite -(mulr1 M.+1%:R^-1).
     rewrite -(mulr1 (M.+1%:R^-1 * 1)).
     apply: cvgM.
@@ -931,7 +910,8 @@ have /cvg_lim : h^-1 * ((stl_and_lt0 (seq_of_rV (const_mx p + h *: err_vec i))) 
           exact: cvg_cst.
         by under eq_fun do rewrite mulrCA mulrC; exact: exp0.
       by under eq_fun do rewrite mulrCA mulrC; exact: exp0.
-    have L1 : forall x : R, x \in (ball 0 1 : set R^o) -> is_derive x 1 ( *%R^~ p^-1) p^-1.
+    have L1 : forall x : R, x \in (ball 0 1 : set R^o) ->
+       is_derive x 1 ( *%R^~ p^-1) p^-1.
       move=> x _.
       rewrite [X in is_derive _ _ X _](_ : _ = p^-1 *: id); last first.
         by apply/funext => y /=; rewrite mulrC.
@@ -965,10 +945,11 @@ have /cvg_lim : h^-1 * ((stl_and_lt0 (seq_of_rV (const_mx p + h *: err_vec i))) 
   pose num x := M%:R * (p + x) * b x - M%:R * p.
   pose den x := x * (M%:R + (a x)^-1).
   have ? : a x != 0 by rewrite ?gt_eqF ?expR_gt0.
-  have ? : ((M%:R * a x)%R + 1%R)%E != 0 by rewrite gt_eqF// addr_gt0// mulr_gt0// ?expR_gt0// ltr0n// lt0n.
+  have ? : ((M%:R * a x)%R + 1%R)%E != 0.
+    by rewrite gt_eqF// addr_gt0// mulr_gt0// ?expR_gt0// ltr0n// lt0n.
   rewrite [X in normr (_ - X)](_ : _ =
     (a x * (M%:R + (a x)^-1))^-1 + num x / den x); last first.
-    rewrite /= H3// mulrA -/(b x) -/(a x).
+    rewrite /= negative_part// mulrA -/(b x) -/(a x).
     rewrite -[X in _ - X](mul1r p) -[X in _ - (X * p)](@mulfV _ (((M%:R * a x)%R + 1%R)))//.
     rewrite -(mulrAC _ p) -mulrBl (mulrDl _ _ p) mul1r opprD !addrA.
     rewrite [X in _ * (X / _)](_ : _ = (p + x) * M%:R * b x * a x + x - M%:R * a x * p); last first.

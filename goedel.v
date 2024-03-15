@@ -10,6 +10,9 @@ Require Import mathcomp_extra analysis_extra ldl.
 (**md**************************************************************************)
 (* # Goedel                                                                   *)
 (*                                                                            *)
+(* - product_and v with v : 'rV_n                                             *)
+(*   $\Pi_{i < n} v_i$                                                        *)
+(*                                                                            *)
 (******************************************************************************)
 
 Import Num.Def Num.Theory GRing.Theory.
@@ -356,7 +359,6 @@ Hypothesis M0 : M != 0%N.
 
 Definition product_and {R : fieldType} {n} (u : 'rV[R]_n) : R :=
   \prod_(i < n) u ``_ i.
-
 
 Lemma shadowlifting_product_andE p : p > 0 ->
   forall i, ('d (@product_and R M.+1) '/d i) (const_mx p) = p ^+ M.

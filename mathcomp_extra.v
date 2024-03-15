@@ -17,6 +17,7 @@ Local Open Scope ring_scope.
 
 Reserved Notation "u '``_' i" (at level 3, i at level 2,
   left associativity, format "u '``_' i").
+Reserved Notation "u *d w" (at level 40).
 
 Lemma In_in (I : eqType) (s : seq I) e : e \in s <-> List.In e s.
 Proof.
@@ -25,6 +26,33 @@ elim: s => //= h t ih; split=> [|[<-|/ih] ].
 - by rewrite mem_head.
 - by rewrite inE => ->; rewrite orbT.
 Qed.
+
+Lemma card_ordS (n : nat) (i : 'I_n.+1) : #|(fun j : 'I_n.+1 => j != i)| = n.
+Proof.
+have := card_ord n.+1.
+rewrite (cardD1 i) inE add1n => -[] hn.
+rewrite -[RHS]hn.
+apply: eq_card => x.
+rewrite inE; apply/idP/idP.
+  by rewrite inE andbT.
+by move=> /andP[xi _].
+Qed.
+
+Lemma naddr_lt0 {R : realDomainType} (x y : R) :
+  x <= 0 -> y <= 0 -> x + y < 0 -> (x < 0) || (y < 0).
+Proof.
+move=> x0 y0; rewrite !ltNge -negb_and; apply: contra.
+by move=> /andP[x0' y0']; rewrite addr_ge0.
+Qed.
+
+Definition row_of_seq {R : numDomainType} (s : seq R) : 'rV[R]_(size s) :=
+  (\row_(i < size s) tnth (in_tuple s) i).
+
+(* TODO(rei): this notation breaks the display of ball predicates *)
+Notation "u '``_' i" := (u 0%R i) : ring_scope.
+
+Definition dotmul {R : ringType} n (u v : 'rV[R]_n) : R := (u *m v^T)``_0.
+Notation "u *d w" := (dotmul u w).
 
 Section alias_for_bigops.
 Context {R : numDomainType}.
@@ -37,9 +65,6 @@ Definition maxR s : R := \big[maxr/0]_(i <- s) i.
 
 End alias_for_bigops.
 
-Definition row_of_seq {R : numDomainType} (s : seq R) : 'rV[R]_(size s) :=
-  (\row_(i < size s) tnth (in_tuple s) i).
-
 Lemma sum_01 {R : numDomainType} (I : eqType) (s : seq I) (f : I -> R) :
   (forall i, i \in s -> f i <= 1) -> \sum_(i <- s) f i <= (size s)%:R.
 Proof.
@@ -47,11 +72,25 @@ move=> s01; rewrite -sum1_size natr_sum big_seq [leRHS]big_seq.
 by rewrite ler_sum// => r /s01 /andP[].
 Qed.
 
-Lemma maxr01 {R : realDomainType} (x : R) : (maxr x 0 == 1) = (x == 1).
-Proof. by rewrite/maxr; case: ifP=>//; lra. Qed.
+Lemma prodr_seq_eq0 {R : numDomainType} {I : Type} (r : seq I) (P : pred I)
+    (F : I -> R) :
+  (\big[*%R/1]_(i <- r | P i) F i == 0) = has (fun i => P i && (F i == 0)) r.
+Proof.
+elim: r => /= [|h t ih]; first by rewrite big_nil oner_eq0.
+rewrite big_cons; case: ifPn => Ph /=; last by rewrite ih.
+by rewrite mulf_eq0 ih.
+Qed.
 
-Lemma minr10 {R : realDomainType} (x : R) : (minr x 1 == 0) = (x == 0).
-Proof. by rewrite /minr; case: ifP=>//; lra. Qed.
+Lemma prodr_le0 {R : numDomainType} (A : Type) (l : seq A) (f: A -> R) :
+  (forall i, f i <= 0) ->
+  (((-1) ^+ (length l).+1) * \big[*%R/1]_(j <- l) f j <= 0).
+Proof.
+move=> fle0.
+elim: l => [|a l IH].
+  by rewrite /= big_nil mulr1 expr1 lerN10.
+rewrite /= big_cons exprS (mulrC (f a)) -mulrA mulN1r.
+by rewrite -!mulrN mulrA mulr_le0_ge0// oppr_ge0.
+Qed.
 
 Lemma prod1 {R : realDomainType} (e1 e2 : R) :
   0 <= e1 <= 1 -> 0 <= e2 <= 1 -> (e1 * e2 == 1) = ((e1 == 1) && (e2 == 1)).
@@ -69,33 +108,6 @@ elim: s => [_|e0].
   have : (0 <= e0 <= 1)%R.
     by apply: es01; rewrite in_cons eq_refl.
   nra.
-Qed.
-
-Lemma prodr_seq_eq0 {R : numDomainType} {I : Type} (r : seq I) (P : pred I)
-    (F : I -> R) :
-  (\big[*%R/1]_(i <- r | P i) F i == 0) = has (fun i => P i && (F i == 0)) r.
-Proof.
-elim: r => /= [|h t ih]; first by rewrite big_nil oner_eq0.
-rewrite big_cons; case: ifPn => Ph /=; last by rewrite ih.
-by rewrite mulf_eq0 ih.
-Qed.
-
-Lemma naddr_lt0 {R : realDomainType} (x y : R) :
-  (x <= 0) -> (y <= 0) -> (x + y < 0) -> ((x < 0) || (y < 0)).
-Proof.
-move=> x0 y0; rewrite !ltNge -negb_and; apply: contra.
-by move=> /andP[x0' y0']; rewrite addr_ge0.
-Qed.
-
-Lemma prodr_le0 {R : realDomainType} (A : Type) (l : seq A) (f: A -> R) :
-  (forall i, f i <= 0) ->
-  (((-1) ^+ (length l).+1) * \big[*%R/1]_(j <- l) f j <= 0).
-Proof.
-move=> fle0.
-elim: l => [|a l IH].
-  by rewrite /= big_nil mulr1 expr1 lerN10.
-rewrite /= big_cons exprS (mulrC (f a)) -mulrA mulN1r.
-by rewrite -!mulrN mulrA mulr_le0_ge0// oppr_ge0.
 Qed.
 
 Lemma psumr_eqsize {R : realDomainType} :
@@ -128,23 +140,7 @@ elim: r.
   + move=> h.
     rewrite /= -nat1r big_cons h.
       by apply: congr1; apply: IH.2 => i ias; apply: h; rewrite in_cons ias orbT.
-    by rewrite in_cons eq_refl//.
-Qed.
-
-Lemma bigmin_eqP {R : realDomainType} (x : R) [I : eqType] (s : seq I) (F : I -> R) :
-  reflect (forall i : I, i \in s -> (x <= F i)) (\big[minr/x]_(i <- s) F i == x).
-Proof.
-have minrl : forall (x y : R), minr x y <= x => //. (* TODO: this should exist *)
-  by move => v w; rewrite /minr; case: ifPn; rewrite ?le_refl -?leNgt.
-apply: (iffP eqP) => [<- i|].
-- elim: s => // a s IH.
-  rewrite in_cons => /orP[/eqP<-|si].
-  + by rewrite big_seq big_cons mem_head minrl.
-  + by rewrite big_cons minC; apply: le_trans (IH si); exact: minrl.
-- elim: s => [h|i l IH h].
-  + by rewrite big_nil.
-  + rewrite big_cons IH ?min_r ?h ?mem_head// => a al.
-    by rewrite h// in_cons al orbT.
+    by rewrite in_cons eq_refl.
 Qed.
 
 Lemma prod1_01 {R : realDomainType} :
@@ -178,11 +174,58 @@ elim.
       by apply: h; rewrite in_cons e0s orbT.
 Qed.
 
-Lemma minrxx {R : realDomainType} (x : R) : minr x x = x.
+Lemma prodrN1 {R : realDomainType} (T : eqType) (l : seq T) (f : T -> R) :
+  (forall e, e \in l -> f e < 0)%R ->
+  sgr (\prod_(e <- l) f e) = (- 1) ^+ (size l).
 Proof.
-rewrite /minr.
-by case: ifPn; lra.
+elim: l => [|a l ih h]; first by rewrite big_nil/= expr0 sgr1.
+rewrite big_cons sgrM ltr0_sg ?h ?mem_head//= exprS ih// => e el.
+by rewrite h// in_cons el orbT.
 Qed.
+
+(* TODO(rei): not used *)
+Lemma bigsum_0x {R : realDomainType} (T : eqType) f :
+  forall [s : seq T], (forall e, e \in s -> 0 <= f e) ->
+    (\sum_(j <- s) f j == 0 <-> (forall e, e \in s -> f e = (0:R))).
+Proof.
+elim.
+- by rewrite big_nil.
+- move => a l0 h1 h2 .
+  rewrite big_cons big_seq.
+  rewrite paddr_eq0; last 2 first.
+  + by apply: h2; rewrite mem_head.
+  + by apply: sumr_ge0 => i il0; apply: h2; rewrite in_cons il0 orbT.
+  split.
+  + move/andP => [/eqP a0].
+    rewrite -big_seq h1 => h3 e.
+      by rewrite in_cons => /orP[/eqP->//|el0]; exact: h3.
+    by apply: h2; rewrite in_cons e orbT.
+  + move=> h3.
+    apply/andP; split.
+      by apply/eqP; apply: h3; rewrite mem_head.
+    rewrite psumr_eq0.
+      by apply/allP => x xl0; apply/implyP => _; apply/eqP; apply: h3; rewrite in_cons xl0 orbT.
+    by move=> i xl0; apply: h2; rewrite in_cons xl0 orbT.
+Qed.
+
+Lemma maxr0_le {R : realDomainType} (x : R) : - maxr x 0 = 0 -> x <= 0.
+Proof.
+rewrite /maxr. case: ifP.
+- by lra.
+- by move => h; lra.
+Qed.
+
+Lemma maxr01 {R : realDomainType} (x : R) : (maxr x 0 == 1) = (x == 1).
+Proof. by rewrite/maxr; case: ifP=>//; lra. Qed.
+
+Lemma minr10 {R : realDomainType} (x : R) : (minr x 1 == 0) = (x == 0).
+Proof. by rewrite /minr; case: ifP=>//; lra. Qed.
+
+Lemma minrxx {R : realDomainType} (x : R) : minr x x = x.
+Proof. by rewrite /minr; case: ifPn; lra. Qed.
+
+Lemma maxrxx {R : realDomainType} (x : R) : maxr x x = x.
+Proof. by rewrite /maxr; case: ifPn; lra. Qed.
 
 (* TODO(Nat): need new name *)
 Lemma minrxxx {R : realDomainType} (x : R) : minr x (minr x x) = minr x x.
@@ -194,27 +237,32 @@ rewrite /minr.
 by case: ifPn; case: ifPn; case: ifPn; lra.
 Qed.
 
-Lemma maxrxx {R : realDomainType} (x : R) : maxr x x = x.
-Proof. by rewrite /maxr; case: ifPn; lra. Qed.
-
 Lemma maxrxxx {R : realDomainType} (x : R) : maxr x (maxr x x) = maxr x x.
 Proof. by rewrite !maxrxx. Qed.
 
 Lemma maxrxyx {R : realDomainType} (x y : R) : maxr x (maxr y x) = maxr y x.
 Proof. by rewrite /maxr; case: ifPn; case: ifPn; lra. Qed.
 
-Lemma maxr0_le {R : realDomainType} (x : R) : - maxr x 0 = 0 -> x <= 0.
+(* TODO(rei): should be on an ordered type *)
+Lemma bigmin_eqP {R : realDomainType} (x : R) [I : eqType] (s : seq I) (F : I -> R) :
+  reflect (forall i : I, i \in s -> (x <= F i)) (\big[minr/x]_(i <- s) F i == x).
 Proof.
-rewrite /maxr. case: ifP.
-- by lra.
-- by move => h; lra.
+have minrl : forall (x y : R), minr x y <= x => //. (* TODO: this should exist *)
+  by move => v w; rewrite /minr; case: ifPn; rewrite ?le_refl -?leNgt.
+apply: (iffP eqP) => [<- i|].
+- elim: s => // a s IH.
+  rewrite in_cons => /orP[/eqP<-|si].
+  + by rewrite big_seq big_cons mem_head minrl.
+  + by rewrite big_cons minC; apply: le_trans (IH si); exact: minrl.
+- elim: s => [h|i l IH h].
+  + by rewrite big_nil.
+  + rewrite big_cons IH ?min_r ?h ?mem_head// => a al.
+    by rewrite h// in_cons al orbT.
 Qed.
-
-(* TODO(rei): this notation breaks the display of ball predicates *)
-Notation "u '``_' i" := (u 0%R i) : ring_scope.
 
 (* NB: not used *)
 (* TODO(ab): not needed, but maybe worth having instead of bigmax_le? *)
+(* TODO(rei): should be on an ordered type *)
 Lemma bigmax_le' (R : realDomainType) :
   forall [I : eqType] (r : seq I) (f : I -> R) (P : pred I) (x0 x : R),
     reflect (x0 <= x /\ forall i, i \in r -> P i -> f i <= x)
@@ -252,77 +300,3 @@ apply: (iffP idP).
   apply: h => //.
   exact: mem_head.
 Qed.
-
-Lemma prodrN1 {R : realDomainType} (T : eqType) (l : seq T) (f : T -> R) :
-  (forall e, e \in l -> f e < 0)%R ->
-  sgr (\prod_(e <- l) f e) = (- 1) ^+ (size l).
-Proof.
-elim: l => [|a l ih h]; first by rewrite big_nil/= expr0 sgr1.
-rewrite big_cons sgrM ltr0_sg ?h ?mem_head//= exprS ih// => e el.
-by rewrite h// in_cons el orbT.
-Qed.
-
-(* TODO(rei): this should maybe go to ldl.v *)
-Definition product_dl_mul {R : numDomainType} (a b : R) := a + b - a * b.
-
-Definition product_dl_prod {R : numDomainType} (s : seq R) :=
-  \big[product_dl_mul/0]_(i <- s) i.
-
-Section product_dl_mul.
-Context {R : realDomainType}.
-
-Local Notation "x * y" := (product_dl_mul x y).
-
-Lemma product_dl_mul_01 (x y : R) : 0 <= x <= 1 -> 0 <= y <= 1 -> 0 <= x * y <= 1.
-Proof. by rewrite /product_dl_mul; nra. Qed.
-
-Lemma product_dl_mul_seq_01 (T : eqType) (f : T -> R) (l0 : seq T) :
-  (forall i, i \in l0 -> 0 <= f i <= 1) -> (0 <= \big[product_dl_mul/0]_(i <- l0) f i <= 1).
-Proof.
-elim: l0.
-- by rewrite big_nil lexx ler01.
-- move=> a l0 IH h.
-  rewrite big_cons product_dl_mul_01 ?h ?mem_head//.
-  apply: IH => i il0; apply: h.
-  by rewrite in_cons il0 orbT.
-Qed.
-
-Lemma product_dl_mul_inv (x y : R) :
-  0 <= x <= 1 -> 0 <= y <= 1 ->
-  reflect (x = 1 \/ y = 1) (x * y == 1).
-Proof.
-by move=> x01 y01; apply: (iffP eqP); rewrite /product_dl_mul; nra.
-Qed.
-
-Lemma product_dl_prod_inv0 (x y : R) :
-  0 <= x <= 1 -> 0 <= y <= 1 ->
-  reflect (x = 0 /\ y = 0) (x * y == 0).
-Proof.
-by move=> x01 y01; apply: (iffP eqP); rewrite /product_dl_mul; nra.
-Qed.
-
-Lemma bigsum_0x (T : eqType) f :
-  forall [s : seq T], (forall e, e \in s -> 0 <= f e) ->
-    (\sum_(j <- s) f j == 0 <-> (forall e, e \in s -> f e = (0:R))).
-Proof.
-elim.
-- by rewrite big_nil.
-- move => a l0 h1 h2 .
-  rewrite big_cons big_seq.
-  rewrite paddr_eq0; last 2 first.
-  + by apply: h2; rewrite mem_head.
-  + by apply: sumr_ge0 => i il0; apply: h2; rewrite in_cons il0 orbT.
-  split.
-  + move/andP => [/eqP a0].
-    rewrite -big_seq h1 => h3 e.
-      by rewrite in_cons => /orP[/eqP->//|el0]; exact: h3.
-    by apply: h2; rewrite in_cons e orbT.
-  + move=> h3.
-    apply/andP; split.
-      by apply/eqP; apply: h3; rewrite mem_head.
-    rewrite psumr_eq0.
-      by apply/allP => x xl0; apply/implyP => _; apply/eqP; apply: h3; rewrite in_cons xl0 orbT.
-    by move=> i xl0; apply: h2; rewrite in_cons xl0 orbT.
-Qed.
-
-End product_dl_mul.

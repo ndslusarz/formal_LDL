@@ -12,17 +12,9 @@ Require Import mathcomp_extra analysis_extra.
 (* # Logics                                                                   *)
 (*                                                                            *)
 (* ## Definitions                                                             *)
+(* - product_dl_mul                                                           *)
 (* - shadow_lifting f with f : rV[R]_n.+1 -> R                                *)
 (*   $\forall p, p > 0 \to \forall i, \frac{d\,f}{d\,x_i} [p; \cdots; p] > 0$ *)
-(* - product_and v with v : 'rV_n                                             *)
-(*   $\Pi_{i < n} v_i$                                                        *)
-(* - dl2_and v with v : 'rV_n                                                 *)
-(*   $\sum_{i < n} v_i$                                                       *)
-(*                                                                            *)
-(* ## Properties                                                              *)
-(* - satisfy shadow_lifting:                                                  *)
-(*   + product_and                                                            *)
-(*   + dl2_and                                                                *)
 (*                                                                            *)
 (******************************************************************************)
 
@@ -241,6 +233,47 @@ where "<< e >>" := (bool_translation e).
 End bool_translation.
 
 Notation "[[ e ]]b" := (bool_translation e) : ldl_scope.
+
+Definition product_dl_mul {R : numDomainType} (a b : R) := (a + b - a * b)%R.
+
+Definition product_dl_prod {R : numDomainType} (s : seq R) :=
+  (\big[product_dl_mul/0]_(i <- s) i)%R.
+
+Section product_dl_mul.
+Context {R : realDomainType}.
+Local Open Scope ring_scope.
+
+Local Notation "x * y" := (product_dl_mul x y).
+
+Lemma product_dl_mul_01 (x y : R) : 0 <= x <= 1 -> 0 <= y <= 1 -> 0 <= x * y <= 1.
+Proof. by rewrite /product_dl_mul; nra. Qed.
+
+Lemma product_dl_mul_seq_01 (T : eqType) (f : T -> R) (l0 : seq T) :
+  (forall i, i \in l0 -> 0 <= f i <= 1) -> (0 <= \big[product_dl_mul/0]_(i <- l0) f i <= 1).
+Proof.
+elim: l0.
+- by rewrite big_nil lexx ler01.
+- move=> a l0 IH h.
+  rewrite big_cons product_dl_mul_01 ?h ?mem_head//.
+  apply: IH => i il0; apply: h.
+  by rewrite in_cons il0 orbT.
+Qed.
+
+Lemma product_dl_mul_inv (x y : R) :
+  0 <= x <= 1 -> 0 <= y <= 1 ->
+  reflect (x = 1 \/ y = 1) (x * y == 1).
+Proof.
+by move=> x01 y01; apply: (iffP eqP); rewrite /product_dl_mul; nra.
+Qed.
+
+Lemma product_dl_prod_inv0 (x y : R) :
+  0 <= x <= 1 -> 0 <= y <= 1 ->
+  reflect (x = 0 /\ y = 0) (x * y == 0).
+Proof.
+by move=> x01 y01; apply: (iffP eqP); rewrite /product_dl_mul; nra.
+Qed.
+
+End product_dl_mul.
 
 Section goedel_translation.
 Local Open Scope ring_scope.
@@ -501,6 +534,7 @@ Local Open Scope ring_scope.
 Definition shadow_lifting {R : realType} n (f : 'rV_n.+1 -> R) :=
   forall p, p > 0 -> forall i, ('d f '/d i) (const_mx p) > 0.
 
+(* TODO(rei): rm this comment? *)
 (*Definition shadow_lifting {R : realType} (f : forall n, 'rV_n.1 -> R) :=
   (* forall Es : seq R, forall i : 'I_(size Es),
     (* (forall i, nth 0 Es i != 0) -> *) *)
@@ -522,21 +556,16 @@ Qed.
 (*
 About realfun.left_right_continuousP. *)
 
-Definition dotmul {R : ringType} n (u v : 'rV[R]_n) : R := (u *m v^T)``_0.
-Reserved Notation "u *d w" (at level 40).
-Local Notation "u *d w" := (dotmul u w).
-
-(* NB(rei): WIP *)
+(* NB(rei): not used *)
 Definition gradient {R : realType} (n : nat) (f : 'rV_n.+1 -> R) a :=
   \row_(i < n.+1) ('d f '/d i) a.
 
-(* NB(rei): main property of gradients? https://en.wikipedia.org/wiki/Gradient *)
 Lemma gradientP {R : realType} (n : nat) (f : 'rV[R]_n.+1 -> R^o) (v : 'rV[R]_n.+1) :
   forall x : 'rV[R]_n.+1, (gradient f x) *d v = 'D_v f x.
 Proof.
 move=> x.
 rewrite /gradient.
-Admitted.
+Abort.
 
 Definition weakly_smooth_cond {R : realType} {n : nat} (a : 'rV[R]_n.+1) :=
   let m := \big[minr/1(*def element*)]_i a``_i in
