@@ -307,10 +307,11 @@ Lemma maxe_geP (T : eqType) (s : seq T) (P : pred T) (f : T -> \bar R) (x : \bar
 Admitted.
 
 Lemma maxe_gt (I : eqType) (r : seq I) (P : pred I) (f : I -> \bar R) x :
-  (x < \big[maxe/+oo]_(i <- r | P i) f i)%E
+  (x < \big[maxe/-oo]_(i <- r | P i) f i)%E
   <-> exists i, i \in r /\ P i /\ (x < f i)%E.
 Proof.
 Admitted.
+
 
 Lemma nglt (x y : \bar R) :
 (x <= y)%E = ~~ (y < x)%E.
@@ -386,17 +387,35 @@ case: ifPn.
  
     rewrite /= {1}lt_eqF//=.
       rewrite {1}gt_eqF//=.
-        admit.
-        admit. 
-        admit.
-    
-    (* rewrite lte_fin invr_gt0 fine_gt0//.
-    apply/andP;split.
-      rewrite big_seq_cond sume_gt0//.
-      move=> i /andP[iEs _]; apply: expeR_ge0.
-      have := hmaxgt0; rewrite big_seq_cond. *)
-      (* rewrite maxe_gt.
-      move/maxe_gt => [i[iEs[_ hilt0]]]. *)
+        admit. rewrite lte_fin. (* Search ((_ < _)%E) "fin". *)
+        rewrite invr_gt0 fine_gt0. done.
+          rewrite sume_gt0.
+            rewrite andTb.
+            admit.
+            move => i _. by rewrite expeR_ge0.
+            admit. rewrite sume_lt0. done.
+              move => i _. 
+              admit.
+        have := hmaxgt0. 
+        rewrite {1}big_seq_cond.
+        move/maxe_gt => [i [iEs [_ hilt0]]].
+        exists i; split => //.
+          rewrite/andP.
+          rewrite mule_lt0_gt0//; last first.
+          rewrite expeR_gt0// ltNye !mule_eq_ninfty/= !negb_or !negb_and !negb_or !negb_and.
+          rewrite -!leNgt !lee_fin/= (ltW nu0)/= !andbT !orbT/=.
+          rewrite invr_le0 fine_le0 ?(ltW hmaxgt0)//.
+          rewrite invr_ge0 fine_ge0. by rewrite !orbT/=.
+          admit. (*easy, use hmaxgt0*)
+          admit. (*is this a contradition?*)
+          rewrite mule_lt0. 
+          admit. About ltNye.
+(*     rewrite adde_Neq_pinfty; last by rewrite eqe_oppLR/=.
+      rewrite eqe_oppLR/= hnoo andbT.
+      by rewrite -ltey (lt_trans hilt0)//= orbT.
+    rewrite -ltNye.
+    move: hnoo; rewrite -ltNye.
+    by move/mine_gt; apply. *)
     
   rewrite -nglt. move => h1 h2 h3.
   case: ifPn.
