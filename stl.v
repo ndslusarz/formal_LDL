@@ -298,6 +298,10 @@ Lemma maxe_ge (T : eqType) (s : seq T) (P : pred T) (f : T -> \bar R) (x : \bar 
   (x <= \big[maxe/+oo]_(i <- s | P i) f i (* < *)-> exists i, i \in s -> P i -> x <= f i)%E.
 Admitted.
 
+Lemma maxe_lt (T : eqType) (s : seq T) (P : pred T) (f : T -> \bar R) (x : \bar R) :
+  (\big[maxe/-oo]_(i <- s | P i) f i < x <-> forall i, i \in s -> P i -> f i < x)%E.
+Admitted.
+
 Lemma maxe_geP (T : eqType) (s : seq T) (P : pred T) (f : T -> \bar R) (x : \bar R) :
   (x <= \big[maxe/-oo]_(i <- s | P i) f i <-> exists i, i \in s -> P i -> x <= f i)%E.
 Admitted.
@@ -349,8 +353,8 @@ case: ifPn => [hgt0|].
     move: (h i) => /negP.
     by rewrite negb_and leNgt iEs/= orbF Bool.negb_involutive. 
   apply/negP; rewrite leNgt Bool.negb_involutive//. (* mule_ge0//. *)
-    rewrite /sumE !big_map big_seq_cond. Search (_ * _ < 0 ).
-    About mule_gt0. (* rewrite mule_lt0 sume_lt0 *)
+    rewrite /sumE !big_map big_seq_cond. 
+    (* rewrite mule_lt0 sume_lt0 *)
     admit. (*need good lemma for x * y < 0 *)
     (* rewrite mule_lt0 sume_lt0// => /andP[xEs _] .
       move: (h (index x Es)).
@@ -377,8 +381,9 @@ case: ifPn.
   move => _ _. admit. (*contra, +oo <0*)
   case: ifPn.
     move => hmaxgt0 hmaxninf hmaxninf'.
-    rewrite/sumE !big_map. Search "mule" "lt0".
-    rewrite mule_lt0//. 
+    rewrite/sumE !big_map.
+    rewrite mule_lt0//.
+ 
     rewrite /= {1}lt_eqF//=.
       rewrite {1}gt_eqF//=.
         admit.
@@ -398,8 +403,15 @@ case: ifPn.
      move => h4.
       rewrite /sumE !big_map.
     rewrite mule_gt0_lt0//; last first.
+      rewrite lte_fin invr_lt0. (* rewrite sume_lt0.  *)(* rewrite fsumr_lt0. *) Search "sum" "lt0".
       admit.
-      admit.
+      rewrite sume_gt0. done.
+        move => i _. rewrite mule_ge0//.
+          admit.
+          by rewrite expeR_ge0.
+        admit.
+      move => _.
+      move/maxe_lt: h4. 
       admit. (*need lemma that if max < 0 -> all elem <0*)
     rewrite -leNgt//=.
     rewrite lte_fin; lra. 
