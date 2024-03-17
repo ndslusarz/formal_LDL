@@ -38,7 +38,7 @@ Reserved Notation "[[ e ]]_dl2'" (at level 10, format "[[ e ]]_dl2'").
 (* Polarity of formulas: pos allows only positive formulas, neg allows negation *)
 Inductive polarity := pos | neg.
 
-Inductive simple_type :=
+Inductive ldl_type :=
 | Bool_T of polarity
 | Index_T of nat
 | Real_T
@@ -53,7 +53,7 @@ Inductive comparison : Type := cmp_le | cmp_eq.
 Section expr.
 Context {R : realType}.
 
-Inductive expr : simple_type -> Type :=
+Inductive expr : ldl_type -> Type :=
   (* base expressions *)
   | ldl_real : R -> expr Real_T
   | ldl_bool : forall p, bool -> expr (Bool_T p)
@@ -93,7 +93,7 @@ Notation "`- a"    := (ldl_lookup (ldl_app ldl_opp [tuple a]) 0) (at level 45).
 
 Let ldl_norm_infty n := ldl_fun (fun (t : (n.+1).-tuple R) => [tuple \big[maxr/[tnth t 0] ]_(i <- t) i ])%R.
 Notation "`|| t ||" := (ldl_lookup (ldl_norm_infty t) 0).
-Notation "t `! n" := (ldl_lookup t n) (at level 55).
+Notation "t `! n" := (ldl_lookup _ t n) (at level 55).
 
 Local Open Scope ldl_scope.
 
@@ -105,7 +105,7 @@ Notation "a `>= b" := (b `<= a) (at level 70).
 Notation "a `> b"  := (b `< a) (at level 70).
 
 Lemma expr_ind' (Real : realType) :
-  forall P : forall s : simple_type, expr s -> Prop,
+  forall P : forall s : ldl_type, expr s -> Prop,
     (forall s : Real, P Real_T (ldl_real s)) ->
     (forall (b : bool) p, P (Bool_T p) (ldl_bool p b)) ->
     (forall n (o : 'I_n), P (Index_T n) (ldl_idx o)) ->
@@ -127,7 +127,7 @@ Lemma expr_ind' (Real : realType) :
      forall e0 : expr (Index_T n), P (Index_T n) e0 -> P Real_T (ldl_lookup e e0)) ->
     (forall (c : comparison) (e : expr Real_T) b,
      P Real_T e -> forall e0 : expr Real_T, P Real_T e0 -> P (Bool_T b) (ldl_cmp b c e e0)) ->
-    forall (s : simple_type) (e : expr s), P s e.
+    forall (s : ldl_type) (e : expr s), P s e.
 Proof.
 move => P H H0 H1 H2 H3 H4 H7 H11 H12 H13 H14 s e.
 revert e.
@@ -167,7 +167,7 @@ Inductive DL := Lukasiewicz | Yager | Godel | product.
 Section type_translation.
 Context {Real : realType}.
 
-Definition type_translation (t : simple_type) : Type:=
+Definition type_translation (t : ldl_type) : Type:=
   match t with
   | Bool_T x => Real
   | Real_T => Real
@@ -176,7 +176,7 @@ Definition type_translation (t : simple_type) : Type:=
   | Fun_T n m => n.-tuple Real -> m.-tuple Real
 end.
 
-Definition bool_type_translation (t : simple_type) : Type:=
+Definition bool_type_translation (t : ldl_type) : Type:=
   match t with
   | Bool_T x => bool
   | Real_T => Real
@@ -185,7 +185,7 @@ Definition bool_type_translation (t : simple_type) : Type:=
   | Fun_T n m => n.-tuple Real -> m.-tuple Real
   end.
 
-Definition dl2_type_translation (t : simple_type) : Type :=
+Definition dl2_type_translation (t : ldl_type) : Type :=
   match t with
   | Bool_T x => \bar Real (* TODO: this should b [-oo,0] *)
   | Real_T => Real
@@ -194,7 +194,7 @@ Definition dl2_type_translation (t : simple_type) : Type :=
   | Fun_T n m => n.-tuple Real -> m.-tuple Real
 end.
 
-Definition stl_type_translation (t : simple_type) : Type :=
+Definition stl_type_translation (t : ldl_type) : Type :=
   match t with
   | Bool_T x => \bar Real
   | Real_T => Real
