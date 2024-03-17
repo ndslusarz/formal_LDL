@@ -30,10 +30,10 @@ Local Open Scope classical_set_scope.
 Reserved Notation "{[ e ]}" (format "{[  e  ]}").
 Reserved Notation "[[ e ]]b" (at level 10, format "[[  e  ]]b").
 Reserved Notation "[[ e ]]_ l" (at level 10, format "[[ e ]]_ l").
+Reserved Notation "nu .-[[ e ]]_stle" (at level 10, format "nu .-[[ e ]]_stle").
 Reserved Notation "nu .-[[ e ]]_stl" (at level 10, format "nu .-[[ e ]]_stl").
-Reserved Notation "nu .-[[ e ]]_stl'" (at level 10, format "nu .-[[ e ]]_stl'").
+Reserved Notation "[[ e ]]_dl2e" (at level 10, format "[[ e ]]_dl2e").
 Reserved Notation "[[ e ]]_dl2" (at level 10, format "[[ e ]]_dl2").
-Reserved Notation "[[ e ]]_dl2'" (at level 10, format "[[ e ]]_dl2'").
 
 (* Polarity of formulas: pos allows only positive formulas, neg allows negation *)
 Inductive polarity := pos | neg.
@@ -309,12 +309,12 @@ where "{[ e ]}" := (translation e).
 
 End goedel_translation.
 
-Section dl2_translation.
+Section dl2_ereal_translation.
 Local Open Scope ereal_scope.
 Local Open Scope ldl_scope.
 Context {R : realType}.
 
-Fixpoint dl2_translation {t} (e : @expr R t) {struct e} : ereal_type_translation t :=
+Fixpoint dl2_ereal_translation {t} (e : @expr R t) {struct e} : ereal_type_translation t :=
   match e in expr t return ereal_type_translation t with
   | ldl_bool _ true => 0
   | ldl_bool _ false => -oo
@@ -322,8 +322,8 @@ Fixpoint dl2_translation {t} (e : @expr R t) {struct e} : ereal_type_translation
   | ldl_idx n i => i
   | ldl_vec n t => t
 
-  | ldl_and _ Es => sumE (map dl2_translation Es)
-  | ldl_or _ Es => ((- 1) ^+ (size Es).+1)%:E * prodE (map dl2_translation Es)
+  | ldl_and _ Es => sumE (map dl2_ereal_translation Es)
+  | ldl_or _ Es => ((- 1) ^+ (size Es).+1)%:E * prodE (map dl2_ereal_translation Es)
   | `~ E1 => +oo (* default value, all lemmas are for negation-free formulas *)
 
   (*comparisons*)
@@ -334,17 +334,17 @@ Fixpoint dl2_translation {t} (e : @expr R t) {struct e} : ereal_type_translation
   | ldl_app n m f v => {[ f ]} {[ v ]}
   | ldl_lookup n v i => tnth {[ v ]} {[ i ]}
   end
-where "{[ e ]}" := (dl2_translation e).
+where "{[ e ]}" := (dl2_ereal_translation e).
 
-End dl2_translation.
-Notation "[[ e ]]_dl2" := (dl2_translation e) : ldl_scope.
+End dl2_ereal_translation.
+Notation "[[ e ]]_dl2e" := (dl2_ereal_translation e) : ldl_scope.
 
-Section dl2_translation_alt.
+Section dl2_translation.
 Local Open Scope ring_scope.
 Local Open Scope ldl_scope.
 Context {R : realType}.
 
-Fixpoint dl2_translation_alt {t} (e : @expr R t) {struct e} : type_translation t :=
+Fixpoint dl2_translation {t} (e : @expr R t) {struct e} : type_translation t :=
   match e in expr t return type_translation t with
   | ldl_bool _ true => 0
   | ldl_bool _ false => -1
@@ -352,8 +352,8 @@ Fixpoint dl2_translation_alt {t} (e : @expr R t) {struct e} : type_translation t
   | ldl_idx n i => i
   | ldl_vec n t => t
 
-  | ldl_and _ Es => sumR (map dl2_translation_alt Es)
-  | ldl_or _ s => (- 1) ^+ (size s).+1 * prodR (map dl2_translation_alt s)
+  | ldl_and _ Es => sumR (map dl2_translation Es)
+  | ldl_or _ s => (- 1) ^+ (size s).+1 * prodR (map dl2_translation s)
   | `~ E1 => 0 (* default value, all lemmas are for negation-free formulas *)
 
   (*comparisons*)
@@ -364,12 +364,12 @@ Fixpoint dl2_translation_alt {t} (e : @expr R t) {struct e} : type_translation t
   | ldl_app n m f v => {[ f ]} {[ v ]}
   | ldl_lookup n v i => tnth {[ v ]} {[ i ]}
 end
-where "{[ e ]}" := (dl2_translation_alt e).
+where "{[ e ]}" := (dl2_translation e).
 
-End dl2_translation_alt.
-Notation "[[ e ]]_dl2'" := (dl2_translation_alt e) : ldl_scope.
+End dl2_translation.
+Notation "[[ e ]]_dl2" := (dl2_translation e) : ldl_scope.
 
-Section stl_translation.
+Section stl_ereal_translation.
 Local Open Scope ereal_scope.
 Local Open Scope ldl_scope.
 Context {R : realType}.
@@ -383,7 +383,7 @@ Definition mine_dev (x y : \bar R) : \bar R :=
 Definition maxe_dev (x y : \bar R) : \bar R :=
   (x - y) * (fine x)^-1%:E.
 
-Fixpoint stl_translation {t} (e : expr t) : ereal_type_translation t :=
+Fixpoint stl_ereal_translation {t} (e : expr t) : ereal_type_translation t :=
   match e in expr t return ereal_type_translation t with
   | ldl_bool _ true => +oo
   | ldl_bool _ false => -oo
@@ -392,7 +392,7 @@ Fixpoint stl_translation {t} (e : expr t) : ereal_type_translation t :=
   | ldl_vec n t => t
 
   | ldl_and _ Es =>
-      let A := map stl_translation Es in
+      let A := map stl_ereal_translation Es in
       let a_min : \bar R := foldr mine +oo A in
       let a'_i (a_i : \bar R) := mine_dev a_i a_min in
       if a_min == -oo then -oo
@@ -405,7 +405,7 @@ Fixpoint stl_translation {t} (e : expr t) : ereal_type_translation t :=
           (fine (sumE (map (fun a => expeR (nu%:E * (a'_i a))) A)))^-1%:E
         else 0
   | ldl_or _ Es =>
-      let A := map stl_translation Es in
+      let A := map stl_ereal_translation Es in
       let a_max : \bar R := foldr maxe -oo A in
       let a'_i (a_i : \bar R) := maxe_dev a_max a_i in
       if a_max == -oo then -oo
@@ -427,11 +427,11 @@ Fixpoint stl_translation {t} (e : expr t) : ereal_type_translation t :=
   | ldl_app n m f v => {[ f ]} {[ v ]}
   | ldl_lookup n v i => tnth {[ v ]} {[ i ]}
     end
-where "{[ e ]}" := (stl_translation e).
+where "{[ e ]}" := (stl_ereal_translation e).
 
-End stl_translation.
+End stl_ereal_translation.
 
-Notation "nu .-[[ e ]]_stl" := (stl_translation nu e) : ldl_scope.
+Notation "nu .-[[ e ]]_stle" := (stl_ereal_translation nu e) : ldl_scope.
 
 Definition min_dev {R : realType} (x : R) (s : seq R) : R :=
   let r := \big[minr/x]_(i <- s) i in (x - r) * r^-1.
@@ -439,7 +439,7 @@ Definition min_dev {R : realType} (x : R) (s : seq R) : R :=
 Definition max_dev {R : realType} (x : R) (s : seq R) : R :=
   let r := \big[maxr/x]_(i <- s) i in (r - x) * r^-1.
 
-Section stl_translation_alt.
+Section stl_translation.
 Local Open Scope ring_scope.
 Local Open Scope ldl_scope.
 Context {R : realType}.
@@ -465,7 +465,7 @@ Definition stl_or_lt0 (v : seq R) :=
   sumR (map (fun a => a * expR (-nu * (max_dev a v))) v) *
     (sumR (map (fun a => expR (nu * max_dev a (v))) v))^-1 .
 
-Fixpoint stl_translation_alt {t} (e : expr t) : type_translation t :=
+Fixpoint stl_translation {t} (e : expr t) : type_translation t :=
   match e in expr t return type_translation t with
   | ldl_bool _ true => 1
   | ldl_bool _ false => -1
@@ -475,8 +475,8 @@ Fixpoint stl_translation_alt {t} (e : expr t) : type_translation t :=
 
   | ldl_and _ [::] => 1
   | ldl_and _ (e0 :: s) =>
-      let A := map stl_translation_alt s in
-      let a0 := stl_translation_alt e0 in
+      let A := map stl_translation s in
+      let a0 := stl_translation e0 in
       let a_min : R := \big[minr/a0]_(i <- A) i in
       if a_min < 0 then
         stl_and_lt0 (a0 :: A)
@@ -485,8 +485,8 @@ Fixpoint stl_translation_alt {t} (e : expr t) : type_translation t :=
       else 0
   | ldl_or _ [::] => -1
   | ldl_or _ (e0 :: s) =>
-      let A := map stl_translation_alt s in
-      let a0 := stl_translation_alt e0 in
+      let A := map stl_translation s in
+      let a0 := stl_translation e0 in
       let a_max: R := \big[maxr/a0]_(i <- A) i in
       if a_max > 0 then
         stl_or_gt0 (a0 :: A)
@@ -503,13 +503,11 @@ Fixpoint stl_translation_alt {t} (e : expr t) : type_translation t :=
   | ldl_app n m f v => {[ f ]} {[ v ]}
   | ldl_lookup n v i => tnth {[ v ]} {[ i ]}
   end
-where "{[ e ]}" := (stl_translation_alt e).
+where "{[ e ]}" := (stl_translation e).
 
-End stl_translation_alt.
+End stl_translation.
 
-Notation "nu .-[[ e ]]_stl'" := (stl_translation_alt nu e) : ldl_scope.
-
- (* Ale: disabled for now *)
+Notation "nu .-[[ e ]]_stl" := (stl_translation nu e) : ldl_scope.
 
 
 (* this is already in MCA master *)

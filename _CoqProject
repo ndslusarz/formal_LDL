@@ -11,9 +11,9 @@
 mathcomp_extra.v
 analysis_extra.v
 ldl.v
-goedel.v
+fuzzy.v
 dl2.v
-dl2alt.v
+dl2_ereal.v
 stl.v
-stlalt.v
+stl_ereal.v
 example.v
