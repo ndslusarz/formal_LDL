@@ -266,12 +266,190 @@ Admitted. *)
   with anything from knowing max_apoo that would give -oo, if anything the only
 result is that there exists some value in Es that is +oo - does the inversion break?*)
 
+Lemma leye_eq' :
+  forall (x : \bar R), (x <= -oo)%E = (x == -oo%E).
+Proof.
+Admitted.
+
+Lemma maxe_eq' (T : eqType) (s : seq T) (P : pred T) (f : T -> \bar R) :
+  (\big[maxe/-oo]_(i <- s | P i) f i = +oo <-> exists i, i \in s -> P i -> f i = +oo)%E.
+Admitted.
+
+Lemma maxe_eq (I : eqType) (r : seq I) (P : pred I) (f : I -> \bar R) x :
+  (-oo != x)%E ->
+  (\big[maxe/-oo]_(i <- r | P i) f i = x)%E
+  -> exists i, i \in r /\ P i /\ (f i = x)%E.
+Proof.
+elim: r.
+  by rewrite big_nil => /[swap]<-; rewrite eq_refl.
+move=> a l IH xltpoo.
+rewrite big_cons.
+case: ifPn => Pa.
+  rewrite {1}/maxe. 
+  case: ifPn => [h1 h2| h3].
+    exists a. rewrite mem_head Pa. (* h2.
+  move/(IH xltpoo) => [b[bl [Pb fb]]].
+  by exists b; rewrite in_cons bl orbT.
+move/(IH xltpoo) => [b[bl [Pb fb]]].
+by exists b; rewrite in_cons bl orbT. *)
+Admitted.
+
+Lemma maxe_gt (I : eqType) (r : seq I) (P : pred I) (f : I -> \bar R) x :
+  (x < \big[maxe/+oo]_(i <- r | P i) f i)%E
+  <-> exists i, i \in r /\ P i /\ (x < f i)%E.
+Proof.
+(* elim: r.
+  rewrite big_nil; split; first by rewrite ltNge leey.
+  by move=> [i[]]; rewrite in_nil.
+move=> a l IH; rewrite big_cons; case: ifPn => Pa; last first.
+  split.
+    by move/IH => [i[il[Pi fi]]]; exists i; rewrite in_cons il Pi fi orbT.
+  move=> [i[]]; rewrite in_cons => /orP[/eqP->[Pa']|il[Pi fi]]; first by rewrite Pa' in Pa.
+  by rewrite IH; exists i; rewrite il Pi fi.
+rewrite {1}/mine.
+case: ifPn => [h|].
+  split; first by move=> h'; exists a; rewrite mem_head.
+  move=>[i[]]; rewrite in_cons => /orP[/eqP->[]//|il [Pi fi]].
+  rewrite (lt_trans h)//.
+  by rewrite IH; exists i.
+rewrite -leNgt => h.
+split.
+  by move/IH => [i[il [Pi fi]]]; exists i; rewrite in_cons il orbT Pi fi.
+move=> [i[]]; rewrite in_cons => /orP[/eqP->[_ faltx]|il [Pi fi]].
+  exact: (le_lt_trans h faltx).
+by rewrite IH; exists i; rewrite il Pi fi. *)
+Admitted.
+
+
 Lemma stl_nary_inversion_orE1 (Es : seq (expr Bool_P) ) :
   is_stl true (nu.-[[ ldl_or Es ]]_stl) -> (exists i, is_stl true (nu.-[[ nth (ldl_bool _ false) Es i ]]_stl) && (i < size Es)%nat).
+Proof.
+
+rewrite/is_stl/= foldrE !big_map.
+have h0 : (-oo != +oo)%E by [].
+case: ifPn => [/eqP|hnoo].
+  rewrite big_seq_cond.
+  rewrite leye_eq'. (*simple, just need 0 != oo) *)
+  admit.
+case: ifPn => [/eqP|hpoo].
+rewrite big_seq_cond.
+(*   move/(maxe_eq (h0 _)) => [x [xEs [_ hxnoo]]].
+  move: xEs.
+  exists (index x Es).
+  by rewrite nth_index// hxnoo ltNy0/= index_mem.
+  by rewrite lt_neqAle leye_eq => _ /andP[_ /eqP]. *)
+  admit.
+case: ifPn => [|].
+  rewrite {1}big_seq_cond.
+admit.
+(*   move/maxe_gt => [x [xEs [_ xlt0]]].
+  exists (index x Es).
+  by rewrite nth_index// xlt0 index_mem. *)
+rewrite -leNgt => hge0.
+case: ifPn => [hgt0|].
+  apply: contraPP.
+  move/forallNP => h.
+  have {}h : forall i : nat,
+      (i < size Es)%N ->
+      (nu.-[[nth (ldl_bool pos false) Es i]]_stl < 0)%E.
+    move=> i iEs.
+    move: (h i) => /negP.
+    by rewrite negb_and leNgt iEs/= orbF Bool.negb_involutive. 
+  apply/negP; rewrite leNgt Bool.negb_involutive//. (* mule_ge0//. *)
+    rewrite /sumE !big_map big_seq_cond. Search (_ * _ < 0 ).
+    About mule_gt0.
+    admit. (*need good lemma for x * y < 0 *)
+    (* rewrite mule_lt0 sume_lt0// => /andP[xEs _] .
+      move: (h (index x Es)).
+      by rewrite index_mem xEs nth_index//; apply.
+    exact: expeR_ge0. *)
+  (* rewrite lee_fin. rewrite invr_ge0 fine_ge0// /sumE !big_map sume_ge0// => x _.
+  exact: expeR_ge0. *)
+About lt_irreflexive.
+(* by rewrite lt_irreflexive. *)
 Admitted.
 
 Lemma stl_nary_inversion_orE0 (Es : seq (expr Bool_P) ) :
     is_stl false (nu.-[[ ldl_or Es ]]_stl) -> (forall i, (i < size Es)%nat -> is_stl false (nu.-[[ nth (ldl_bool pos false) Es i ]]_stl)).
+Proof.
+rewrite/is_stl/= foldrE big_map.
+case: ifPn => [//|hnoo].
+  admit.
+(* case: ifPn => [/eqP max_apoo _ _|hpoo _].
+  move=> i isize.
+  move: ((mine_eqyP _ _ _).1 min_apoo (nth (ldl_bool pos false) Es i)).
+  by rewrite mem_nth// => ->. *)
+case: ifPn=>[hmaxlt0|].
+  admit. (*contra, +oo <0*)
+  rewrite/sumE. 
+  rewrite !big_map.
+ (*  rewrite mule_lt0_gt0//; last first.
+    rewrite lte_fin invr_gt0 fine_gt0//.
+    apply/andP;split.
+      rewrite big_seq_cond sume_gt0//.
+      move=> i /andP[iEs _]; apply: expeR_ge0.
+      have := hminlt0; rewrite big_seq_cond.
+      move/mine_lt => [i[iEs[_ hilt0]]].
+      exists i; split; first exact: iEs.
+      rewrite expeR_gt0 ?iEs//.
+      rewrite ltNye !mule_eq_ninfty.
+      rewrite !lte_fin !nu0/=.
+      rewrite !negb_or !negb_and -!leNgt/= andbT !orbT/= (ltW nu0)/= -!big_seq_cond.
+      rewrite andbT invr_le0 invr_ge0 fine_le0 ?orbT ?(ltW hminlt0)//=.
+      rewrite -ltey lte_add_pinfty//.
+        by apply: lt_trans; first exact: hilt0.
+      by rewrite lte_oppl/= ltNye.
+    rewrite big_seq_cond.
+    apply: lte_sum_pinfty => i /andP[iEs _].
+    apply: expeR_lty.
+    rewrite ltey !mule_eq_pinfty/= !negb_or !negb_and !negb_or !negb_and.
+    rewrite -!leNgt !lee_fin !(ltW nu0)/= !orbT !andbT/=.
+    rewrite invr_le0 fine_le0 ?(ltW hminlt0)// orbT/=.
+    rewrite adde_eq_ninfty negb_or; apply/orP; right.
+    apply/orP; left; apply/andP; split.
+    rewrite gt_eqF//.
+    have := hnoo; rewrite -ltNye.
+    move/mine_gt; apply => //.
+    by rewrite eqe_oppLR/=.
+  apply sume_lt0.
+    move=> i _.
+    rewrite !mule_le0_ge0//; last 2 first.
+      by apply expeR_ge0.
+      by apply expeR_ge0.
+    exact: ltW.
+  have := hminlt0.
+  rewrite {1}big_seq_cond.
+  move/mine_lt => [i [iEs [_ hilt0]]].
+  exists i; split => //.
+  rewrite mule_lt0_gt0//; last first.
+    rewrite expeR_gt0// ltNye !mule_eq_ninfty/= !negb_or !negb_and !negb_or !negb_and.
+    rewrite -!leNgt !lee_fin/= (ltW nu0)/= !andbT !orbT/=.
+    rewrite invr_le0 fine_le0 ?(ltW hminlt0)// orbT/=.
+    rewrite adde_Neq_pinfty; last by rewrite eqe_oppLR/=.
+      rewrite eqe_oppLR/= hnoo andbT.
+      by rewrite -ltey (lt_trans hilt0)//= orbT.
+    rewrite -ltNye.
+    move: hnoo; rewrite -ltNye.
+    by move/mine_gt; apply.
+  rewrite mule_lt0 hminlt0/= {1}lt_eqF//= {1}gt_eqF//=.
+    by rewrite -leNgt expeR_ge0.
+  rewrite expeR_gt0// ltNye mule_eq_ninfty !negb_or !negb_and -!leNgt.
+  rewrite -!ltNye -!ltey !ltNyr !orbT/=.
+  rewrite lee_fin invr_le0 fine_le0 ?(ltW hminlt0)// orbT/=.
+  rewrite ltey adde_Neq_pinfty ?eqe_oppLR/= ?hpoo ?hnoo//.
+    by rewrite -ltey (lt_trans hilt0).
+  rewrite -ltNye.
+  move: hnoo; rewrite -ltNye.
+  by move/mine_gt; apply.
+rewrite -leNgt => hminge0.
+case: ifPn => [hmingt0 _ i isize|].
+  have := hminge0.
+  by move/mine_geP; apply => //; rewrite mem_nth.
+rewrite -leNgt => hminle0 _ i isize.
+have := hminge0.
+rewrite big_seq_cond.
+by move/mine_geP; apply; rewrite mem_nth. *)
+
 Admitted.
 
 Lemma stl_soundness (e : expr Bool_P) b :
