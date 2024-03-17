@@ -100,7 +100,7 @@ by rewrite muleCA !muleA.
 Qed.
 
 Lemma dl2_translation_le0 e :
-  ([[ e ]]_dl2 <= 0 :> dl2_type_translation Bool_P)%E.
+  ([[ e ]]_dl2 <= 0 :> ereal_type_translation Bool_P)%E.
 Proof.
 dependent induction e using expr_ind' => /=.
 - by case: b.

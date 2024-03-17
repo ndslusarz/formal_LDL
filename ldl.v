@@ -185,16 +185,7 @@ Definition bool_type_translation (t : ldl_type) : Type:=
   | Fun_T n m => n.-tuple Real -> m.-tuple Real
   end.
 
-Definition dl2_type_translation (t : ldl_type) : Type :=
-  match t with
-  | Bool_T x => \bar Real (* TODO: this should b [-oo,0] *)
-  | Real_T => Real
-  | Vector_T n => n.-tuple Real
-  | Index_T n => 'I_n
-  | Fun_T n m => n.-tuple Real -> m.-tuple Real
-end.
-
-Definition stl_type_translation (t : ldl_type) : Type :=
+Definition ereal_type_translation (t : ldl_type) : Type :=
   match t with
   | Bool_T x => \bar Real
   | Real_T => Real
@@ -323,8 +314,8 @@ Local Open Scope ereal_scope.
 Local Open Scope ldl_scope.
 Context {R : realType}.
 
-Fixpoint dl2_translation {t} (e : @expr R t) {struct e} : dl2_type_translation t :=
-  match e in expr t return dl2_type_translation t with
+Fixpoint dl2_translation {t} (e : @expr R t) {struct e} : ereal_type_translation t :=
+  match e in expr t return ereal_type_translation t with
   | ldl_bool _ true => 0
   | ldl_bool _ false => -oo
   | ldl_real r => r
@@ -392,8 +383,8 @@ Definition mine_dev (x y : \bar R) : \bar R :=
 Definition maxe_dev (x y : \bar R) : \bar R :=
   (x - y) * (fine x)^-1%:E.
 
-Fixpoint stl_translation {t} (e : expr t) : stl_type_translation t :=
-  match e in expr t return stl_type_translation t with
+Fixpoint stl_translation {t} (e : expr t) : ereal_type_translation t :=
+  match e in expr t return ereal_type_translation t with
   | ldl_bool _ true => +oo
   | ldl_bool _ false => -oo
   | ldl_real r => r
