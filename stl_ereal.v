@@ -326,20 +326,28 @@ Proof.
 rewrite/is_stl/= foldrE !big_map.
 have h0 : (-oo != +oo)%E by [].
 case: ifPn => [/eqP|hnoo].
-  rewrite big_seq_cond.
+  rewrite big_seq_cond. move => _.
   rewrite leye_eq'. (*simple, just need 0 != oo) *)
   admit.
 case: ifPn => [/eqP|hpoo].
-rewrite big_seq_cond. (*non_simple*)
+rewrite big_seq_cond.
 (*   move/(maxe_eq (h0 _)) => [x [xEs [_ hxnoo]]].
   move: xEs.
   exists (index x Es).
-  by rewrite nth_index// hxnoo ltNy0/= index_mem.
-  by rewrite lt_neqAle leye_eq => _ /andP[_ /eqP]. *)
+  by rewrite nth_index// hxnoo ltNy0/= index_mem. *)
+   (*non_simple*)
   admit.
 case: ifPn => [|].
   rewrite {1}big_seq_cond.
-admit.
+  move => hmaxgt0.
+  rewrite /sumE big_map mule_ge0.
+    move => _.
+    admit.
+    rewrite sume_ge0. done.
+    move => t _. rewrite -muleA mule_ge0. done.
+      (*use hmaxgt0*) admit.
+      rewrite mule_ge0 ?expeR_ge0; done.
+     admit.
 (*   move/maxe_gt => [x [xEs [_ xlt0]]].
   exists (index x Es).
   by rewrite nth_index// xlt0 index_mem. *)
@@ -355,14 +363,14 @@ case: ifPn => [hgt0|].
     by rewrite negb_and leNgt iEs/= orbF Bool.negb_involutive. 
   apply/negP; rewrite leNgt Bool.negb_involutive//. (* mule_ge0//. *)
     rewrite /sumE !big_map big_seq_cond. 
-    (* rewrite mule_lt0 sume_lt0 *)
-    admit. (*need good lemma for x * y < 0 *)
-    (* rewrite mule_lt0 sume_lt0// => /andP[xEs _] .
-      move: (h (index x Es)).
-      by rewrite index_mem xEs nth_index//; apply.
-    exact: expeR_ge0. *)
-  (* rewrite lee_fin. rewrite invr_ge0 fine_ge0// /sumE !big_map sume_ge0// => x _.
-  exact: expeR_ge0. *)
+    rewrite mule_lt0.
+    rewrite !sume_lt0.
+    admit.
+    move => i. rewrite andbT. move => i0.
+    rewrite mule_le0_ge0. done.
+      admit.
+      by rewrite expeR_ge0.
+    admit.
  rewrite -nglt//=.
 move => h _. move: h.
 rewrite big_seq_cond.
@@ -410,13 +418,6 @@ case: ifPn.
           admit. (*is this a contradition?*)
           rewrite mule_lt0. 
           admit. About ltNye.
-(*     rewrite adde_Neq_pinfty; last by rewrite eqe_oppLR/=.
-      rewrite eqe_oppLR/= hnoo andbT.
-      by rewrite -ltey (lt_trans hilt0)//= orbT.
-    rewrite -ltNye.
-    move: hnoo; rewrite -ltNye.
-    by move/mine_gt; apply. *)
-    
   rewrite -nglt. move => h1 h2 h3.
   case: ifPn.
      move => h4.
