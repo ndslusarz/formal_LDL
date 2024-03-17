@@ -298,6 +298,10 @@ Lemma maxe_ge (T : eqType) (s : seq T) (P : pred T) (f : T -> \bar R) (x : \bar 
   (x <= \big[maxe/+oo]_(i <- s | P i) f i (* < *)-> exists i, i \in s -> P i -> x <= f i)%E.
 Admitted.
 
+Lemma maxe_geP (T : eqType) (s : seq T) (P : pred T) (f : T -> \bar R) (x : \bar R) :
+  (x <= \big[maxe/-oo]_(i <- s | P i) f i <-> exists i, i \in s -> P i -> x <= f i)%E.
+Admitted.
+
 Lemma maxe_gt (I : eqType) (r : seq I) (P : pred I) (f : I -> \bar R) x :
   (x < \big[maxe/+oo]_(i <- r | P i) f i)%E
   <-> exists i, i \in r /\ P i /\ (x < f i)%E.
@@ -357,13 +361,9 @@ case: ifPn => [hgt0|].
  rewrite -nglt//=.
 move => h _. move: h.
 rewrite big_seq_cond.
-have: maxe_ge.
-by move/maxe_ge; apply; rewrite mem_nth. *)
-
+move/maxe_geP.
+admit.
 Admitted.
-
-
-(*move/maxe_lt => [i[iEs[_ hilt0]]]. using when exists*)
 
 Lemma stl_nary_inversion_orE0 (Es : seq (expr Bool_P) ) :
     is_stl false (nu.-[[ ldl_or Es ]]_stl) -> (forall i, (i < size Es)%nat -> is_stl false (nu.-[[ nth (ldl_bool pos false) Es i ]]_stl)).
@@ -381,22 +381,28 @@ case: ifPn.
     rewrite mule_lt0//. 
     rewrite /= {1}lt_eqF//=.
       rewrite {1}gt_eqF//=.
-        rewrite -leNgt expeR_ge0.
-    by rewrite -leNgt expeR_ge0.
+        admit.
+        admit. 
+        admit.
+    
     (* rewrite lte_fin invr_gt0 fine_gt0//.
     apply/andP;split.
       rewrite big_seq_cond sume_gt0//.
       move=> i /andP[iEs _]; apply: expeR_ge0.
-      have := hmaxgt0; rewrite big_seq_cond. *) *)
+      have := hmaxgt0; rewrite big_seq_cond. *)
       (* rewrite maxe_gt.
       move/maxe_gt => [i[iEs[_ hilt0]]]. *)
     
   rewrite -nglt. move => h1 h2 h3.
   case: ifPn.
-    move => h4.
+     move => h4.
       rewrite /sumE !big_map.
     rewrite mule_gt0_lt0//; last first.
-
+      admit.
+      admit.
+      admit. (*need lemma that if max < 0 -> all elem <0*)
+    rewrite -leNgt//=.
+    rewrite lte_fin; lra. 
 Admitted.
 
 Lemma stl_soundness (e : expr Bool_P) b :
