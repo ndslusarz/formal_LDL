@@ -464,6 +464,119 @@ dependent induction e using expr_ind'.
     by rewrite oppr_lt0 normr_gt0 subr_eq0 => /negbTE.
 Qed.
 
+Lemma perm_big_minr_helper0 (a : R) (s : seq R) :
+  \big[minr/a]_(i <- a::s) i = \big[minr/a]_(i <- s) i.
+Proof.
+elim: s; first by rewrite big_cons big_nil minxx.
+move=> a1 l.
+by rewrite !big_cons minCA => ->.
+Qed.
+
+Lemma perm_big_minr_helper (a : R) (s : seq R) :
+  minr a (\big[minr/a]_(i <- s) i) = \big[minr/a]_(i <- s) i.
+Proof.
+have := perm_big_minr_helper0 a s.
+by rewrite big_cons.
+Qed.
+
+Lemma perm_big_minr_helper2 (a1 a2 : R) (s : seq R) :
+  \big[minr/a1]_(i <- a2 :: s) i = \big[minr/a2]_(i <- a1 :: s) i.
+Proof.
+elim: s; first by rewrite !big_cons !big_nil minC.
+move=> a3 l.
+rewrite !big_cons => ih.
+by rewrite minCA ih minCA.
+Qed.
+
+Lemma perm_big_minr_helper3 (a1 a2 : R) (s : seq R) :
+  a1 \in s -> minr a1 (\big[minr/a2]_(i <- s) i) = \big[minr/a2]_(i <- s) i.
+Proof.
+elim: s; first by rewrite in_nil.
+move=> a3 l ih.
+rewrite inE => /orP[/eqP -> | a1l].
+  by rewrite !big_cons minA minxx.
+by rewrite !big_cons minCA ih.
+Qed.
+
+Lemma perm_big_minr_helper4 (a1 a2 : R) (s : seq R) :
+  a1 \in s -> a2 \in s ->
+    \big[minr/a1]_(i <- s) i = \big[minr/a2]_(i <- s) i.
+Proof.
+elim: s; first by rewrite in_nil.
+move=> a l ih.
+rewrite inE => /orP[/eqP -> |a1l].
+  rewrite inE => /orP[/eqP -> //|a2l].
+  rewrite big_cons.
+  rewrite perm_big_minr_helper.
+  rewrite perm_big_minr_helper2.
+  rewrite big_cons.
+  by rewrite perm_big_minr_helper3.
+rewrite inE => /orP[/eqP -> |a2l].
+  rewrite perm_big_minr_helper2.
+  rewrite big_cons.
+  rewrite perm_big_minr_helper3//.
+  rewrite big_cons.
+  by rewrite perm_big_minr_helper.
+rewrite !big_cons.
+by rewrite ih.
+Qed.
+
+Lemma perm_big_minr2 (a1 a2 : R) (s1 s2 : seq R) :
+  a1 \in s2 -> a2 \in s1 -> perm_eq s1 s2 ->
+    \big[minr/a1]_(i <- s1) i = \big[minr/a2]_(i <- s2) i.
+Proof.
+move=> a1s2 a2s1 pi.
+rewrite (perm_big_minr_helper4 _ a2)//.
+  by rewrite (perm_big _ pi).
+by rewrite (@perm_mem _ s1 s2).
+Qed.
+
+Lemma perm_big_minr3 (a1 a2 : R) (l1 l2 : seq R) :
+  perm_eq (a1 :: l1) (a2 :: l2) -> \big[minr/a1]_(i <- l1) i = \big[minr/a2]_(i <- l2) i.
+Proof.
+move=> pi.
+rewrite -perm_big_minr_helper0.
+rewrite (perm_big _ pi)/=.
+rewrite (perm_big_minr_helper4 a1 a2); last 2 first.
+- by rewrite -(perm_mem pi) inE eq_refl.
+- by rewrite inE eq_refl.
+by rewrite perm_big_minr_helper0.
+Qed.
+
+Lemma andC_stl_nary (s1 s2 : seq (expr Bool_N)) :
+  perm_eq s1 s2 -> nu.-[[ldl_and s1]]_stl = nu.-[[ldl_and s2]]_stl.
+Proof.
+case: s1; first by rewrite perm_sym => /perm_nilP ->.
+move=> a1 l1; case: s2; first by move/perm_nilP.
+move=> a2 l2 pi.
+rewrite /=.
+have pi2 := @perm_map _ _ (stl_translation nu) _ _ pi.
+rewrite (perm_big_minr3 _ _ _ _ pi2)/=.
+rewrite !big_map !seq_cons.
+case: ifPn => // ?.
+  rewrite /stl_and_lt0 /sumR !big_map.
+  congr (_ / _).
+    rewrite (perm_big _ pi)/=.
+    apply: eq_bigr => i _.
+    congr (_ * _).
+      congr(_ * _).
+        rewrite !seq_cons !big_map.
+        exact: perm_big.
+      by rewrite !seq_cons /min_dev !big_map (perm_big _ pi).
+    by rewrite !seq_cons /min_dev !big_map (perm_big _ pi).
+  rewrite (perm_big _ pi)/=.
+  apply: eq_bigr => i _.
+  by rewrite !seq_cons /min_dev !big_map (perm_big _ pi).
+case: ifPn => // ?.
+rewrite /stl_and_gt0 /sumR !big_map.
+congr (_ / _).
+  rewrite (perm_big _ pi)/=.
+  apply: eq_bigr => i _.
+  by rewrite /min_dev !seq_cons !big_map (perm_big _ pi).
+rewrite (perm_big _ pi)/=.
+apply: eq_bigr => i _.
+by rewrite /min_dev !seq_cons !big_map (perm_big _ pi).
+Qed.
 
 End stl_lemmas.
 
