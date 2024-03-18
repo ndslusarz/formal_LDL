@@ -313,7 +313,6 @@ Lemma nglt (x y : \bar R) :
 Proof.
 Admitted.
 
-
 Lemma stl_nary_inversion_orE1 (Es : seq (expr Bool_P) ) :
   is_stl true (nu.-[[ ldl_or Es ]]_stle) -> (exists i, is_stl true (nu.-[[ nth (ldl_bool _ false) Es i ]]_stle) && (i < size Es)%nat).
 Proof.
@@ -325,25 +324,27 @@ case: ifPn => [/eqP|hnoo].
   rewrite leye_eq'. (*simple, just need 0 != oo) *)
   admit.
 case: ifPn => [/eqP|hpoo].
-rewrite big_seq_cond. move/maxe_eq_inf => [x [xEs [_ xlt0]]].
-   (*  rewrite maxe_eq'. 
-   move => [x]. rewrite andbT. *)
+rewrite big_seq_cond. 
+  move/maxe_eq_inf => [x [xEs [_ xlt0]]].
   exists (index x Es). 
   by rewrite nth_index//  xlt0 H/= index_mem. 
 case: ifPn => [|].
-  rewrite {1}big_seq_cond.
+  (* rewrite {1}big_seq_cond.  *)
+  (* rewrite big_seq_cond. *)
   move => hmaxgt0.
   rewrite /sumE big_map mule_ge0.
     move => _.
     admit.
     rewrite sume_ge0. done.
-    move => t _. rewrite -muleA mule_ge0. done.
+    move => t _. rewrite -muleA mule_ge0. done. 
+      move : hmaxgt0. (*N: simple, just inequalities*)
       (*use hmaxgt0*) admit.
-      rewrite mule_ge0 ?expeR_ge0; done.
+      rewrite mule_ge0 ?expeR_ge0; done. 
+      rewrite lee_fin invr_ge0 fine_ge0. done.
+        rewrite sume_ge0. done.
+        move => t _. (*I can't seem to prove this?*)
      admit.
-(*   move/maxe_gt => [x [xEs [_ xlt0]]].
-  exists (index x Es).
-  by rewrite nth_index// xlt0 index_mem. *)
+
 rewrite -leNgt => hge0.
 case: ifPn => [hgt0|].
   apply: contraPP.
@@ -358,16 +359,30 @@ case: ifPn => [hgt0|].
     rewrite /sumE !big_map big_seq_cond. 
     rewrite mule_lt0.
     rewrite !sume_lt0.
+    rewrite invr_neq0. rewrite neq_lt. rewrite sume_lt0. 
+  (*N: odd behaviour - if I collapse rewrites into one I get an error
+    to investigate when I've got time*)
+    rewrite sume_gt0. rewrite orbT !andTb.
+    rewrite lte_fin invr_lt0 fine_lt0. Search (_(+) _).
+    rewrite -negb_eqb. (*contraditcion?*)
+    admit. (*these all come from the unpacking that led to
+    the aobe contradition* so left till that is fixed*)
+    admit.
+    admit.
+    admit.
+    admit.
+    admit.
     admit.
     move => i. rewrite andbT. move => i0.
     rewrite mule_le0_ge0. done.
+      move: hgt0. rewrite maxe_lt.
       admit.
       by rewrite expeR_ge0.
     admit.
  rewrite -nglt//=.
 move => h _. move: h.
 rewrite big_seq_cond.
-move/maxe_geP. => [x [xEs ]].
+move/maxe_geP.
 admit.
 Admitted.
 
@@ -409,14 +424,14 @@ case: ifPn.
           rewrite invr_ge0 fine_ge0. by rewrite !orbT/=.
           admit. (*easy, use hmaxgt0*)
           admit. (*is this a contradition?*)
-          rewrite mule_lt0. 
+          rewrite mule_lt0.
           admit. About ltNye.
   rewrite -nglt. move => h1 h2 h3.
   case: ifPn.
      move => h4.
       rewrite /sumE !big_map.
     rewrite mule_gt0_lt0//; last first.
-      rewrite lte_fin invr_lt0. (* rewrite sume_lt0.  *)(* rewrite fsumr_lt0. *) Search "sum" "lt0".
+      rewrite lte_fin invr_lt0. 
       admit.
       rewrite sume_gt0. done.
         move => i _. rewrite mule_ge0//.
