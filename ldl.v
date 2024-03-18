@@ -383,6 +383,9 @@ Definition mine_dev (x y : \bar R) : \bar R :=
 Definition maxe_dev (x y : \bar R) : \bar R :=
   (x - y) * (fine x)^-1%:E.
 
+Let bigmine (s : seq (\bar R)) := \big[mine/+oo]_(i <- s) i.
+Let bigmaxe (s : seq (\bar R)) := \big[maxe/-oo]_(i <- s) i.
+
 Fixpoint stl_ereal_translation {t} (e : expr t) : ereal_type_translation t :=
   match e in expr t return ereal_type_translation t with
   | ldl_bool _ true => +oo
@@ -393,7 +396,7 @@ Fixpoint stl_ereal_translation {t} (e : expr t) : ereal_type_translation t :=
 
   | ldl_and _ Es =>
       let A := map stl_ereal_translation Es in
-      let a_min : \bar R := foldr mine +oo A in
+      let a_min : \bar R := bigmine A in
       let a'_i (a_i : \bar R) := mine_dev a_i a_min in
       if a_min == -oo then -oo
       else if a_min == +oo then +oo
@@ -406,7 +409,7 @@ Fixpoint stl_ereal_translation {t} (e : expr t) : ereal_type_translation t :=
         else 0
   | ldl_or _ Es =>
       let A := map stl_ereal_translation Es in
-      let a_max : \bar R := foldr maxe -oo A in
+      let a_max : \bar R := bigmaxe A in
       let a'_i (a_i : \bar R) := maxe_dev a_max a_i in
       if a_max == -oo then -oo
       else if a_max == +oo then +oo
