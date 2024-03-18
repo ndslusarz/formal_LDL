@@ -50,13 +50,6 @@ case: ifPn => //; rewrite -leNgt => ele0.
 by apply le_anti_ereal; apply/andP; split.
 Qed.
 
-Lemma andC_stl_nary (s1 s2 : seq (expr Bool_N)) :
-  perm_eq s1 s2 -> nu.-[[ldl_and s1]]_stle = nu.-[[ldl_and s2]]_stle.
-Proof.
-move=> pi; rewrite /= !big_map (perm_big _ pi) /sumE !big_map.
-repeat case: ifPn=> //?; try congr (_ * _)%E; try congr (((fine _)^-1)%:E); exact: perm_big.
-Qed.
-
 Lemma andC_stl (e1 e2 : expr Bool_N) :
   nu.-[[e1 `/\ e2]]_stle = nu.-[[e2 `/\ e1]]_stle.
 Proof.
@@ -98,13 +91,6 @@ case: ifPn => [/eqP->//|?].
 case: ifPn => [//|]; rewrite -leNgt => ege0.
 case: ifPn => [//|]; rewrite -leNgt => ele0.
 by apply/eqP; rewrite eq_le ege0 ele0.
-Qed.
-
-Lemma orC_stl_nary (s1 s2 : seq (expr Bool_N)) :
-  perm_eq s1 s2 -> nu.-[[ldl_or s1]]_stle = nu.-[[ldl_or s2]]_stle.
-Proof.
-move=> pi; rewrite /= !big_map (perm_big _ pi) /sumE !big_map.
-repeat case: ifPn=> //?; try congr (_ * _)%E; try congr (((fine _)^-1)%:E); exact: perm_big.
 Qed.
 
 Lemma orC_stl (e1 e2 : expr Bool_N) :
@@ -154,7 +140,7 @@ Definition is_stl b (x : \bar R) := (if b then x >= 0 else x < 0)%E.
 Lemma stl_nary_inversion_andE1 (Es : seq (expr Bool_P) ) :
   is_stl true (nu.-[[ ldl_and Es ]]_stle) -> (forall i, (i < size Es)%N -> is_stl true (nu.-[[ nth (ldl_bool pos false) Es i ]]_stle)).
 Proof.
-rewrite/is_stl/= big_map.
+rewrite/is_stl/= foldrE big_map.
 case: ifPn => [//|hnoo].
 case: ifPn => [/eqP min_apoo _|hpoo].
   move=> i isize.
@@ -234,7 +220,7 @@ Qed.
 Lemma stl_nary_inversion_andE0 (Es : seq (expr Bool_P) ) :
   is_stl false (nu.-[[ ldl_and Es ]]_stle) -> (exists (i : nat), is_stl false (nu.-[[ nth (ldl_bool pos false) Es i ]]_stle)%E && (i < size Es)%nat).
 Proof.
-rewrite/is_stl/= !big_map.
+rewrite/is_stl/= foldrE !big_map.
 have h0 : (-oo != +oo)%E by [].
 case: ifPn => [/eqP|hnoo].
   rewrite big_seq_cond.
@@ -275,10 +261,6 @@ Lemma leye_eq' :
 Proof.
 Admitted.
 
-Lemma maxe_eq' (T : eqType) (s : seq T) (P : pred T) (f : T -> \bar R) :
-  (\big[maxe/-oo]_(i <- s | P i) f i = +oo <-> exists i, i \in s -> P i -> f i = +oo)%E.
-Admitted.
-
 Lemma maxe_eq_inf (I : eqType) (r : seq I) (P : pred I) (f : I -> \bar R) :
   (\big[maxe/-oo]_(i <- r | P i) f i = +oo)%E
   -> exists i, i \in r /\ P i /\ (f i = +oo)%E.
@@ -300,8 +282,9 @@ move=> a l IH xltpoo.
 rewrite big_cons.
 case: ifPn => Pa.
   rewrite {1}/maxe. 
-  case: ifPn => [h1 h2| h3].
-    exists a. rewrite mem_head Pa. (* h2.
+  case: ifP => [h1 h2| h3].
+    exists a. rewrite mem_head Pa. 
+    split. done. split. done. (* h2.
   move/(IH xltpoo) => [b[bl [Pb fb]]].
   by exists b; rewrite in_cons bl orbT.
 move/(IH xltpoo) => [b[bl [Pb fb]]].
@@ -309,15 +292,16 @@ by exists b; rewrite in_cons bl orbT. *)
 Admitted.
 
 Lemma maxe_ge (T : eqType) (s : seq T) (P : pred T) (f : T -> \bar R) (x : \bar R) :
-  (x <= \big[maxe/+oo]_(i <- s | P i) f i (* < *)-> exists i, i \in s -> P i -> x <= f i)%E.
+  (x <= \big[maxe/+oo]_(i <- s | P i) f i  <-> exists i, i \in s -> P i -> x <= f i)%E.
+Proof.
+elim: s.
+  rewrite big_nil; split; first rewrite leey. 
 Admitted.
 
 Lemma maxe_lt (T : eqType) (s : seq T) (P : pred T) (f : T -> \bar R) (x : \bar R) :
   (\big[maxe/-oo]_(i <- s | P i) f i < x <-> forall i, i \in s -> P i -> f i < x)%E.
-Admitted.
+Proof.
 
-Lemma maxe_geP (T : eqType) (s : seq T) (P : pred T) (f : T -> \bar R) (x : \bar R) :
-  (x <= \big[maxe/-oo]_(i <- s | P i) f i <-> exists i, i \in s -> P i -> x <= f i)%E.
 Admitted.
 
 Lemma maxe_gt (I : eqType) (r : seq I) (P : pred I) (f : I -> \bar R) x :
@@ -336,6 +320,10 @@ Lemma maxe_neq_infty (T : eqType) (s : seq T) (P : pred T) (f : T -> \bar R) (x 
   (\big[maxe/-oo]_(i <- s | P i) f i != +oo <-> forall i, i \in s -> P i -> f i != +oo)%E.
 Admitted.
 
+Lemma maxe_neq_infty' (T : eqType) (s : seq T) (P : pred T) (f : T -> \bar R) (x : \bar R) :
+  (\big[maxe/-oo]_(i <- s | P i) f i != -oo <-> forall i, i \in s -> P i -> f i != -oo)%E.
+Admitted.
+
 
 Lemma nglt (x y : \bar R) :
 (x <= y)%E = ~~ (y < x)%E.
@@ -345,11 +333,15 @@ Admitted.
 Lemma mule_neq_ninfty (x y : \bar R) : (x * y != -oo)%E = ((x != -oo)%E && (y != -oo)%E).
 Admitted.
 
+Lemma maxe_eqyP (T : eqType) (s : seq T) (P : pred T) (f : T -> \bar R) :
+  (\big[maxe/-oo]_(i <- s | P i) f i = -oo <-> forall i, i \in s -> P i -> f i = -oo)%E.
+Admitted.
+
 Lemma stl_nary_inversion_orE1 (Es : seq (expr Bool_P) ) :
   is_stl true (nu.-[[ ldl_or Es ]]_stle) -> (exists i, is_stl true (nu.-[[ nth (ldl_bool _ false) Es i ]]_stle) && (i < size Es)%nat).
 Proof.
 
-rewrite/is_stl/= !big_map.
+rewrite/is_stl/= foldrE !big_map.
 have h0 : (-oo != +oo)%E by [].
 case: ifPn => [/eqP|hnoo].
   rewrite big_seq_cond. move => _.
@@ -383,7 +375,7 @@ case: ifPn => [hgt0|].
       rewrite ltW// mule_lt0.
       rewrite expeR_eq0. rewrite mule_neq_ninfty.
       rewrite /maxe_dev mule_neq_ninfty.
-      rewrite adde_Neq_ninfty. rewrite hnoo.
+      rewrite adde_Neq_ninfty. rewrite hnoo. (* rewrite hnoo. *)
       admit.
       rewrite hpoo//.
       move/maxe_neq_infty : hpoo .
@@ -397,34 +389,35 @@ case: ifPn => [hgt0|].
         admit. (*use nu0*)
         rewrite /maxe_dev lte_mul_pinfty//.
           (*any way to separate the constant inside the maxe?
-          probably need to backtrack somwehre...*)
+          probably need to backtrack somwehre... or create a bunch of new lemmas*)
           admit.
           rewrite fin_numE. (*bigmaxe_fin_num*)
           admit.
           admit.
         move => i _. by rewrite expeR_ge0.
-        
+        (* have: maxe_lt. *)
         admit.
     rewrite /= -leNgt lee_fin invr_ge0 fine_ge0//.
     rewrite /= sume_ge0//. move => t _. 
     by rewrite  expeR_ge0. 
  rewrite -nglt//=. 
 move/maxe_ge' => [x [xs [_ h]]] _.
-exists (index x Es).
+exists (index x Es). Search (_ = +oo).
 by rewrite nth_index// h /= index_mem xs.
 Admitted.
 
 Lemma stl_nary_inversion_orE0 (Es : seq (expr Bool_P) ) :
     is_stl false (nu.-[[ ldl_or Es ]]_stle) -> (forall i, (i < size Es)%nat -> is_stl false (nu.-[[ nth (ldl_bool pos false) Es i ]]_stle)).
 Proof.
-rewrite/is_stl/= big_map.
+rewrite/is_stl/= foldrE big_map.
+
 case: ifPn.
   move => h _ i i0.
-  rewrite /=.
+  rewrite /=. 
   (* simple needs lemma max = -oo -> all elemtns -oo*)
   admit.
 case: ifPn.
-  move => _ _. admit. (*contra, +oo <0*)
+  move => h1 h2.  admit. (*contra, +oo <0*)
   case: ifPn.
   rewrite maxe_gt => [ [x [xs [_ h]]] hmaxinf].
     move => hmaxninf'.
@@ -443,17 +436,14 @@ case: ifPn.
             admit. rewrite sume_lt0. done.
               move => i _. 
               admit.
-        (* have := h.  *)
         exists x. rewrite xs; split => //; split => //.
-       (*  rewrite {1}big_seq_cond.  *)
-(*       move/maxe_gt => [i [iEs [_ hilt0]]].
-        exists i; split => //. *)
           rewrite mule_lt0_gt0//; last first.
           rewrite expeR_gt0// ltNye !mule_eq_ninfty/= !negb_or !negb_and !negb_or !negb_and.
           rewrite -!leNgt !lee_fin/= (ltW nu0)/= !andbT !orbT/=.
-          (* rewrite invr_le0 fine_le0//. *)
           rewrite invr_ge0 fine_ge0. rewrite !orbT/=. 
           rewrite adde_Neq_ninfty. rewrite hmaxninf'.
+          move: hmaxninf'. move/maxe_neq_infty' => h1. 
+          (* rewrite h1. *)
           admit. (*easy, use hilt0*)
           rewrite hmaxinf//.
           admit.
@@ -466,11 +456,9 @@ case: ifPn.
       rewrite /sumE !big_map.
     move => hlt0 i i0.
     move: h4. rewrite maxe_lt. 
-      
       admit.
-      
     rewrite -leNgt//=.
-    rewrite lte_fin; lra. 
+    rewrite lte_fin; lra.  
 Admitted.
 
 Lemma stl_soundness (e : expr Bool_P) b :
@@ -513,4 +501,65 @@ dependent induction e using expr_ind'.
     by rewrite oppr_lt0 normr_gt0 subr_eq0 => /negbTE.
 Qed.
 
+
 End stl_lemmas.
+
+(* Ale: disabled for now
+Section shadow_lifting_stl_and.
+Context {R : realType}.
+Variable nu : R.
+Variable M : nat.
+Hypothesis M0 : M != 0%N.
+(*add hypothesis nu>0 if needed*)
+
+(* The ones below do not type check yet, need to check if we can extend to ereal *)
+
+Definition min_dev {R : numDomainType} (x : \bar R) (xs : seq \bar R) : \bar R :=
+  (x - minE xs) * (fine (minE xs))^-1%:E.
+
+Definition min_devR {R : realType} (x : R) (xs : seq R) : R :=
+  (x - minR xs) * (minR xs)^-1.
+
+Local Open Scope ereal_scope.
+
+(*Natalia: will only consider >0 and <0 without edge cases, as to separate cases*)
+(* Definition stl_and (xs : seq \bar R) : \bar R :=
+  if minE xs == +oo then +oo
+  else if minE xs == -oo then -oo (*Check if needed*)
+  else if minE xs < 0 then
+    sumE (map (fun a => minE xs * expeR (min_dev a xs) * expeR (nu%:E * min_dev a xs)) xs) *
+    (fine (sumE (map (fun a => expeR (nu%:E * min_dev a xs)) xs)))^-1%:E
+  else if minE xs > 0 then
+    sumE (map (fun a => a * expeR (-nu%:E * min_dev a xs)) xs) *
+    (fine (sumE (map (fun a => expeR (nu%:E * min_dev a xs)) xs)))^-1%:E
+    else 0. *)
+
+(*to do: change map to big operator probably*)
+
+Local Close Scope ereal_scope.
+
+Definition stl_and_gt0 n (v : 'rV[R]_n)  :=
+  sumR (map (fun a => a * expR (-nu * min_devR a ( MatrixFormula.seq_of_rV v))) ( MatrixFormula.seq_of_rV v)) *
+  (sumR (map (fun a => expR (nu * min_devR a ( MatrixFormula.seq_of_rV v))) ( MatrixFormula.seq_of_rV v)))^-1.
+
+Definition stl_and_lt0 n (v : 'rV[R]_n) :=
+  sumR (map (fun a => a * expR (-nu * min_devR a ( MatrixFormula.seq_of_rV v))) ( MatrixFormula.seq_of_rV v)) *
+    (sumR (map (fun a => expR (nu * min_devR a ( MatrixFormula.seq_of_rV v))) ( MatrixFormula.seq_of_rV v)))^-1.
+
+
+ Search (_ `^ _).
+Lemma shadowlifting_stl_and_gt0 (p : R) : p > 0 ->
+  forall i, ('d (@stl_and_gt0 M.+1) '/d i) (const_mx p) = (M%:R) ^ -1.
+Proof.
+move=> p0 i.
+rewrite /partial.
+(* have /cvg_lim : h^-1 * (stl_and_gt0 (const_mx p + h *: err_vec i) -
+                        stl_and_gt0 (n:=M.+1) (const_mx p))
+       @[h --> (0:R)^'] --> ((M%:R)^ -1):R. *)
+
+
+Admitted.
+
+
+End shadow_lifting_stl_and.
+*)
