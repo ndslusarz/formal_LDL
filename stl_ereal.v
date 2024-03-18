@@ -328,9 +328,12 @@ rewrite big_seq_cond.
   move/maxe_eq_inf => [x [xEs [_ xlt0]]].
   exists (index x Es). 
   by rewrite nth_index//  xlt0 H/= index_mem. 
-case: ifPn => [|].
-  (* rewrite {1}big_seq_cond.  *)
-  (* rewrite big_seq_cond. *)
+case: ifPn => [|]. 
+  rewrite maxe_gt => [ [x [xs [_ h]]] _].
+  exists (index x Es).
+  by rewrite nth_index// ltW// ?h/= index_mem. 
+(*   About ltW.
+  rewrite 
   move => hmaxgt0.
   rewrite /sumE big_map mule_ge0.
     move => _.
@@ -343,7 +346,7 @@ case: ifPn => [|].
       rewrite lee_fin invr_ge0 fine_ge0. done.
         rewrite sume_ge0. done.
         move => t _. (*I can't seem to prove this?*)
-     admit.
+     admit. *)
 
 rewrite -leNgt => hge0.
 case: ifPn => [hgt0|].
@@ -357,28 +360,22 @@ case: ifPn => [hgt0|].
     by rewrite negb_and leNgt iEs/= orbF Bool.negb_involutive. 
   apply/negP; rewrite leNgt Bool.negb_involutive//. (* mule_ge0//. *)
     rewrite /sumE !big_map big_seq_cond. 
-    rewrite mule_lt0.
-    rewrite !sume_lt0.
-    rewrite invr_neq0. rewrite neq_lt. rewrite sume_lt0. 
-  (*N: odd behaviour - if I collapse rewrites into one I get an error
-    to investigate when I've got time*)
-    rewrite sume_gt0. rewrite orbT !andTb.
-    rewrite lte_fin invr_lt0 fine_lt0. Search (_(+) _).
-    rewrite -negb_eqb. (*contraditcion?*)
-    admit. (*these all come from the unpacking that led to
-    the aobe contradition* so left till that is fixed*)
-    admit.
-    admit.
-    admit.
-    admit.
-    admit.
-    admit.
-    move => i. rewrite andbT. move => i0.
-    rewrite mule_le0_ge0. done.
-      move: hgt0. rewrite maxe_lt.
-      admit.
-      by rewrite expeR_ge0.
-    admit.
+    rewrite mule_lt0/=.
+    rewrite neq_lt.
+    rewrite sume_lt0/=; last 2 first.
+       admit.
+
+       admit.
+    rewrite invr_neq0; last first.
+      rewrite gt_eqF// fine_gt0// sume_gt0/=.
+        admit.
+        move => i _. by rewrite expeR_ge0.
+        admit.
+    rewrite /= -leNgt lee_fin invr_ge0 fine_ge0//.
+    rewrite /= sume_ge0//. move => t _. 
+    by rewrite  expeR_ge0. 
+ (*     About gt_eqF.
+*)
  rewrite -nglt//=.
 move => h _. move: h.
 rewrite big_seq_cond.
