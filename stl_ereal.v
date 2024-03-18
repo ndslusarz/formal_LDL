@@ -307,10 +307,19 @@ Lemma maxe_gt (I : eqType) (r : seq I) (P : pred I) (f : I -> \bar R) x :
 Proof.
 Admitted.
 
+Lemma maxe_ge' (I : eqType) (r : seq I) (P : pred I) (f : I -> \bar R) x :
+  (x <= \big[maxe/-oo]_(i <- r | P i) f i)%E
+  <-> exists i, i \in r /\ P i /\ (x <= f i)%E.
+Proof.
+Admitted.
+
 
 Lemma nglt (x y : \bar R) :
 (x <= y)%E = ~~ (y < x)%E.
 Proof.
+Admitted.
+
+Lemma mule_neq_ninfty (x y : \bar R) : (x * y != -oo)%E = ((x != -oo)%E && (y != -oo)%E).
 Admitted.
 
 Lemma stl_nary_inversion_orE1 (Es : seq (expr Bool_P) ) :
@@ -349,12 +358,14 @@ case: ifPn => [hgt0|].
     rewrite sume_lt0/=; last 2 first.
       move => i. rewrite andbT. move => iEs.
       rewrite ltW// mule_lt0.
-      rewrite expeR_eq0. Search (_ != _) "ty".
+      rewrite expeR_eq0. rewrite mule_neq_ninfty.
+      rewrite /maxe_dev mule_neq_ninfty.
+      rewrite adde_Neq_ninfty. rewrite hnoo.
       admit.
-(*       have := hgt0.
-      rewrite {1}big_seq_cond. *)
-       admit.
-    rewrite invr_neq0; last first.
+      rewrite hpoo//.
+       admit. (*new lemma I think*)
+      admit.
+      rewrite invr_neq0; last first.
       rewrite gt_eqF// fine_gt0// sume_gt0/=.
         admit.
         move => i _. by rewrite expeR_ge0.
@@ -362,13 +373,10 @@ case: ifPn => [hgt0|].
     rewrite /= -leNgt lee_fin invr_ge0 fine_ge0//.
     rewrite /= sume_ge0//. move => t _. 
     by rewrite  expeR_ge0. 
- (*     About gt_eqF.
-*)
- rewrite -nglt//=.
-move => h _. move: h.
-rewrite big_seq_cond.
-move/maxe_geP.
-admit.
+ rewrite -nglt//=. 
+move/maxe_ge' => [x [xs [_ h]]] _.
+exists (index x Es).
+by rewrite nth_index// h /= index_mem xs.
 Admitted.
 
 Lemma stl_nary_inversion_orE0 (Es : seq (expr Bool_P) ) :
@@ -416,10 +424,6 @@ case: ifPn.
           admit.
           rewrite mule_lt0.
           admit. 
-
-
-
-
   rewrite -nglt. move => h1 h2 h3.
   case: ifPn.
      move => h4.
