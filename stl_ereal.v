@@ -321,8 +321,7 @@ rewrite/is_stl/= foldrE !big_map.
 have h0 : (-oo != +oo)%E by [].
 case: ifPn => [/eqP|hnoo].
   rewrite big_seq_cond. move => _.
-  rewrite leye_eq'. (*simple, just need 0 != oo) *)
-  admit.
+  rewrite leye_eq' //=.
 case: ifPn => [/eqP|hpoo].
 rewrite big_seq_cond. 
   move/maxe_eq_inf => [x [xEs [_ xlt0]]].
@@ -332,22 +331,7 @@ case: ifPn => [|].
   rewrite maxe_gt => [ [x [xs [_ h]]] _].
   exists (index x Es).
   by rewrite nth_index// ltW// ?h/= index_mem. 
-(*   About ltW.
-  rewrite 
-  move => hmaxgt0.
-  rewrite /sumE big_map mule_ge0.
-    move => _.
-    admit.
-    rewrite sume_ge0. done.
-    move => t _. rewrite -muleA mule_ge0. done. 
-      move : hmaxgt0. (*N: simple, just inequalities*)
-      (*use hmaxgt0*) admit.
-      rewrite mule_ge0 ?expeR_ge0; done. 
-      rewrite lee_fin invr_ge0 fine_ge0. done.
-        rewrite sume_ge0. done.
-        move => t _. (*I can't seem to prove this?*)
-     admit. *)
-
+(*   About ltW. *)
 rewrite -leNgt => hge0.
 case: ifPn => [hgt0|].
   apply: contraPP.
@@ -363,8 +347,12 @@ case: ifPn => [hgt0|].
     rewrite mule_lt0/=.
     rewrite neq_lt.
     rewrite sume_lt0/=; last 2 first.
-       admit.
-
+      move => i. rewrite andbT. move => iEs.
+      rewrite ltW// mule_lt0.
+      rewrite expeR_eq0. Search (_ != _) "ty".
+      admit.
+(*       have := hgt0.
+      rewrite {1}big_seq_cond. *)
        admit.
     rewrite invr_neq0; last first.
       rewrite gt_eqF// fine_gt0// sume_gt0/=.
@@ -394,50 +382,53 @@ case: ifPn.
 case: ifPn.
   move => _ _. admit. (*contra, +oo <0*)
   case: ifPn.
-    move => hmaxgt0 hmaxninf hmaxninf'.
+  rewrite maxe_gt => [ [x [xs [_ h]]] hmaxinf].
+    move => hmaxninf'.
     rewrite/sumE !big_map.
     rewrite mule_lt0//.
- 
     rewrite /= {1}lt_eqF//=.
       rewrite {1}gt_eqF//=.
-        admit. rewrite lte_fin. (* Search ((_ < _)%E) "fin". *)
-        rewrite invr_gt0 fine_gt0. done.
+        admit. 
+          rewrite lte_fin invr_gt0 fine_gt0//. 
           rewrite sume_gt0.
             rewrite andTb.
             admit.
             move => i _. by rewrite expeR_ge0.
+            exists x. rewrite xs//=. split.
+              done. split. done. rewrite expeR_gt0//.
             admit. rewrite sume_lt0. done.
               move => i _. 
               admit.
-        have := hmaxgt0. 
-        rewrite {1}big_seq_cond.
-        move/maxe_gt => [i [iEs [_ hilt0]]].
-        exists i; split => //.
-          rewrite/andP.
+        (* have := h.  *)
+        exists x. rewrite xs; split => //; split => //.
+       (*  rewrite {1}big_seq_cond.  *)
+(*       move/maxe_gt => [i [iEs [_ hilt0]]].
+        exists i; split => //. *)
           rewrite mule_lt0_gt0//; last first.
           rewrite expeR_gt0// ltNye !mule_eq_ninfty/= !negb_or !negb_and !negb_or !negb_and.
           rewrite -!leNgt !lee_fin/= (ltW nu0)/= !andbT !orbT/=.
-          rewrite invr_le0 fine_le0 ?(ltW hmaxgt0)//.
-          rewrite invr_ge0 fine_ge0. by rewrite !orbT/=.
-          admit. (*easy, use hmaxgt0*)
-          admit. (*is this a contradition?*)
+          (* rewrite invr_le0 fine_le0//. *)
+          rewrite invr_ge0 fine_ge0. rewrite !orbT/=. 
+          rewrite adde_Neq_ninfty. rewrite hmaxninf'.
+          admit. (*easy, use hilt0*)
+          rewrite hmaxinf//.
+          admit.
+          admit.
           rewrite mule_lt0.
-          admit. About ltNye.
+          admit. 
+
+
+
+
   rewrite -nglt. move => h1 h2 h3.
   case: ifPn.
      move => h4.
       rewrite /sumE !big_map.
-    rewrite mule_gt0_lt0//; last first.
-      rewrite lte_fin invr_lt0. 
+    move => hlt0 i i0.
+    move: h4. rewrite maxe_lt. 
+      
       admit.
-      rewrite sume_gt0. done.
-        move => i _. rewrite mule_ge0//.
-          admit.
-          by rewrite expeR_ge0.
-        admit.
-      move => _.
-      move/maxe_lt: h4. 
-      admit. (*need lemma that if max < 0 -> all elem <0*)
+      
     rewrite -leNgt//=.
     rewrite lte_fin; lra. 
 Admitted.
