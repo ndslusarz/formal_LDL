@@ -468,6 +468,13 @@ Definition stl_or_lt0 (v : seq R) :=
   sumR (map (fun a => a * expR (-nu * (max_dev a v))) v) *
     (sumR (map (fun a => expR (nu * max_dev a (v))) v))^-1 .
 
+Definition stl_and (a_min : R) h (t : seq R) : R :=
+  if a_min < 0 then
+      stl_and_lt0 (h :: t)
+    else if a_min > 0 then
+      stl_and_gt0 (h :: t)
+    else 0.
+
 Fixpoint stl_translation {t} (e : expr t) : type_translation t :=
   match e in expr t return type_translation t with
   | ldl_bool _ true => 1
@@ -481,11 +488,12 @@ Fixpoint stl_translation {t} (e : expr t) : type_translation t :=
       let A := map stl_translation s in
       let a0 := stl_translation e0 in
       let a_min : R := \big[minr/a0]_(i <- A) i in
-      if a_min < 0 then
+      stl_and a_min a0 A
+(*      if a_min < 0 then
         stl_and_lt0 (a0 :: A)
       else if a_min > 0 then
         stl_and_gt0 (a0 :: A)
-      else 0
+      else 0*)
   | ldl_or _ [::] => -1
   | ldl_or _ (e0 :: s) =>
       let A := map stl_translation s in
