@@ -526,45 +526,4 @@ Local Open Scope ring_scope.
 Definition shadow_lifting {R : realType} n (f : 'rV_n.+1 -> R) :=
   forall p, p > 0 -> forall i, ('d f '/d i) (const_mx p) > 0.
 
-(* TODO(rei): rm this comment? *)
-(*Definition shadow_lifting {R : realType} (f : forall n, 'rV_n.1 -> R) :=
-  (* forall Es : seq R, forall i : 'I_(size Es),
-    (* (forall i, nth 0 Es i != 0) -> *) *)
-    forall Es : seq R, forall i : 'I_(size Es), forall e : R,
-    e != 0 (* (0 < e <= 1)  *)->
-    0 < nth 0 Es i <= 1 ->
-    (forall j, j != i -> nth 0 Es j = e) ->
-    partial (f (size Es)) i (row_of_seq Es) > 0.
-
-Lemma all_0_product_partial {R : realType} (Es : seq R) (i : 'I_(size Es)) :
-  partial 0 i (row_of_seq Es) = 0.
-(*I'm not sure if I don't need an additional assumption here*)
-Proof.
-apply/cvg_lim; first exact: Rhausdorff.
-rewrite [X in X @ _ --> _](_ : _ = 0); first exact: (@cvg_cst R).
-by apply/funext => r/=; rewrite /GRing.zero/=(*NB: I shouldn't do that*) subrr mulr0.
-Qed.
-*)
-(*
-About realfun.left_right_continuousP. *)
-
-(* NB(rei): not used *)
-Definition gradient {R : realType} (n : nat) (f : 'rV_n.+1 -> R) a :=
-  \row_(i < n.+1) ('d f '/d i) a.
-
-Lemma gradientP {R : realType} (n : nat) (f : 'rV[R]_n.+1 -> R^o) (v : 'rV[R]_n.+1) :
-  forall x : 'rV[R]_n.+1, (gradient f x) *d v = 'D_v f x.
-Proof.
-move=> x.
-rewrite /gradient.
-Abort.
-
-Definition weakly_smooth_cond {R : realType} {n : nat} (a : 'rV[R]_n.+1) :=
-  let m := \big[minr/1(*def element*)]_i a``_i in
-  forall i j, i != j -> a``_i != m /\ a``_j != m.
-
-Definition weakly_smooth {R : realType} (n : nat) (f : 'rV[R]_n.+1 -> R) :=
-  (forall a, {for a, continuous f}) /\
-  (forall a, weakly_smooth_cond a -> {for a, continuous (gradient f)}).
-
 End shadow_lifting.
