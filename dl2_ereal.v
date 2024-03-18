@@ -6,7 +6,7 @@ From mathcomp Require Import all_classical.
 From mathcomp Require Import reals ereal signed.
 From mathcomp Require Import topology derive normedtype sequences
  exp measure lebesgue_measure lebesgue_integral hoelder.
-Require Import mathcomp_extra analysis_extra ldl.
+Require Import mathcomp_extra analysis_extra ldl dl2.
 
 (**md**************************************************************************)
 (* # DL2                                                                      *)
@@ -21,51 +21,6 @@ Import Num.Def Num.Theory GRing.Theory.
 Import Order.TTheory.
 Import numFieldTopology.Exports.
 
-Section shadow_lifting_dl2_and.
-Local Open Scope ring_scope.
-Local Open Scope classical_set_scope.
-Context {R : realType}.
-Variable M : nat.
-Hypothesis M0 : M != 0%N.
-
-Definition dl2_and {R : fieldType} {n} (v : 'rV[R]_n) :=
-  \sum_(i < n) v ``_ i.
-
-Lemma shadowlifting_dl2_andE (p : R) : p > 0 ->
-  forall i, ('d (@dl2_and _ M.+1) '/d i) (const_mx p) = 1.
-Proof.
-move=> p0 i.
-rewrite /partial.
-About dl2_and.
-have /cvg_lim : h^-1 * (dl2_and (const_mx p + h *: err_vec i) -
-                        @dl2_and _ M.+1 (const_mx p))
-       @[h --> (0:R)^'] --> (1:R)%R.
-  rewrite /dl2_and.
-  have H : forall h, h != 0 ->
-      \sum_(x < M.+1) (const_mx p + h *: err_vec i) ``_ x -
-      \sum_(x < M.+1) (const_mx (n:=M.+1) (m:=1) p) ``_ x = h.
-    move=> h h0; rewrite [X in X - _](bigD1 i)//= !mxE eqxx mulr1.
-    rewrite (eq_bigr (fun=> p)); last first.
-      by move=> j ji; rewrite !mxE eq_sym (negbTE ji) mulr0 addr0.
-    rewrite [X in _ - X](eq_bigr (fun=> p)); last by move=> *; rewrite mxE.
-    rewrite [X in _ - X](bigD1 i)//= (addrC p h) -addrA.
-    by rewrite addrA -(addrA h) addrK.
-  have : h^-1 * h @[h --> (0:R)^'] --> (1:R)%R.
-    have : {near (0:R)^', (fun=> 1) =1 (fun h => h^-1 * h)}.
-      near=> h; rewrite mulVf//.
-      by near: h;  exact: nbhs_dnbhs_neq.
-    by move/near_eq_cvg/cvg_trans; apply; exact: cvg_cst.
-  apply: cvg_trans; apply: near_eq_cvg => /=; near=> k.
-  by rewrite H//; near: k; exact: nbhs_dnbhs_neq.
-by apply; exact: Rhausdorff.
-Unshelve. all: by end_near. Qed.
-
-Corollary shadow_lifting_dl2_and :  shadow_lifting (@dl2_and R M.+1).
-Proof. by move=> p p0 i; rewrite shadowlifting_dl2_andE. Qed.
-
-End shadow_lifting_dl2_and.
-
-
 Section dl2_lemmas.
 Local Open Scope ldl_scope.
 Local Open Scope ring_scope.
@@ -73,6 +28,12 @@ Context {R : realType}.
 Variable p : R.
 
 Local Notation "[[ e ]]_dl2e" := (@dl2_ereal_translation R _ e).
+
+Lemma dl2_andC_nary (s1 s2 : seq (expr Bool_N)) :
+  perm_eq s1 s2 -> [[ldl_and s1]]_dl2e = [[ldl_and s2]]_dl2e.
+Proof.
+by move=> pi; rewrite /=/sumE !big_map (perm_big _ pi)/=.
+Qed.
 
 Lemma dl2_andC (e1 e2 : expr Bool_N) : [[ e1 `/\ e2 ]]_dl2e = [[ e2 `/\ e1 ]]_dl2e.
 Proof.
@@ -83,6 +44,12 @@ Lemma dl2_andA (e1 e2 e3 : expr Bool_P) :
   [[ e1 `/\ (e2 `/\ e3) ]]_dl2e = [[ (e1 `/\ e2) `/\ e3 ]]_dl2e.
 Proof.
 by rewrite /=/sumE ?big_cons ?big_nil !adde0 addeA.
+Qed.
+
+Lemma dl2_orC_nary (s1 s2 : seq (expr Bool_N)) :
+  perm_eq s1 s2 -> [[ldl_or s1]]_dl2e = [[ldl_or s2]]_dl2e.
+Proof.
+by move=> pi; rewrite /=/prodE !big_map (perm_big _ pi)/= (perm_size pi).
 Qed.
 
 Lemma dl2_orC (e1 e2 : expr Bool_P) :

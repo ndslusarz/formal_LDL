@@ -368,7 +368,7 @@ End stl_helpers.
 
 Section partial.
 Context {R : realType}.
-Variables (n : nat) (f : 'rV[R^o]_n.+1 -> R^o).
+Variables (n : nat) (f : 'rV[R]_n.+1 -> R).
 
 Definition err_vec {R : ringType} (i : 'I_n.+1) : 'rV[R]_n.+1 :=
   \row_(j < n.+1) (i == j)%:R.
@@ -451,7 +451,7 @@ Proof.
 have [r] := MVT ab gdg cg; rewrite in_itv/= => /andP[ar rb] dgg.
 have gba0 : g b - g a != 0.
   by rewrite dgg mulf_neq0 ?dg0 ?in_itv/= ?ar// subr_eq0 gt_eqF.
-pose h (x : R^o) := f x - ((f b - f a) / (g b - g a)) * g x.
+pose h (x : R) := f x - ((f b - f a) / (g b - g a)) * g x.
 have hder x : x \in `]a, b[%R -> derivable h x 1.
   move=> xab; apply: derivableB => /=.
     exact: (@ex_derive _ _ _ _ _ _ _ (fdf xab)).
@@ -463,12 +463,12 @@ have /(Rolle ab hder ch)[x xab derh] : h a = h b.
   rewrite /h; apply/eqP; rewrite subr_eq eq_sym -addrA eq_sym addrC -subr_eq.
   rewrite -mulrN -mulrDr -(addrC (g a)) -[X in _ * X]opprB mulrN -mulrA.
   by rewrite mulVf// mulr1 opprB.
-pose dh (x : R^o) := df x - (f b - f a) / (g b - g a) * dg x.
+pose dh (x : R) := df x - (f b - f a) / (g b - g a) * dg x.
 have his_der y : y \in `]a, b[%R -> is_derive x 1 h (dh x).
   by move=> yab; apply: is_deriveB; [exact: fdf|apply: is_deriveZ; exact: gdg].
 exists x => //.
-have := @derive_val _ R^o _ _ _ _ _ (his_der _ xab).
-have -> := @derive_val _ R^o _ _ _ _ _ derh.
+have := @derive_val _ R _ _ _ _ _ (his_der _ xab).
+have -> := @derive_val _ R _ _ _ _ _ derh.
 move=> /eqP; rewrite eq_sym subr_eq add0r => /eqP ->.
 by rewrite -mulrA divff ?mulr1//; exact: dg0.
 Qed.

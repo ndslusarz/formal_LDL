@@ -50,6 +50,13 @@ case: ifPn => //; rewrite -leNgt => ele0.
 by apply le_anti_ereal; apply/andP; split.
 Qed.
 
+Lemma andC_stl_nary (s1 s2 : seq (expr Bool_N)) :
+  perm_eq s1 s2 -> nu.-[[ldl_and s1]]_stle = nu.-[[ldl_and s2]]_stle.
+Proof.
+move=> pi; rewrite /= !big_map (perm_big _ pi) /sumE !big_map.
+repeat case: ifPn=> //?; try congr (_ * _)%E; try congr (((fine _)^-1)%:E); exact: perm_big.
+Qed.
+
 Lemma andC_stl (e1 e2 : expr Bool_N) :
   nu.-[[e1 `/\ e2]]_stle = nu.-[[e2 `/\ e1]]_stle.
 Proof.
@@ -91,6 +98,13 @@ case: ifPn => [/eqP->//|?].
 case: ifPn => [//|]; rewrite -leNgt => ege0.
 case: ifPn => [//|]; rewrite -leNgt => ele0.
 by apply/eqP; rewrite eq_le ege0 ele0.
+Qed.
+
+Lemma orC_stl_nary (s1 s2 : seq (expr Bool_N)) :
+  perm_eq s1 s2 -> nu.-[[ldl_or s1]]_stle = nu.-[[ldl_or s2]]_stle.
+Proof.
+move=> pi; rewrite /= !big_map (perm_big _ pi) /sumE !big_map.
+repeat case: ifPn=> //?; try congr (_ * _)%E; try congr (((fine _)^-1)%:E); exact: perm_big.
 Qed.
 
 Lemma orC_stl (e1 e2 : expr Bool_N) :
@@ -140,7 +154,7 @@ Definition is_stl b (x : \bar R) := (if b then x >= 0 else x < 0)%E.
 Lemma stl_nary_inversion_andE1 (Es : seq (expr Bool_P) ) :
   is_stl true (nu.-[[ ldl_and Es ]]_stle) -> (forall i, (i < size Es)%N -> is_stl true (nu.-[[ nth (ldl_bool pos false) Es i ]]_stle)).
 Proof.
-rewrite/is_stl/= foldrE big_map.
+rewrite/is_stl/= big_map.
 case: ifPn => [//|hnoo].
 case: ifPn => [/eqP min_apoo _|hpoo].
   move=> i isize.
@@ -220,7 +234,7 @@ Qed.
 Lemma stl_nary_inversion_andE0 (Es : seq (expr Bool_P) ) :
   is_stl false (nu.-[[ ldl_and Es ]]_stle) -> (exists (i : nat), is_stl false (nu.-[[ nth (ldl_bool pos false) Es i ]]_stle)%E && (i < size Es)%nat).
 Proof.
-rewrite/is_stl/= foldrE !big_map.
+rewrite/is_stl/= !big_map.
 have h0 : (-oo != +oo)%E by [].
 case: ifPn => [/eqP|hnoo].
   rewrite big_seq_cond.
@@ -335,7 +349,7 @@ Lemma stl_nary_inversion_orE1 (Es : seq (expr Bool_P) ) :
   is_stl true (nu.-[[ ldl_or Es ]]_stle) -> (exists i, is_stl true (nu.-[[ nth (ldl_bool _ false) Es i ]]_stle) && (i < size Es)%nat).
 Proof.
 
-rewrite/is_stl/= foldrE !big_map.
+rewrite/is_stl/= !big_map.
 have h0 : (-oo != +oo)%E by [].
 case: ifPn => [/eqP|hnoo].
   rewrite big_seq_cond. move => _.
@@ -403,7 +417,7 @@ Admitted.
 Lemma stl_nary_inversion_orE0 (Es : seq (expr Bool_P) ) :
     is_stl false (nu.-[[ ldl_or Es ]]_stle) -> (forall i, (i < size Es)%nat -> is_stl false (nu.-[[ nth (ldl_bool pos false) Es i ]]_stle)).
 Proof.
-rewrite/is_stl/= foldrE big_map.
+rewrite/is_stl/= big_map.
 case: ifPn.
   move => h _ i i0.
   rewrite /=.
@@ -499,65 +513,4 @@ dependent induction e using expr_ind'.
     by rewrite oppr_lt0 normr_gt0 subr_eq0 => /negbTE.
 Qed.
 
-
 End stl_lemmas.
-
-(* Ale: disabled for now
-Section shadow_lifting_stl_and.
-Context {R : realType}.
-Variable nu : R.
-Variable M : nat.
-Hypothesis M0 : M != 0%N.
-(*add hypothesis nu>0 if needed*)
-
-(* The ones below do not type check yet, need to check if we can extend to ereal *)
-
-Definition min_dev {R : numDomainType} (x : \bar R) (xs : seq \bar R) : \bar R :=
-  (x - minE xs) * (fine (minE xs))^-1%:E.
-
-Definition min_devR {R : realType} (x : R) (xs : seq R) : R :=
-  (x - minR xs) * (minR xs)^-1.
-
-Local Open Scope ereal_scope.
-
-(*Natalia: will only consider >0 and <0 without edge cases, as to separate cases*)
-(* Definition stl_and (xs : seq \bar R) : \bar R :=
-  if minE xs == +oo then +oo
-  else if minE xs == -oo then -oo (*Check if needed*)
-  else if minE xs < 0 then
-    sumE (map (fun a => minE xs * expeR (min_dev a xs) * expeR (nu%:E * min_dev a xs)) xs) *
-    (fine (sumE (map (fun a => expeR (nu%:E * min_dev a xs)) xs)))^-1%:E
-  else if minE xs > 0 then
-    sumE (map (fun a => a * expeR (-nu%:E * min_dev a xs)) xs) *
-    (fine (sumE (map (fun a => expeR (nu%:E * min_dev a xs)) xs)))^-1%:E
-    else 0. *)
-
-(*to do: change map to big operator probably*)
-
-Local Close Scope ereal_scope.
-
-Definition stl_and_gt0 n (v : 'rV[R]_n)  :=
-  sumR (map (fun a => a * expR (-nu * min_devR a ( MatrixFormula.seq_of_rV v))) ( MatrixFormula.seq_of_rV v)) *
-  (sumR (map (fun a => expR (nu * min_devR a ( MatrixFormula.seq_of_rV v))) ( MatrixFormula.seq_of_rV v)))^-1.
-
-Definition stl_and_lt0 n (v : 'rV[R]_n) :=
-  sumR (map (fun a => a * expR (-nu * min_devR a ( MatrixFormula.seq_of_rV v))) ( MatrixFormula.seq_of_rV v)) *
-    (sumR (map (fun a => expR (nu * min_devR a ( MatrixFormula.seq_of_rV v))) ( MatrixFormula.seq_of_rV v)))^-1.
-
-
- Search (_ `^ _).
-Lemma shadowlifting_stl_and_gt0 (p : R) : p > 0 ->
-  forall i, ('d (@stl_and_gt0 M.+1) '/d i) (const_mx p) = (M%:R) ^ -1.
-Proof.
-move=> p0 i.
-rewrite /partial.
-(* have /cvg_lim : h^-1 * (stl_and_gt0 (const_mx p + h *: err_vec i) -
-                        stl_and_gt0 (n:=M.+1) (const_mx p))
-       @[h --> (0:R)^'] --> ((M%:R)^ -1):R. *)
-
-
-Admitted.
-
-
-End shadow_lifting_stl_and.
-*)

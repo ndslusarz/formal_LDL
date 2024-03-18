@@ -12,11 +12,15 @@ Require Import mathcomp_extra analysis_extra ldl.
 (* # DL2 alternative                                                          *)
 (*                                                                            *)
 (* - dl2_and v == $\sum_{i < n} v_i$                                          *)
+(* - shadowlifting_dl2_andE == shadow-lifting for DL2                         *)
 (******************************************************************************)
 
 Import Num.Def Num.Theory GRing.Theory.
 Import Order.TTheory.
 Import numFieldTopology.Exports.
+
+Definition dl2_and {R' : fieldType} {n} (v : 'rV[R']_n) :=
+  (\sum_(i < n) v ``_ i)%R.
 
 Section shadow_lifting_dl2_and.
 Local Open Scope ring_scope.
@@ -25,8 +29,14 @@ Context {R : realType}.
 Variable M : nat.
 Hypothesis M0 : M != 0%N.
 
-Definition dl2_and {R : fieldType} {n} (v : 'rV[R]_n) :=
-  \sum_(i < n) v ``_ i.
+Import MatrixFormula.
+
+Lemma dl2_andE {n} (v : 'rV[R]_n) :
+  dl2_and v = sumR (map (dl2_translation \o ldl_real) (seq_of_rV v)).
+Proof.
+rewrite /sumR !big_map /dl2_and -enumT big_enum.
+by under [in RHS]eq_bigr do rewrite ffunE.
+Qed.
 
 Lemma shadowlifting_dl2_andE (p : R) : p > 0 ->
   forall i, ('d (@dl2_and _ M.+1) '/d i) (const_mx p) = 1.
@@ -56,7 +66,7 @@ have /cvg_lim : h^-1 * (dl2_and (const_mx p + h *: err_vec i) -
 by apply; exact: Rhausdorff.
 Unshelve. all: by end_near. Qed.
 
-Corollary shadow_lifting_dl2_and :  shadow_lifting (@dl2_and R M.+1).
+Corollary shadow_lifting_dl2_and : shadow_lifting (@dl2_and R M.+1).
 Proof. by move=> p p0 i; rewrite shadowlifting_dl2_andE. Qed.
 
 End shadow_lifting_dl2_and.
@@ -69,6 +79,12 @@ Variable p : R.
 
 Local Notation "[[ e ]]_dl2" := (@dl2_translation R _ e).
 
+Lemma dl2_andC_nary (s1 s2 : seq (expr Bool_N)) :
+  perm_eq s1 s2 -> [[ldl_and s1]]_dl2 = [[ldl_and s2]]_dl2.
+Proof.
+by move=> pi; rewrite /=/sumR !big_map (perm_big _ pi)/=.
+Qed.
+
 Lemma dl2_andC (e1 e2 : expr Bool_N) : [[ e1 `/\ e2 ]]_dl2 = [[ e2 `/\ e1 ]]_dl2.
 Proof.
 by rewrite /=/sumR ?big_cons ?big_nil /= addr0 addr0 addrC.
@@ -78,6 +94,12 @@ Lemma dl2_andA (e1 e2 e3 : expr Bool_P) :
   [[ e1 `/\ (e2 `/\ e3) ]]_dl2 = [[ (e1 `/\ e2) `/\ e3 ]]_dl2.
 Proof.
 by rewrite /=/sumR ?big_cons ?big_nil !addr0 addrA.
+Qed.
+
+Lemma dl2_orC_nary (s1 s2 : seq (expr Bool_N)) :
+  perm_eq s1 s2 -> [[ldl_or s1]]_dl2 = [[ldl_or s2]]_dl2.
+Proof.
+by move=> pi; rewrite /=/prodR !big_map (perm_big _ pi)/= (perm_size pi).
 Qed.
 
 Lemma dl2_orC (e1 e2 : expr Bool_P) :

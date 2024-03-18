@@ -24,8 +24,7 @@ Context {R : realType}.
 Variables (nu : R).
 Hypothesis nu0 : 0 < nu.
 
-Lemma andI_stl (e : expr Bool_N) :
-  nu.-[[e `/\ e]]_stl = nu.-[[e]]_stl.
+Lemma andI_stl (e : expr Bool_N) : nu.-[[e `/\ e]]_stl = nu.-[[e]]_stl.
 Proof.
 rewrite /= /stl_and_gt0 /stl_and_lt0 /min_dev /sumR.
 rewrite !big_cons !big_nil/=.
@@ -464,6 +463,119 @@ dependent induction e using expr_ind'.
     by rewrite oppr_lt0 normr_gt0 subr_eq0 => /negbTE.
 Qed.
 
+Lemma perm_big_minr_helper0 (a : R) (s : seq R) :
+  \big[minr/a]_(i <- a::s) i = \big[minr/a]_(i <- s) i.
+Proof.
+elim: s; first by rewrite big_cons big_nil minxx.
+move=> a1 l.
+by rewrite !big_cons minCA => ->.
+Qed.
+
+Lemma perm_big_minr_helper (a : R) (s : seq R) :
+  minr a (\big[minr/a]_(i <- s) i) = \big[minr/a]_(i <- s) i.
+Proof.
+have := perm_big_minr_helper0 a s.
+by rewrite big_cons.
+Qed.
+
+Lemma perm_big_minr_helper2 (a1 a2 : R) (s : seq R) :
+  \big[minr/a1]_(i <- a2 :: s) i = \big[minr/a2]_(i <- a1 :: s) i.
+Proof.
+elim: s; first by rewrite !big_cons !big_nil minC.
+move=> a3 l.
+rewrite !big_cons => ih.
+by rewrite minCA ih minCA.
+Qed.
+
+Lemma perm_big_minr_helper3 (a1 a2 : R) (s : seq R) :
+  a1 \in s -> minr a1 (\big[minr/a2]_(i <- s) i) = \big[minr/a2]_(i <- s) i.
+Proof.
+elim: s; first by rewrite in_nil.
+move=> a3 l ih.
+rewrite inE => /orP[/eqP -> | a1l].
+  by rewrite !big_cons minA minxx.
+by rewrite !big_cons minCA ih.
+Qed.
+
+Lemma perm_big_minr_helper4 (a1 a2 : R) (s : seq R) :
+  a1 \in s -> a2 \in s ->
+    \big[minr/a1]_(i <- s) i = \big[minr/a2]_(i <- s) i.
+Proof.
+elim: s; first by rewrite in_nil.
+move=> a l ih.
+rewrite inE => /orP[/eqP -> |a1l].
+  rewrite inE => /orP[/eqP -> //|a2l].
+  rewrite big_cons.
+  rewrite perm_big_minr_helper.
+  rewrite perm_big_minr_helper2.
+  rewrite big_cons.
+  by rewrite perm_big_minr_helper3.
+rewrite inE => /orP[/eqP -> |a2l].
+  rewrite perm_big_minr_helper2.
+  rewrite big_cons.
+  rewrite perm_big_minr_helper3//.
+  rewrite big_cons.
+  by rewrite perm_big_minr_helper.
+rewrite !big_cons.
+by rewrite ih.
+Qed.
+
+Lemma perm_big_minr2 (a1 a2 : R) (s1 s2 : seq R) :
+  a1 \in s2 -> a2 \in s1 -> perm_eq s1 s2 ->
+    \big[minr/a1]_(i <- s1) i = \big[minr/a2]_(i <- s2) i.
+Proof.
+move=> a1s2 a2s1 pi.
+rewrite (perm_big_minr_helper4 _ a2)//.
+  by rewrite (perm_big _ pi).
+by rewrite (@perm_mem _ s1 s2).
+Qed.
+
+Lemma perm_big_minr3 (a1 a2 : R) (l1 l2 : seq R) :
+  perm_eq (a1 :: l1) (a2 :: l2) -> \big[minr/a1]_(i <- l1) i = \big[minr/a2]_(i <- l2) i.
+Proof.
+move=> pi.
+rewrite -perm_big_minr_helper0.
+rewrite (perm_big _ pi)/=.
+rewrite (perm_big_minr_helper4 a1 a2); last 2 first.
+- by rewrite -(perm_mem pi) inE eq_refl.
+- by rewrite inE eq_refl.
+by rewrite perm_big_minr_helper0.
+Qed.
+
+Lemma andC_stl_nary (s1 s2 : seq (expr Bool_N)) :
+  perm_eq s1 s2 -> nu.-[[ldl_and s1]]_stl = nu.-[[ldl_and s2]]_stl.
+Proof.
+case: s1; first by rewrite perm_sym => /perm_nilP ->.
+move=> a1 l1; case: s2; first by move/perm_nilP.
+move=> a2 l2 pi.
+rewrite /=.
+have pi2 := @perm_map _ _ (stl_translation nu) _ _ pi.
+rewrite (perm_big_minr3 _ _ _ _ pi2)/=.
+rewrite !big_map !seq_cons.
+case: ifPn => // ?.
+  rewrite /stl_and_lt0 /sumR !big_map.
+  congr (_ / _).
+    rewrite (perm_big _ pi)/=.
+    apply: eq_bigr => i _.
+    congr (_ * _).
+      congr(_ * _).
+        rewrite !seq_cons !big_map.
+        exact: perm_big.
+      by rewrite !seq_cons /min_dev !big_map (perm_big _ pi).
+    by rewrite !seq_cons /min_dev !big_map (perm_big _ pi).
+  rewrite (perm_big _ pi)/=.
+  apply: eq_bigr => i _.
+  by rewrite !seq_cons /min_dev !big_map (perm_big _ pi).
+case: ifPn => // ?.
+rewrite /stl_and_gt0 /sumR !big_map.
+congr (_ / _).
+  rewrite (perm_big _ pi)/=.
+  apply: eq_bigr => i _.
+  by rewrite /min_dev !seq_cons !big_map (perm_big _ pi).
+rewrite (perm_big _ pi)/=.
+apply: eq_bigr => i _.
+by rewrite /min_dev !seq_cons !big_map (perm_big _ pi).
+Qed.
 
 End stl_lemmas.
 
@@ -715,7 +827,7 @@ Proof. by transitivity (p * -1) => //; rewrite mulrN1. Qed.
 Lemma derive_cst (p x : R) : 'D_1 (fun=> p) x = 0.
 Proof. by rewrite -derive1E derive1_cst. Qed.
 
-Lemma derive_id (v : R^o) (x : R) : 'D_v id x = v :> R.
+Lemma derive_id (v : R) (x : R) : 'D_v id x = v :> R.
 Proof. exact: derive_val. Qed.
 
 Lemma derive_comp (R' : realFieldType) (f g : R'^o -> R'^o) x :
@@ -728,7 +840,7 @@ move=> fx1 gfx1; rewrite -derive1E derive1_comp; last 2 first.
 by rewrite !derive1E.
 Qed.
 
-Lemma derivable_comp (f g : R^o -> R^o) (x : R^o) :
+Lemma derivable_comp (f g : R -> R) (x : R) :
   derivable f (g x) 1 -> derivable g x 1 -> derivable (f \o g) x 1.
 Proof.
 move=> fgx1 gx1.
@@ -910,12 +1022,12 @@ have /cvg_lim : h^-1 * ((stl_and_lt0 (seq_of_rV (const_mx p + h *: err_vec i))) 
           exact: cvg_cst.
         by under eq_fun do rewrite mulrCA mulrC; exact: exp0.
       by under eq_fun do rewrite mulrCA mulrC; exact: exp0.
-    have L1 : forall x : R, x \in (ball 0 1 : set R^o) ->
+    have L1 : forall x : R, x \in (ball 0 1 : set R) ->
        is_derive x 1 ( *%R^~ p^-1) p^-1.
       move=> x _.
       rewrite [X in is_derive _ _ X _](_ : _ = p^-1 *: id); last first.
         by apply/funext => y /=; rewrite mulrC.
-      rewrite [X in is_derive _ _ _ X](_ : _ = p^-1 *: (1:R^o))//.
+      rewrite [X in is_derive _ _ _ X](_ : _ = p^-1 *: (1:R))//.
         exact: is_deriveZ.
       by rewrite /GRing.scale/= mulr1.
     apply: (@lhopital_right R (fun x => expR (x / p) - 1)
@@ -993,19 +1105,19 @@ have /cvg_lim : h^-1 * ((stl_and_lt0 (seq_of_rV (const_mx p + h *: err_vec i))) 
 
   have Hint6 (x : R) : derivable -%R x 1.
     by apply: derivableN; exact: derivable_id.
-  have px_neq0 (x : R) : x \in (ball 0 p : set R^o) -> (p + x)%R != 0.
+  have px_neq0 (x : R) : x \in (ball 0 p : set R) -> (p + x)%R != 0.
     rewrite inE /ball/= sub0r normrN lter_norml => /andP[Npx xp].
     by rewrite gt_eqF// -ltrBlDl sub0r.
   have Hint3 (x : R) : derivable (+%R p) x 1.
     by apply: derivableD; [exact: derivable_cst|exact: derivable_id].
-  have Hint4 (x : R) : x \in (ball 0 p : set R^o) ->
+  have Hint4 (x : R) : x \in (ball 0 p : set R) ->
     derivable (fun x0 => (p + x0)%E^-1) x 1.
     by move=> x0p; apply: derivableV; [exact: px_neq0|exact: Hint3].
-  have Hint5 (x : R) : x \in (ball 0 p : set R^o) ->
-      derivable (fun x0 : R^o => - x0 / (p + x0)%E) x 1.
+  have Hint5 (x : R) : x \in (ball 0 p : set R) ->
+      derivable (fun x0 : R => - x0 / (p + x0)%E) x 1.
     move=> x0p; apply: derivableM; last exact: Hint4.
     by apply: derivableN; exact: derivable_id.
-  have Hint2 (x : R) : x \in (ball 0 p : set R^o) ->
+  have Hint2 (x : R) : x \in (ball 0 p : set R) ->
     derivable (fun x0 : R => expR (- x0 / (p + x0)%E)) x 1.
     move=> x0p.
     by apply: derivable_comp; [exact: derivable_expR|exact: Hint5].
