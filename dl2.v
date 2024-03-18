@@ -69,6 +69,12 @@ Variable p : R.
 
 Local Notation "[[ e ]]_dl2" := (@dl2_translation R _ e).
 
+Lemma dl2_andC_nary (s1 s2 : seq (expr Bool_N)) :
+  perm_eq s1 s2 -> [[ldl_and s1]]_dl2 = [[ldl_and s2]]_dl2.
+Proof.
+by move=> pi; rewrite /=/sumR !big_map (perm_big _ pi)/=.
+Qed.
+
 Lemma dl2_andC (e1 e2 : expr Bool_N) : [[ e1 `/\ e2 ]]_dl2 = [[ e2 `/\ e1 ]]_dl2.
 Proof.
 by rewrite /=/sumR ?big_cons ?big_nil /= addr0 addr0 addrC.
@@ -78,6 +84,12 @@ Lemma dl2_andA (e1 e2 e3 : expr Bool_P) :
   [[ e1 `/\ (e2 `/\ e3) ]]_dl2 = [[ (e1 `/\ e2) `/\ e3 ]]_dl2.
 Proof.
 by rewrite /=/sumR ?big_cons ?big_nil !addr0 addrA.
+Qed.
+
+Lemma dl2_orC_nary (s1 s2 : seq (expr Bool_N)) :
+  perm_eq s1 s2 -> [[ldl_or s1]]_dl2 = [[ldl_or s2]]_dl2.
+Proof.
+by move=> pi; rewrite /=/prodR !big_map (perm_big _ pi)/= (perm_size pi).
 Qed.
 
 Lemma dl2_orC (e1 e2 : expr Bool_P) :
