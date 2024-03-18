@@ -12,6 +12,7 @@ Require Import mathcomp_extra analysis_extra ldl.
 (*                                                                            *)
 (* - product_and v with v : 'rV_n                                             *)
 (*   $\Pi_{i < n} v_i$                                                        *)
+(* - shadowlifting_product_andE == shadow-lifting for product                 *)
 (*                                                                            *)
 (******************************************************************************)
 
@@ -350,15 +351,15 @@ Qed.
 
 End translation_lemmas.
 
+Definition product_and {R : fieldType} {n} (u : 'rV[R]_n) : R :=
+  \prod_(i < n) u ``_ i.
+
 Section shadow_lifting_product_and.
 Context {R : realType}.
 Local Open Scope ring_scope.
 Local Open Scope classical_set_scope.
 Variable M : nat.
 Hypothesis M0 : M != 0%N.
-
-Definition product_and {R : fieldType} {n} (u : 'rV[R]_n) : R :=
-  \prod_(i < n) u ``_ i.
 
 Lemma shadowlifting_product_andE p : p > 0 ->
   forall i, ('d (@product_and R M.+1) '/d i) (const_mx p) = p ^+ M.

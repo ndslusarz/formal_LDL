@@ -24,8 +24,7 @@ Context {R : realType}.
 Variables (nu : R).
 Hypothesis nu0 : 0 < nu.
 
-Lemma andI_stl (e : expr Bool_N) :
-  nu.-[[e `/\ e]]_stl = nu.-[[e]]_stl.
+Lemma andI_stl (e : expr Bool_N) : nu.-[[e `/\ e]]_stl = nu.-[[e]]_stl.
 Proof.
 rewrite /= /stl_and_gt0 /stl_and_lt0 /min_dev /sumR.
 rewrite !big_cons !big_nil/=.

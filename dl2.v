@@ -12,11 +12,15 @@ Require Import mathcomp_extra analysis_extra ldl.
 (* # DL2 alternative                                                          *)
 (*                                                                            *)
 (* - dl2_and v == $\sum_{i < n} v_i$                                          *)
+(* - shadowlifting_dl2_andE == shadow-lifting for DL2                         *)
 (******************************************************************************)
 
 Import Num.Def Num.Theory GRing.Theory.
 Import Order.TTheory.
 Import numFieldTopology.Exports.
+
+Definition dl2_and {R' : fieldType} {n} (v : 'rV[R']_n) :=
+  (\sum_(i < n) v ``_ i)%R.
 
 Section shadow_lifting_dl2_and.
 Local Open Scope ring_scope.
@@ -25,8 +29,14 @@ Context {R : realType}.
 Variable M : nat.
 Hypothesis M0 : M != 0%N.
 
-Definition dl2_and {R : fieldType} {n} (v : 'rV[R]_n) :=
-  \sum_(i < n) v ``_ i.
+Import MatrixFormula.
+
+Lemma dl2_andE {n} (v : 'rV[R]_n) :
+  dl2_and v = sumR (map (dl2_translation \o ldl_real) (seq_of_rV v)).
+Proof.
+rewrite /sumR !big_map /dl2_and -enumT big_enum.
+by under [in RHS]eq_bigr do rewrite ffunE.
+Qed.
 
 Lemma shadowlifting_dl2_andE (p : R) : p > 0 ->
   forall i, ('d (@dl2_and _ M.+1) '/d i) (const_mx p) = 1.
@@ -56,7 +66,7 @@ have /cvg_lim : h^-1 * (dl2_and (const_mx p + h *: err_vec i) -
 by apply; exact: Rhausdorff.
 Unshelve. all: by end_near. Qed.
 
-Corollary shadow_lifting_dl2_and :  shadow_lifting (@dl2_and R M.+1).
+Corollary shadow_lifting_dl2_and : shadow_lifting (@dl2_and R M.+1).
 Proof. by move=> p p0 i; rewrite shadowlifting_dl2_andE. Qed.
 
 End shadow_lifting_dl2_and.
