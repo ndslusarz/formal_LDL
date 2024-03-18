@@ -270,6 +270,11 @@ Lemma maxe_eq_inf (I : eqType) (r : seq I) (P : pred I) (f : I -> \bar R) :
   -> exists i, i \in r /\ P i /\ (f i = +oo)%E.
 Admitted.
 
+Lemma maxe_eq_inf' (I : eqType) (r : seq I) (P : pred I) (f : I -> \bar R) :
+  (\big[maxe/-oo]_(i <- r | P i) f i = -oo)%E
+  -> forall i, i \in r /\ P i /\ (f i = -oo)%E.
+Admitted.
+
 Lemma maxe_eq (I : eqType) (r : seq I) (P : pred I) (f : I -> \bar R) x :
   (-oo != x)%E ->
   (\big[maxe/-oo]_(i <- r | P i) f i = x)%E
@@ -311,6 +316,10 @@ Lemma maxe_ge' (I : eqType) (r : seq I) (P : pred I) (f : I -> \bar R) x :
   (x <= \big[maxe/-oo]_(i <- r | P i) f i)%E
   <-> exists i, i \in r /\ P i /\ (x <= f i)%E.
 Proof.
+Admitted.
+
+Lemma maxe_neq_infty (T : eqType) (s : seq T) (P : pred T) (f : T -> \bar R) (x : \bar R) :
+  (\big[maxe/-oo]_(i <- s | P i) f i != +oo <-> forall i, i \in s -> P i -> f i != +oo)%E.
 Admitted.
 
 
@@ -363,12 +372,24 @@ case: ifPn => [hgt0|].
       rewrite adde_Neq_ninfty. rewrite hnoo.
       admit.
       rewrite hpoo//.
-       admit. (*new lemma I think*)
+      move/maxe_neq_infty : hpoo .
+      admit. (*new lemma I think*)
       admit.
-      rewrite invr_neq0; last first.
+      rewrite invr_neq0; last first. About fine_lt.
       rewrite gt_eqF// fine_gt0// sume_gt0/=.
-        admit.
+      rewrite lte_sum_pinfty//.
+      move => i _. rewrite expeR_lty//.
+      rewrite lte_mul_pinfty//. 
+        admit. (*use nu0*)
+        rewrite /maxe_dev lte_mul_pinfty//.
+          (*any way to separate the constant inside the maxe?
+          probably need to backtrack somwehre...*)
+          admit.
+          rewrite fin_numE. (*bigmaxe_fin_num*)
+          admit.
+          admit.
         move => i _. by rewrite expeR_ge0.
+        
         admit.
     rewrite /= -leNgt lee_fin invr_ge0 fine_ge0//.
     rewrite /= sume_ge0//. move => t _. 
@@ -385,7 +406,8 @@ Proof.
 rewrite/is_stl/= foldrE big_map.
 case: ifPn.
   move => h _ i i0.
-  rewrite /=. (* simple needs lemma max = -oo -> all elemtns -oo*)
+  rewrite /=.
+  (* simple needs lemma max = -oo -> all elemtns -oo*)
   admit.
 case: ifPn.
   move => _ _. admit. (*contra, +oo <0*)
