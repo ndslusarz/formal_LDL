@@ -256,16 +256,6 @@ case: ifPn => [hgt0|].
 by rewrite lt_irreflexive.
 Qed.
 
-(* Lemma maxe_eqyP (T : eqType) (s : seq T) (P : pred T) (f : T -> \bar R) :
-  (- (\big[maxe/+oo]_(i <- s | P i) f i) = -oo <-> exists i, i \in s -> P i -> f i = +oo)%E.
-Proof.
-elim s=>[|a l IH].
-Admitted. *)
-
-(*Natalia: I need the maxe_eqyP to match the goal in both or inversions - but can't come up
-  with anything from knowing max_apoo that would give -oo, if anything the only
-result is that there exists some value in Es that is +oo - does the inversion break?*)
-
 Lemma leye_eq' :
   forall (x : \bar R), (x <= -oo)%E = (x == -oo%E).
 Proof.
@@ -273,6 +263,11 @@ Admitted.
 
 Lemma maxe_eq' (T : eqType) (s : seq T) (P : pred T) (f : T -> \bar R) :
   (\big[maxe/-oo]_(i <- s | P i) f i = +oo <-> exists i, i \in s -> P i -> f i = +oo)%E.
+Admitted.
+
+Lemma maxe_eq_inf (I : eqType) (r : seq I) (P : pred I) (f : I -> \bar R) :
+  (\big[maxe/-oo]_(i <- r | P i) f i = +oo)%E
+  -> exists i, i \in r /\ P i /\ (f i = +oo)%E.
 Admitted.
 
 Lemma maxe_eq (I : eqType) (r : seq I) (P : pred I) (f : I -> \bar R) x :
@@ -330,13 +325,11 @@ case: ifPn => [/eqP|hnoo].
   rewrite leye_eq'. (*simple, just need 0 != oo) *)
   admit.
 case: ifPn => [/eqP|hpoo].
-rewrite big_seq_cond.
-(*   move/(maxe_eq (h0 _)) => [x [xEs [_ hxnoo]]].
-  move: xEs.
-  exists (index x Es).
-  by rewrite nth_index// hxnoo ltNy0/= index_mem. *)
-   (*non_simple*)
-  admit.
+rewrite big_seq_cond. move/maxe_eq_inf => [x [xEs [_ xlt0]]].
+   (*  rewrite maxe_eq'. 
+   move => [x]. rewrite andbT. *)
+  exists (index x Es). 
+  by rewrite nth_index//  xlt0 H/= index_mem. 
 case: ifPn => [|].
   rewrite {1}big_seq_cond.
   move => hmaxgt0.
@@ -374,7 +367,7 @@ case: ifPn => [hgt0|].
  rewrite -nglt//=.
 move => h _. move: h.
 rewrite big_seq_cond.
-move/maxe_geP.
+move/maxe_geP. => [x [xEs ]].
 admit.
 Admitted.
 
