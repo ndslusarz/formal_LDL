@@ -413,10 +413,10 @@ Fixpoint stl_ereal_translation {t} (e : expr t) : ereal_type_translation t :=
       let a'_i (a_i : \bar R) := maxe_dev a_max a_i in
       if a_max == -oo then -oo
       else if a_max == +oo then +oo
-        else if a_max < 0 then
+        else if a_max > 0 then
           sumE (map (fun a => a_max * expeR (a'_i a) * expeR (nu%:E * a'_i a)) A) *
           (fine (sumE (map (fun a => expeR (nu%:E * (a'_i a))) A)))^-1%:E
-        else if a_max > 0 then
+        else if a_max < 0 then
           sumE (map (fun a => a * expeR (-nu%:E * (a'_i a))) A) *
           (fine (sumE (map (fun a => expeR (nu%:E * (a'_i a))) A)))^-1%:E
         else 0
