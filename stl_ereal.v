@@ -140,7 +140,7 @@ Definition is_stl b (x : \bar R) := (if b then x >= 0 else x < 0)%E.
 Lemma stl_nary_inversion_andE1 (Es : seq (expr Bool_P) ) :
   is_stl true (nu.-[[ ldl_and Es ]]_stle) -> (forall i, (i < size Es)%N -> is_stl true (nu.-[[ nth (ldl_bool pos false) Es i ]]_stle)).
 Proof.
-rewrite/is_stl/= foldrE big_map.
+rewrite/is_stl/= big_map.
 case: ifPn => [//|hnoo].
 case: ifPn => [/eqP min_apoo _|hpoo].
   move=> i isize.
@@ -220,7 +220,7 @@ Qed.
 Lemma stl_nary_inversion_andE0 (Es : seq (expr Bool_P) ) :
   is_stl false (nu.-[[ ldl_and Es ]]_stle) -> (exists (i : nat), is_stl false (nu.-[[ nth (ldl_bool pos false) Es i ]]_stle)%E && (i < size Es)%nat).
 Proof.
-rewrite/is_stl/= foldrE !big_map.
+rewrite/is_stl/= !big_map.
 have h0 : (-oo != +oo)%E by [].
 case: ifPn => [/eqP|hnoo].
   rewrite big_seq_cond.
@@ -341,7 +341,7 @@ Lemma stl_nary_inversion_orE1 (Es : seq (expr Bool_P) ) :
   is_stl true (nu.-[[ ldl_or Es ]]_stle) -> (exists i, is_stl true (nu.-[[ nth (ldl_bool _ false) Es i ]]_stle) && (i < size Es)%nat).
 Proof.
 
-rewrite/is_stl/= foldrE !big_map.
+rewrite/is_stl/= !big_map.
 have h0 : (-oo != +oo)%E by [].
 case: ifPn => [/eqP|hnoo].
   rewrite big_seq_cond. move => _.
@@ -438,7 +438,7 @@ Admitted.
 Lemma stl_nary_inversion_orE0 (Es : seq (expr Bool_P) ) :
     is_stl false (nu.-[[ ldl_or Es ]]_stle) -> (forall i, (i < size Es)%nat -> is_stl false (nu.-[[ nth (ldl_bool pos false) Es i ]]_stle)).
 Proof.
-rewrite/is_stl/= foldrE big_map.
+rewrite/is_stl/= big_map.
 
 case: ifPn.
   move => /eqP h _ i i0/=.
