@@ -491,15 +491,74 @@ Qed.
 
 
 Lemma maxe_ge' (I : eqType) (r : seq I) (P : pred I) (f : I -> \bar R) x :
+  (x != -oo)%E ->
   (x <= \big[maxe/-oo]_(i <- r | P i) f i)%E
   <-> exists i, i \in r /\ P i /\ (x <= f i)%E.
 Proof.
-Admitted.
-
+move=> /negPf xnoo.
+elim: r.
+  rewrite big_nil leeNy_eq xnoo; split => //.
+  by move=> [i [] ]; rewrite in_nil.
+move=> a l ih.
+rewrite big_cons.
+case: ifPn => pa.
+  rewrite {1}/maxe.
+  case: ifPn => [h|].
+    split.
+      move=> /ih [i [il [pi xfi] ] ].
+      by exists i; rewrite in_cons il orbT pi xfi.
+    move=> [i [] ]. rewrite in_cons=> /orP[/eqP -> [_ xfa]|il [pi xfi] ].
+      by rewrite ltW// (le_lt_trans xfa h).
+    by rewrite ih; exists i; rewrite il pi xfi.
+  rewrite -leNgt => h.
+  split.
+    by move=> xfa; exists a; rewrite mem_head pa xfa.
+  move=> [i]. 
+  rewrite in_cons => [ [/orP [/eqP -> | ] [il [pi] ] ] ]// xfi.
+  rewrite (le_trans _ h)// ih.
+  by exists i; rewrite il pi xfi.
+split.
+  rewrite ih => [ [i [il [pi xfi] ] ] ].
+  by exists i; rewrite in_cons il orbT pi xfi.
+move=> [ i [] ].
+rewrite in_cons => /orP[/eqP -> [pa'] | il [pi xfi] ].
+  by rewrite pa' in pa.
+by rewrite ih; exists i; rewrite il pi xfi.
+Qed.
 
 Lemma maxe_eqyP (T : eqType) (s : seq T) (P : pred T) (f : T -> \bar R) :
   (\big[maxe/-oo]_(i <- s | P i) f i = -oo <-> forall i, i \in s -> P i -> f i = -oo)%E.
-Admitted.
+Proof.
+elim: s; first by rewrite big_nil.
+move=> a l ih.
+rewrite big_cons.
+case: ifPn => pa.
+  rewrite {1}/maxe.
+  case: ifPn => h.
+    split.
+      move=> h1 i.
+      move: h; rewrite h1.
+      by rewrite ltNge leNye.
+    move=> h1.
+    rewrite ih => i il pi.
+    by rewrite h1// in_cons il orbT.
+  split.
+    move=> fanoo i.
+    move: h.
+    rewrite -leNgt fanoo leeNy_eq => /eqP.
+    move/ih => h.
+    rewrite in_cons => /orP[/eqP -> //| ].
+    exact: h.
+  by apply; rewrite ?mem_head ?pa.
+split.
+  move/ih => h i.
+  rewrite in_cons => /orP[/eqP -> pa'| ].
+    by rewrite pa' in pa.
+  exact: h.
+move=> h.
+rewrite ih => i il pi.
+by rewrite h// in_cons il orbT.
+Qed.
 
 End stl_helpers.
 

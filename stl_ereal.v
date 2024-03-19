@@ -306,7 +306,9 @@ case: ifPn => [hlt0|].
         exact: h1.
       by move: hlt0 => /maxe_lt ->.
 rewrite -leNgt => hge0 _.
-move: hge0 => /maxe_ge' [i [iEs [_ hige0 ] ] ].
+move: hge0 => /maxe_ge'.
+rewrite gt_eqF//=.
+move/(_ isT)=> [i [iEs [_ hige0 ] ] ].
 exists (index i Es).
 by rewrite nth_index// hige0 index_mem.
 Qed.
