@@ -357,79 +357,97 @@ case: ifPn => [|].
   by rewrite nth_index// ltW// ?h/= index_mem. 
 (*   About ltW. *)
 rewrite -leNgt => hge0.
-case: ifPn => [hgt0|].
-  apply: contraPP.
-  move/forallNP => h.
-  have {}h : forall i : nat,
-      (i < size Es)%N ->
-      (nu.-[[nth (ldl_bool pos false) Es i]]_stle < 0)%E.
-    move=> i iEs.
-    move: (h i) => /negP.
-    by rewrite negb_and leNgt iEs/= orbF Bool.negb_involutive. 
-  apply/negP; rewrite leNgt Bool.negb_involutive//. (* mule_ge0//. *)
-    rewrite /sumE !big_map big_seq_cond. 
-    rewrite mule_lt0/=.
-    rewrite neq_lt.
-    rewrite sume_lt0/=; last 2 first.
-      move => i. rewrite andbT. move => iEs.
-      rewrite ltW// mule_lt0.
-      rewrite expeR_eq0. rewrite mule_neq_ninfty.
-      rewrite /maxe_dev mule_neq_ninfty.
-      rewrite adde_Neq_ninfty. rewrite hnoo. (* rewrite hnoo. *)
-      admit.
-      rewrite hpoo//.
-      move/maxe_neq_infty : hpoo .
-      admit. (*new lemma I think*)
-      admit.
-      rewrite invr_neq0; last first. About fine_lt.
-      rewrite gt_eqF// fine_gt0// sume_gt0/=.
-      rewrite lte_sum_pinfty//.
-      move => i _. rewrite expeR_lty//.
-      rewrite lte_mul_pinfty//. 
-        admit. (*use nu0*)
-        rewrite /maxe_dev lte_mul_pinfty//.
-          (*any way to separate the constant inside the maxe?
-          probably need to backtrack somwehre... or create a bunch of new lemmas*)
-          admit.
-          rewrite fin_numE. (*bigmaxe_fin_num*)
-          admit.
-          admit.
-        move => i _. by rewrite expeR_ge0.
-        (* have: maxe_lt. *)
-        admit.
-    rewrite /= -leNgt lee_fin invr_ge0 fine_ge0//.
-    rewrite /= sume_ge0//. move => t _. 
-    by rewrite  expeR_ge0. 
- rewrite -nglt//=. 
-(* case: ifPn => [hlt0|]. *)
-(*   rewrite leNgt mule_lt0. *)
-(*   rewrite /sumE !big_map !big_seq !negb_and negb_add. *)
-(*   rewrite lte_fin invr_lt0 (ltNge _ 0%R) fine_ge0//=; last first. *)
-(*     by rewrite sume_ge0// => t _; rewrite expeR_ge0. *)
-(*   have /maxe_lt/= h := hlt0. *)
-(*   rewrite sume_lt0/=; last 2 first. *)
-(*   - by move=> i iEs; rewrite nmule_rle0 ?expeR_ge0// h//. *)
-(*   - admit. *)
-(*   rewrite lt_eqF/= ?gt_eqF//=. *)
-(*     rewrite lte_fin invr_gt0 fine_gt0// sume_gt0/=; last 2 first. *)
-(*     - by move=> i _; rewrite expeR_ge0. *)
-(*     - admit. *)
-(*     rewrite lte_sum_pinfty// => i iEs. *)
-(*     rewrite expeR_lty// lte_mul_pinfty// ?ltW//. *)
-(*     rewrite /maxe_dev lte_mul_pinfty//. *)
-(*     - rewrite -big_seq sube_ge0 ?maxe_ge'; first by exists i; rewrite iEs le_refl. *)
-(*     - by rewrite !fin_numE hnoo hpoo/= orbT. *)
-(*     - rewrite fin_numE adde_Neq_pinfty.  *)
-(*       + admit.  *)
-(*       + by rewrite -big_seq//. *)
-(*       rewrite -oppeey oppeK lt_eqF//=. *)
-(*       apply: (le_lt_trans (le_trans _ hge0) _) => //. *)
-(*       by rewrite maxe_ge'; exists i; rewrite iEs le_refl. *)
-(*     exact: ltry. *)
-(*   rewrite sume_lt0//=. *)
-(*     by move=> i iEs; rewrite nmule_rle0 ?expeR_ge0// h. *)
-(*   admit. *)
-(* rewrite -nglt//=.  *)
+(* case: ifPn => [hgt0|]. *)
+(*   apply: contraPP. *)
+(*   move/forallNP => h. *)
+(*   have {}h : forall i : nat, *)
+(*       (i < size Es)%N -> *)
+(*       (nu.-[[nth (ldl_bool pos false) Es i]]_stle < 0)%E. *)
+(*     move=> i iEs. *)
+(*     move: (h i) => /negP. *)
+(*     by rewrite negb_and leNgt iEs/= orbF Bool.negb_involutive.  *)
+(*   apply/negP; rewrite leNgt Bool.negb_involutive//. (* mule_ge0//. *) *)
+(*     rewrite /sumE !big_map big_seq_cond.  *)
+(*     rewrite mule_lt0/=. *)
+(*     rewrite neq_lt. *)
+(*     rewrite sume_lt0/=; last 2 first. *)
+(*       move => i. rewrite andbT. move => iEs. *)
+(*       have hilt0 : (nu.-[[i]]_stle < 0)%E. *)
+(*         apply: (le_lt_trans _ hgt0). *)
+(*         apply/maxe_ge'. *)
+(*         by exists i; rewrite iEs le_refl. *)
+(*       rewrite ltW// mule_lt0. *)
+(*       rewrite expeR_eq0. rewrite mule_neq_ninfty. *)
+(*       rewrite /maxe_dev mule_neq_ninfty. *)
+(*       rewrite adde_Neq_ninfty ?hnoo ?hpoo//. *)
+(*       rewrite lt_eqF//=. *)
+(*       rewrite -oppeey oppeK lt_eqF/=; last exact: (lt_trans hilt0). *)
+(*       by rewrite hilt0/= -leNgt expeR_ge0. *)
+(*       rewrite hpoo//. *)
+(*       rewrite oppeey. *)
+(*       move/maxe_neq_infty : hpoo . *)
+(*       admit. (*new lemma I think*) *)
+(*       admit. *)
+(*       rewrite invr_neq0; last first. About fine_lt. *)
+(*       rewrite gt_eqF// fine_gt0// sume_gt0/=. *)
+(*       rewrite lte_sum_pinfty//. *)
+(*       move => i _. rewrite expeR_lty//. *)
+(*       rewrite lte_mul_pinfty//.  *)
+(*         admit. (*use nu0*) *)
+(*         rewrite /maxe_dev lte_mul_pinfty//. *)
+(*           (*any way to separate the constant inside the maxe? *)
+(*           probably need to backtrack somwehre... or create a bunch of new lemmas*) *)
+(*           admit. *)
+(*           rewrite fin_numE. (*bigmaxe_fin_num*) *)
+(*           admit. *)
+(*           admit. *)
+(*         move => i _. by rewrite expeR_ge0. *)
+(*         (* have: maxe_lt. *) *)
+(*         admit. *)
+(*     rewrite /= -leNgt lee_fin invr_ge0 fine_ge0//. *)
+(*     rewrite /= sume_ge0//. move => t _.  *)
+(*     by rewrite  expeR_ge0.  *)
+(*  rewrite -nglt//=.  *)
+case: ifPn => [hlt0|].
+  rewrite leNgt mule_lt0.
+  rewrite /sumE !big_map !big_seq !negb_and negb_add.
+  rewrite lte_fin invr_lt0 (ltNge _ 0%R) fine_ge0//=; last first.
+    by rewrite sume_ge0// => t _; rewrite expeR_ge0.
+  have /maxe_lt/= h := hlt0.
+  rewrite sume_lt0/=; last 2 first.
+  - by move=> i iEs; rewrite nmule_rle0 ?expeR_ge0// h//.
+  - move: hlt0 => /maxe_lt.
+    have := hnoo; rewrite eq_sym -ltNye => /maxe_gt [i [iEs [_ igtNye] ] ].
+    move/(_ i iEs) => h1.
+    exists i. rewrite iEs mule_lt0 lt_eqF ?h1//= -leNgt expeR_ge0//.
+    rewrite gt_eqF// expeR_gt0//.
+    rewrite ltNye mule_neq_ninfty.
+    rewrite gt_eqF ?ltNyr//= /maxe_dev mule_neq_ninfty.
+    rewrite gt_eqF//= ltNye adde_Neq_ninfty.
+    - rewrite -big_seq hnoo -oppeey oppeK lt_eqF//=.
+      exact: (lt_trans (h1 _)).
+    - by rewrite -big_seq hpoo.
+    by rewrite oppeey gt_eqF.
+  rewrite lt_eqF/= ?gt_eqF//=.
+    rewrite lte_fin invr_gt0 fine_gt0// sume_gt0/=; last 2 first.
+    - by move=> i _; rewrite expeR_ge0.
+    - admit.
+    rewrite lte_sum_pinfty// => i iEs.
+    rewrite expeR_lty// lte_mul_pinfty// ?ltW//.
+    rewrite /maxe_dev lte_mul_pinfty//.
+    - rewrite -big_seq sube_ge0 ?maxe_ge'; first by exists i; rewrite iEs le_refl.
+    - by rewrite !fin_numE hnoo hpoo/= orbT.
+    - rewrite fin_numE adde_Neq_pinfty.
+      + admit.
+      + by rewrite -big_seq//.
+      rewrite -oppeey oppeK lt_eqF//=.
+      apply: (le_lt_trans (le_trans _ hge0) _) => //.
+      by rewrite maxe_ge'; exists i; rewrite iEs le_refl.
+    exact: ltry.
+  rewrite sume_lt0//=.
+    by move=> i iEs; rewrite nmule_rle0 ?expeR_ge0// h.
+  admit.
+rewrite -nglt//=.
 move/maxe_ge' => [x [xs [_ h]]] _.
 exists (index x Es). Search (_ = +oo).
 by rewrite nth_index// h /= index_mem xs.
