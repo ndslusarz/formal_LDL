@@ -401,6 +401,35 @@ case: ifPn => [hgt0|].
     rewrite /= sume_ge0//. move => t _. 
     by rewrite  expeR_ge0. 
  rewrite -nglt//=. 
+(* case: ifPn => [hlt0|]. *)
+(*   rewrite leNgt mule_lt0. *)
+(*   rewrite /sumE !big_map !big_seq !negb_and negb_add. *)
+(*   rewrite lte_fin invr_lt0 (ltNge _ 0%R) fine_ge0//=; last first. *)
+(*     by rewrite sume_ge0// => t _; rewrite expeR_ge0. *)
+(*   have /maxe_lt/= h := hlt0. *)
+(*   rewrite sume_lt0/=; last 2 first. *)
+(*   - by move=> i iEs; rewrite nmule_rle0 ?expeR_ge0// h//. *)
+(*   - admit. *)
+(*   rewrite lt_eqF/= ?gt_eqF//=. *)
+(*     rewrite lte_fin invr_gt0 fine_gt0// sume_gt0/=; last 2 first. *)
+(*     - by move=> i _; rewrite expeR_ge0. *)
+(*     - admit. *)
+(*     rewrite lte_sum_pinfty// => i iEs. *)
+(*     rewrite expeR_lty// lte_mul_pinfty// ?ltW//. *)
+(*     rewrite /maxe_dev lte_mul_pinfty//. *)
+(*     - rewrite -big_seq sube_ge0 ?maxe_ge'; first by exists i; rewrite iEs le_refl. *)
+(*     - by rewrite !fin_numE hnoo hpoo/= orbT. *)
+(*     - rewrite fin_numE adde_Neq_pinfty.  *)
+(*       + admit.  *)
+(*       + by rewrite -big_seq//. *)
+(*       rewrite -oppeey oppeK lt_eqF//=. *)
+(*       apply: (le_lt_trans (le_trans _ hge0) _) => //. *)
+(*       by rewrite maxe_ge'; exists i; rewrite iEs le_refl. *)
+(*     exact: ltry. *)
+(*   rewrite sume_lt0//=. *)
+(*     by move=> i iEs; rewrite nmule_rle0 ?expeR_ge0// h. *)
+(*   admit. *)
+(* rewrite -nglt//=.  *)
 move/maxe_ge' => [x [xs [_ h]]] _.
 exists (index x Es). Search (_ = +oo).
 by rewrite nth_index// h /= index_mem xs.
