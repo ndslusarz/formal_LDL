@@ -256,55 +256,6 @@ case: ifPn => [hgt0|].
 by rewrite lt_irreflexive.
 Qed.
 
-Lemma maxe_eq (I : eqType) (r : seq I) (P : pred I) (f : I -> \bar R) x :
-  (-oo != x)%E ->
-  (\big[maxe/-oo]_(i <- r | P i) f i = x)%E
-  -> exists i, i \in r /\ P i /\ (f i = x)%E.
-Proof.
-elim: r.
-  by rewrite big_nil => /[swap]<-; rewrite eq_refl.
-move=> a l IH xltpoo.
-rewrite big_cons.
-case: ifPn => Pa.
-  rewrite {1}/maxe. 
-  case: ifP => [h1 h2| h3].
-    exists a. rewrite mem_head Pa. 
-    split. done. split. done. (* h2.
-  move/(IH xltpoo) => [b[bl [Pb fb]]].
-  by exists b; rewrite in_cons bl orbT.
-move/(IH xltpoo) => [b[bl [Pb fb]]].
-by exists b; rewrite in_cons bl orbT. *)
-Admitted.
-
-Lemma maxe_ge (T : eqType) (s : seq T) (P : pred T) (f : T -> \bar R) (x : \bar R) :
-  (x <= \big[maxe/+oo]_(i <- s | P i) f i  <-> exists i, i \in s -> P i -> x <= f i)%E.
-Proof.
-elim: s.
-  rewrite big_nil; split; first rewrite leey. 
-Admitted.
-
-Lemma maxe_lt (T : eqType) (s : seq T) (P : pred T) (f : T -> \bar R) (x : \bar R) :
-  (\big[maxe/-oo]_(i <- s | P i) f i < x <-> forall i, i \in s -> P i -> f i < x)%E.
-Proof.
-Admitted.
-
-Lemma maxe_gt (I : eqType) (r : seq I) (P : pred I) (f : I -> \bar R) x :
-  (x < \big[maxe/-oo]_(i <- r | P i) f i)%E
-  <-> exists i, i \in r /\ P i /\ (x < f i)%E.
-Proof.
-Admitted.
-
-Lemma maxe_ge' (I : eqType) (r : seq I) (P : pred I) (f : I -> \bar R) x :
-  (x <= \big[maxe/-oo]_(i <- r | P i) f i)%E
-  <-> exists i, i \in r /\ P i /\ (x <= f i)%E.
-Proof.
-Admitted.
-
-
-Lemma maxe_eqyP (T : eqType) (s : seq T) (P : pred T) (f : T -> \bar R) :
-  (\big[maxe/-oo]_(i <- s | P i) f i = -oo <-> forall i, i \in s -> P i -> f i = -oo)%E.
-Admitted.
-
 Lemma stl_nary_inversion_orE1 (Es : seq (expr Bool_P) ) :
   is_stl true (nu.-[[ ldl_or Es ]]_stle) -> (exists i, is_stl true (nu.-[[ nth (ldl_bool _ false) Es i ]]_stle) && (i < size Es)%nat).
 Proof.
@@ -316,70 +267,49 @@ case: ifPn => [/eqP|hpoo].
   exists (index x Es). 
   by rewrite nth_index// xlt0 index_mem ltW.
 have := hnoo; rewrite eq_sym -ltNye => /maxe_gt [j [jEs [_ jgtNye] ] ].
-case: ifPn => [hlt0|]. 
-  (* apply: contraPP. *)
-  (* move/forallNP => h. *)
-  (* have {}h : forall i : nat, *)
-  (*     (i < size Es)%N -> *)
-  (*     (nu.-[[nth (ldl_bool pos false) Es i]]_stle < 0)%E. *)
-  (*   move=> i iEs. *)
-  (*   move: (h i) => /negP. *)
-  (*   by rewrite negb_and -ltNge iEs/= orbF. *)
-  (* apply/negP; rewrite -ltNge mule_lt0//. *)
-  (*   rewrite /sumE !big_map big_seq_cond sume_lt0; last first. *)
-  (*   - exists j. rewrite jEs/= !nmule_rlt0 ?expeR_gt0// /maxe_dev. admit. admit. *)
-  (*   - by move=> i /andP[iEs _]; rewrite !mule_le0_ge0// ?expeR_ge0// ltW//. *)
-  (*   rewrite ltNge lee_fin invr_ge0 fine_ge0//=; last first. *)
-  (*     by rewrite sume_ge0// => t _; rewrite expeR_ge0. *)
-  (*   rewrite lt_eqF//=; last first. *)
-  (*     have h1 := h (index j Es). *)
-  (*     rewrite nth_index// in h1. *)
-  (*     rewrite sume_lt0//. *)
-  (*     - by move=> i /andP [iEs _]; rewrite !mule_le0_ge0// ?expeR_ge0// ltW. *)
-  (*     - exists j. rewrite jEs/= !mule_lt0_gt0// expeR_gt0// /maxe_dev. *)
-  (*       rewrite ltNye mule_eq_ninfty !negb_or !negb_and -!leNgt. *)
-  (*       rewrite gt_eqF//= ?orbT ?ltNyr//. *)
-  (*       rewrite adde_eq_ninfty negb_or hnoo/=. *)
-  (*       rewrite -oppeey oppeK lt_eqF//=; last first. *)
-  (*       by apply: (lt_trans (h1 _)) => //; rewrite index_mem//. *)
-  (*       rewrite adde_Neq_pinfty ?hpoo//=; last first. *)
-  (*         rewrite -?oppeey ?oppeK lt_eqF//. *)
-  (*         by apply: (lt_trans (h1 _)) => //; rewrite index_mem//. *)
-  (*       by rewrite oppeey gt_eqF. *)
-  (*     rewrite ltNye mule_eq_ninfty !negb_or !negb_and -!leNgt !lee_fin !(ltW nu0)/=. *)
-  (*     rewrite mule_eq_ninfty !negb_or !negb_and -!leNgt. *)
-  (*     rewrite gt_eqF ?orbT ?ltNyr//=. *)
-  (*     rewrite adde_eq_ninfty !negb_or hnoo//= -oppeey oppeK. *)
-  (*     rewrite lt_eqF//=; last first. *)
-  (*       by apply: (lt_trans (h1 _)) => //; rewrite index_mem//. *)
-  (*     rewrite adde_Neq_pinfty// -?oppeey ?oppeK; last first. *)
-  (*       by rewrite lt_eqF//; apply: (lt_trans (h1 _)) => //; rewrite index_mem//. *)
-  (*     by rewrite hpoo//= oppeey gt_eqF ?orbT//=. *)
-  (*   rewrite andbT gt_eqF//. *)
-  (*   rewrite big_seq lte_fin invr_gt0 fine_gt0// sume_gt0//=. *)
-  (*   - rewrite big_seq lte_sum_pinfty// => i ?. *)
-  (*     rewrite expeR_lty// ltey mule_eq_pinfty// !negb_or !negb_and. *)
-  (*     rewrite -!leNgt !lee_fin (ltW nu0)/= andbT /maxe_dev. *)
-  (*     rewrite mule_eq_pinfty !negb_or !negb_and -!leNgt. *)
-  (*     rewrite (lt_eqF (ltry _)) orbT//= orbT//=. *)
-  (*     rewrite  -big_seq lee_fin invr_le0 fine_le0 ?orbT//=; last by rewrite ltW// hlt0. *)
-  (*     rewrite adde_Neq_ninfty ?hnoo ?hpoo//=; last first. *)
-  (*       rewrite oppeey gt_eqF//. *)
-  (*       admit. *)
-  (*     rewrite -oppeey oppeK lt_eqF ?orbT//. *)
-  (*     have h1 := h (index i Es). *)
-  (*     rewrite nth_index// in h1. *)
-  (*     by apply: (lt_trans (h1 _)) => //; rewrite index_mem. *)
-  (*   - by move=> i iEs; rewrite expeR_ge0. *)
-  (*   - exists j. rewrite jEs expeR_gt0// ltNye mule_eq_ninfty//=. *)
-  (*     rewrite !negb_or !negb_and -!leNgt !lee_fin (ltW nu0)//= /maxe_dev. *)
-  (*     rewrite mule_eq_ninfty//= !negb_or !negb_and -!leNgt. *)
-  (*     rewrite gt_eqF ?ltNyr//= !orbT//=. *)
-  (*     rewrite lee_fin invr_le0 fine_le0 ?(ltW hlt0)// orbT//=. *)
-  (*     rewrite adde_Neq_pinfty ?hpoo ?hnoo//=; first rewrite  ?oppeey ?gt_eqF//= orbT//. *)
-  (*     rewrite -oppeey oppeK. *)
-
-Admitted.
+case: ifPn => [hlt0 _|]. 
+  move: hlt0 => /maxe_gt [x [xEs [_ hxgt0] ] ].
+  by exists (index x Es); rewrite nth_index// ltW// index_mem.
+rewrite -leNgt => hle0.
+case: ifPn => [hlt0|].
+  have h1 (i : expr Bool_P) (iEs : i \in Es) : (maxe_dev (\big[maxe/-oo%E]_(i0 <- Es | i0 \in Es) nu.-[[i0]]_stle) (nu.-[[i]]_stle) != +oo)%E.
+    rewrite /maxe_dev mule_eq_pinfty !negb_or !negb_and -!leNgt.
+    rewrite lt_eqF ?ltry//=!orbT/=.
+    rewrite !lee_fin invr_le0 fine_le0 -big_seq ?hle0// orbT//=.
+    rewrite adde_eq_ninfty negb_or hnoo/= -oppeey oppeK.
+    rewrite lt_eqF//=.
+    by apply: lt_trans; first by move: hlt0 => /maxe_lt; apply.      
+  have h2 (i : expr Bool_P) (iEs : i \in Es) (gtNyi : (-oo < nu.-[[i]]_stle)%E) : (maxe_dev (\big[maxe/-oo%E]_(i0 <- Es | i0 \in Es) nu.-[[i0]]_stle) (nu.-[[i]]_stle) != -oo)%E.
+    rewrite /maxe_dev mule_eq_ninfty !negb_or !negb_and -!leNgt.
+    rewrite gt_eqF ?ltNyr//=!orbT/=.
+    rewrite !lee_fin invr_le0 fine_le0 -big_seq ?hle0// orbT//=.
+    rewrite adde_Neq_pinfty ?hnoo ?hpoo//= ?oppeey.
+    rewrite gt_eqF//=.
+    rewrite -oppeey oppeK lt_eqF//.
+    by apply: lt_trans; first by move: hlt0 => /maxe_lt; apply.
+  rewrite /sumE !big_map !big_seq.
+  rewrite leNgt nmule_rlt0.
+    rewrite lte_fin invr_gt0 fine_gt0// sume_gt0/=.
+    - rewrite lte_sum_pinfty// => i iEs.
+      rewrite expeR_lty//.
+      rewrite lteey mule_eq_pinfty !negb_or !negb_and !lte_fin nu0 -!leNgt (ltW nu0)//= andbT.
+      exact: h1.
+    - by move=> i iEs; rewrite expeR_ge0.
+    - exists j. rewrite jEs expeR_gt0// ltNye mule_eq_ninfty.
+      rewrite !lte_fin nu0/= !negb_or !negb_and -leNgt (ltW nu0)/= andbT.
+      exact: h2.
+    - rewrite sume_lt0//.
+        move=> i iEs; rewrite nmule_rle0 ?expeR_ge0//.
+        by move: hlt0 => /maxe_lt ->.
+      exists j; rewrite jEs ?nmule_rlt0 ?expeR_gt0//.
+        rewrite ltNye mule_eq_ninfty !lte_fin ltrNl ltrNr oppr0 nu0 !negb_or !negb_and -leNgt (ltW nu0) andbT/=.
+        exact: h1.
+      by move: hlt0 => /maxe_lt ->.
+rewrite -leNgt => hge0 _.
+move: hge0 => /maxe_ge' [i [iEs [_ hige0 ] ] ].
+exists (index i Es).
+by rewrite nth_index// hige0 index_mem.
+Qed.
 
 Lemma stl_nary_inversion_orE0 (Es : seq (expr Bool_P) ) :
     is_stl false (nu.-[[ ldl_or Es ]]_stle) -> (forall i, (i < size Es)%nat -> is_stl false (nu.-[[ nth (ldl_bool pos false) Es i ]]_stle)).
@@ -445,63 +375,3 @@ Qed.
 
 
 End stl_lemmas.
-
-(* Ale: disabled for now
-Section shadow_lifting_stl_and.
-Context {R : realType}.
-Variable nu : R.
-Variable M : nat.
-Hypothesis M0 : M != 0%N.
-(*add hypothesis nu>0 if needed*)
-
-(* The ones below do not type check yet, need to check if we can extend to ereal *)
-
-Definition min_dev {R : numDomainType} (x : \bar R) (xs : seq \bar R) : \bar R :=
-  (x - minE xs) * (fine (minE xs))^-1%:E.
-
-Definition min_devR {R : realType} (x : R) (xs : seq R) : R :=
-  (x - minR xs) * (minR xs)^-1.
-
-Local Open Scope ereal_scope.
-
-(*Natalia: will only consider >0 and <0 without edge cases, as to separate cases*)
-(* Definition stl_and (xs : seq \bar R) : \bar R :=
-  if minE xs == +oo then +oo
-  else if minE xs == -oo then -oo (*Check if needed*)
-  else if minE xs < 0 then
-    sumE (map (fun a => minE xs * expeR (min_dev a xs) * expeR (nu%:E * min_dev a xs)) xs) *
-    (fine (sumE (map (fun a => expeR (nu%:E * min_dev a xs)) xs)))^-1%:E
-  else if minE xs > 0 then
-    sumE (map (fun a => a * expeR (-nu%:E * min_dev a xs)) xs) *
-    (fine (sumE (map (fun a => expeR (nu%:E * min_dev a xs)) xs)))^-1%:E
-    else 0. *)
-
-(*to do: change map to big operator probably*)
-
-Local Close Scope ereal_scope.
-
-Definition stl_and_gt0 n (v : 'rV[R]_n)  :=
-  sumR (map (fun a => a * expR (-nu * min_devR a ( MatrixFormula.seq_of_rV v))) ( MatrixFormula.seq_of_rV v)) *
-  (sumR (map (fun a => expR (nu * min_devR a ( MatrixFormula.seq_of_rV v))) ( MatrixFormula.seq_of_rV v)))^-1.
-
-Definition stl_and_lt0 n (v : 'rV[R]_n) :=
-  sumR (map (fun a => a * expR (-nu * min_devR a ( MatrixFormula.seq_of_rV v))) ( MatrixFormula.seq_of_rV v)) *
-    (sumR (map (fun a => expR (nu * min_devR a ( MatrixFormula.seq_of_rV v))) ( MatrixFormula.seq_of_rV v)))^-1.
-
-
- Search (_ `^ _).
-Lemma shadowlifting_stl_and_gt0 (p : R) : p > 0 ->
-  forall i, ('d (@stl_and_gt0 M.+1) '/d i) (const_mx p) = (M%:R) ^ -1.
-Proof.
-move=> p0 i.
-rewrite /partial.
-(* have /cvg_lim : h^-1 * (stl_and_gt0 (const_mx p + h *: err_vec i) -
-                        stl_and_gt0 (n:=M.+1) (const_mx p))
-       @[h --> (0:R)^'] --> ((M%:R)^ -1):R. *)
-
-
-Admitted.
-
-
-End shadow_lifting_stl_and.
-*)

@@ -364,6 +364,143 @@ Proof. by case: x => //=x; rewrite !ltry. Qed.
 Lemma oppeey (x : \bar R) : ((- x == +oo) = (x == -oo))%E.
 Proof. by case: x. Qed.
 
+Lemma maxe_eq (I : eqType) (r : seq I) (P : pred I) (f : I -> \bar R) x :
+  (-oo != x)%E ->
+  (\big[maxe/-oo]_(i <- r | P i) f i = x)%E
+  -> exists i, i \in r /\ P i /\ (f i = x)%E.
+Proof.
+elim: r.
+  by rewrite big_nil => /[swap]<-; rewrite eq_refl.
+move=> a l IH xltpoo.
+rewrite big_cons.
+case: ifPn => Pa.
+  rewrite {1}/maxe.
+  case: ifPn => [h1 h2|_ fax]; last first.
+    by exists a; rewrite mem_head Pa fax.
+  move: (IH xltpoo h2) => [b[bl [Pb fb]]].
+  by exists b; rewrite in_cons bl orbT.
+move/(IH xltpoo) => [b[bl [Pb fb]]].
+by exists b; rewrite in_cons bl orbT.
+Qed.
+
+Lemma maxe_lt (T : eqType) (r : seq T) (P : pred T) (f : T -> \bar R) (x : \bar R) :
+  (-oo < x)%E ->
+  (\big[maxe/-oo]_(i <- r | P i) f i < x <-> forall i, i \in r -> P i -> f i < x)%E.
+Proof.
+move=> ltNyx.
+elim: r; first by rewrite big_nil; split.
+move=> a l IH.
+rewrite big_cons.
+case: ifPn => Pa; last first.
+  rewrite IH; split => h i.
+    rewrite in_cons => /orP[/eqP -> Pa'| il Pi].
+      by rewrite Pa' in Pa.
+    exact: h.
+  move=> il Pi.
+  apply: h => //.
+  by rewrite in_cons il orbT.
+rewrite {1}/maxe.
+case: ifPn=> [h1|].
+  split => h2.
+    move=> i; rewrite in_cons => /orP[/eqP-> _|il Pi].
+      exact: (lt_trans h1 h2).
+    exact: IH.1.
+  by apply: IH.2 => i il Pi; rewrite h2// in_cons il orbT.
+rewrite -leNgt=> h1; split => h2.
+  move=> i; rewrite in_cons => /orP[/eqP->_//|il Pi].
+  by rewrite IH.1// (le_lt_trans h1 h2).
+by rewrite h2// mem_head.
+Qed.
+
+Lemma maxe_leP (T : eqType) (s : seq T) (P : pred T) (f : T -> \bar R) (x : \bar R) :
+  (\big[maxe/-oo]_(i <- s | P i) f i <= x <-> forall i, i \in s -> P i -> f i <= x)%E.
+Proof.
+elim s=>[|a l IH].
+  by split; [move=> _ i; rewrite in_nil//|move=>h; rewrite big_nil leNye].
+split.
+- rewrite big_cons.
+  case: ifPn => [pa|npa]; last first.
+    move=> hlpoo i; rewrite inE => /orP[/eqP -> pa|il pi].
+      by rewrite pa in npa.
+    exact: IH.1 hlpoo i il pi.
+  rewrite {1}/maxe; case: ifPn.
+    move=>/[swap] le1 le2 i.
+    rewrite in_cons=> /orP[/eqP -> Pa |il Pi].
+      exact: (le_trans (ltW le2) le1).
+    exact: IH.1.
+  rewrite -leNgt=>/[swap] fax h2.
+  move=> i. rewrite in_cons => /orP[/eqP -> _//|il pi].
+  rewrite IH.1//.
+  exact: (le_trans h2 fax).
+- move=> filtx.
+  rewrite big_cons.
+  case: ifPn => [pa|npa]; last first.
+    by apply: IH.2 => i il pi; apply: filtx => //; rewrite inE il orbT.
+  rewrite {1}/maxe; case: ifPn => [_|].
+  by apply: IH.2=> i il pi; rewrite filtx// in_cons il orbT.
+rewrite -leNgt => ?.
+by rewrite filtx// mem_head.
+Qed.
+
+Lemma maxe_ge (I : eqType) (r : seq I) (P : pred I) (f : I -> \bar R) :
+  forall x, x \in r -> P x -> (f x <= \big[maxe/-oo]_(i <- r | P i) f i)%E.
+Proof.
+elim: r; first by move=> x; rewrite in_nil.
+move=> a l ih x.
+rewrite in_cons => /orP[/eqP -> pa| xl px].
+  rewrite big_cons pa {1}/maxe.
+  case: ifPn => // h.
+  exact: ltW.
+rewrite big_cons.
+case: ifPn => pa.
+  rewrite {1}/maxe.
+  case: ifPn => // [h|].
+    rewrite ih//.
+  rewrite -leNgt => h.
+  apply: (le_trans _ h).
+  rewrite ih//.
+exact: ih.
+Qed.
+
+Lemma maxe_gt (I : eqType) (r : seq I) (P : pred I) (f : I -> \bar R) x :
+  (x < \big[maxe/-oo]_(i <- r | P i) f i)%E
+  <-> exists i, i \in r /\ P i /\ (x < f i)%E.
+Proof.
+elim: r.
+  rewrite big_nil; split; first by rewrite ltNge leNye.
+  by move=> [i[]]; rewrite in_nil.
+move=> a l IH; rewrite big_cons; case: ifPn => Pa; last first.
+  split.
+    by move/IH => [i[il[Pi fi]]]; exists i; rewrite in_cons il Pi fi orbT.
+  move=> [i[]]; rewrite in_cons => /orP[/eqP->[Pa']|il[Pi fi]]; first by rewrite Pa' in Pa.
+  by rewrite IH; exists i; rewrite il Pi fi.
+rewrite {1}/maxe.
+case: ifPn => [h|].
+  split; first by move/IH => [i [il [Pi xfi] ] ]; exists i; rewrite in_cons il orbT Pi xfi.
+  move=>[i[]]; rewrite in_cons => /orP[/eqP->[_ xfa]//|il [Pi fi]].
+    exact: (lt_trans xfa h).
+  by rewrite IH; exists i.
+rewrite -leNgt => h.
+split.
+  by move=> xfa; exists a; rewrite mem_head Pa xfa.
+move=> [i[]]; rewrite in_cons => /orP[/eqP->[_ //]|il [Pi fi]].
+apply: (lt_le_trans fi).
+apply: (le_trans _ h).
+exact: maxe_ge.
+Qed.
+
+
+Lemma maxe_ge' (I : eqType) (r : seq I) (P : pred I) (f : I -> \bar R) x :
+  (x <= \big[maxe/-oo]_(i <- r | P i) f i)%E
+  <-> exists i, i \in r /\ P i /\ (x <= f i)%E.
+Proof.
+Admitted.
+
+
+Lemma maxe_eqyP (T : eqType) (s : seq T) (P : pred T) (f : T -> \bar R) :
+  (\big[maxe/-oo]_(i <- s | P i) f i = -oo <-> forall i, i \in s -> P i -> f i = -oo)%E.
+Admitted.
+
 End stl_helpers.
 
 Section partial.
