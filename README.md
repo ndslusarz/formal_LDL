@@ -1,13 +1,6 @@
 # LDL_coq
 
-Repo for formalisation attempt of LDL in Coq. 
-
-Parts of formalisation left, sorted by DL:
-- STL
-  + shadow lifting (split into two parts - lt0, gt0)
-  + paper sketch of proof for the half missing from STL paper
-
-
+Repo for formalisation of LDL in Coq. 
 ## Setup instructions
 
 Create an opam switch with the Coq repository:
