@@ -256,21 +256,6 @@ case: ifPn => [hgt0|].
 by rewrite lt_irreflexive.
 Qed.
 
-Lemma leye_eq' :
-  forall (x : \bar R), (x <= -oo)%E = (x == -oo%E).
-Proof.
-Admitted.
-
-Lemma maxe_eq_inf (I : eqType) (r : seq I) (P : pred I) (f : I -> \bar R) :
-  (\big[maxe/-oo]_(i <- r | P i) f i = +oo)%E
-  -> exists i, i \in r /\ P i /\ (f i = +oo)%E.
-Admitted.
-
-Lemma maxe_eq_inf' (I : eqType) (r : seq I) (P : pred I) (f : I -> \bar R) :
-  (\big[maxe/-oo]_(i <- r | P i) f i = -oo)%E
-  -> forall i, i \in r /\ P i /\ (f i = -oo)%E.
-Admitted.
-
 Lemma maxe_eq (I : eqType) (r : seq I) (P : pred I) (f : I -> \bar R) x :
   (-oo != x)%E ->
   (\big[maxe/-oo]_(i <- r | P i) f i = x)%E
@@ -301,7 +286,6 @@ Admitted.
 Lemma maxe_lt (T : eqType) (s : seq T) (P : pred T) (f : T -> \bar R) (x : \bar R) :
   (\big[maxe/-oo]_(i <- s | P i) f i < x <-> forall i, i \in s -> P i -> f i < x)%E.
 Proof.
-
 Admitted.
 
 Lemma maxe_gt (I : eqType) (r : seq I) (P : pred I) (f : I -> \bar R) x :
@@ -316,22 +300,6 @@ Lemma maxe_ge' (I : eqType) (r : seq I) (P : pred I) (f : I -> \bar R) x :
 Proof.
 Admitted.
 
-Lemma maxe_neq_infty (T : eqType) (s : seq T) (P : pred T) (f : T -> \bar R) (x : \bar R) :
-  (\big[maxe/-oo]_(i <- s | P i) f i != +oo <-> forall i, i \in s -> P i -> f i != +oo)%E.
-Admitted.
-
-Lemma maxe_neq_infty' (T : eqType) (s : seq T) (P : pred T) (f : T -> \bar R) (x : \bar R) :
-  (\big[maxe/-oo]_(i <- s | P i) f i != -oo <-> forall i, i \in s -> P i -> f i != -oo)%E.
-Admitted.
-
-
-Lemma nglt (x y : \bar R) :
-(x <= y)%E = ~~ (y < x)%E.
-Proof.
-Admitted.
-
-Lemma mule_neq_ninfty (x y : \bar R) : (x * y != -oo)%E = ((x != -oo)%E && (y != -oo)%E).
-Admitted.
 
 Lemma maxe_eqyP (T : eqType) (s : seq T) (P : pred T) (f : T -> \bar R) :
   (\big[maxe/-oo]_(i <- s | P i) f i = -oo <-> forall i, i \in s -> P i -> f i = -oo)%E.
@@ -340,183 +308,82 @@ Admitted.
 Lemma stl_nary_inversion_orE1 (Es : seq (expr Bool_P) ) :
   is_stl true (nu.-[[ ldl_or Es ]]_stle) -> (exists i, is_stl true (nu.-[[ nth (ldl_bool _ false) Es i ]]_stle) && (i < size Es)%nat).
 Proof.
-
 rewrite/is_stl/= !big_map.
-have h0 : (-oo != +oo)%E by [].
-case: ifPn => [/eqP|hnoo].
-  rewrite big_seq_cond. move => _.
-  rewrite leye_eq' //=.
+case: ifPn => [_|hnoo]; first by rewrite leNgt ltNyr.
 case: ifPn => [/eqP|hpoo].
-rewrite big_seq_cond. 
-  move/maxe_eq_inf => [x [xEs [_ xlt0]]].
+  have h : -oo%E != +oo%E by [].
+  move/maxe_eq; move/(_ (h R)) => [x [xEs [_ xlt0]]] _.
   exists (index x Es). 
-  by rewrite nth_index//  xlt0 H/= index_mem. 
-case: ifPn => [|]. 
-  rewrite maxe_gt => [ [x [xs [_ h]]] _].
-  exists (index x Es).
-  by rewrite nth_index// ltW// ?h/= index_mem. 
-(*   About ltW. *)
-rewrite -leNgt => hge0.
-(* case: ifPn => [hgt0|]. *)
-(*   apply: contraPP. *)
-(*   move/forallNP => h. *)
-(*   have {}h : forall i : nat, *)
-(*       (i < size Es)%N -> *)
-(*       (nu.-[[nth (ldl_bool pos false) Es i]]_stle < 0)%E. *)
-(*     move=> i iEs. *)
-(*     move: (h i) => /negP. *)
-(*     by rewrite negb_and leNgt iEs/= orbF Bool.negb_involutive.  *)
-(*   apply/negP; rewrite leNgt Bool.negb_involutive//. (* mule_ge0//. *) *)
-(*     rewrite /sumE !big_map big_seq_cond.  *)
-(*     rewrite mule_lt0/=. *)
-(*     rewrite neq_lt. *)
-(*     rewrite sume_lt0/=; last 2 first. *)
-(*       move => i. rewrite andbT. move => iEs. *)
-(*       have hilt0 : (nu.-[[i]]_stle < 0)%E. *)
-(*         apply: (le_lt_trans _ hgt0). *)
-(*         apply/maxe_ge'. *)
-(*         by exists i; rewrite iEs le_refl. *)
-(*       rewrite ltW// mule_lt0. *)
-(*       rewrite expeR_eq0. rewrite mule_neq_ninfty. *)
-(*       rewrite /maxe_dev mule_neq_ninfty. *)
-(*       rewrite adde_Neq_ninfty ?hnoo ?hpoo//. *)
-(*       rewrite lt_eqF//=. *)
-(*       rewrite -oppeey oppeK lt_eqF/=; last exact: (lt_trans hilt0). *)
-(*       by rewrite hilt0/= -leNgt expeR_ge0. *)
-(*       rewrite hpoo//. *)
-(*       rewrite oppeey. *)
-(*       move/maxe_neq_infty : hpoo . *)
-(*       admit. (*new lemma I think*) *)
-(*       admit. *)
-(*       rewrite invr_neq0; last first. About fine_lt. *)
-(*       rewrite gt_eqF// fine_gt0// sume_gt0/=. *)
-(*       rewrite lte_sum_pinfty//. *)
-(*       move => i _. rewrite expeR_lty//. *)
-(*       rewrite lte_mul_pinfty//.  *)
-(*         admit. (*use nu0*) *)
-(*         rewrite /maxe_dev lte_mul_pinfty//. *)
-(*           (*any way to separate the constant inside the maxe? *)
-(*           probably need to backtrack somwehre... or create a bunch of new lemmas*) *)
-(*           admit. *)
-(*           rewrite fin_numE. (*bigmaxe_fin_num*) *)
-(*           admit. *)
-(*           admit. *)
-(*         move => i _. by rewrite expeR_ge0. *)
-(*         (* have: maxe_lt. *) *)
-(*         admit. *)
-(*     rewrite /= -leNgt lee_fin invr_ge0 fine_ge0//. *)
-(*     rewrite /= sume_ge0//. move => t _.  *)
-(*     by rewrite  expeR_ge0.  *)
-(*  rewrite -nglt//=.  *)
-case: ifPn => [hlt0|].
-  rewrite leNgt mule_lt0.
-  rewrite /sumE !big_map !big_seq !negb_and negb_add.
-  rewrite lte_fin invr_lt0 (ltNge _ 0%R) fine_ge0//=; last first.
-    by rewrite sume_ge0// => t _; rewrite expeR_ge0.
-  have /maxe_lt/= h := hlt0.
-  have := hnoo; rewrite eq_sym -ltNye => /maxe_gt [i [iEs [_ igtNye] ] ].
-  rewrite sume_lt0/=; last 2 first.
-  - by move=> j jEs; rewrite nmule_rle0 ?expeR_ge0// h//.
-  - move: hlt0 => /maxe_lt.
-    move/(_ i iEs) => h1.
-    exists i. rewrite iEs mule_lt0 lt_eqF ?h1//= -leNgt expeR_ge0//.
-    rewrite gt_eqF// expeR_gt0//.
-    rewrite ltNye mule_neq_ninfty.
-    rewrite gt_eqF ?ltNyr//= /maxe_dev mule_neq_ninfty.
-    rewrite gt_eqF//= ltNye adde_Neq_ninfty.
-    - rewrite -big_seq hnoo -oppeey oppeK lt_eqF//=.
-      exact: (lt_trans (h1 _)).
-    - by rewrite -big_seq hpoo.
-    by rewrite oppeey gt_eqF.
-  rewrite lt_eqF/= ?gt_eqF//=.
-    rewrite lte_fin invr_gt0 fine_gt0// sume_gt0/=; last 2 first.
-    - by move=> j _; rewrite expeR_ge0.
-    - move: hlt0 => /maxe_lt.
-      move/(_ i iEs) => h1.
-      exists i. rewrite iEs expeR_gt0//.
-      rewrite ltNye mule_neq_ninfty.
-      rewrite gt_eqF ?ltNyr//= /maxe_dev mule_neq_ninfty.
-      rewrite gt_eqF//= ltNye adde_Neq_ninfty.
-      - rewrite -big_seq hnoo -oppeey oppeK lt_eqF//=.
-        exact: (lt_trans (h1 _)).
-      - by rewrite -big_seq hpoo.
-      by rewrite oppeey gt_eqF.
-    rewrite lte_sum_pinfty// => j jEs.
-    rewrite expeR_lty// lte_mul_pinfty// ?ltW//.
-    rewrite /maxe_dev lte_mul_pinfty//.
-    - rewrite -big_seq sube_ge0 ?maxe_ge'; first by exists j; rewrite jEs le_refl.
-    - by rewrite !fin_numE hnoo hpoo/= orbT.
-    - rewrite fin_numE -big_seq adde_Neq_pinfty//.
-      + rewrite adde_Neq_ninfty// ?hpoo ?hnoo//.
-        admit. admit.
-      rewrite -oppeey oppeK lt_eqF//=.
-      apply: (le_lt_trans (le_trans _ hge0) _) => //.
-      by rewrite maxe_ge'; exists j; rewrite jEs le_refl.
-    exact: ltry.
-  rewrite sume_lt0//=.
-    by move=> j jEs; rewrite nmule_rle0 ?expeR_ge0// h.
-  admit.
-rewrite -nglt//=.
-move/maxe_ge' => [x [xs [_ h]]] _.
-exists (index x Es). Search (_ = +oo).
-by rewrite nth_index// h /= index_mem xs.
+  by rewrite nth_index// xlt0 index_mem ltW.
+have := hnoo; rewrite eq_sym -ltNye => /maxe_gt [j [jEs [_ jgtNye] ] ].
+case: ifPn => [hlt0|]. 
+  apply: contraPP.
+  move/forallNP => h.
+  have {}h : forall i : nat,
+      (i < size Es)%N ->
+      (nu.-[[nth (ldl_bool pos false) Es i]]_stle < 0)%E.
+    move=> i iEs.
+    move: (h i) => /negP.
+    by rewrite negb_and -ltNge iEs/= orbF.
+  apply/negP; rewrite -ltNge mule_lt0//.
+    rewrite /sumE !big_map big_seq_cond sume_lt0; last first.
+    - exists j. rewrite jEs/= !nmule_rlt0 ?expeR_gt0// /maxe_dev. admit. admit.
+    - by move=> i /andP[iEs _]; rewrite !mule_le0_ge0// ?expeR_ge0// ltW//.
+    rewrite ltNge lee_fin invr_ge0 fine_ge0//=; last first.
+      by rewrite sume_ge0// => t _; rewrite expeR_ge0.
+    rewrite lt_eqF//=; last first.
+      have h1 := h (index j Es).
+      rewrite nth_index// in h1.
+      rewrite sume_lt0//.
+      - by move=> i /andP [iEs _]; rewrite !mule_le0_ge0// ?expeR_ge0// ltW.
+      - exists j. rewrite jEs/= !mule_lt0_gt0// expeR_gt0// /maxe_dev.
+        rewrite ltNye mule_eq_ninfty !negb_or !negb_and -!leNgt.
+        rewrite gt_eqF//= ?orbT ?ltNyr//.
+        rewrite adde_eq_ninfty negb_or hnoo/=.
+        rewrite -oppeey oppeK lt_eqF//=; last first.
+        by apply: (lt_trans (h1 _)) => //; rewrite index_mem//.
+        rewrite adde_Neq_pinfty ?hpoo//=; last first.
+          rewrite -?oppeey ?oppeK lt_eqF//.
+          by apply: (lt_trans (h1 _)) => //; rewrite index_mem//.
+        by rewrite oppeey gt_eqF.
+      rewrite ltNye mule_eq_ninfty !negb_or !negb_and -!leNgt !lee_fin !(ltW nu0)/=.
+      rewrite mule_eq_ninfty !negb_or !negb_and -!leNgt.
+      rewrite gt_eqF ?orbT ?ltNyr//=.
+      rewrite adde_eq_ninfty !negb_or hnoo//= -oppeey oppeK.
+      rewrite lt_eqF//=; last first.
+        by apply: (lt_trans (h1 _)) => //; rewrite index_mem//.
+      rewrite adde_Neq_pinfty// -?oppeey ?oppeK; last first.
+        by rewrite lt_eqF//; apply: (lt_trans (h1 _)) => //; rewrite index_mem//.
+      by rewrite hpoo//= oppeey gt_eqF ?orbT//=.
+    rewrite andbT gt_eqF//.
+    rewrite big_seq lte_fin invr_gt0 fine_gt0// sume_gt0//=.
+    - rewrite big_seq lte_sum_pinfty// => i ?.
+      rewrite expeR_lty// ltey mule_eq_pinfty// !negb_or !negb_and.
+      rewrite -!leNgt !lee_fin (ltW nu0)/= andbT /maxe_dev.
+      rewrite mule_eq_pinfty !negb_or !negb_and -!leNgt.
+      rewrite (lt_eqF (ltry _)) orbT//= orbT//=.
+      rewrite  -big_seq lee_fin invr_le0 fine_le0 ?orbT//=; last by rewrite ltW// hlt0.
+      rewrite adde_Neq_ninfty ?hnoo ?hpoo//=; last first.
+        rewrite oppeey gt_eqF//.
+        admit.
+      rewrite -oppeey oppeK lt_eqF ?orbT//.
+      have h1 := h (index i Es).
+      rewrite nth_index// in h1.
+      by apply: (lt_trans (h1 _)) => //; rewrite index_mem.
+    - by move=> i iEs; rewrite expeR_ge0.
+    - exists j. rewrite jEs expeR_gt0// ltNye mule_eq_ninfty//=.
+      rewrite !negb_or !negb_and -!leNgt !lee_fin (ltW nu0)//= /maxe_dev.
+      rewrite mule_eq_ninfty//= !negb_or !negb_and -!leNgt.
+      rewrite gt_eqF ?ltNyr//= !orbT//=.
+      rewrite lee_fin invr_le0 fine_le0 ?(ltW hlt0)// orbT//=.
+      rewrite adde_Neq_pinfty ?hpoo ?hnoo//=; first rewrite  ?oppeey ?gt_eqF//= orbT//.
+      rewrite -oppeey oppeK.
+
 Admitted.
 
 Lemma stl_nary_inversion_orE0 (Es : seq (expr Bool_P) ) :
     is_stl false (nu.-[[ ldl_or Es ]]_stle) -> (forall i, (i < size Es)%nat -> is_stl false (nu.-[[ nth (ldl_bool pos false) Es i ]]_stle)).
 Proof.
-rewrite/is_stl/= big_map.
-
-case: ifPn.
-  move => /eqP h _ i i0/=.
-  apply: (@le_lt_trans _ _ (\big[maxe/-oo%E]_(j <- Es) nu.-[[j]]_stle)).
-  
-  (* simple needs lemma max = -oo -> all elemtns -oo*)
-  admit.
-  rewrite h//.
-case: ifPn.
-  move => h1 h2.  admit. (*contra, +oo <0*)
-  case: ifPn.
-  rewrite maxe_gt => [ [x [xs [_ h]]] hmaxinf].
-    move => hmaxninf'.
-    rewrite/sumE !big_map.
-    rewrite mule_lt0//.
-    rewrite /= {1}lt_eqF//=.
-      rewrite {1}gt_eqF//=.
-        admit. 
-          rewrite lte_fin invr_gt0 fine_gt0//. 
-          rewrite sume_gt0.
-            rewrite andTb.
-            admit.
-            move => i _. by rewrite expeR_ge0.
-            exists x. rewrite xs//=. split.
-              done. split. done. rewrite expeR_gt0//.
-            admit. rewrite sume_lt0. done.
-              move => i _. 
-              admit.
-        exists x. rewrite xs; split => //; split => //.
-          rewrite mule_lt0_gt0//; last first.
-          rewrite expeR_gt0// ltNye !mule_eq_ninfty/= !negb_or !negb_and !negb_or !negb_and.
-          rewrite -!leNgt !lee_fin/= (ltW nu0)/= !andbT !orbT/=.
-          rewrite invr_ge0 fine_ge0. rewrite !orbT/=. 
-          rewrite adde_Neq_ninfty. rewrite hmaxninf'.
-          move: hmaxninf'. move/maxe_neq_infty' => h1. 
-          (* rewrite h1. *)
-          admit. (*easy, use hilt0*)
-          rewrite hmaxinf//.
-          admit.
-          admit.
-          rewrite mule_lt0.
-          admit. 
-  rewrite -nglt. move => h1 h2 h3.
-  case: ifPn.
-     move => h4.
-      rewrite /sumE !big_map.
-    move => hlt0 i i0.
-    move: h4. rewrite maxe_lt. 
-      admit.
-    rewrite -leNgt//=.
-    rewrite lte_fin; lra.  
 Admitted.
 
 Lemma stl_soundness (e : expr Bool_P) b :
