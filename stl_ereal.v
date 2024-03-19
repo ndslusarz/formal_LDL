@@ -441,10 +441,12 @@ Proof.
 rewrite/is_stl/= foldrE big_map.
 
 case: ifPn.
-  move => h _ i i0.
-  rewrite /=. 
+  move => /eqP h _ i i0/=.
+  apply: (@le_lt_trans _ _ (\big[maxe/-oo%E]_(j <- Es) nu.-[[j]]_stle)).
+  
   (* simple needs lemma max = -oo -> all elemtns -oo*)
   admit.
+  rewrite h//.
 case: ifPn.
   move => h1 h2.  admit. (*contra, +oo <0*)
   case: ifPn.
