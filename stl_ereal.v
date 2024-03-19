@@ -414,10 +414,10 @@ case: ifPn => [hlt0|].
   rewrite lte_fin invr_lt0 (ltNge _ 0%R) fine_ge0//=; last first.
     by rewrite sume_ge0// => t _; rewrite expeR_ge0.
   have /maxe_lt/= h := hlt0.
+  have := hnoo; rewrite eq_sym -ltNye => /maxe_gt [i [iEs [_ igtNye] ] ].
   rewrite sume_lt0/=; last 2 first.
-  - by move=> i iEs; rewrite nmule_rle0 ?expeR_ge0// h//.
+  - by move=> j jEs; rewrite nmule_rle0 ?expeR_ge0// h//.
   - move: hlt0 => /maxe_lt.
-    have := hnoo; rewrite eq_sym -ltNye => /maxe_gt [i [iEs [_ igtNye] ] ].
     move/(_ i iEs) => h1.
     exists i. rewrite iEs mule_lt0 lt_eqF ?h1//= -leNgt expeR_ge0//.
     rewrite gt_eqF// expeR_gt0//.
@@ -430,12 +430,21 @@ case: ifPn => [hlt0|].
     by rewrite oppeey gt_eqF.
   rewrite lt_eqF/= ?gt_eqF//=.
     rewrite lte_fin invr_gt0 fine_gt0// sume_gt0/=; last 2 first.
-    - by move=> i _; rewrite expeR_ge0.
-    - admit.
-    rewrite lte_sum_pinfty// => i iEs.
+    - by move=> j _; rewrite expeR_ge0.
+    - move: hlt0 => /maxe_lt.
+      move/(_ i iEs) => h1.
+      exists i. rewrite iEs expeR_gt0//.
+      rewrite ltNye mule_neq_ninfty.
+      rewrite gt_eqF ?ltNyr//= /maxe_dev mule_neq_ninfty.
+      rewrite gt_eqF//= ltNye adde_Neq_ninfty.
+      - rewrite -big_seq hnoo -oppeey oppeK lt_eqF//=.
+        exact: (lt_trans (h1 _)).
+      - by rewrite -big_seq hpoo.
+      by rewrite oppeey gt_eqF.
+    rewrite lte_sum_pinfty// => j jEs.
     rewrite expeR_lty// lte_mul_pinfty// ?ltW//.
     rewrite /maxe_dev lte_mul_pinfty//.
-    - rewrite -big_seq sube_ge0 ?maxe_ge'; first by exists i; rewrite iEs le_refl.
+    - rewrite -big_seq sube_ge0 ?maxe_ge'; first by exists j; rewrite jEs le_refl.
     - by rewrite !fin_numE hnoo hpoo/= orbT.
     - rewrite fin_numE adde_Neq_pinfty.
       + admit.
