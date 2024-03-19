@@ -446,15 +446,15 @@ case: ifPn => [hlt0|].
     rewrite /maxe_dev lte_mul_pinfty//.
     - rewrite -big_seq sube_ge0 ?maxe_ge'; first by exists j; rewrite jEs le_refl.
     - by rewrite !fin_numE hnoo hpoo/= orbT.
-    - rewrite fin_numE adde_Neq_pinfty.
-      + admit.
-      + by rewrite -big_seq//.
+    - rewrite fin_numE -big_seq adde_Neq_pinfty//.
+      + rewrite adde_Neq_ninfty// ?hpoo ?hnoo//.
+        admit. admit.
       rewrite -oppeey oppeK lt_eqF//=.
       apply: (le_lt_trans (le_trans _ hge0) _) => //.
-      by rewrite maxe_ge'; exists i; rewrite iEs le_refl.
+      by rewrite maxe_ge'; exists j; rewrite jEs le_refl.
     exact: ltry.
   rewrite sume_lt0//=.
-    by move=> i iEs; rewrite nmule_rle0 ?expeR_ge0// h.
+    by move=> j jEs; rewrite nmule_rle0 ?expeR_ge0// h.
   admit.
 rewrite -nglt//=.
 move/maxe_ge' => [x [xs [_ h]]] _.
