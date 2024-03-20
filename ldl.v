@@ -11,9 +11,34 @@ Require Import mathcomp_extra analysis_extra.
 (**md**************************************************************************)
 (* # Logics                                                                   *)
 (*                                                                            *)
+(* This file provides a formalization of the LDL language. The inductive type *)
+(* `expr` defines the language itself, which is intrisically typed on the     *)
+(* types defined by `ldl_type`. Boolean formulas take an argument of type     *)
+(* `polarity`: `neg` allows negation in the expression, while `pos` disallows *)
+(* it.                                                                        *)
+(*                                                                            *)
 (* ## Definitions                                                             *)
-(* - product_dl_mul                                                           *)
-(* - shadow_lifting f with f : rV[R]_n.+1 -> R                                *)
+(* - `type_translation`: the real-valued translation of ldl_type into the     *)
+(*   corresponding type of the interpretation; maps `Bool_T` to $\mathbb R$   *)
+(* - `ereal_type_translation`: same as before, but maps `Bool_T` to $\bar{\mathbb R}}$ *)
+(* - `bool_type_translation`: type translation for the boolean interpretation; *)
+(*   maps `Bool_T` to `bool`                                                  *)
+(* - `bool_translation`: maps an LDL-formula to a Boolean formula, with the   *)
+(*   obvious interpretation                                                   *)
+(* - `translation`: maps an LDL-formula to its fuzzy interpretation;    *)
+(*   takes as additional argument a parameter of type `DL` to specify the     *)
+(*   logic, among `Lukasiewicz`, `Yager`, `Godel`, and `product`              *)
+(* - `dl2_translation`: maps an LDL-formula to its interpretation in DL2,     *)
+(*   mapping true to $0$ and false to $-1$                                    *)
+(* - `dl2_ereal_translation`: maps an LDL-formula to its interpretation in    *)
+(*   DL2 on extended reals, mapping true to $0$ and false to $-\infty$        *)
+(* - `stl_translation`: maps an LDL-formula to its interpretation in STL,     *)
+(*   mapping true to $1$ and false to $-1$                                    *)
+(* - `stl_ereal_translation`: maps an LDL-formula to its interpretation in    *)
+(*   STL on extended reals, mapping true to $\infty$ and false to $-\infty$   *)
+(*                                                                            *)
+(* ## Mathematical definitions:                                               *)
+(* `shadow_lifting f` with `f : rV[R]_n.+1 -> R`                              *)
 (*   $\forall p, p > 0 \to \forall i, \frac{d\,f}{d\,x_i} [p; \cdots; p] > 0$ *)
 (*                                                                            *)
 (******************************************************************************)
@@ -91,10 +116,6 @@ Notation "a `- b"  := (ldl_lookup (ldl_app ldl_sub [tuple a b]) 0) (at level 45)
 Notation "a `* b"  := (ldl_lookup (ldl_app ldl_mul [tuple a b]) 0) (at level 40).
 Notation "`- a"    := (ldl_lookup (ldl_app ldl_opp [tuple a]) 0) (at level 45).
 
-Let ldl_norm_infty n := ldl_fun (fun (t : (n.+1).-tuple R) => [tuple \big[maxr/[tnth t 0] ]_(i <- t) i ])%R.
-Notation "`|| t ||" := (ldl_lookup (ldl_norm_infty t) 0).
-Notation "t `! n" := (ldl_lookup _ t n) (at level 55).
-
 Local Open Scope ldl_scope.
 
 Notation "a `<= b" := (ldl_cmp _ cmp_le a b) (at level 70).
@@ -104,21 +125,16 @@ Notation "a `< b"  := (a `<= b /\ a `!= b) (at level 70).
 Notation "a `>= b" := (b `<= a) (at level 70).
 Notation "a `> b"  := (b `< a) (at level 70).
 
-Lemma expr_ind' (Real : realType) :
+Lemma expr_ind' (R : realType) :
   forall P : forall s : ldl_type, expr s -> Prop,
-    (forall s : Real, P Real_T (ldl_real s)) ->
+    (forall s : R, P Real_T (ldl_real s)) ->
     (forall (b : bool) p, P (Bool_T p) (ldl_bool p b)) ->
     (forall n (o : 'I_n), P (Index_T n) (ldl_idx o)) ->
-    (forall n (t : n.-tuple Real), P (Vector_T n) (ldl_vec t)) ->
+    (forall n (t : n.-tuple R), P (Vector_T n) (ldl_vec t)) ->
     (forall b (l : seq (expr (Bool_T b))), List.Forall (fun x => P (Bool_T b) x) l -> P (Bool_T b) (ldl_and l)) ->
     (forall b (l : seq (expr (Bool_T b))), List.Forall (fun x => P (Bool_T b) x) l -> P (Bool_T b) (ldl_or l)) ->
     (forall e : expr Bool_N, P Bool_N e -> P Bool_N (`~ e)) ->
-    (* (forall e : expr Real_T, *)
-    (*  P Real_T e -> forall e0 : expr Real_T, P Real_T e0 -> P Real_T (e `+ e0)) -> *)
-    (* (forall e : expr Real_T, *)
-    (*  P Real_T e -> forall e0 : expr Real_T, P Real_T e0 -> P Real_T (e `* e0)) -> *)
-    (* (forall e : expr Real_T, P Real_T e -> P Real_T (`- e)) -> *)
-    (forall (n m : nat) (t : n.-tuple Real -> m.-tuple Real), P (Fun_T n m) (ldl_fun t)) ->
+    (forall (n m : nat) (t : n.-tuple R -> m.-tuple R), P (Fun_T n m) (ldl_fun t)) ->
     (forall (n m : nat) (e : expr (Fun_T n m)),
      P (Fun_T n m) e ->
      forall e0 : expr (Vector_T n), P (Vector_T n) e0 -> P (Vector_T m) (ldl_app e e0)) ->
@@ -165,33 +181,33 @@ Local Close Scope ldl_scope.
 Inductive DL := Lukasiewicz | Yager | Godel | product.
 
 Section type_translation.
-Context {Real : realType}.
+Context {R : realType}.
 
 Definition type_translation (t : ldl_type) : Type:=
   match t with
-  | Bool_T x => Real
-  | Real_T => Real
-  | Vector_T n => n.-tuple Real
+  | Bool_T x => R
+  | Real_T => R
+  | Vector_T n => n.-tuple R
   | Index_T n => 'I_n
-  | Fun_T n m => n.-tuple Real -> m.-tuple Real
+  | Fun_T n m => n.-tuple R -> m.-tuple R
 end.
 
 Definition bool_type_translation (t : ldl_type) : Type:=
   match t with
   | Bool_T x => bool
-  | Real_T => Real
-  | Vector_T n => n.-tuple Real
+  | Real_T => R
+  | Vector_T n => n.-tuple R
   | Index_T n => 'I_n
-  | Fun_T n m => n.-tuple Real -> m.-tuple Real
+  | Fun_T n m => n.-tuple R -> m.-tuple R
   end.
 
 Definition ereal_type_translation (t : ldl_type) : Type :=
   match t with
-  | Bool_T x => \bar Real
-  | Real_T => Real
-  | Vector_T n => n.-tuple Real
+  | Bool_T x => \bar R
+  | Real_T => R
+  | Vector_T n => n.-tuple R
   | Index_T n => 'I_n
-  | Fun_T n m => n.-tuple Real -> m.-tuple Real
+  | Fun_T n m => n.-tuple R -> m.-tuple R
 end.
 
 End type_translation.
@@ -199,9 +215,9 @@ End type_translation.
 Section bool_translation.
 Local Open Scope ring_scope.
 Local Open Scope ldl_scope.
-Context {Real : realType}.
+Context {R : realType}.
 
-Fixpoint bool_translation {t} (e : @expr Real t) : bool_type_translation t :=
+Fixpoint bool_translation {t} (e : @expr R t) : bool_type_translation t :=
   match e in expr t return bool_type_translation t with
   | ldl_bool b x => x
   | ldl_real r => r%R
@@ -212,9 +228,9 @@ Fixpoint bool_translation {t} (e : @expr Real t) : bool_type_translation t :=
   | ldl_or b Es => \big[orb/false]_(i <- map bool_translation Es) i
   | `~ E1 => ~~ << E1 >>
 
-  (*comparisons*)
   | E1 `== E2 => << E1 >> == << E2 >>
   | E1 `<= E2 => << E1 >> <= << E2 >>
+
   | ldl_fun n m f => f
   | ldl_app n m f v => << f >> << v >>
   | ldl_lookup n v i => tnth << v >> << i >>
@@ -266,7 +282,7 @@ Qed.
 
 End product_dl_mul.
 
-Section goedel_translation.
+Section fuzzy_translation.
 Local Open Scope ring_scope.
 Local Open Scope ldl_scope.
 Context {R : realType}.
@@ -297,7 +313,6 @@ Fixpoint translation {t} (e : @expr R t) {struct e} : type_translation t :=
 
     | `~ E1 => 1 - {[ E1 ]}
 
-    (*comparisons*)
     | E1 `== E2 => if {[ E1 ]} == -{[ E2 ]} then ({[ E1 ]} == {[ E2 ]})%:R else maxr (1 - `|({[ E1 ]} - {[ E2 ]}) / ({[ E1 ]} + {[ E2 ]})|) 0
     | E1 `<= E2 => if {[ E1 ]} == -{[ E2 ]} then ({[ E1 ]} <= {[ E2 ]})%R%:R else maxr (1 - maxr (({[ E1 ]} - {[ E2 ]}) / `|{[ E1 ]} + {[ E2 ]}|) 0) 0
 
@@ -307,7 +322,7 @@ Fixpoint translation {t} (e : @expr R t) {struct e} : type_translation t :=
     end
 where "{[ e ]}" := (translation e).
 
-End goedel_translation.
+End fuzzy_translation.
 
 Section dl2_ereal_translation.
 Local Open Scope ereal_scope.
@@ -326,7 +341,6 @@ Fixpoint dl2_ereal_translation {t} (e : @expr R t) {struct e} : ereal_type_trans
   | ldl_or _ Es => ((- 1) ^+ (size Es).+1)%:E * prodE (map dl2_ereal_translation Es)
   | `~ E1 => +oo (* default value, all lemmas are for negation-free formulas *)
 
-  (*comparisons*)
   | E1 `== E2 => (- `| {[ E1 ]} - {[ E2 ]}|)%:E
   | E1 `<= E2 => (- maxr ({[ E1 ]} - {[ E2 ]}) 0)%:E
 
@@ -356,7 +370,6 @@ Fixpoint dl2_translation {t} (e : @expr R t) {struct e} : type_translation t :=
   | ldl_or _ s => (- 1) ^+ (size s).+1 * prodR (map dl2_translation s)
   | `~ E1 => 0 (* default value, all lemmas are for negation-free formulas *)
 
-  (*comparisons*)
   | E1 `== E2 => (- `| {[ E1 ]} - {[ E2 ]}|)
   | E1 `<= E2 => (- maxr ({[ E1 ]} - {[ E2 ]}) 0)
 
@@ -504,7 +517,6 @@ Fixpoint stl_translation {t} (e : expr t) : type_translation t :=
       stl_or a_max a0 A
   | `~ E1 => - {[ E1 ]}
 
-  (*comparisons*)
   | E1 `== E2 => - `| {[ E1 ]} - {[ E2 ]}|
   | E1 `<= E2 => {[ E2 ]} - {[ E1 ]}
 
