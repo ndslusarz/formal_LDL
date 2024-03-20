@@ -66,7 +66,6 @@ Require Import mathcomp_extra analysis_extra ldl.
 (* - product_orA == associativity of disjunction                              *)
 (* - product_andA == associativity of conjunction                             *)
 (*                                                                            *)
-(*                                                                            *)
 (* ## Shadow-lifting                                                          *)
 (* - product_and v == $\product_{i < n} v_i$                                  *)
 (* - shadowlifting_product_andE == shadow-lifting for product                 *)
@@ -159,11 +158,6 @@ dependent induction e using expr_ind'.
       by apply: (andP (H _ _ _ _ _)).2 => //; rewrite -In_in.
   + rewrite /product_dl_prod big_map product_dl_mul_seq_01=> //i il0.
     by apply: H => //; rewrite -In_in.
-(*- move/List.Forall_forall in H.
-  have [il0|il0] := ltP i (size l0).
-    rewrite (H (nth (Bool c false) l0 i))//.
-    by apply/In_in; rewrite mem_nth.
-  by rewrite nth_default//= lexx ler01.*)
 - move: IHe => /(_ e erefl JMeq_refl).
   case dl => //=; set a := [[e]]_ _; lra.
 - case: c => /=; case: ifP => ?.
@@ -173,73 +167,69 @@ dependent induction e using expr_ind'.
   - by rewrite le_maxr lexx orbT/= le_maxl ler01 gerBl// normr_ge0 andTb.
 Qed.
 
-Lemma nary_inversion_andE1 (Es : seq (expr (Bool_N)) ) :
-  [[ ldl_and Es ]]_ l = 1 -> (forall i, (i < size Es)%N -> [[ nth (ldl_bool _ false) Es i ]]_ l = 1).
+Lemma nary_inversion_andE1 (s : seq (expr (Bool_N))) :
+  [[ ldl_and s ]]_ l = 1 ->
+    forall i, (i < size s)%N -> [[ nth (ldl_bool _ false) s i ]]_ l = 1.
 Proof.
-have H := translate_Bool_T_01 l. move: H.
-case: l => /=; move => H.
+have := translate_Bool_T_01 l.
+case: l => /= H.
 - move/eqP. rewrite maxr01 /sumR eq_sym -subr_eq subrr eq_sym subr_eq0.
   move/eqP; rewrite big_map psumr_eqsize.
   + move => h i iEs.
-    move: h => /(_ (nth (ldl_bool _ false) Es i)).
+    move: h => /(_ (nth (ldl_bool _ false) s i)).
     apply.
     apply/(nthP (ldl_bool _ false)).
     by exists i.
   + move => i //=.
-    move: (H i); set a := [[i]]_ _; lra.
+    by move: (H i); set a := [[i]]_ _; lra.
 - move/eqP.
   rewrite maxr01 eq_sym addrC -subr_eq subrr eq_sym oppr_eq0 powR_eq0 invr_eq0 => /andP [+ _].
   + rewrite /sumR big_map psumr_eq0.
     move => /allP h i iEs.
     apply/eqP.
-    move: h => /(_ (nth (ldl_bool _ false) Es i)).
+    move: h => /(_ (nth (ldl_bool _ false) s i)).
     rewrite implyTb powR_eq0 subr_eq0 eq_sym (gt_eqF (lt_le_trans _ p1))// ?andbT.
     apply.
-    apply/(nthP (ldl_bool _ false)).
-    by exists i.
-  + move => i //=.
-    move: (H i). rewrite le_pow_01.
-    * lra.
-    * move: (H i); set a := [[i]]_ _; lra.
+    by apply/(nthP (ldl_bool _ false)); exists i.
+  + by move=> ? //= _; exact: powR_ge0.
 - move/eqP.
-  rewrite /minR big_map=>/bigmin_eqP/= => h i iEs.
+  rewrite /minR big_map => /bigmin_eqP/= h i iEs.
   apply/eqP.
   rewrite eq_sym eq_le.
-  rewrite ((andP (H _)).2) h//.
+  rewrite ((andP (H _)).2) h //.
   exact: mem_nth.
 - move/eqP. rewrite /prodR big_map.
-  move => h i iEs.
-  apply (@prod1_01 _ (map (@translation R product p (Bool_T _)) Es)) => // [e||].
+  move => h i si.
+  apply (@prod1_01 _ (map (@translation R product p (Bool_T _)) s)) => // [e||].
   - by move=> /mapP[x _ ->].
   - by apply/eqP; rewrite big_map.
   - by apply/mapP; eexists; last reflexivity; exact: mem_nth.
 Qed.
 
-Lemma nary_inversion_andE0 (Es : seq (expr (Bool_N)) ) :
-  l <> Lukasiewicz -> l <> Yager ->
-    [[ ldl_and Es ]]_ l = 0 -> (exists (i : nat), ([[ nth (ldl_bool _ false) Es i ]]_ l == 0) && (i < size Es)%nat).
+Lemma nary_inversion_andE0 (s : seq (expr (Bool_N))) :
+  l <> Lukasiewicz -> l <> Yager -> [[ ldl_and s ]]_ l = 0 ->
+   exists2 i, ([[ nth (ldl_bool _ false) s i ]]_ l == 0) & (i < size s)%N.
 Proof.
 have H := translate_Bool_T_01. move: H.
 have p0 := lt_le_trans ltr01 p1.
 case: l => //=; move => H.
 - move => l1 l2; move/eqP.
   rewrite /minR big_map.
-  elim: Es.
+  elim: s.
   + by rewrite big_nil oner_eq0.
   + move=> a l0 IH.
     rewrite big_cons {1}/minr.
-    case: ifPn => _; first by exists 0%nat; rewrite ltn0Sn andbT.
-    move/IH => [i i0].
-    by exists i.+1.
+    case: ifPn => [_ ?|_]; first by exists 0%N => //; rewrite ltn0Sn andbT.
+    by move/IH => [i i0]; exists i.+1.
 - move=> l1 l2 /eqP.
   rewrite /prodR big_map prodf_seq_eq0 => /hasP[e eEs/= /eqP e0].
   move/(nthP (ldl_bool _ false)) : eEs => [i iEs ie].
-  by exists i; rewrite ie e0 eqxx.
+  by exists i => //; rewrite ie e0 eqxx.
 Qed.
 
-Lemma nary_inversion_orE1 (Es : seq (expr (Bool_N)) ) :
-  l <> Lukasiewicz -> l <> Yager ->
-    [[ ldl_or Es ]]_ l = 1 -> (exists i, ([[ nth (ldl_bool _ false) Es i ]]_ l == 1) && (i < size Es)%nat).
+Lemma nary_inversion_orE1 (Es : seq (expr (Bool_N))) :
+  l <> Lukasiewicz -> l <> Yager -> [[ ldl_or Es ]]_ l = 1 ->
+    exists2 i, ([[ nth (ldl_bool _ false) Es i ]]_ l == 1) & (i < size Es)%N.
 Proof.
 have H := translate_Bool_T_01 l. move: H.
 have p0 := lt_le_trans ltr01 p1.
@@ -250,7 +240,7 @@ case: l => //=; move => H.
   + by rewrite big_nil eq_sym oner_eq0.
   + move=> a l0 IH.
     rewrite -big_seq big_cons {1}/maxr.
-    case: ifPn => [_|_ a1]; last by exists 0%nat; rewrite a1 ltn0Sn.
+    case: ifPn => [_|_ a1]; last by exists 0%N => //; rewrite a1 ltn0Sn.
     rewrite big_seq; move/IH => [i i1].
     by exists i.+1.
 - move => l1 l2 /eqP.
@@ -262,12 +252,13 @@ case: l => //=; move => H.
     move/product_dl_mul_inv => [|||/eqP].
     * exact: H.
     * by apply: product_dl_mul_seq_01.
-    * by exists 0%nat; rewrite a0 eq_refl ltn0Sn.
+    * by exists 0%N => //; rewrite a0 eqxx.
     * by rewrite big_seq; move/IH => [x ?]; exists x.+1.
 Qed.
 
-Lemma nary_inversion_orE0 (Es : seq (expr (Bool_N)) ) :
-    [[ ldl_or Es ]]_ l  = 0 -> (forall i, (i < size Es)%nat -> [[ nth (ldl_bool _ false) Es i ]]_ l = 0).
+Lemma nary_inversion_orE0 (Es : seq (expr (Bool_N))) :
+  [[ ldl_or Es ]]_ l = 0 ->
+    forall i, (i < size Es)%N -> [[ nth (ldl_bool _ false) Es i ]]_ l = 0.
 Proof.
 have H := translate_Bool_T_01 l. move: H.
 have p0 := lt_le_trans ltr01 p1.
@@ -331,7 +322,7 @@ dependent induction e using expr_ind' => ll ly.
     by apply: H  => //; rewrite ?h// -In_in mem_nth.
   + move/nary_inversion_andE0.
     rewrite /= big_map big_all.
-    elim=>// i /andP[/eqP i0 isize].
+    elim=>// i /eqP i0 isize.
     apply/allPn; exists (nth (ldl_bool _ false) l0 i); first by rewrite mem_nth.
     apply/negPf; apply: H => //.
     by rewrite -In_in mem_nth.
@@ -340,7 +331,7 @@ dependent induction e using expr_ind' => ll ly.
   move: b => [].
   + move/nary_inversion_orE1.
     rewrite /= big_map big_has.
-    elim=>// i /andP[/eqP i0 isize].
+    elim=>// i /eqP i0 isize.
     apply/hasP; exists (nth (ldl_bool _ false) l0 i); first by rewrite mem_nth.
     apply: H => //.
     by rewrite -In_in mem_nth.
@@ -359,8 +350,8 @@ dependent induction e using expr_ind' => ll ly.
     rewrite /maxr.
     have ? : 0 < `|t1 + t2| by rewrite normr_gt0 addr_eq0.
     have ? : 0 < `|t1 + t2|^-1 by rewrite invr_gt0.
-    case: b; repeat case: ifPn; try lra; rewrite -?leNgt.
-    * rewrite pmulr_llt0; lra.
+    case: b; repeat case: ifPn; [lra|lra| | |lra| |lra|]; rewrite -?leNgt.
+    * by rewrite pmulr_llt0; lra.
     * rewrite pmulr_lge0// subr_ge0 => t120 _ ?.
       have : (t1 - t2) / `|t1 + t2| = 0 by lra.
       nra.
@@ -374,16 +365,16 @@ dependent induction e using expr_ind' => ll ly.
       rewrite lter_normr => ? ?.
       have : (t1 - t2) / `|t1 + t2| = 1 by lra.
       move/divr1_eq => /eqP.
-      rewrite eq_sym eqr_norml; lra.
+      by rewrite eq_sym eqr_norml; lra.
   + case: ifP => [/eqP ->|e12eq].
-    have [] := eqVneq (-t2) t2 => /=; case: b; lra.
+    have [] := eqVneq (- t2) t2 => /=; case: b; lra.
     rewrite /maxr.
-    case: b; case: ifPn; try lra; rewrite -?leNgt.
+    case: b; case: ifPn; first by lra; rewrite -?leNgt.
     * move=> _ H.
-      have : `|(t1 - t2) / (t1 + t2)|%R == 0.
+      have : `|(t1 - t2) / (t1 + t2)| == 0.
         clear -H.
         simpl in *.
-        by lra.
+        lra.
       simpl in *.
       rewrite normr_eq0 mulf_eq0 invr_eq0.
       clear -H e12eq.
@@ -407,6 +398,55 @@ Qed.
 
 End translation_lemmas.
 
+Definition product_and {R : fieldType} {n} (u : 'rV[R]_n) : R :=
+  \prod_(i < n) u ``_ i.
+
+Section shadow_lifting_product_and.
+Context {R : realType}.
+Local Open Scope ring_scope.
+Local Open Scope classical_set_scope.
+Variable M : nat.
+Hypothesis M0 : M != 0%N.
+
+Lemma shadowlifting_product_andE p : p > 0 ->
+  forall i, ('d (@product_and R M.+1) '/d i) (const_mx p) = p ^+ M.
+Proof.
+move=> p0 i.
+rewrite /partial.
+have /cvg_lim : h^-1 * (product_and (const_mx p + h *: err_vec i) -
+                        @product_and _ M.+1 (const_mx p))
+       @[h --> (0:R)^'] --> p ^+ M.
+  rewrite /product_and.
+  have H (h : R) : h != 0 ->
+      \prod_(x < M.+1) (const_mx p + h *: err_vec i) 0 x -
+      \prod_(x < M.+1) const_mx (m:=M.+1) p 0 x = h * p ^+ M.
+    move=> h0; rewrite [X in X - _](bigD1 i)//= !mxE eqxx mulr1.
+    rewrite (eq_bigr (fun=> p)); last first.
+      by move=> j ji; rewrite !mxE eq_sym (negbTE ji) mulr0 addr0.
+    rewrite [X in _ - X](eq_bigr (fun=> p)); last by move=> *; rewrite mxE.
+    rewrite [X in _ - X](bigD1 i)//= -mulrBl addrAC subrr add0r; congr (h * _).
+    transitivity (\prod_(i0 in @predC1 [the eqType of 'I_M.+1] i) p).
+      by apply: eq_bigl => j; rewrite inE.
+    rewrite prodr_const; congr (_ ^+ _).
+    by rewrite cardC1 card_ord.
+  have : h^-1 * (h * p ^+ M) @[h --> (0:R)^'] --> p ^+ M.
+    have : {near (0:R)^', (fun=> p ^+ M) =1 (fun h => h^-1 * (h * p ^+ M))}.
+      near=> h; rewrite mulrA mulVf ?mul1r//.
+      by near: h; exact: nbhs_dnbhs_neq.
+    by move/near_eq_cvg/cvg_trans; apply; exact: cvg_cst.
+  apply: cvg_trans; apply: near_eq_cvg; near=> k.
+  have <-// := H k.
+    congr (_ * (_ - _)).
+    apply: eq_bigr => /= j _.
+    by rewrite !mxE.
+  by near: k; exact: nbhs_dnbhs_neq.
+by apply; exact: Rhausdorff.
+Unshelve. all: by end_near. Qed.
+
+Corollary shadow_lifting_product_and : shadow_lifting (@product_and R M.+1).
+Proof. by move=> p p0 i; rewrite shadowlifting_product_andE// exprn_gt0. Qed.
+
+End shadow_lifting_product_and.
 
 Section Lukasiewicz_lemmas.
 Local Open Scope ldl_scope.
@@ -594,7 +634,7 @@ have powRle1 : forall x, 0 <= x -> x `^ p^-1 <= 1 -> x <= 1.
 have powRgt1 : forall x, 0 <= x -> 1 < x `^ p^-1 -> 1 < x.
   move=> x x0; rewrite {1}powRpinv.
   move/(@gt0_ltr_powR _ p p0).
-  by rewrite -!powRrM !mulVf// powR1 powRr1//; apply; rewrite inE/= in_itv/= ?ler01 ?powR_ge0.
+  by rewrite -!powRrM !mulVf// powR1 powRr1// !nnegrE; apply => //; exact: powR_ge0.
 have se_ge0 r := @addr_ge0 R _ _ (@powR_ge0 _ _ r) (@powR_ge0 _ _ r).
 rewrite {2}/maxr=> ht3 ht2 ht1.
 case: ifPn; rewrite addr0 subr_lt0.
@@ -750,7 +790,7 @@ set t1 := _ e1.
   set t2 := _ e2.
   set t3 := _ e3.
 move => h1 h2 h3 p0.
-rewrite /minr. 
+rewrite /minr.
 by repeat case: ifPn => //; lra.
 Qed.
 
@@ -810,56 +850,3 @@ lra.
 Qed.
 
 End product_lemmas.
-
-Section shadow_lifting_product_and.
-Context {R : realType}.
-Local Open Scope ring_scope.
-Local Open Scope classical_set_scope.
-Variable M : nat.
-Hypothesis M0 : M != 0%N.
-
-Definition product_and {R : fieldType} {n} (u : 'rV[R]_n) : R :=
-  \prod_(i < n) u ``_ i.
-
-Lemma shadowlifting_product_andE p : p > 0 ->
-  forall i, ('d (@product_and R M.+1) '/d i) (const_mx p) = p ^+ M.
-Proof.
-move=> p0 i.
-rewrite /partial.
-have /cvg_lim : h^-1 * (product_and (const_mx p + h *: err_vec i) -
-                        @product_and _ M.+1 (const_mx p))
-       @[h --> (0:R)^'] --> p ^+ M.
-  rewrite /product_and.
-  have H : forall h : R, h != 0 ->
-      \prod_(x < M.+1) (const_mx p + h *: err_vec i) 0 x -
-      \prod_(x < M.+1) const_mx (m:=M.+1) p 0 x = h * p ^+ M.
-    move=> h h0; rewrite [X in X - _](bigD1 i)//= !mxE eqxx mulr1.
-    rewrite (eq_bigr (fun=> p)); last first.
-      by move=> j ji; rewrite !mxE eq_sym (negbTE ji) mulr0 addr0.
-    rewrite [X in _ - X](eq_bigr (fun=> p)); last by move=> *; rewrite mxE.
-    rewrite [X in _ - X](bigD1 i)//= -mulrBl addrAC subrr add0r; congr (h * _).
-    transitivity (\prod_(i0 in @predC1 [the eqType of 'I_M.+1] i) p).
-      by apply: eq_bigl => j; rewrite inE.
-    rewrite prodr_const; congr (_ ^+ _).
-    by rewrite cardC1 card_ord.
-  have : h^-1 * (h * p ^+ M) @[h --> (0:R)^'] --> p ^+ M.
-    have : {near (0:R)^', (fun=> p ^+ M) =1 (fun h => h^-1 * (h * p ^+ M))}.
-      near=> h; rewrite mulrA mulVf ?mul1r//.
-      by near: h; exact: nbhs_dnbhs_neq.
-    by move/near_eq_cvg/cvg_trans; apply; exact: cvg_cst.
-  apply: cvg_trans; apply: near_eq_cvg; near=> k.
-  have <-// := H k.
-    congr (_ * (_ - _)).
-    apply: eq_bigr => /= j _.
-    by rewrite !mxE.
-  by near: k; exact: nbhs_dnbhs_neq.
-by apply; exact: Rhausdorff.
-Unshelve. all: by end_near. Qed.
-
-Corollary shadow_lifting_product_and :
-  shadow_lifting (@product_and R M.+1).
-Proof.
-by move=> p p0 i; rewrite shadowlifting_product_andE// exprn_gt0.
-Qed.
-
-End shadow_lifting_product_and.

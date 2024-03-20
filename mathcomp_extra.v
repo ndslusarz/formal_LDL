@@ -132,10 +132,10 @@ elim: r.
   split.
   + have : (\sum_(i <- s) F i <= (size s)%:R)%R.
       by apply: sum_01 => i _.
-    rewrite /= le_eqVlt big_cons => /orP[/eqP h|h].
+    rewrite /= le_eqVlt big_cons => /predU1P[h|h].
       rewrite -natr1 addrC h.
       move/addrI => h' i.
-      rewrite in_cons => /orP[/eqP ->|ils]; first by rewrite h'.
+      rewrite in_cons => /predU1P[->|ils]; first by rewrite h'.
       exact: IH.1.
     have: F a + \sum_(j <- s) F j < (size (a :: s))%:R.
       rewrite /= -nat1r.
@@ -170,7 +170,7 @@ elim.
     rewrite IH; last first.
       by move=> e0 e0s; apply: h; rewrite in_cons e0s orbT.
     move=> h' e0.
-    rewrite in_cons => /orP [/eqP -> //|].
+    rewrite in_cons => /predU1P[-> //|].
     apply: h'.
   + move=> es1.
     apply /eqP.
@@ -208,7 +208,7 @@ elim.
   split.
   + move/andP => [/eqP a0].
     rewrite -big_seq h1 => h3 e.
-      by rewrite in_cons => /orP[/eqP->//|el0]; exact: h3.
+      by rewrite in_cons => /predU1P[->//|el0]; exact: h3.
     by apply: h2; rewrite in_cons e orbT.
   + move=> h3.
     apply/andP; split.
@@ -270,8 +270,9 @@ Section big_order_maxmin.
 Local Open Scope order_scope.
 Context {d} {R : orderType d}.
 
+(* TODO: rename *)
 Lemma big_min_helper (T : eqType) (f : T -> R) a l :
-  \big[Order.min/f a]_(j <- (a :: l)) f j =
+  \big[Order.min/f a]_(j <- a :: l) f j =
     \big[Order.min/f a]_(j <- l) f j.
 Proof.
 elim: l; first by rewrite big_cons big_nil minxx.
@@ -287,25 +288,25 @@ by move=> a1 l ih; rewrite !big_cons minCA ih minCA.
 Qed.
 
 Lemma big_min_cons (T : eqType) (f : T -> R) (a : T) l :
-  forall i, i \in (a :: l) ->
-        \big[Order.min/f i]_(j <- (a :: l)) f j =
-          \big[Order.min/f a]_(j <- l) f j.
+  forall i, i \in a :: l ->
+  \big[Order.min/f i]_(j <- a :: l) f j =
+  \big[Order.min/f a]_(j <- l) f j.
 Proof.
 elim: l.
   by move=> i; rewrite mem_seq1 => /eqP ->; rewrite big_cons !big_nil minxx.
 move=> a0 l ih i.
 have h a' : Order.min (f a') (\big[Order.min/f a']_(j <- l) f j) =
-            \big[Order.min/f a']_(j <- (a'::l)) f j by rewrite big_cons.
+            \big[Order.min/f a']_(j <- a' :: l) f j by rewrite big_cons.
 have h' : Order.min (f a) (\big[Order.min/f i]_(j <- l) f j) =
-          \big[Order.min/f i]_(j <- (a::l)) f j by rewrite big_cons.
-rewrite in_cons => /orP[/eqP ->|]; first by rewrite big_min_helper.
-rewrite in_cons => /orP[/eqP ->|il]; first by rewrite !big_cons h big_min_helper big_min_helper2.
+          \big[Order.min/f i]_(j <- a :: l) f j by rewrite big_cons.
+rewrite in_cons => /predU1P[->|]; first by rewrite big_min_helper.
+rewrite in_cons => /predU1P[->|il]; first by rewrite !big_cons h big_min_helper big_min_helper2.
 by rewrite !big_cons minCA h' ih// in_cons il orbT.
 Qed.
 
 Lemma big_max_helper (T : eqType) (f : T -> R) a l :
-  \big[Order.max/f a]_(j <- (a :: l)) f j =
-    \big[Order.max/f a]_(j <- l) f j.
+  \big[Order.max/f a]_(j <- a :: l) f j =
+  \big[Order.max/f a]_(j <- l) f j.
 Proof.
 elim: l; first by rewrite big_cons big_nil maxxx.
 by move=> a0 l; rewrite !big_cons => IH; rewrite maxCA IH.
@@ -320,9 +321,9 @@ by move=> a1 l ih; rewrite !big_cons maxCA ih maxCA.
 Qed.
 
 Lemma big_max_cons (T : eqType) (f : T -> R) (a : T) l :
-  forall i, i \in (a :: l) ->
-        \big[Order.max/f i]_(j <- (a :: l)) f j =
-          \big[Order.max/f a]_(j <- l) f j.
+  forall i, i \in a :: l ->
+  \big[Order.max/f i]_(j <- a :: l) f j =
+  \big[Order.max/f a]_(j <- l) f j.
 Proof.
 elim: l.
   by move=> i; rewrite mem_seq1 => /eqP ->; rewrite big_cons !big_nil maxxx.
@@ -331,20 +332,20 @@ have h a' : Order.max (f a') (\big[Order.max/f a']_(j <- l) f j) =
             \big[Order.max/f a']_(j <- a' :: l) f j by rewrite big_cons.
 have h' : Order.max (f a) (\big[Order.max/f i]_(j <- l) f j) =
           (\big[Order.max/f i]_(j <- a :: l) f j) by rewrite big_cons.
-rewrite in_cons => /orP[/eqP ->|]; first by rewrite big_max_helper.
-rewrite in_cons => /orP[/eqP ->|il]; first by rewrite !big_cons h big_max_helper big_max_helper2.
+rewrite in_cons => /predU1P[->|]; first by rewrite big_max_helper.
+rewrite in_cons => /predU1P[->|il]; first by rewrite !big_cons h big_max_helper big_max_helper2.
 by rewrite !big_cons maxCA h' ih// in_cons il orbT.
 Qed.
 
 (* TODO: rename, this is not on minr anymore but Order.min *)
 Lemma minrgex [I : eqType] x (f : I -> R) a l:
-  x <= \big[Order.min/f a]_(j <- l) f j -> forall i, i \in (a :: l) -> x <= f i.
+  x <= \big[Order.min/f a]_(j <- l) f j -> forall i, i \in a :: l -> x <= f i.
 Proof.
 elim: l; first by rewrite big_nil => xfa i; rewrite mem_seq1 => /eqP ->.
 move=> a' l IH h i.
 rewrite !in_cons => h'.
 have {h'} : i \in [:: a', a & l] by rewrite !in_cons orbCA.
-rewrite in_cons => /orP[/eqP ->|].
+rewrite in_cons => /predU1P[->|].
   move: h. rewrite big_cons.
   rewrite /Order.min; case: ifPn => //.
   rewrite -leNgt => h1 h2.
@@ -355,73 +356,70 @@ exact: (le_trans h2 (ltW h1)).
 Qed.
 
 Lemma minrltx [I : eqType] x (f : I -> R) a l:
-  \big[Order.min/f a]_(j <- l) f j < x -> exists i, i \in (a :: l) /\ f i < x.
+  \big[Order.min/f a]_(j <- l) f j < x -> exists2 i, i \in a :: l & f i < x.
 Proof.
-elim: l; first by rewrite big_nil => fax; exists a; rewrite mem_seq1 eqxx fax.
+elim: l; first by rewrite big_nil => fax; exists a; rewrite ?mem_head.
 move=> a' l IH.
 rewrite big_cons {1}/Order.min.
-case: ifPn => [_ fax|_]; first by exists a'; rewrite !in_cons eqxx/= orbT fax.
-move/IH => [i[ial filex]].
-exists i.
-by rewrite !in_cons orbCA -in_cons ial orbT filex.
+case: ifPn => [_ fax|_]; first by exists a' => //; rewrite ?inE ?eqxx ?orbT.
+move/IH => [i ial ?].
+by exists i => //; rewrite inE in ial; rewrite !inE orbCA ial orbT.
 Qed.
 
 Lemma maxrltx [I : eqType] x (f : I -> R) a l:
-  \big[Order.max/f a]_(j <- l) f j < x -> forall i, i \in (a :: l) -> f i < x.
+  \big[Order.max/f a]_(j <- l) f j < x -> forall i, i \in a :: l -> f i < x.
 Proof.
 elim: l; first by rewrite big_nil => fax i; rewrite mem_seq1 => /eqP ->.
 move=> a' l IH.
 rewrite big_cons {1}/Order.max.
 case: ifPn => [fa'lt maxltx i|].
-  rewrite in_cons => /orP[/eqP ->|]; first by apply IH => //; rewrite mem_head.
-  rewrite in_cons => /orP[/eqP ->|il]; first exact: (lt_trans fa'lt maxltx).
+  rewrite in_cons => /predU1P[->|]; first by apply IH => //; rewrite mem_head.
+  rewrite in_cons => /predU1P[->|il]; first exact: (lt_trans fa'lt maxltx).
   by apply: IH => //; rewrite in_cons il orbT.
 rewrite -leNgt => fmaxltfa' fa'ltx i.
-rewrite in_cons => /orP[/eqP ->|].
+rewrite in_cons => /predU1P[->|].
   by apply: IH; rewrite ?mem_head// (le_lt_trans fmaxltfa' fa'ltx).
-rewrite in_cons => /orP[/eqP ->//|il].
+rewrite in_cons => /predU1P[->//|il].
 by rewrite IH// ?(le_lt_trans fmaxltfa' fa'ltx)// in_cons il orbT.
 Qed.
 
 Lemma maxrlex [I : eqType] x (f : I -> R) a l:
-  \big[Order.max/f a]_(j <- l) f j <= x -> forall i, i \in (a :: l) -> f i <= x.
+  \big[Order.max/f a]_(j <- l) f j <= x -> forall i, i \in a :: l -> f i <= x.
 Proof.
 elim: l; first by rewrite big_nil => fax i; rewrite mem_seq1 => /eqP ->.
 move=> a' l IH.
 rewrite big_cons {1}/Order.max.
 case: ifPn => [fa'lt maxltx i|].
-  rewrite in_cons => /orP[/eqP ->|]; first by apply IH => //; rewrite mem_head.
-  rewrite in_cons => /orP[/eqP ->|il]; first exact: (ltW (lt_le_trans fa'lt maxltx)).
+  rewrite in_cons => /predU1P[->|]; first by apply IH => //; rewrite mem_head.
+  rewrite in_cons => /predU1P[->|il]; first exact: (ltW (lt_le_trans fa'lt maxltx)).
   by apply: IH => //; rewrite in_cons il orbT.
 rewrite -leNgt => fmaxltfa' fa'ltx i.
-rewrite in_cons => /orP[/eqP ->|].
+rewrite in_cons => /predU1P[->|].
   by apply: IH; rewrite ?mem_head// (le_trans fmaxltfa' fa'ltx).
-rewrite in_cons => /orP[/eqP ->//|il].
+rewrite in_cons => /predU1P[->//|il].
 by rewrite IH// ?(le_trans fmaxltfa' fa'ltx)// in_cons il orbT.
 Qed.
 
 Lemma maxrgtx [I : eqType] x (f : I -> R) a l:
-  x < \big[Order.max/f a]_(j <- l) f j -> exists i, i \in (a :: l) /\ x < f i.
+  x < \big[Order.max/f a]_(j <- l) f j -> exists2 i, i \in a :: l & x < f i.
 Proof.
-elim: l; first by rewrite big_nil => fax; exists a; rewrite mem_seq1 eqxx fax.
+elim: l; first by rewrite big_nil => fax; exists a => //; rewrite mem_head.
 move=> a' l IH.
 rewrite big_cons {1}/Order.max.
-case: ifPn => [_|_ fax]; last by exists a'; rewrite !in_cons eqxx/= orbT fax.
-move/IH => [i[ial filex]].
-exists i.
-by rewrite !in_cons orbCA -in_cons ial orbT filex.
+case: ifPn => [_|_ fax]; last by exists a' => //; rewrite !in_cons eqxx/= orbT.
+move/IH => [i ial filex].
+by eexists i => //; rewrite !in_cons orbCA -in_cons ial orbT.
 Qed.
 
 Lemma maxrgex [I : eqType] x (f : I -> R) a l:
-  x <= \big[Order.max/f a]_(j <- l) f j -> exists i, i \in (a :: l) /\ x <= f i.
+  x <= \big[Order.max/f a]_(j <- l) f j -> exists2 i, i \in a :: l & x <= f i.
 Proof.
-elim: l; first by rewrite big_nil => fax; exists a; rewrite mem_seq1 eqxx fax.
+elim: l; first by rewrite big_nil => fax; exists a => //; rewrite mem_seq1 eqxx.
 move=> a' l IH.
 rewrite big_cons {1}/Order.max.
-case: ifPn => [_|_ fax]; last by exists a'; rewrite !in_cons eqxx/= orbT fax.
-move/IH => [i[ial filex]].
-exists i.
-by rewrite !in_cons orbCA -in_cons ial orbT filex.
+case: ifPn => [_|_ fax]; last by exists a' => //; rewrite !in_cons eqxx/= orbT.
+move/IH => [i ial filex].
+by exists i => //; rewrite !in_cons orbCA -in_cons ial orbT.
 Qed.
 
 Lemma bigmin_eqP (x : R) [I : eqType] (s : seq I) (F : I -> R) :
@@ -431,7 +429,7 @@ have minrl : forall (x y : R), Order.min x y <= x => //. (* TODO: this should ex
   by move => v w; rewrite /Order.min; case: ifPn; rewrite ?le_refl -?leNgt.
 apply: (iffP eqP) => [<- i|].
 - elim: s => // a s IH.
-  rewrite in_cons => /orP[/eqP<-|si].
+  rewrite in_cons => /predU1P[<-|si].
   + by rewrite big_seq big_cons mem_head minrl.
   + by rewrite big_cons minC; apply: le_trans (IH si); exact: minrl.
 - elim: s => [h|i l IH h].
@@ -455,23 +453,23 @@ apply: (iffP idP).
   case: ifPn => Pa.
   + case: ifPn => [fabig h|].
     * have /IH[-> h'] := h; split=>//i.
-      rewrite in_cons => /orP[/eqP -> _|il0 Pi].
+      rewrite in_cons => /predU1P[-> _|il0 Pi].
         by apply: le_trans (ltW fabig) h.
       exact: h'.
     rewrite -leNgt => fabig fax.
     have /IH[x0fa h] := fabig.
     split; first apply: (le_trans x0fa fax).
     move=> i.
-    rewrite in_cons => /orP[/eqP ->//|il0 Pi].
+    rewrite in_cons => /predU1P[->//|il0 Pi].
     apply: le_trans.
     apply: h => //.
     apply: fax.
   + move=> /IH[-> h]; split=>// i.
-    rewrite in_cons => /orP[/eqP ->|]; first by move: Pa=> /[swap]->.
+    rewrite in_cons => /predU1P[->|]; first by move: Pa=> /[swap]->.
     exact: h.
 - move=>[x0x h].
-  have h' : forall i, i \in l0 -> P i -> f i <= x.
-    by move=> i il0 Pi; rewrite h ?in_cons ?il0 ?orbT.
+  have h' i : i \in l0 -> P i -> f i <= x.
+    by move=> il0 Pi; rewrite h ?in_cons ?il0 ?orbT.
   have /IH h'' := conj x0x h'.
   rewrite big_cons {1}/Order.max.
   case: ifPn => Pa //.
@@ -515,7 +513,7 @@ Lemma perm_big_minr_helper3 (a1 a2 : R) (s : seq R) :
 Proof.
 elim: s; first by rewrite in_nil.
 move=> a3 l ih.
-rewrite inE => /orP[/eqP -> | a1l].
+rewrite inE => /predU1P[-> | a1l].
   by rewrite !big_cons minA minxx.
 by rewrite !big_cons minCA ih.
 Qed.
@@ -526,14 +524,14 @@ Lemma perm_big_minr_helper4 (a1 a2 : R) (s : seq R) :
 Proof.
 elim: s; first by rewrite in_nil.
 move=> a l ih.
-rewrite inE => /orP[/eqP -> |a1l].
-  rewrite inE => /orP[/eqP -> //|a2l].
+rewrite inE => /predU1P[-> |a1l].
+  rewrite inE => /predU1P[-> //|a2l].
   rewrite big_cons.
   rewrite perm_big_minr_helper.
   rewrite perm_big_minr_helper2.
   rewrite big_cons.
   by rewrite perm_big_minr_helper3.
-rewrite inE => /orP[/eqP -> |a2l].
+rewrite inE => /predU1P[-> |a2l].
   rewrite perm_big_minr_helper2.
   rewrite big_cons.
   rewrite perm_big_minr_helper3//.

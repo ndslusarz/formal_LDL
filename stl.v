@@ -133,7 +133,7 @@ rewrite /is_stl /= /stl_and /stl_and_gt0 /stl_and_lt0 /min_dev.
 rewrite /sumR !map_cons !big_map.
 set a_min := \big[minr/nu.-[[a]]_stl]_(j <- l) nu.-[[j]]_stl.
 case: ifPn=>[hminlt0|].
-  have /=[y[ymem ylt0]] := minrltx hminlt0.
+  have /=[y ymem ylt0] := minrltx hminlt0.
   rewrite !big_seq.
   under eq_bigr => i il do rewrite map_cons big_map big_min_cons//.
   under [X in _ / X]eq_bigr => i il do rewrite map_cons big_map big_min_cons//.
@@ -158,7 +158,7 @@ case: Es => [|a l]; first by rewrite /= ltr10.
 rewrite /is_stl /= /stl_and /= big_map.
 set a_min := \big[minr/nu.-[[a]]_stl]_(j <- l) nu.-[[j]]_stl.
 case: ifPn=>[hminlt0 _|].
-  have [x [xmem hlt0]] := minrltx hminlt0.
+  have [x xmem hlt0] := minrltx hminlt0.
   exists (index x (a :: l)).
     by rewrite nth_index ?xmem// hlt0.
   by rewrite  index_mem xmem.
@@ -178,8 +178,8 @@ Proof.
 case: Es => [|a l]; first by rewrite /= ler0N1.
 rewrite/is_stl/= /stl_or/stl_or_gt0/stl_or_lt0/max_dev /sumR !map_cons !big_map.
 set a_max := \big[maxr/nu.-[[a]]_stl]_(j <- l) nu.-[[j]]_stl.
-case: ifPn=>[hmaxgt0 _|].
-  have [x [xmem hgt0]] := maxrgtx hmaxgt0.
+case: ifPn=> [hmaxgt0 _|].
+  have [x xmem hgt0] := maxrgtx hmaxgt0.
   exists (index x (a :: l)).
     by rewrite nth_index ?xmem// (ltW hgt0).
   by rewrite index_mem xmem.
@@ -199,7 +199,7 @@ case: ifPn=>[hmaxlt0|].
   exists a.
   by rewrite mem_head nmulr_rlt0 ?expR_gt0 ?hilt0 ?mem_head.
 rewrite -leNgt => hmaxge0 _.
-have /=[x [xmem hxge0]] := maxrgex hmaxge0.
+have /= [x xmem hxge0] := maxrgex hmaxge0.
 exists (index x (a :: l)).
   by rewrite nth_index ?xmem// hxge0.
 by rewrite index_mem xmem.
