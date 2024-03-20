@@ -9,9 +9,28 @@ From mathcomp Require Import topology derive normedtype sequences
 Require Import mathcomp_extra analysis_extra ldl.
 
 (**md**************************************************************************)
-(* # STL                                                                      *)
+(* # Properties of STL on extended reals                                      *)
 (*                                                                            *)
+(* ## Structural properties                                                   *)
+(* - andI_stl == idempotence of conjunction                                   *)
+(* - andC_stl == commutativity of conjunction                                 *)
+(* - orI_stl == idempotence of disjunction                                    *)
+(* - orC_stl == commutativity of disjunction                                  *)
+(*                                                                            *)
+(* ## Soundness                                                               *)
+(* - stl_nary_inversion_andE1 == inversion lemma for conjunction/true         *)
+(* - stl_nary_inversion_andE0 == inversion lemma for conjuntion/false         *)
+(* - stl_nary_inversion_orE1 == inversion lemma for disjunction/true          *)
+(* - stl_nary_inversion_orE0 == inversion lemma for disjunction/false         *)
+(* - stl_ereal_translations_Vector_coincide == shows that the Boolean translation *)
+(*   and the STL translation coincide on expressions of type Vector_T         *)
+(* - stl_ereal_translations_Index_coincide == shows that the Boolean translation *)
+(*   and the STL translation coincide on expressions of type Index_T          *)
+(* - stl_ereal_translations_Real_coincide == shows that the Boolean translation and *)
+(*   the STL translation coincide on expressions of type Real_T               *)
+(* - stl_soundness == final soundness result for STL                          *)
 (******************************************************************************)
+
 
 Import Num.Def Num.Theory GRing.Theory.
 Import Order.TTheory.
