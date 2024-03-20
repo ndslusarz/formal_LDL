@@ -65,7 +65,7 @@ Qed.
 
 Lemma orI_stl (e : expr Bool_N) : nu.-[[e `\/ e]]_stl = nu.-[[e]]_stl.
 Proof.
-rewrite /= /stl_or_gt0 /stl_or_lt0 /max_dev
+rewrite /= /stl_or /stl_or_gt0 /stl_or_lt0 /max_dev
 /sumR !big_cons !big_nil/= !addr0.
 rewrite !maxrxxx.
 set a_max := maxr (nu.-[[e]]_stl) (nu.-[[e]]_stl).
@@ -86,7 +86,7 @@ Qed.
 Lemma orC_stl (e1 e2 : expr Bool_N) :
   nu.-[[e1 `\/ e2]]_stl  = nu.-[[e2 `\/ e1]]_stl.
 Proof.
-rewrite /=/stl_or_gt0 /stl_or_lt0 /max_dev
+rewrite /= /stl_or /stl_or_gt0 /stl_or_lt0 /max_dev
 /sumR !big_cons !big_nil/= !addr0.
 rewrite !maxrxyx !maxrxx.
 set a_max := maxr (nu.-[[e2]]_stl) (nu.-[[e1]]_stl).
@@ -378,7 +378,7 @@ Lemma stl_nary_inversion_orE1 (Es : seq (expr Bool_P) ) :
   is_stl true (nu.-[[ ldl_or Es ]]_stl) -> (exists i, is_stl true (nu.-[[ nth (ldl_bool _ false) Es i ]]_stl) && (i < size Es)%nat).
 Proof.
 case: Es => [|a l]; first by rewrite /= ler0N1.
-rewrite/is_stl/= /stl_or_gt0/stl_or_lt0/max_dev /sumR !seq_cons !big_map.
+rewrite/is_stl/= /stl_or/stl_or_gt0/stl_or_lt0/max_dev /sumR !seq_cons !big_map.
 set a_max := \big[maxr/nu.-[[a]]_stl]_(j <- l) nu.-[[j]]_stl.
 case: ifPn=>[hmaxgt0 _|].
   have [x [xmem hgt0]] := maxrgtx _ _ _ _ hmaxgt0.
@@ -409,7 +409,7 @@ Lemma stl_nary_inversion_orE0 (Es : seq (expr Bool_P) ) :
     is_stl false (nu.-[[ ldl_or Es ]]_stl) -> (forall i, (i < size Es)%nat -> is_stl false (nu.-[[ nth (ldl_bool pos false) Es i ]]_stl)).
 Proof.
 case: Es => // a l.
-rewrite/is_stl/= /stl_or_gt0/stl_or_lt0 big_map.
+rewrite/is_stl/= /stl_or/stl_or_gt0/stl_or_lt0 big_map.
 set a_max := \big[maxr/nu.-[[a]]_stl]_(j <- l) nu.-[[j]]_stl.
 case: ifPn=>[hmaxgt0|].
   rewrite !seq_cons/sumR !big_map!big_seq.

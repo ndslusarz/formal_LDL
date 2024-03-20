@@ -470,10 +470,17 @@ Definition stl_or_lt0 (v : seq R) :=
 
 Definition stl_and (a_min : R) h (t : seq R) : R :=
   if a_min < 0 then
-      stl_and_lt0 (h :: t)
-    else if a_min > 0 then
-      stl_and_gt0 (h :: t)
-    else 0.
+    stl_and_lt0 (h :: t)
+  else if a_min > 0 then
+    stl_and_gt0 (h :: t)
+  else 0.
+
+Definition stl_or (a_max : R) h (t : seq R) : R :=
+  if a_max > 0 then
+    stl_or_gt0 (h :: t)
+  else if a_max < 0 then
+    stl_or_lt0 (h :: t)
+  else 0.
 
 Fixpoint stl_translation {t} (e : expr t) : type_translation t :=
   match e in expr t return type_translation t with
@@ -489,21 +496,12 @@ Fixpoint stl_translation {t} (e : expr t) : type_translation t :=
       let a0 := stl_translation e0 in
       let a_min : R := \big[minr/a0]_(i <- A) i in
       stl_and a_min a0 A
-(*      if a_min < 0 then
-        stl_and_lt0 (a0 :: A)
-      else if a_min > 0 then
-        stl_and_gt0 (a0 :: A)
-      else 0*)
   | ldl_or _ [::] => -1
   | ldl_or _ (e0 :: s) =>
       let A := map stl_translation s in
       let a0 := stl_translation e0 in
       let a_max: R := \big[maxr/a0]_(i <- A) i in
-      if a_max > 0 then
-        stl_or_gt0 (a0 :: A)
-      else if a_max < 0 then
-        stl_or_lt0 (a0 :: A)
-      else 0
+      stl_or a_max a0 A
   | `~ E1 => - {[ E1 ]}
 
   (*comparisons*)
