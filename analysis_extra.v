@@ -608,6 +608,15 @@ Qed.
 
 End stl_helpers.
 
+Definition expR_cvg0 {R : realType} K :
+  expR (K * t) @[t --> nbhs 0^'+] --> (1:R)%R.
+Proof.
+rewrite -expR0; apply: continuous_cvg; first exact: continuous_expR.
+rewrite -[X in _ --> X](mulr0 K).
+apply: cvgM; first exact: cvg_cst.
+exact/cvg_at_right_filter/cvg_id.
+Qed.
+
 Section derive.
 Context {R : realFieldType}.
 

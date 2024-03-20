@@ -249,6 +249,23 @@ Proof. by rewrite (maxC y) maxA maxxx. Qed.
 
 End maxmin.
 
+Lemma iter_minr {R : realDomainType} k p p' : k != 0%N ->
+  p' >= p -> iter k (minr p) p' = p :> R.
+Proof.
+elim: k p p' => //= -[_ /= p' p _ p'p|k ih p p' _ pp'].
+  rewrite /minr; case: ifPn => //.
+  by rewrite -leNgt => pp'; apply/eqP; rewrite eq_le p'p pp'.
+by rewrite ih// minxx.
+Qed.
+
+Lemma iter_minr' {R : realDomainType} k p p' : k != 0%N ->
+  p' <= p -> iter k (minr p) p' = p' :> R.
+Proof.
+elim: k p p' => //= -[_ /= p p' _ p'p|n ih p p' _ p'p].
+  by rewrite /minr ltNge p'p.
+by rewrite ih// /minr ltNge p'p.
+Qed.
+
 Section big_order_maxmin.
 Local Open Scope order_scope.
 Context {d} {R : orderType d}.
@@ -550,3 +567,13 @@ rewrite (@perm_big_minr_helper4 a1 a2).
 Qed.
 
 End perm_big_minr.
+
+Lemma seq_of_rV_const {R : fieldType} (p : R) n :
+  @MatrixFormula.seq_of_rV R n (const_mx p) = nseq n p.
+Proof.
+apply: (@eq_from_nth _ 0).
+  by rewrite MatrixFormula.size_seq_of_rV size_nseq.
+move=> k; rewrite MatrixFormula.size_seq_of_rV => kM.
+have -> := @MatrixFormula.nth_seq_of_rV R _ 0 (const_mx p) (Ordinal kM).
+by rewrite mxE nth_nseq kM.
+Qed.

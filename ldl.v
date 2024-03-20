@@ -449,19 +449,27 @@ End stl_ereal_translation.
 
 Notation "nu .-[[ e ]]_stle" := (stl_ereal_translation nu e) : ldl_scope.
 
-Definition min_dev {R : realType} (x : R) (s : seq R) : R :=
+Section min_max_dev.
+Context {R : realType}.
+
+Definition min_dev (x : R) (s : seq R) : R :=
   let r := \big[minr/x]_(i <- s) i in (x - r) * r^-1.
+
+Lemma min_dev_nseq (p : R) n : min_dev p (nseq n.+1 p) = 0%R.
+Proof. by rewrite /min_dev big_nseq iter_minr// subrr mul0r. Qed.
 
 Definition max_dev {R : realType} (x : R) (s : seq R) : R :=
   let r := \big[maxr/x]_(i <- s) i in (r - x) * r^-1.
+
+End min_max_dev.
 
 Section stl_translation.
 Local Open Scope ring_scope.
 Local Open Scope ldl_scope.
 Context {R : realType}.
 Variables (p : R) (nu : R).
-Hypothesis p1 : (1 <= p)%R.
-Hypothesis nu0 : (0 < nu)%R.
+Hypothesis p1 : 1 <= p.
+Hypothesis nu0 : 0 < nu.
 
 Definition stl_and_gt0 (v : seq R) :=
   sumR (map (fun a => a * expR (-nu * min_dev a v)) v) *
@@ -529,14 +537,6 @@ where "{[ e ]}" := (stl_translation e).
 End stl_translation.
 
 Notation "nu .-[[ e ]]_stl" := (stl_translation nu e) : ldl_scope.
-
-
-(* this is already in MCA master *)
-#[global] Hint Extern 0 (Filter (nbhs _^'+)) =>
-  (apply: at_right_proper_filter) : typeclass_instances.
-
-#[global] Hint Extern 0 (Filter (nbhs _^'-)) =>
-  (apply: at_left_proper_filter) : typeclass_instances.
 
 Section shadow_lifting.
 Local Open Scope ring_scope.
