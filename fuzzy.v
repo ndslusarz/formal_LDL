@@ -7,13 +7,69 @@ From mathcomp Require Import normedtype sequences exp measure lebesgue_measure.
 From mathcomp Require Import lebesgue_integral hoelder.
 Require Import mathcomp_extra analysis_extra ldl.
 
+
 (**md**************************************************************************)
-(* # Goedel                                                                   *)
+(* # Properties of fuzzy DLs:                                                 *)
+(*   Lukaseiwicz, Yager, Godel and product                                    *)
 (*                                                                            *)
-(* - product_and v with v : 'rV_n                                             *)
-(*   $\Pi_{i < n} v_i$                                                        *)
+(*  grouped by DL, unless generic enough to apply to all fuzzy DLs            *)
+(*                                                                            *)
+(*                                                                            *)
+(* ## Soundness                                                               *)
+(* - translations_Fun_coincide == shows that the Boolean translation          *)
+(*   and the fuzzy translation coincide on expressions of type Fun_T          *)
+(* - translations_Vector_coincide == shows that the Boolean translation       *)
+(*   and the fuzzy translation coincide on expressions of type Vector_T       *)
+(* - translations_Index_coincide == shows that the Boolean translation        *)
+(*   and the fuzzy translation coincide on expressions of type Index_T        *)
+(* - translations_Real_coincide == shows that the Boolean translation and     *)
+(* - translate_Bool_T_01 == invariant for the translation: all values are in  *)
+(*                          the range $[-1, 0]$                               *)
+(* - nary_inversion_andE1 == inversion lemma for conjunction/true             *)
+(* - nary_inversion_andE0 == inversion lemma for conjuntion/false             *)
+(* - nary_inversion_orE1 == inversion lemma for disjunction/true              *)
+(* - nary_inversion_orE0 == inversion lemma for disjunction/false             *)
+(*   the fuzzy translation coincide on expressions of type Real_T             *)
+(* - soundness == final soundness result for Godel and product                *)
+(*                                                                            *)
+(* ## Structural properties for Lukasiewicz                                   *)
+(* - Lukasiewicz_andC_nary == n-ary commutativity of conjunction              *)
+(* - Lukasiewicz_andC == commutativity of conjunction                         *)
+(* - Lukasiewicz_orC_nary == n-ary commutativity of disjunction               *)
+(* - Lukasiewicz_orC_ == commutativity of disjunction                         *)
+(* - Lukasiewicz_orA == associativity of disjunction                          *)
+(* - Lukasiewicz_andA == associativity of conjunction                         *)
+(*                                                                            *)
+(* ## Structural properties for Yager                                         *)
+(* - Yager_andC_nary == n-ary commutativity of conjunction                    *)
+(* - Yager_andC == commutativity of conjunction                               *)
+(* - Yager_orC_nary == n-ary commutativity of disjunction                     *)
+(* - Yager_orC_ == commutativity of disjunction                               *)
+(* - Yager_orA == associativity of disjunction                                *)
+(* - Yager_andA == associativity of conjunction                               *)
+(*                                                                            *)
+(* ## Structural properties for Godel                                         *)
+(* - Godel_andI == idempotence of conjunction                                 *)
+(* - Godel_orI == idempotence of disjunction                                  *)
+(* - Godel_andC_nary == n-ary commutativity of conjunction                    *)
+(* - Godel_andC == commutativity of conjunction                               *)
+(* - Godel_orC_nary == n-ary commutativity of disjunction                     *)
+(* - Godel_orC_ == commutativity of disjunction                               *)
+(* - Godel_orA == associativity of disjunction                                *)
+(* - Godel_andA == associativity of conjunction                               *)
+(*                                                                            *)
+(* ## Structural properties for product                                       *)
+(* - product_andC_nary == n-ary commutativity of conjunction                  *)
+(* - product_andC == commutativity of conjunction                             *)
+(* - product_orC_nary == n-ary commutativity of disjunction                   *)
+(* - product_orC_ == commutativity of disjunction                             *)
+(* - product_orA == associativity of disjunction                              *)
+(* - product_andA == associativity of conjunction                             *)
+(*                                                                            *)
+(*                                                                            *)
+(* ## Shadow-lifting                                                          *)
+(* - product_and v == $\product_{i < n} v_i$                                  *)
 (* - shadowlifting_product_andE == shadow-lifting for product                 *)
-(*                                                                            *)
 (******************************************************************************)
 
 Import Num.Def Num.Theory GRing.Theory.
@@ -29,7 +85,7 @@ Hypothesis p1 : 1 <= p.
 
 Local Notation "[[ e ]]_ l" := (@translation R l p _ e).
 
-Lemma translations_Network_coincide:
+Lemma translations_Fun_coincide:
   forall n m (e : expr (Fun_T n m)), [[ e ]]_l = [[ e ]]b.
 Proof.
 dependent induction e => //=.
@@ -350,59 +406,6 @@ dependent induction e using expr_ind' => ll ly.
 Qed.
 
 End translation_lemmas.
-
-Definition product_and {R : fieldType} {n} (u : 'rV[R]_n) : R :=
-  \prod_(i < n) u ``_ i.
-
-Section shadow_lifting_product_and.
-Context {R : realType}.
-Local Open Scope ring_scope.
-Local Open Scope classical_set_scope.
-Variable M : nat.
-Hypothesis M0 : M != 0%N.
-
-Lemma shadowlifting_product_andE p : p > 0 ->
-  forall i, ('d (@product_and R M.+1) '/d i) (const_mx p) = p ^+ M.
-Proof.
-move=> p0 i.
-rewrite /partial.
-have /cvg_lim : h^-1 * (product_and (const_mx p + h *: err_vec i) -
-                        @product_and _ M.+1 (const_mx p))
-       @[h --> (0:R)^'] --> p ^+ M.
-  rewrite /product_and.
-  have H : forall h : R, h != 0 ->
-      \prod_(x < M.+1) (const_mx p + h *: err_vec i) 0 x -
-      \prod_(x < M.+1) const_mx (m:=M.+1) p 0 x = h * p ^+ M.
-    move=> h h0; rewrite [X in X - _](bigD1 i)//= !mxE eqxx mulr1.
-    rewrite (eq_bigr (fun=> p)); last first.
-      by move=> j ji; rewrite !mxE eq_sym (negbTE ji) mulr0 addr0.
-    rewrite [X in _ - X](eq_bigr (fun=> p)); last by move=> *; rewrite mxE.
-    rewrite [X in _ - X](bigD1 i)//= -mulrBl addrAC subrr add0r; congr (h * _).
-    transitivity (\prod_(i0 in @predC1 [the eqType of 'I_M.+1] i) p).
-      by apply: eq_bigl => j; rewrite inE.
-    rewrite prodr_const; congr (_ ^+ _).
-    by rewrite cardC1 card_ord.
-  have : h^-1 * (h * p ^+ M) @[h --> (0:R)^'] --> p ^+ M.
-    have : {near (0:R)^', (fun=> p ^+ M) =1 (fun h => h^-1 * (h * p ^+ M))}.
-      near=> h; rewrite mulrA mulVf ?mul1r//.
-      by near: h; exact: nbhs_dnbhs_neq.
-    by move/near_eq_cvg/cvg_trans; apply; exact: cvg_cst.
-  apply: cvg_trans; apply: near_eq_cvg; near=> k.
-  have <-// := H k.
-    congr (_ * (_ - _)).
-    apply: eq_bigr => /= j _.
-    by rewrite !mxE.
-  by near: k; exact: nbhs_dnbhs_neq.
-by apply; exact: Rhausdorff.
-Unshelve. all: by end_near. Qed.
-
-Corollary shadow_lifting_product_and :
-  shadow_lifting (@product_and R M.+1).
-Proof.
-by move=> p p0 i; rewrite shadowlifting_product_andE// exprn_gt0.
-Qed.
-
-End shadow_lifting_product_and.
 
 
 Section Lukasiewicz_lemmas.
@@ -807,3 +810,56 @@ lra.
 Qed.
 
 End product_lemmas.
+
+Section shadow_lifting_product_and.
+Context {R : realType}.
+Local Open Scope ring_scope.
+Local Open Scope classical_set_scope.
+Variable M : nat.
+Hypothesis M0 : M != 0%N.
+
+Definition product_and {R : fieldType} {n} (u : 'rV[R]_n) : R :=
+  \prod_(i < n) u ``_ i.
+
+Lemma shadowlifting_product_andE p : p > 0 ->
+  forall i, ('d (@product_and R M.+1) '/d i) (const_mx p) = p ^+ M.
+Proof.
+move=> p0 i.
+rewrite /partial.
+have /cvg_lim : h^-1 * (product_and (const_mx p + h *: err_vec i) -
+                        @product_and _ M.+1 (const_mx p))
+       @[h --> (0:R)^'] --> p ^+ M.
+  rewrite /product_and.
+  have H : forall h : R, h != 0 ->
+      \prod_(x < M.+1) (const_mx p + h *: err_vec i) 0 x -
+      \prod_(x < M.+1) const_mx (m:=M.+1) p 0 x = h * p ^+ M.
+    move=> h h0; rewrite [X in X - _](bigD1 i)//= !mxE eqxx mulr1.
+    rewrite (eq_bigr (fun=> p)); last first.
+      by move=> j ji; rewrite !mxE eq_sym (negbTE ji) mulr0 addr0.
+    rewrite [X in _ - X](eq_bigr (fun=> p)); last by move=> *; rewrite mxE.
+    rewrite [X in _ - X](bigD1 i)//= -mulrBl addrAC subrr add0r; congr (h * _).
+    transitivity (\prod_(i0 in @predC1 [the eqType of 'I_M.+1] i) p).
+      by apply: eq_bigl => j; rewrite inE.
+    rewrite prodr_const; congr (_ ^+ _).
+    by rewrite cardC1 card_ord.
+  have : h^-1 * (h * p ^+ M) @[h --> (0:R)^'] --> p ^+ M.
+    have : {near (0:R)^', (fun=> p ^+ M) =1 (fun h => h^-1 * (h * p ^+ M))}.
+      near=> h; rewrite mulrA mulVf ?mul1r//.
+      by near: h; exact: nbhs_dnbhs_neq.
+    by move/near_eq_cvg/cvg_trans; apply; exact: cvg_cst.
+  apply: cvg_trans; apply: near_eq_cvg; near=> k.
+  have <-// := H k.
+    congr (_ * (_ - _)).
+    apply: eq_bigr => /= j _.
+    by rewrite !mxE.
+  by near: k; exact: nbhs_dnbhs_neq.
+by apply; exact: Rhausdorff.
+Unshelve. all: by end_near. Qed.
+
+Corollary shadow_lifting_product_and :
+  shadow_lifting (@product_and R M.+1).
+Proof.
+by move=> p p0 i; rewrite shadowlifting_product_andE// exprn_gt0.
+Qed.
+
+End shadow_lifting_product_and.
