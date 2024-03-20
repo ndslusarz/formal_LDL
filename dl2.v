@@ -11,10 +11,6 @@ Require Import mathcomp_extra analysis_extra ldl.
 (**md**************************************************************************)
 (* # Properties of DL2                                                        *)
 (*                                                                            *)
-(* ## Shadow-lifting                                                          *)
-(* - dl2_and v == $\sum_{i < n} v_i$                                          *)
-(* - shadowlifting_dl2_andE == shadow-lifting for DL2                         *)
-(*                                                                            *)
 (* ## Structural properties                                                   *)
 (* - dl2_andC_nary == n-ary commutativity of conjunction                      *)
 (* - dl2_andC == commutativity of conjunction                                 *)
@@ -37,63 +33,16 @@ Require Import mathcomp_extra analysis_extra ldl.
 (* - dl2_translations_Real_coincide == shows that the Boolean translation and *)
 (*   the DL2 translation coincide on expressions of type Real_T               *)
 (* - dl2_soundness == final soundness result for DL2                          *)
+(*                                                                            *)
+(* ## Shadow-lifting                                                          *)
+(* - dl2_and v == $\sum_{i < n} v_i$                                          *)
+(* - shadowlifting_dl2_andE == shadow-lifting for DL2                         *)
 (******************************************************************************)
 
 Import Num.Def Num.Theory GRing.Theory.
 Import Order.TTheory.
 Import numFieldTopology.Exports.
 
-Definition dl2_and {R' : fieldType} {n} (v : 'rV[R']_n) :=
-  (\sum_(i < n) v ``_ i)%R.
-
-Section shadow_lifting_dl2_and.
-Local Open Scope ring_scope.
-Local Open Scope classical_set_scope.
-Context {R : realType}.
-Variable M : nat.
-Hypothesis M0 : M != 0%N.
-
-Import MatrixFormula.
-
-Lemma dl2_andE {n} (v : 'rV[R]_n) :
-  dl2_and v = sumR (map (dl2_translation \o ldl_real) (seq_of_rV v)).
-Proof.
-rewrite /sumR !big_map /dl2_and -enumT big_enum.
-by under [in RHS]eq_bigr do rewrite ffunE.
-Qed.
-
-Lemma shadowlifting_dl2_andE (p : R) : p > 0 ->
-  forall i, ('d (@dl2_and _ M.+1) '/d i) (const_mx p) = 1.
-Proof.
-move=> p0 i.
-rewrite /partial.
-have /cvg_lim : h^-1 * (dl2_and (const_mx p + h *: err_vec i) -
-                        dl2_and (n:=M.+1) (const_mx p))
-       @[h --> (0:R)^'] --> (1:R)%R.
-  rewrite /dl2_and.
-  have H : forall h, h != 0 ->
-      \sum_(x < M.+1) (const_mx p + h *: err_vec i) ``_ x -
-      \sum_(x < M.+1) (const_mx (n:=M.+1) (m:=1) p) ``_ x = h.
-    move=> h h0; rewrite [X in X - _](bigD1 i)//= !mxE eqxx mulr1.
-    rewrite (eq_bigr (fun=> p)); last first.
-      by move=> j ji; rewrite !mxE eq_sym (negbTE ji) mulr0 addr0.
-    rewrite [X in _ - X](eq_bigr (fun=> p)); last by move=> *; rewrite mxE.
-    rewrite [X in _ - X](bigD1 i)//= (addrC p h) -addrA.
-    by rewrite addrA -(addrA h) addrK.
-  have : h^-1 * h @[h --> (0:R)^'] --> (1:R)%R.
-    have : {near (0:R)^', (fun=> 1) =1 (fun h => h^-1 * h)}.
-      near=> h; rewrite mulVf//.
-      by near: h;  exact: nbhs_dnbhs_neq.
-    by move/near_eq_cvg/cvg_trans; apply; exact: cvg_cst.
-  apply: cvg_trans; apply: near_eq_cvg => /=; near=> k.
-  by rewrite H//; near: k; exact: nbhs_dnbhs_neq.
-by apply; exact: Rhausdorff.
-Unshelve. all: by end_near. Qed.
-
-Corollary shadow_lifting_dl2_and : shadow_lifting (@dl2_and R M.+1).
-Proof. by move=> p p0 i; rewrite shadowlifting_dl2_andE. Qed.
-
-End shadow_lifting_dl2_and.
 
 Section dl2_lemmas.
 Local Open Scope ldl_scope.
@@ -315,3 +264,55 @@ dependent induction e using expr_ind'.
 Qed.
 
 End dl2_lemmas.
+
+Section shadow_lifting_dl2_and.
+Local Open Scope ring_scope.
+Local Open Scope classical_set_scope.
+Context {R : realType}.
+Variable M : nat.
+Hypothesis M0 : M != 0%N.
+
+Definition dl2_and {R' : fieldType} {n} (v : 'rV[R']_n) :=
+  (\sum_(i < n) v ``_ i)%R.
+
+Import MatrixFormula.
+
+Lemma dl2_andE {n} (v : 'rV[R]_n) :
+  dl2_and v = sumR (map (dl2_translation \o ldl_real) (seq_of_rV v)).
+Proof.
+rewrite /sumR !big_map /dl2_and -enumT big_enum.
+by under [in RHS]eq_bigr do rewrite ffunE.
+Qed.
+
+Lemma shadowlifting_dl2_andE (p : R) : p > 0 ->
+  forall i, ('d (@dl2_and _ M.+1) '/d i) (const_mx p) = 1.
+Proof.
+move=> p0 i.
+rewrite /partial.
+have /cvg_lim : h^-1 * (dl2_and (const_mx p + h *: err_vec i) -
+                        dl2_and (n:=M.+1) (const_mx p))
+       @[h --> (0:R)^'] --> (1:R)%R.
+  rewrite /dl2_and.
+  have H : forall h, h != 0 ->
+      \sum_(x < M.+1) (const_mx p + h *: err_vec i) ``_ x -
+      \sum_(x < M.+1) (const_mx (n:=M.+1) (m:=1) p) ``_ x = h.
+    move=> h h0; rewrite [X in X - _](bigD1 i)//= !mxE eqxx mulr1.
+    rewrite (eq_bigr (fun=> p)); last first.
+      by move=> j ji; rewrite !mxE eq_sym (negbTE ji) mulr0 addr0.
+    rewrite [X in _ - X](eq_bigr (fun=> p)); last by move=> *; rewrite mxE.
+    rewrite [X in _ - X](bigD1 i)//= (addrC p h) -addrA.
+    by rewrite addrA -(addrA h) addrK.
+  have : h^-1 * h @[h --> (0:R)^'] --> (1:R)%R.
+    have : {near (0:R)^', (fun=> 1) =1 (fun h => h^-1 * h)}.
+      near=> h; rewrite mulVf//.
+      by near: h;  exact: nbhs_dnbhs_neq.
+    by move/near_eq_cvg/cvg_trans; apply; exact: cvg_cst.
+  apply: cvg_trans; apply: near_eq_cvg => /=; near=> k.
+  by rewrite H//; near: k; exact: nbhs_dnbhs_neq.
+by apply; exact: Rhausdorff.
+Unshelve. all: by end_near. Qed.
+
+Corollary shadow_lifting_dl2_and : shadow_lifting (@dl2_and R M.+1).
+Proof. by move=> p p0 i; rewrite shadowlifting_dl2_andE. Qed.
+
+End shadow_lifting_dl2_and.
