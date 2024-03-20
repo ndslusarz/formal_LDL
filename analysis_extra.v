@@ -3,7 +3,7 @@ From mathcomp Require Import all_ssreflect ssralg ssrnum matrix interval.
 From mathcomp Require Import mathcomp_extra boolp classical_sets functions.
 From mathcomp Require Import reals signed topology prodnormedzmodule.
 From mathcomp Require Import constructive_ereal ereal normedtype landau forms.
-From mathcomp Require Import derive sequences exp.
+From mathcomp Require Import derive sequences exp realfun.
 From mathcomp Require Import lra.
 
 (**md**************************************************************************)
@@ -43,6 +43,52 @@ Notation "'decreasing_fun' f" := ({mono f : n m / (n <= m)%O >-> (n >= m)%O})
 
 Reserved Notation "'d f '/d i" (at level 10, f, i at next level,
   format "''d'  f  ''/d'  i").
+
+Lemma sumr_lt0 {R : realDomainType} [I : eqType] [r : seq I]
+    [P : pred I] [F : I -> R] :
+  (forall i : I, i \in r -> P i -> (F i <= 0%R)) ->
+  (exists i : I, i \in r /\ P i /\ (F i < 0%R)) ->
+  ((\sum_(i <- r | P i) F i)%R < 0%R).
+Proof.
+elim: r => [h1 [x []]|]; first by rewrite in_nil.
+move=> a l IH h1 [x[]].
+rewrite in_cons => /orP[/eqP ->[Pa Fa0]|].
+  rewrite big_seq_cond big_cons.
+  case: ifPn; rewrite mem_head Pa// -{2}(addr0 0) ltr_leD//.
+  by rewrite sumr_le0// => i /andP[? Pi]; rewrite h1.
+move=> xl [Px Fx0].
+rewrite big_cons.
+case: ifPn => Pa.
+  rewrite -{2}(addr0 0) ler_ltD ?h1 ?mem_head// IH//.
+    by move=> i il Pi; rewrite h1// in_cons il orbT.
+  by exists x; rewrite xl Px Fx0.
+apply: IH.
+  by move=> i il Pi; rewrite h1// in_cons il orbT.
+by exists x; rewrite xl Px Fx0.
+Qed.
+
+Lemma sumr_gt0 {R : realDomainType} [I : eqType] [r : seq I]
+    [P : pred I] [F : I -> R] :
+  (forall i : I, i \in r -> P i -> (0 <= F i)) ->
+  (exists i : I, i \in r /\ P i /\ (0 < F i)) ->
+  (0 < \sum_(i <- r | P i) F i).
+Proof.
+elim: r => [h1 [x []]|]; first by rewrite in_nil.
+move=> a l IH h1 [x[]].
+rewrite in_cons => /orP[/eqP ->[Pa Fa0]|].
+  rewrite big_seq_cond big_cons.
+  case: ifPn; rewrite mem_head Pa// -{1}(addr0 0) ltr_leD//.
+  by rewrite sumr_ge0// => i /andP[? Pi]; rewrite h1.
+move=> xl [Px Fx0].
+rewrite big_cons.
+case: ifPn => Pa.
+  rewrite -{1}(addr0 0) ler_ltD ?h1 ?mem_head// IH//.
+    by move=> i il Pi; rewrite h1// in_cons il orbT.
+  by exists x; rewrite xl Px Fx0.
+apply: IH.
+  by move=> i il Pi; rewrite h1// in_cons il orbT.
+by exists x; rewrite xl Px Fx0.
+Qed.
 
 Lemma le_pow_01 {R : realType} (x p0 : R ):
   0 <= x <= 1 -> (0 <= (1 - x) `^ p0).
@@ -489,11 +535,10 @@ apply: (le_trans _ h).
 exact: maxe_ge.
 Qed.
 
-
 Lemma maxe_ge' (I : eqType) (r : seq I) (P : pred I) (f : I -> \bar R) x :
   (x != -oo)%E ->
   (x <= \big[maxe/-oo]_(i <- r | P i) f i)%E
-  <-> exists i, i \in r /\ P i /\ (x <= f i)%E.
+  <-> exists i, [/\ i \in r, P i & (x <= f i)%E].
 Proof.
 move=> /negPf xnoo.
 elim: r.
@@ -505,29 +550,30 @@ case: ifPn => pa.
   rewrite {1}/maxe.
   case: ifPn => [h|].
     split.
-      move=> /ih [i [il [pi xfi] ] ].
+      move=> /ih [i [il pi xfi ] ].
       by exists i; rewrite in_cons il orbT pi xfi.
-    move=> [i [] ]. rewrite in_cons=> /orP[/eqP -> [_ xfa]|il [pi xfi] ].
+    move=> [i [] ]. rewrite in_cons=> /orP[/eqP -> _ xfa|il pi xfi ].
       by rewrite ltW// (le_lt_trans xfa h).
     by rewrite ih; exists i; rewrite il pi xfi.
   rewrite -leNgt => h.
   split.
     by move=> xfa; exists a; rewrite mem_head pa xfa.
-  move=> [i]. 
-  rewrite in_cons => [ [/orP [/eqP -> | ] [il [pi] ] ] ]// xfi.
+  move=> [i].
+  rewrite in_cons => [[/orP [/eqP -> | ] il pi]]  // xfi.
   rewrite (le_trans _ h)// ih.
   by exists i; rewrite il pi xfi.
 split.
-  rewrite ih => [ [i [il [pi xfi] ] ] ].
+  rewrite ih => -[i [il pi xfi ] ].
   by exists i; rewrite in_cons il orbT pi xfi.
 move=> [ i [] ].
-rewrite in_cons => /orP[/eqP -> [pa'] | il [pi xfi] ].
+rewrite in_cons => /orP[/eqP -> pa' | il pi xfi ].
   by rewrite pa' in pa.
 by rewrite ih; exists i; rewrite il pi xfi.
 Qed.
 
 Lemma maxe_eqyP (T : eqType) (s : seq T) (P : pred T) (f : T -> \bar R) :
-  (\big[maxe/-oo]_(i <- s | P i) f i = -oo <-> forall i, i \in s -> P i -> f i = -oo)%E.
+  (\big[maxe/-oo]_(i <- s | P i) f i = -oo <->
+  forall i, i \in s -> P i -> f i = -oo)%E.
 Proof.
 elim: s; first by rewrite big_nil.
 move=> a l ih.
@@ -562,6 +608,43 @@ Qed.
 
 End stl_helpers.
 
+Section derive.
+Context {R : realFieldType}.
+
+Lemma derive_cst (p x : R) : 'D_1 (fun=> p) x = 0.
+Proof. by rewrite -derive1E derive1_cst. Qed.
+
+Lemma derive_id (v : R) (x : R) : 'D_v id x = v :> R.
+Proof. exact: derive_val. Qed.
+
+Lemma derivable_subr (x : R) : derivable -%R x 1.
+Proof. by apply: derivableN; exact: derivable_id. Qed.
+
+Lemma derivable_addr (p x : R) : derivable (+%R p) x 1.
+Proof. by apply: derivableD; [exact: derivable_cst|exact: derivable_id]. Qed.
+
+Lemma derive_comp (f g : R^o -> R^o) x :
+  derivable f x 1 -> derivable g (f x) 1 ->
+  'D_1 (g \o f) x = 'D_1 g (f x) * 'D_1 f x.
+Proof.
+move=> fx1 gfx1; rewrite -derive1E derive1_comp; last 2 first.
+  exact: fx1.
+  exact: gfx1.
+by rewrite !derive1E.
+Qed.
+
+End derive.
+
+Lemma derivable_comp {R : realType} (f g : R -> R) (x : R) :
+  derivable f (g x) 1 -> derivable g x 1 -> derivable (f \o g) x 1.
+Proof.
+move=> fgx1 gx1.
+apply: ex_derive.
+apply: is_derive1_comp.
+  by apply/derivableP; exact: fgx1.
+exact/derivableP.
+Qed.
+
 Section partial.
 Context {R : realType}.
 Variables (n : nat) (f : 'rV[R]_n.+1 -> R).
@@ -581,26 +664,6 @@ Qed.
 
 End partial.
 Notation "'d f '/d i" := (partial f i).
-
-Lemma nonincreasing_at_right_cvgr {R : realType} (f : R -> R) a (b : itv_bound R) :
-    (BRight a < b)%O ->
-    {in Interval (BRight a) b &, nonincreasing_fun f} ->
-    has_ubound (f @` [set` Interval (BRight a) b]) ->
-  f x @[x --> a ^'+] --> sup (f @` [set` Interval (BRight a) b]).
-Proof.
-move=> ab nif ubf.
-exact: realfun.nonincreasing_at_right_cvgr.
-Qed.
-
-Lemma nondecreasing_at_right_cvgr {R : realType} (f : R -> R) a (b : itv_bound R) :
-    (BRight a < b)%O ->
-    {in Interval (BRight a) b &, nondecreasing_fun f} ->
-    has_lbound (f @` [set` Interval (BRight a) b]) ->
-  f x @[x --> a ^'+] --> inf (f @` [set` Interval (BRight a) b]).
-Proof.
-move=> ab ndf lbf.
-exact: realfun.nondecreasing_at_right_cvgr.
-Qed.
 
 Lemma monotonous_bounded_is_cvg {R : realType} (f : R -> R) x y :
   (BRight x < y)%O ->

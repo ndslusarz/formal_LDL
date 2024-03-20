@@ -253,21 +253,22 @@ case: ifPn => [hgt0|].
     exact: expeR_ge0.
   rewrite lee_fin invr_ge0 fine_ge0// /sumE !big_map sume_ge0// => x _.
   exact: expeR_ge0.
-by rewrite lt_irreflexive.
+by rewrite ltxx.
 Qed.
 
 Lemma stl_nary_inversion_orE1 (Es : seq (expr Bool_P) ) :
-  is_stl true (nu.-[[ ldl_or Es ]]_stle) -> (exists i, is_stl true (nu.-[[ nth (ldl_bool _ false) Es i ]]_stle) && (i < size Es)%nat).
+  is_stl true (nu.-[[ ldl_or Es ]]_stle) ->
+    exists i, is_stl true (nu.-[[ nth (ldl_bool _ false) Es i ]]_stle) && (i < size Es)%N.
 Proof.
 rewrite/is_stl/= !big_map.
 case: ifPn => [_|hnoo]; first by rewrite leNgt ltNyr.
 case: ifPn => [/eqP|hpoo].
   have h : -oo%E != +oo%E by [].
   move/maxe_eq; move/(_ (h R)) => [x [xEs [_ xlt0]]] _.
-  exists (index x Es). 
+  exists (index x Es).
   by rewrite nth_index// xlt0 index_mem ltW.
 have := hnoo; rewrite eq_sym -ltNye => /maxe_gt [j [jEs [_ jgtNye] ] ].
-case: ifPn => [hlt0 _|]. 
+case: ifPn => [hlt0 _|].
   move: hlt0 => /maxe_gt [x [xEs [_ hxgt0] ] ].
   by exists (index x Es); rewrite nth_index// ltW// index_mem.
 rewrite -leNgt => hle0.
@@ -278,7 +279,7 @@ case: ifPn => [hlt0|].
     rewrite !lee_fin invr_le0 fine_le0 -big_seq ?hle0// orbT//=.
     rewrite adde_eq_ninfty negb_or hnoo/= -oppeey oppeK.
     rewrite lt_eqF//=.
-    by apply: lt_trans; first by move: hlt0 => /maxe_lt; apply.      
+    by apply: lt_trans; first by move: hlt0 => /maxe_lt; apply.
   have h2 (i : expr Bool_P) (iEs : i \in Es) (gtNyi : (-oo < nu.-[[i]]_stle)%E) : (maxe_dev (\big[maxe/-oo%E]_(i0 <- Es | i0 \in Es) nu.-[[i0]]_stle) (nu.-[[i]]_stle) != -oo)%E.
     rewrite /maxe_dev mule_eq_ninfty !negb_or !negb_and -!leNgt.
     rewrite gt_eqF ?ltNyr//=!orbT/=.
@@ -308,13 +309,15 @@ case: ifPn => [hlt0|].
 rewrite -leNgt => hge0 _.
 move: hge0 => /maxe_ge'.
 rewrite gt_eqF//=.
-move/(_ isT)=> [i [iEs [_ hige0 ] ] ].
+move=> /(_ isT)[i [iEs _ hige0 ] ].
 exists (index i Es).
 by rewrite nth_index// hige0 index_mem.
 Qed.
 
-Lemma stl_nary_inversion_orE0 (Es : seq (expr Bool_P) ) :
-    is_stl false (nu.-[[ ldl_or Es ]]_stle) -> (forall i, (i < size Es)%nat -> is_stl false (nu.-[[ nth (ldl_bool pos false) Es i ]]_stle)).
+Lemma stl_nary_inversion_orE0 (Es : seq (expr Bool_P)) :
+  is_stl false (nu.-[[ ldl_or Es ]]_stle) ->
+    forall i, (i < size Es)%N ->
+      is_stl false (nu.-[[ nth (ldl_bool pos false) Es i ]]_stle).
 Proof.
 rewrite/is_stl/= !big_map.
 case: ifPn => [/eqP hnoo _|hnoo].
@@ -332,7 +335,7 @@ case: ifPn => [hlt0 _|].
   move=> i isize.
   move: hlt0 => /maxe_lt ->//.
   exact: mem_nth.
-by rewrite lt_irreflexive.
+by rewrite ltxx.
 Qed.
 
 Lemma stl_soundness (e : expr Bool_P) b :
@@ -374,6 +377,5 @@ dependent induction e using expr_ind'.
     by rewrite oppr_ge0 normr_le0 subr_eq0.
     by rewrite oppr_lt0 normr_gt0 subr_eq0 => /negbTE.
 Qed.
-
 
 End stl_lemmas.
