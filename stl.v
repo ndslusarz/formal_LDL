@@ -53,11 +53,10 @@ rewrite !minrxyx !minxx.
 set a_min := minr (nu.-[[e1]]_stl) (nu.-[[e2]]_stl).
 have -> : (minr (nu.-[[e2]]_stl) (nu.-[[e1]]_stl)) = a_min.
   by rewrite /a_min/minr; case: ifPn => h1; case: ifPn => h2//; lra.
-set a1 := ((nu.-[[e1]]_stl - a_min) * a_min^-1).
-set a2 := ((nu.-[[e2]]_stl - a_min) * a_min^-1).
-set d1 := (expR (nu * a1) + expR (nu * a2))%R.
-have -> : (expR (nu * a2) + expR (nu * a1))%R = d1.
-  by rewrite addrC.
+set a1 := (nu.-[[e1]]_stl - a_min) * a_min^-1.
+set a2 := (nu.-[[e2]]_stl - a_min) * a_min^-1.
+set d1 := expR (nu * a1) + expR (nu * a2).
+have -> : expR (nu * a2) + expR (nu * a1) = d1 by rewrite addrC.
 case: ifPn; first by rewrite addrC .
 case: ifPn; first by rewrite addrC (addrC (expR (- nu * a1)) (expR (- nu * a2))) .
 lra.
@@ -301,20 +300,14 @@ Qed.
 
 End stl_lemmas.
 
-Section shadow_lifting_stl_and.
+Section stl_and_lemmas.
 Local Open Scope ring_scope.
-Local Open Scope classical_set_scope.
 Context {R : realType}.
-Variable nu : R.
-Variable M : nat.
-Hypothesis M0 : M != 0%N.
-(*add hypothesis nu>0 if needed*)
+Variables (nu : R) (M : nat).
 
 Local Notation seq_of_rV := (@MatrixFormula.seq_of_rV _ M.+1).
-Local Notation stl_and_gt0 := (stl_and_gt0 nu).
-Local Notation stl_and_lt0 := (stl_and_lt0 nu).
 
-Lemma stl_and_gt0_const (p : R) : stl_and_gt0 (seq_of_rV (const_mx p)) = p.
+Lemma stl_and_gt0_const p : stl_and_gt0 nu (seq_of_rV (const_mx p)) = p.
 Proof.
 rewrite /stl_and_gt0/= {1}/sumR big_map seq_of_rV_const big_nseq.
 rewrite min_dev_nseq.
@@ -325,23 +318,48 @@ rewrite min_dev_nseq mulr0 expR0 iter_addr addr0.
 by rewrite -(mulr_natr p) -mulrA divff ?mulr1.
 Qed.
 
+Lemma stl_and_lt0_const p : stl_and_lt0 nu (seq_of_rV (const_mx p)) = p.
+Proof.
+rewrite /stl_and_lt0/= {1}/sumR big_map seq_of_rV_const big_nseq.
+rewrite min_dev_nseq.
+rewrite mulr0 expR0 !mulr1.
+rewrite iter_addr addr0.
+rewrite /sumR big_map !big_nseq.
+rewrite min_dev_nseq mulr0 expR0 iter_addr addr0.
+rewrite iter_minr//.
+by rewrite -(mulr_natr p) -mulrA divff ?mulr1.
+Qed.
+
+End stl_and_lemmas.
+
+Section shadow_lifting_stl_and.
+Local Open Scope ring_scope.
+Local Open Scope classical_set_scope.
+Context {R : realType}.
+Variable nu : R.
+Variable M : nat.
+Hypothesis M0 : M != 0%N.
+
+Local Notation seq_of_rV := (@MatrixFormula.seq_of_rV _ M.+1).
+Local Notation stl_and_gt0 := (stl_and_gt0 nu).
+Local Notation stl_and_lt0 := (stl_and_lt0 nu).
+
+(* technical lemmas *)
 Lemma mip_at_right (p h : R) i : 0 < h ->
-  \big[minr/(p + h)]_(i <- seq_of_rV (const_mx p + h *: err_vec i)%R) i = p.
+  \big[minr/(p + h)]_(i <- seq_of_rV (const_mx p + h *: err_vec i)) i = p.
 Proof.
 move=> h0.
-rewrite big_map/= big_enum/= (bigminD1 i)//.
-rewrite ffunE !mxE eqxx mulr1.
+rewrite big_map/= big_enum/= (bigminD1 i)// ffunE !mxE eqxx mulr1.
 rewrite (eq_bigr (fun=> p)); last first.
   by move=> /= j ji; rewrite ffunE !mxE eq_sym (negbTE ji) mulr0 addr0.
-rewrite big_const/=.
-rewrite iter_minr//; last 2 first.
+rewrite big_const/= iter_minr//; last 2 first.
   by rewrite card_ordS.
   by rewrite lerDl// ltW.
 by rewrite /minr ltNge lerDl (ltW h0).
 Qed.
 
 Lemma mip_at_left (p h : R) i : h < 0 ->
-  \big[minr/(p + h)]_(i <- seq_of_rV (const_mx p + h *: err_vec i)%R) i = p + h.
+  \big[minr/(p + h)]_(i <- seq_of_rV (const_mx p + h *: err_vec i)) i = p + h.
 Proof.
 move=> h0; rewrite big_map/= big_enum/= (bigminD1 i)//.
 rewrite ffunE !mxE eqxx mulr1.
@@ -411,18 +429,17 @@ have H h : h > 0 ->
     by rewrite mulr0 expR0.
   rewrite big_const/= iter_addr addr0 card_ordS.
   by rewrite [LHS]addrC.
-apply/cvgrPdist_le => /= e e0.
-near=> t.
-rewrite H//=.
-rewrite -[X in (_ / _ - X)](mul1r p).
+apply/cvgrPdist_le => /= e e0; near=> t.
+rewrite H//= -[X in (_ / _ - X)](mul1r p).
 rewrite -[X in (_ / _ - X * _)](@divff _ (M%:R + expR (- nu * (t / p)))); last first.
   by rewrite lt0r_neq0// addr_gt0// ?expR_gt0// ltr0n lt0n.
 rewrite (mulrAC _ (_^-1) p) -mulrBl.
-have -> : ((p * M%:R)%R + ((p + t) * expR (- nu * (t / p)))%R) -
+have -> : ((p * M%:R) + ((p + t) * expR (- nu * (t / p)))) -
           (M%:R + expR (- nu * (t / p))) * p = t * expR (- nu * (t / p)) by lra.
 rewrite !mulrA mulVf// mul1r -(mul1r (M.+1%:R^-1)).
 have -> : expR (- nu * t / p) / (M%:R + expR (- nu * t / p)) =
-  ((fun t => expR (- nu * t / p)) \* (fun t => (M%:R + expR (- nu * t / p)) ^-1)) t by [].
+  ((fun t => expR (- nu * t / p)) \*
+   (fun t => (M%:R + expR (- nu * t / p)) ^-1)) t by [].
 near: t; move: e e0; apply/cvgrPdist_le.
 apply: cvgM.
   by under eq_fun do rewrite mulrAC; exact: expR_cvg0.
@@ -444,14 +461,13 @@ have H h : h < 0 -> (stl_and_gt0 (seq_of_rV  (const_mx p + h *: err_vec i))) =
   move=> h0.
   rewrite /stl_and_gt0/= /sumR/= !big_map -enumT !big_enum/= (bigD1 i)//=.
   congr (_ / _).
-    rewrite ffunE !mxE eqxx mulr1.
-    rewrite (_ : min_dev _ _ = 0); last first.
+    rewrite ffunE !mxE eqxx mulr1 (_ : min_dev _ _ = 0); last first.
       by rewrite /min_dev mip_at_left; lra.
     rewrite mulr0 expR0 mulr1 addrC.
     rewrite (eq_bigr (fun=> p * expR (- nu * (- h / (p + h))))); last first.
       move=> j ji.
       rewrite ffunE !mxE eq_sym (negbTE ji) mulr0 addr0.
-      rewrite (_ : min_dev _ _ = -h / (p + h))//.
+      rewrite (_ : min_dev _ _ = - h / (p + h))//.
       by rewrite /min_dev mip'_at_left//; lra.
     rewrite big_const/= iter_addr addr0 card_ordS.
     by rewrite -[in LHS]mulr_natr mulrAC.
@@ -466,8 +482,7 @@ have H h : h < 0 -> (stl_and_gt0 (seq_of_rV  (const_mx p + h *: err_vec i))) =
     by rewrite /min_dev mip'_at_left; lra.
   rewrite big_const/= iter_addr addr0 card_ordS.
   by rewrite mulr0 expR0 addrC -[in LHS]mulr_natr mulrC.
-apply/cvgrPdist_le => /= e e0.
-near=> t.
+apply/cvgrPdist_le => /= e e0; near=> t.
 rewrite H//=.
 rewrite /= stl_and_gt0_const.
 rewrite -[X in (_ / _ - X)](mul1r p).
@@ -476,10 +491,10 @@ rewrite -[X in (_ / _ - X * _)](@divff _ (M%:R * expR (- nu * (- t / (p + t))) +
     by rewrite ltr0n lt0n.
     by rewrite expR_gt0.
   rewrite (mulrAC _ (_^-1) p) -mulrBl.
-  have -> : (((p * M%:R * expR (- nu * (- t / (p + t))))%R + (p + t)) -
-   ((M%:R * expR (- nu * (- t / (p + t))))%R + 1%R) * p) = t by lra.
-  have -> : t^-1 * (t / ((M%:R * expR (- nu * (- t / (p + t))))%R + 1%R)) =
-    1 / ((M%:R * expR (- nu * (- t / (p + t))))%R + 1%R).
+  have -> : ((p * M%:R * expR (- nu * (- t / (p + t)))) + (p + t)) -
+   ((M%:R * expR (- nu * (- t / (p + t)))) + 1) * p = t by lra.
+  have -> : t^-1 * (t / ((M%:R * expR (- nu * (- t / (p + t)))) + 1)) =
+    1 / ((M%:R * expR (- nu * (- t / (p + t)))) + 1).
     by rewrite (mulrA (t^-1)) mulVf.
   rewrite div1r.
   near: t; move: e e0; apply/cvgrPdist_le.
@@ -520,25 +535,11 @@ rewrite stl_and_gt0_const => /cvg_lim.
 by apply; exact: Rhausdorff.
 Qed.
 
-Lemma stl_and_lt0_const (p : R) : stl_and_lt0 (seq_of_rV (const_mx p)) = p.
-Proof.
-rewrite /stl_and_lt0/= {1}/sumR big_map seq_of_rV_const big_nseq.
-rewrite min_dev_nseq.
-rewrite mulr0 expR0 !mulr1.
-rewrite iter_addr addr0.
-rewrite /sumR big_map !big_nseq.
-rewrite min_dev_nseq mulr0 expR0 iter_addr addr0.
-rewrite iter_minr.
-by rewrite -(mulr_natr p) -mulrA divff ?mulr1.
-by [].
-lra.
-Qed.
-
 Let num' (p x : R) : R := M%:R * expR (- x / (p + x)) +
   expR (- x / (p + x)) * x * M%:R * (x / (x + p)^+2 - (x + p)^-1) +
   expR (- x / (p + x)) * M%:R * p * (x / (x + p)^+2 - (x + p)^-1).
 
-Let px_neq0 (p y : R) : y \in (ball 0 p : set R) -> (p + y)%R != 0.
+Let px_neq0 (p y : R) : y \in (ball 0 p : set R) -> (p + y) != 0.
 Proof.
 rewrite inE /ball/= sub0r normrN lter_norml => /andP[Npx xp].
 by rewrite gt_eqF// -ltrBlDl sub0r.
@@ -755,8 +756,7 @@ have H h : h > 0 ->
   rewrite (_ : min_dev _ _ = 0); last first.
     by rewrite /min_dev mip'_at_right// subrr mul0r.
   by rewrite mulr0 expR0.
-apply/cvgrPdist_le => /= eps eps0.
-near=> x.
+apply/cvgrPdist_le => /= eps eps0; near=> x.
 rewrite [X in normr (_ - X)](_ : _ =
     (M%:R + expR (nu * (x / p)))^-1 *
     expR (nu * (x / p)) *
@@ -773,8 +773,7 @@ rewrite [X in normr (_ - X)](_ : _ =
     rewrite -mulrC -mulrDr -mulrBr.
     nra.
   by rewrite gt_eqF// addr_gt0// ?ltr0n ?lt0n// expR_gt0.
-near: x.
-move: eps eps0; apply/cvgrPdist_le.
+near: x; move: eps eps0; apply/cvgrPdist_le.
 rewrite -(mulr1 M.+1%:R^-1).
 rewrite -(mulr1 (M.+1%:R^-1 * 1)).
 apply: cvgM.
@@ -845,14 +844,13 @@ have H h : h < 0 ->
     by rewrite /min_dev mip'_at_left//; lra.
   rewrite big_const/= iter_addr addr0 card_ordS.
   by rewrite mulr0 expR0 addrC -[in LHS]mulr_natr mulrC.
-apply/cvgrPdist_le => /= eps eps0.
-near=> x.
+apply/cvgrPdist_le => /= eps eps0; near=> x.
 pose a x := expR (nu * - x / (p + x)).
 pose b x := expR (- x / (p + x)).
 pose num x := M%:R * (p + x) * b x - M%:R * p.
 pose den x := x * (M%:R + (a x)^-1).
 have ? : a x != 0 by rewrite ?gt_eqF ?expR_gt0.
-have ? : ((M%:R * a x)%R + 1%R) != 0.
+have ? : (M%:R * a x) + 1 != 0.
   by rewrite gt_eqF// addr_gt0// mulr_gt0// ?expR_gt0// ltr0n// lt0n.
 rewrite [X in normr (_ - X)](_ : _ =
     (a x * (M%:R + (a x)^-1))^-1 + num x / den x); last first.
@@ -874,8 +872,7 @@ rewrite [X in normr (_ - X)](_ : _ =
   rewrite !invrM'// (mulrC (a x)) !mulrA; congr(_/_).
   rewrite -mulrA mulfV// mulr1 mulrC; congr(_/_).
   by rewrite /num [in RHS](mulrC (M%:R)).
-near: x.
-move: eps eps0; apply/cvgrPdist_le.
+near: x; move: eps eps0; apply/cvgrPdist_le.
 have a01 : a x @[x --> nbhs 0^'-] --> (1:R).
   rewrite /a -expR0; apply: continuous_cvg; first apply: continuous_expR.
   rewrite -[X in _ --> X](mul0r p^-1).
@@ -898,7 +895,7 @@ apply: cvgD.
   rewrite -invr1 /a.
   exact: cvgV.
 rewrite /num /den /a /b.
-have H1 : - x * nu / (x + p) ^+ 2 @[x --> 0] --> - 0 * nu / (0%R + p) ^+ 2.
+have H1 : - x * nu / (x + p) ^+ 2 @[x --> 0] --> - 0 * nu / (0 + p) ^+ 2.
   apply: cvgM.
     apply: cvgM.
       by apply: cvgN; exact: cvg_id.
@@ -917,8 +914,8 @@ apply: (@lhopital_left R _ (num' p) _ (den' p) 0 _ (nbhsx_ballx _ _ p0)).
 - by rewrite oppr0 mul0r expR0 mulr1 addr0 subrr.
 - by rewrite mul0r.
 - have H2 : (expR (nu * (x / (x + p))) + M%:R +
-    (expR (nu * (x / (x + p))) * x * (- x * nu / (x + p) ^+ 2 + nu / (x + p)))%R)
-    @[x --> (0:R)^'] --> ((1:R)%R + M%:R).
+      expR (nu * (x / (x + p))) * x * (- x * nu / (x + p) ^+ 2 + nu / (x + p)))
+      @[x --> (0:R)^'] --> ((1:R) + M%:R).
     rewrite -[X in _ --> X]addr0.
     have H2 : nu * (x0 / (x0 + p)) @[x0 --> 0^'] --> 0.
       rewrite -[X in _ --> X](mulr0 nu).
@@ -952,7 +949,7 @@ apply: (@lhopital_left R _ (num' p) _ (den' p) 0 _ (nbhsx_ballx _ _ p0)).
   by apply: cvgr_neq0; [exact: H2|rewrite gt_eqF].
 - rewrite -{2}(mul0r (den' p 0)^-1).
   have H2 : expR (nu * (x / (x + p))) @[x --> 0^'-] -->
-            expR (nu * (0 / (0%R + p))).
+            expR (nu * (0 / (0 + p))).
     apply: continuous_cvg; first exact: continuous_expR.
     apply: cvgM; first exact: cvg_cst.
     apply: cvgM. exact/cvg_at_left_filter/cvg_id.
