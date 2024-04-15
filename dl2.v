@@ -316,3 +316,63 @@ Corollary shadow_lifting_dl2_and : shadow_lifting (@dl2_and R M.+1).
 Proof. by move=> p p0 i; rewrite shadowlifting_dl2_andE. Qed.
 
 End shadow_lifting_dl2_and.
+
+Section shadow_lifting_dl2_or.
+Local Open Scope ring_scope.
+Local Open Scope classical_set_scope.
+Context {R : realType}.
+Variable M : nat.
+Hypothesis M0 : M != 0%N.
+
+Definition dl2_or {R' : fieldType} {n} (v : 'rV[R']_n) :=
+  (\prod_(i < n) v ``_ i)%R.
+
+Import MatrixFormula.
+
+Lemma dl2_orE {n} (v : 'rV[R]_n) :
+  dl2_or v = prodR (map (dl2_translation \o ldl_real) (seq_of_rV v)).
+Proof.
+rewrite /prodR !big_map /dl2_and -enumT big_enum.
+by under [in RHS]eq_bigr do rewrite ffunE.
+Qed.
+
+Lemma shadowlifting_dl2_orE (p : R) : p > 0 ->
+  forall i, ('d (@dl2_or _ M.+1) '/d i) (const_mx p) = p ^+ M.
+Proof.
+move=> p0 i.
+rewrite /partial.
+have /cvg_lim : h^-1 * (dl2_or (const_mx p + h *: err_vec i) -
+                        @dl2_or _ M.+1 (const_mx p))
+       @[h --> (0:R)^'] --> p ^+ M.
+  rewrite /dl2_or.
+  have H (h : R) : h != 0 ->
+      \prod_(x < M.+1) (const_mx p + h *: err_vec i) 0 x -
+      \prod_(x < M.+1) const_mx (m:=M.+1) p 0 x = h * p ^+ M.
+    move=> h0; rewrite [X in X - _](bigD1 i)//= !mxE eqxx mulr1.
+    rewrite (eq_bigr (fun=> p)); last first.
+      by move=> j ji; rewrite !mxE eq_sym (negbTE ji) mulr0 addr0.
+    rewrite [X in _ - X](eq_bigr (fun=> p)); last by move=> *; rewrite mxE.
+    rewrite [X in _ - X](bigD1 i)//= -mulrBl addrAC subrr add0r; congr (h * _).
+    transitivity (\prod_(i0 in @predC1 [the eqType of 'I_M.+1] i) p).
+      by apply: eq_bigl => j; rewrite inE.
+    rewrite prodr_const; congr (_ ^+ _).
+    by rewrite cardC1 card_ord.
+  have : h^-1 * (h * p ^+ M) @[h --> (0:R)^'] --> p ^+ M.
+    have : {near (0:R)^', (fun=> p ^+ M) =1 (fun h => h^-1 * (h * p ^+ M))}.
+      near=> h; rewrite mulrA mulVf ?mul1r//.
+      by near: h; exact: nbhs_dnbhs_neq.
+    by move/near_eq_cvg/cvg_trans; apply; exact: cvg_cst.
+  apply: cvg_trans; apply: near_eq_cvg; near=> k.
+  have <-// := H k.
+    congr (_ * (_ - _)).
+    apply: eq_bigr => /= j _.
+    by rewrite !mxE.
+  by near: k; exact: nbhs_dnbhs_neq.
+by apply; exact: Rhausdorff.
+Unshelve. all: by end_near.
+Qed.
+
+Corollary shadow_lifting_dl2_or : shadow_lifting (@dl2_or R M.+1).
+Proof. by move=> p p0 i; rewrite shadowlifting_dl2_orE// exprn_gt0. Qed.
+
+End shadow_lifting_dl2_or.
