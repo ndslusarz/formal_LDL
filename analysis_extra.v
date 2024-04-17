@@ -646,6 +646,43 @@ Qed.
 End partial.
 Notation "'d f '/d i" := (partial f i).
 
+(* Section smoothness.
+Local Open Scope ring_scope.
+
+Reserved Notation "u '``_' i" (at level 3, i at level 2,
+  left associativity, format "u '``_' i").
+Reserved Notation "u *d w" (at level 40).
+
+Definition row_of_seq {R : numDomainType} (s : seq R) : 'rV[R]_(size s) :=
+  (\row_(i < size s) tnth (in_tuple s) i).
+
+(* TODO(rei): this notation breaks the display of ball predicates *)
+Notation "u '``_' i" := (u 0%R i) : ring_scope. *)
+
+
+(* Definition gradient {R : realType} (n : nat) (f : 'rV_n.+1 -> R) a :=
+  (\row_(i < n.+1) ('d f '/d i) a).
+
+
+(* NB(rei): main property of gradients? https://en.wikipedia.org/wiki/Gradient *)
+Lemma gradientP {R : realType} (n : nat) (f : 'rV[R]_n.+1 -> R^o) (v : 'rV[R]_n.+1) :
+  forall x : 'rV[R]_n.+1, (gradient f x) *d v = 'D_v f x.
+Proof.
+move=> x.
+rewrite /gradient.
+Admitted. *)
+(* 
+Definition weakly_smooth_cond {R : numDomainType} {n : nat} (a : 'rV[R]_n.+1) :=
+  let m := \big[minr/1(*def element*)]_i a``_i in
+  forall i j, i != j -> a``_i != m /\ a``_j != m.
+
+Definition weakly_smooth {R : numDomainType} (n : nat) (f : 'rV[R]_n.+1 -> R) :=
+  (forall a, {for a, continuous f}) /\
+  (forall a, weakly_smooth_cond a -> {for a, continuous (gradient f)}).
+
+End smoothness. *)
+
+
 Lemma monotonous_bounded_is_cvg {R : realType} (f : R -> R) x y :
   (BRight x < y)%O ->
   monotonous ([set` Interval (BRight x)(*NB(rei): was BSide b x*) y]) f ->
@@ -666,6 +703,7 @@ case: uf => r fr; exists r => z/= [s].
 by rewrite in_itv/= => /andP[xs _] <-{z}; exact: fr.
 Qed.
 
+
 Section hyperbolic_function.
 Variable R : realType.
 
@@ -674,6 +712,7 @@ Definition cosh (x : R) := (expR x + expR (- x)) / 2.
 Definition tanh (x : R) := sinh x / cosh x.
 
 End hyperbolic_function.
+
 
 Section Cauchy_MVT.
 Context {R : realType}.

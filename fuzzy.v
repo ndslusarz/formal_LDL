@@ -448,6 +448,47 @@ Proof. by move=> p p0 i; rewrite shadowlifting_product_andE// exprn_gt0. Qed.
 
 End shadow_lifting_product_and.
 
+Definition product_dl_mul {R : fieldType} (a b : R) := (a + b - a * b)%R.
+
+Definition product_dl_prod {R : fieldType} {n} (s : 'rV[R]_n) :=
+  (\big[product_dl_mul/0]_(i < n) s ``_ i)%R.
+
+Definition product_or {R : fieldType} {n} (u : 'rV[R]_n) : R :=
+  (\big[product_dl_mul/0]_(i < n) u ``_ i)%R.
+
+Section shadow_lifting_product_or.
+Context {R : realType}.
+Local Open Scope ring_scope.
+Local Open Scope classical_set_scope.
+Variable M : nat.
+Hypothesis M0 : M != 0%N.
+
+(*works for binary case on paper, idk about n-ary
+but does not work if p=1 !*)
+
+Lemma shadowlifting_product_orE p : p > 0 -> p < 1 ->
+  forall i, ('d (@product_or R M.+1) '/d i) (const_mx p) = 1 - p.
+Proof.
+Admitted.
+
+Corollary shadow_lifting_product_or : shadow_lifting (@product_and R M.+1).
+Proof. Admitted.
+
+End shadow_lifting_product_or.
+
+Section smoothness_product.
+Context {R : realType}.
+Local Open Scope ring_scope.
+Local Open Scope classical_set_scope.
+Variable M : nat.
+
+Lemma smooth_product_and : weakly_smooth (@product_and R M.+1).
+Proof.
+rewrite /weakly_smooth.
+Admitted.
+
+End smoothness_product.
+
 Section Lukasiewicz_lemmas.
 Local Open Scope ldl_scope.
 Local Open Scope ring_scope.

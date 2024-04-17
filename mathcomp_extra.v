@@ -62,7 +62,7 @@ Definition row_of_seq {R : numDomainType} (s : seq R) : 'rV[R]_(size s) :=
 Notation "u '``_' i" := (u 0%R i) : ring_scope.
 
 Definition dotmul {R : ringType} n (u v : 'rV[R]_n) : R := (u *m v^T)``_0.
-Notation "u *d w" := (dotmul u w).
+Notation "u *d w" := (dotmul u w). 
 
 Section alias_for_bigops.
 Context {R : numDomainType}.

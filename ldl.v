@@ -545,3 +545,36 @@ Definition shadow_lifting {R : realType} n (f : 'rV_n.+1 -> R) :=
   forall p, p > 0 -> forall i, ('d f '/d i) (const_mx p) > 0.
 
 End shadow_lifting.
+
+Section smoothness.
+Local Open Scope ring_scope.
+
+Definition gradient {R : realType} (n : nat) (f : 'rV_n.+1 -> R) a :=
+  \row_(i < n.+1) ('d f '/d i) a.
+
+Lemma gradientP {R : realType} (n : nat) (f : 'rV[R]_n.+1 -> R^o) (v : 'rV[R]_n.+1) :
+  forall x : 'rV[R]_n.+1, (gradient f x) *d v = 'D_v f x.
+Proof.
+move=> x.
+rewrite /gradient.
+Admitted.
+
+Definition weakly_smooth_cond {R : realType} {n : nat} (a : 'rV[R]_n.+1) :=
+  let m := \big[minr/1]_i a``_i in
+  forall i j, i != j -> a``_i != m /\ a``_j != m.
+
+Definition weakly_smooth {R : realType} (n : nat) (f : 'rV[R]_n.+1 -> R) :=
+  (forall a, {for a, continuous f}) /\
+  (forall a, weakly_smooth_cond a -> {for a, continuous (gradient f)}).
+
+End smoothness.
+
+Section scale_invariance.
+Local Open Scope ring_scope.
+
+Search ('rV_?n) "mul". 
+
+(* Definition scale_invariant {R : realType} (n : nat) (f : 'rV[R]_n.+1 -> R) :=
+  forall a : R, forall v, a * (f v) = (f (a* v)). *)
+
+End scale_invariance.
