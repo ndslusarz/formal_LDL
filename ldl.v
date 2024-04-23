@@ -59,7 +59,7 @@ Reserved Notation "nu .-[[ e ]]_stle" (at level 10, format "nu .-[[ e ]]_stle").
 Reserved Notation "nu .-[[ e ]]_stl" (at level 10, format "nu .-[[ e ]]_stl").
 Reserved Notation "[[ e ]]_dl2e" (at level 10, format "[[ e ]]_dl2e").
 Reserved Notation "[[ e ]]_dl2" (at level 10, format "[[ e ]]_dl2").
-Reserved Notation "[[ e ]]_d" (at level 10, format "[[ e ]]_d").
+Reserved Notation "[[ e ]]_Dombi" (at level 10, format "[[ e ]]_Dombi").
 
 (* Polarity of formulas: pos allows only positive formulas, neg allows negation *)
 Inductive polarity := pos | neg.
@@ -363,7 +363,7 @@ Fixpoint dombi_translation {t} (e : @expr R t) {struct e} : type_translation t :
 where "{[ e ]}" := (dombi_translation e).
 
 End dombi_translation.
-Notation "[[ e ]]_d" := (dombi_translation e) : ldl_scope.
+Notation "[[ e ]]_" := (dombi_translation e) : ldl_scope.
 
 Section dl2_ereal_translation.
 Local Open Scope ereal_scope.
