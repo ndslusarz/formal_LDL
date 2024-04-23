@@ -207,8 +207,8 @@ Local Notation "[[ e ]]_Dombi" := (@dombi_translation R v _ e).
 Lemma Dombi_andC_nary (s1 s2 : seq (expr Bool_N)) :
   perm_eq s1 s2 -> [[ldl_and s1]]_Dombi = [[ldl_and s2]]_Dombi.
 Proof.
-
-Admitted.
+by move=> pi; rewrite /=/sumR !big_map (perm_big _ pi)/=. 
+Qed.
 
 Lemma Dombi_andC (e1 e2 : expr Bool_N) :
   [[ e1 `/\ e2 ]]_Dombi = [[ e2 `/\ e1 ]]_Dombi.
@@ -221,7 +221,8 @@ Qed.
 Lemma Dombi_orC_nary (s1 s2 : seq (expr Bool_N)) :
   perm_eq s1 s2 -> [[ldl_or s1]]_Dombi = [[ldl_or s2]]_Dombi.
 Proof.
-Admitted.
+by move=> pi; rewrite /=/sumR !big_map (perm_big _ pi)/=. 
+Qed.
 
 Lemma Dombi_orC (e1 e2 : expr Bool_N) :
   [[ e1 `\/ e2 ]]_Dombi = [[ e2 `\/ e1 ]]_Dombi.
@@ -229,16 +230,19 @@ Proof.
 rewrite /=/sumR ?big_cons ?big_nil. 
 rewrite !addr0. 
 by rewrite (addrC _ (((1 - [[e1]]_Dombi)^-1 * [[e1]]_Dombi))). 
-Admitted.
+Qed.
 
 Lemma Dombi_orA (e1 e2 e3 : expr Bool_N) :
   [[ (e1 `\/ (e2 `\/ e3)) ]]_Dombi = [[ ((e1 `\/ e2) `\/ e3) ]]_Dombi.
 Proof.
+rewrite /=/sumR ?big_cons ?big_nil !addr0.
 Admitted.
 
 Theorem Dombi_andA (e1 e2 e3 : expr Bool_N) : 
   [[ (e1 `/\ e2) `/\ e3]]_Dombi = [[ e1 `/\ (e2 `/\ e3) ]]_Dombi.
 Proof.
+rewrite /=/sumR ?big_cons ?big_nil !addr0.
+
 Admitted.
 
 
