@@ -466,9 +466,15 @@ Hypothesis M0 : M != 0%N.
 (*works for binary case on paper, idk about n-ary
 but does not work if p=1 !*)
 
-Lemma shadowlifting_product_orE p : p > 0 -> p < 1 ->
+Lemma shadowlifting_product_orE p : p < 1 ->
   forall i, ('d (@product_or R M.+1) '/d i) (const_mx p) = 1 - p.
 Proof.
+move=> p0 i.
+rewrite /partial.
+have /cvg_lim : h^-1 * (product_or (const_mx p + h *: err_vec i) -
+                        @product_or _ M.+1 (const_mx p))
+       @[h --> (0:R)^'] --> 1 - p.
+rewrite /product_or/product_dl_mul.
 Admitted.
 
 Corollary shadow_lifting_product_or : shadow_lifting (@product_and R M.+1).
