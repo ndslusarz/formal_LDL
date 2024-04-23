@@ -324,6 +324,45 @@ where "{[ e ]}" := (translation e).
 
 End fuzzy_translation.
 
+(*nat: this could go together with fuzzy, perhaps if it's finished
+
+it does use the same type translation as fuzzy, may split
+
+here using alpha = 1/-1*)
+Section dombi_translation.
+Local Open Scope ring_scope.
+Local Open Scope ldl_scope.
+Context {R : realType}.
+Variables (v : R).
+
+Fixpoint dombi_translation {t} (e : @expr R t) {struct e} : type_translation t :=
+   match e in expr t return type_translation t with
+   | ldl_bool _ true => (1%R : type_translation (Bool_T _))
+   | ldl_bool _ false => (0%R : type_translation (Bool_T _))
+   | ldl_real r => r%R
+   | ldl_idx n i => i
+   | ldl_vec n t => t
+
+   | ldl_and b Es => ( 1 + sumR (map (fun E => (1 - ({[ E ]} : type_translation (Bool_T _)))
+        * ({[ E ]} : type_translation (Bool_T _))^-1) Es))^-1
+       
+   | ldl_or b Es => ( 1 + (sumR (map (fun E => (1 - ({[ E ]} : type_translation (Bool_T _)))^-1
+        * ({[ E ]} : type_translation (Bool_T _))) Es))^-1)^-1
+       
+
+    | `~ E1 => (1 + ((1 -v) * v^-1)^2 * {[ E1 ]} * (1 - {[ E1 ]})^-1 )^-1
+
+    | E1 `== E2 => if {[ E1 ]} == -{[ E2 ]} then ({[ E1 ]} == {[ E2 ]})%:R else maxr (1 - `|({[ E1 ]} - {[ E2 ]}) / ({[ E1 ]} + {[ E2 ]})|) 0
+    | E1 `<= E2 => if {[ E1 ]} == -{[ E2 ]} then ({[ E1 ]} <= {[ E2 ]})%R%:R else maxr (1 - maxr (({[ E1 ]} - {[ E2 ]}) / `|{[ E1 ]} + {[ E2 ]}|) 0) 0
+
+    | ldl_fun n m f => f
+    | ldl_app n m f v => (dombi_translation f) (dombi_translation v)
+    | ldl_lookup n v i => tnth (dombi_translation v) (dombi_translation i)
+    end
+where "{[ e ]}" := (dombi_translation e).
+
+End dombi_translation.
+
 Section dl2_ereal_translation.
 Local Open Scope ereal_scope.
 Local Open Scope ldl_scope.
