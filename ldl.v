@@ -1,3 +1,4 @@
+
 From HB Require Import structures.
 Require Import Coq.Program.Equality.
 From mathcomp Require Import all_ssreflect all_algebra.
@@ -329,7 +330,7 @@ End fuzzy_translation.
 
 it does use the same type translation as fuzzy, may split
 
-here using alpha = 1/-1*)
+here using alpha = 1/-1 - to explore with generic alpha*)
 Section dombi_translation.
 Local Open Scope ring_scope.
 Local Open Scope ldl_scope.
@@ -343,7 +344,6 @@ Definition dombi_and (v : seq R) :=
 Definition dombi_or (v : seq R) :=
   ( 1 + (sumR (map (fun E => (1 - E)^-1 * E) v))^-1)^-1.
 
-
 Fixpoint dombi_translation {t} (e : @expr R t) {struct e} : type_translation t :=
    match e in expr t return type_translation t with
    | ldl_bool _ true => (1%R : type_translation (Bool_T _))
@@ -354,14 +354,17 @@ Fixpoint dombi_translation {t} (e : @expr R t) {struct e} : type_translation t :
 
    | ldl_and b Es => 
       let A := map dombi_translation Es in
-      let a_min : R := \big[minr/1]_(i <- A) i in
-      if a_min > 0 then dombi_and A
+      (*let a_min : R := \big[minr/1]_(i <- A) i in*)
+      let a_prod : R := \prod_(i <- A) i in
+      if a_prod > 0 then dombi_and A
+     (* if (forall i, i \in A -> 0 < i) then dombi_and A*)
       else 0
 
    | ldl_or b Es => 
       let A := map dombi_translation Es in
-      let a_max : R := \big[maxr/0]_(i <- A) i in
-      if a_max < 1 then dombi_or A
+      (*let a_max : R := \big[maxr/0]_(i <- A) i in*)
+      let a_prod : R := \prod_(i <- A) (i-1) in
+      if a_prod != 0 then dombi_or A
       else 1
 
 (* ( 1 + sumR (map (fun E => (1 - ({[ E ]} : type_translation (Bool_T _)))

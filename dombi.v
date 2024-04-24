@@ -209,7 +209,10 @@ Lemma Dombi_andC_nary (s1 s2 : seq (expr Bool_N)) :
 Proof.
 move=> pi; rewrite /=/dombi_and/sumR !big_map (perm_big _ pi)//=.
 case:ifPn. 
-  - move => h. About perm_eq.
+- move => h.  Search "perm" "sum". 
+  rewrite (perm_big _ pi). 
+admit.
+- lra.
 Admitted.
 
 Lemma Dombi_andC (e1 e2 : expr Bool_N) :
@@ -244,18 +247,32 @@ case: ifPn; move => h; case: ifP.
 - lra.
 Admitted.
 
-Lemma Dombi_orA (e1 e2 e3 : expr Bool_N) :
-  [[ (e1 `\/ (e2 `\/ e3)) ]]_Dombi = [[ ((e1 `\/ e2) `\/ e3) ]]_Dombi.
-Proof.
-rewrite /=/sumR ?big_cons ?big_nil.
-case: ifP; case: ifP; move => h1 h2.
-Admitted.
 
 Theorem Dombi_andA (e1 e2 e3 : expr Bool_N) : 
   [[ (e1 `/\ e2) `/\ e3]]_Dombi = [[ e1 `/\ (e2 `/\ e3) ]]_Dombi.
 Proof.
-rewrite /=/sumR ?big_cons ?big_nil.
-
+rewrite /=/dombi_and/sumR ?big_cons ?big_nil.
+case: ifP; case: ifP => h1 h2.
+- case: ifP; case: ifP => h3 h4; rewrite !addr0.
+  + admit.
+  + admit.
+  + admit.
+  + admit.
+- case: ifP; case: ifP => h3 h4; rewrite !addr0 !subr0.
+  + admit.
+  + admit.
+  + admit.
+  + admit.
+- case: ifP; case: ifP => h3 h4.
+  + admit.
+  + admit.
+  + exact.
+  + exact.
+- case: ifP; case: ifP => h3 h4.
+  + admit.
+  + admit.
+  + exact.
+  + exact.
 Admitted.
 
 
