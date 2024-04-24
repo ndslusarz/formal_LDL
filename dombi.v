@@ -219,7 +219,7 @@ rewrite /=/dombi_and/sumR ?big_cons ?big_nil.
 rewrite !addr0.
 case: ifPn; move => h; case: ifP.
 - by rewrite -(addrC _ ((1 - [[e1]]_Dombi) / [[e1]]_Dombi)). 
-- admit. (*use h for contradiction*)
+-  Search ( _ = false) (~~ _). (* real_leNgt. *) admit. (*use h for contradiction*)
 - admit. (*use h for contradiction*)
 - lra.
 Admitted.
@@ -247,13 +247,14 @@ Admitted.
 Lemma Dombi_orA (e1 e2 e3 : expr Bool_N) :
   [[ (e1 `\/ (e2 `\/ e3)) ]]_Dombi = [[ ((e1 `\/ e2) `\/ e3) ]]_Dombi.
 Proof.
-rewrite /=/sumR ?big_cons ?big_nil !addr0.
+rewrite /=/sumR ?big_cons ?big_nil.
+case: ifP; case: ifP; move => h1 h2.
 Admitted.
 
 Theorem Dombi_andA (e1 e2 e3 : expr Bool_N) : 
   [[ (e1 `/\ e2) `/\ e3]]_Dombi = [[ e1 `/\ (e2 `/\ e3) ]]_Dombi.
 Proof.
-rewrite /=/sumR ?big_cons ?big_nil !addr0.
+rewrite /=/sumR ?big_cons ?big_nil.
 
 Admitted.
 
