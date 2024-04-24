@@ -207,30 +207,42 @@ Local Notation "[[ e ]]_Dombi" := (@dombi_translation R v _ e).
 Lemma Dombi_andC_nary (s1 s2 : seq (expr Bool_N)) :
   perm_eq s1 s2 -> [[ldl_and s1]]_Dombi = [[ldl_and s2]]_Dombi.
 Proof.
-by move=> pi; rewrite /=/sumR !big_map (perm_big _ pi)/=. 
-Qed.
+move=> pi; rewrite /=/dombi_and/sumR !big_map (perm_big _ pi)//=.
+case:ifPn. 
+  - move => h. About perm_eq.
+Admitted.
 
 Lemma Dombi_andC (e1 e2 : expr Bool_N) :
   [[ e1 `/\ e2 ]]_Dombi = [[ e2 `/\ e1 ]]_Dombi.
 Proof.
-rewrite /=/sumR ?big_cons ?big_nil. 
-rewrite !addr0. 
-by rewrite -(addrC _ ((1 - [[e1]]_Dombi) / [[e1]]_Dombi)). 
-Qed.
+rewrite /=/dombi_and/sumR ?big_cons ?big_nil. 
+rewrite !addr0.
+case: ifPn; move => h; case: ifP.
+- by rewrite -(addrC _ ((1 - [[e1]]_Dombi) / [[e1]]_Dombi)). 
+- admit. (*use h for contradiction*)
+- admit. (*use h for contradiction*)
+- lra.
+Admitted.
 
 Lemma Dombi_orC_nary (s1 s2 : seq (expr Bool_N)) :
   perm_eq s1 s2 -> [[ldl_or s1]]_Dombi = [[ldl_or s2]]_Dombi.
 Proof.
-by move=> pi; rewrite /=/sumR !big_map (perm_big _ pi)/=. 
-Qed.
+move=> pi; rewrite /=/dombi_or/sumR !big_map (perm_big _ pi)/=.
+case:ifPn. 
+  - move => h. About perm_eq.
+Admitted.
 
 Lemma Dombi_orC (e1 e2 : expr Bool_N) :
   [[ e1 `\/ e2 ]]_Dombi = [[ e2 `\/ e1 ]]_Dombi.
 Proof.
-rewrite /=/sumR ?big_cons ?big_nil. 
+rewrite /=/dombi_or/sumR ?big_cons ?big_nil. 
 rewrite !addr0. 
-by rewrite (addrC _ (((1 - [[e1]]_Dombi)^-1 * [[e1]]_Dombi))). 
-Qed.
+case: ifPn; move => h; case: ifP.
+- by rewrite (addrC _ (((1 - [[e1]]_Dombi)^-1 * [[e1]]_Dombi))). 
+- admit. (*use h for contradiction*)
+- admit. (*use h for contradiction*)
+- lra.
+Admitted.
 
 Lemma Dombi_orA (e1 e2 e3 : expr Bool_N) :
   [[ (e1 `\/ (e2 `\/ e3)) ]]_Dombi = [[ ((e1 `\/ e2) `\/ e3) ]]_Dombi.

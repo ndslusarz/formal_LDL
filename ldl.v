@@ -336,6 +336,14 @@ Local Open Scope ldl_scope.
 Context {R : realType}.
 Variables (v : R).
 
+
+Definition dombi_and (v : seq R) :=
+  ( 1 + sumR (map (fun E => (1 - E) * (E)^-1) v))^-1.
+
+Definition dombi_or (v : seq R) :=
+  ( 1 + (sumR (map (fun E => (1 - E)^-1 * E) v))^-1)^-1.
+
+
 Fixpoint dombi_translation {t} (e : @expr R t) {struct e} : type_translation t :=
    match e in expr t return type_translation t with
    | ldl_bool _ true => (1%R : type_translation (Bool_T _))
@@ -344,11 +352,23 @@ Fixpoint dombi_translation {t} (e : @expr R t) {struct e} : type_translation t :
    | ldl_idx n i => i
    | ldl_vec n t => t
 
-   | ldl_and b Es => ( 1 + sumR (map (fun E => (1 - ({[ E ]} : type_translation (Bool_T _)))
-        * ({[ E ]} : type_translation (Bool_T _))^-1) Es))^-1
+   | ldl_and b Es => 
+      let A := map dombi_translation Es in
+      let a_min : R := \big[minr/1]_(i <- A) i in
+      if a_min > 0 then dombi_and A
+      else 0
+
+   | ldl_or b Es => 
+      let A := map dombi_translation Es in
+      let a_max : R := \big[maxr/0]_(i <- A) i in
+      if a_max < 1 then dombi_or A
+      else 1
+
+(* ( 1 + sumR (map (fun E => (1 - ({[ E ]} : type_translation (Bool_T _)))
+        * ({[ E ]} : type_translation (Bool_T _))^-1) Es))^-1 *)
        
-   | ldl_or b Es => ( 1 + (sumR (map (fun E => (1 - ({[ E ]} : type_translation (Bool_T _)))^-1
-        * ({[ E ]} : type_translation (Bool_T _))) Es))^-1)^-1
+(*    | ldl_or b Es => ( 1 + (sumR (map (fun E => (1 - ({[ E ]} : type_translation (Bool_T _)))^-1
+        * ({[ E ]} : type_translation (Bool_T _))) Es))^-1)^-1 *)
        
 
     | `~ E1 => (1 + ((1 -v) * v^-1)^2 * {[ E1 ]} * (1 - {[ E1 ]})^-1 )^-1
