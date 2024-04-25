@@ -209,11 +209,9 @@ Lemma Dombi_andC_nary (s1 s2 : seq (expr Bool_N)) :
 Proof.
 move=> pi; rewrite /=/dombi_and/sumR !big_map (perm_big _ pi)//=.
 case:ifPn. 
-- move => h.  Search "perm" "sum". 
-  rewrite (perm_big _ pi). 
-admit.
+- move => h. rewrite (perm_big _ pi)//=.
 - lra.
-Admitted.
+Qed.
 
 Lemma Dombi_andC (e1 e2 : expr Bool_N) :
   [[ e1 `/\ e2 ]]_Dombi = [[ e2 `/\ e1 ]]_Dombi.
@@ -222,7 +220,7 @@ rewrite /=/dombi_and/sumR ?big_cons ?big_nil.
 rewrite !addr0.
 case: ifPn; move => h; case: ifP.
 - by rewrite -(addrC _ ((1 - [[e1]]_Dombi) / [[e1]]_Dombi)). 
--  Search ( _ = false) (~~ _). (* real_leNgt. *) admit. (*use h for contradiction*)
+- (* real_leNgt. *) admit. (*use h for contradiction*)
 - admit. (*use h for contradiction*)
 - lra.
 Admitted.
@@ -232,8 +230,9 @@ Lemma Dombi_orC_nary (s1 s2 : seq (expr Bool_N)) :
 Proof.
 move=> pi; rewrite /=/dombi_or/sumR !big_map (perm_big _ pi)/=.
 case:ifPn. 
-  - move => h. About perm_eq.
-Admitted.
+- move => h. rewrite (perm_big _ pi)//=.
+- lra.
+Qed.
 
 Lemma Dombi_orC (e1 e2 : expr Bool_N) :
   [[ e1 `\/ e2 ]]_Dombi = [[ e2 `\/ e1 ]]_Dombi.
