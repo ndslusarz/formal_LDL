@@ -356,7 +356,7 @@ Fixpoint dombi_translation {t} (e : @expr R t) {struct e} : type_translation t :
       let A := map dombi_translation Es in
       (*let a_min : R := \big[minr/1]_(i <- A) i in*)
       let a_prod : R := \prod_(i <- A) i in
-      if a_prod > 0 then dombi_and A
+      if a_prod != 0 then dombi_and A
      (* if (forall i, i \in A -> 0 < i) then dombi_and A*)
       else 0
 

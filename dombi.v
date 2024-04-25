@@ -56,9 +56,14 @@ dependent induction e using expr_ind'.
 - rewrite /=; case b; lra.
 - move: H. rewrite /=; move=> /List.Forall_forall H.
   rewrite /sumR; apply/andP; split.
-  + Search (0 <= _%E ^ _).  admit.
-  + Search powR (1). admit.
-
+  + case: ifP; rewrite /dombi_and/sumR.
+    - move => h1. rewrite -exprN1 exprz_ge0 //=.
+      
+      admit.
+    - lra.
+  +  case: ifP; rewrite /dombi_and.
+    - admit.
+    - lra.
 - move: H. rewrite /=; move=> /List.Forall_forall H.
   rewrite /sumR; apply/andP; split.
   + admit.
@@ -80,7 +85,8 @@ Lemma dombi_nary_inversion_andE1 (s : seq (expr (Bool_N))) :
   [[ ldl_and s ]]_Dombi = 1 ->
     forall i, (i < size s)%N -> [[ nth (ldl_bool _ false) s i ]]_Dombi = 1.
 Proof.
-have := dombi_translate_Bool_T_01.
+  have := dombi_translate_Bool_T_01.
+  move => H1 H2 i i0 /=.
 Admitted.
 
 Lemma dombi_nary_inversion_andE0 (s : seq (expr (Bool_N))) :
@@ -213,7 +219,18 @@ case:ifPn.
 - lra.
 Qed.
 
-Lemma Dombi_andC (e1 e2 : expr Bool_N) :
+Lemma Dombi_orC_nary (s1 s2 : seq (expr Bool_N)) :
+  perm_eq s1 s2 -> [[ldl_or s1]]_Dombi = [[ldl_or s2]]_Dombi.
+Proof.
+move=> pi; rewrite /=/dombi_or/sumR !big_map (perm_big _ pi)/=.
+case:ifPn. 
+- move => h. rewrite (perm_big _ pi)//=.
+- lra.
+Qed.
+
+
+(*not really needed since I proved n-ary versions first, will delete later*)
+(*Lemma Dombi_andC (e1 e2 : expr Bool_N) :
   [[ e1 `/\ e2 ]]_Dombi = [[ e2 `/\ e1 ]]_Dombi.
 Proof.
 rewrite /=/dombi_and/sumR ?big_cons ?big_nil. 
@@ -225,14 +242,6 @@ case: ifPn; move => h; case: ifP.
 - lra.
 Admitted.
 
-Lemma Dombi_orC_nary (s1 s2 : seq (expr Bool_N)) :
-  perm_eq s1 s2 -> [[ldl_or s1]]_Dombi = [[ldl_or s2]]_Dombi.
-Proof.
-move=> pi; rewrite /=/dombi_or/sumR !big_map (perm_big _ pi)/=.
-case:ifPn. 
-- move => h. rewrite (perm_big _ pi)//=.
-- lra.
-Qed.
 
 Lemma Dombi_orC (e1 e2 : expr Bool_N) :
   [[ e1 `\/ e2 ]]_Dombi = [[ e2 `\/ e1 ]]_Dombi.
@@ -244,35 +253,37 @@ case: ifPn; move => h; case: ifP.
 - admit. (*use h for contradiction*)
 - admit. (*use h for contradiction*)
 - lra.
-Admitted.
+Admitted.*)
 
 
 Theorem Dombi_andA (e1 e2 e3 : expr Bool_N) : 
   [[ (e1 `/\ e2) `/\ e3]]_Dombi = [[ e1 `/\ (e2 `/\ e3) ]]_Dombi.
 Proof.
-rewrite /=/dombi_and/sumR ?big_cons ?big_nil.
-case: ifP; case: ifP => h1 h2.
-- case: ifP; case: ifP => h3 h4; rewrite !addr0.
-  + admit.
-  + admit.
-  + admit.
-  + admit.
-- case: ifP; case: ifP => h3 h4; rewrite !addr0 !subr0.
-  + admit.
-  + admit.
-  + admit.
-  + admit.
-- case: ifP; case: ifP => h3 h4.
-  + admit.
-  + admit.
-  + exact.
-  + exact.
-- case: ifP; case: ifP => h3 h4.
-  + admit.
-  + admit.
-  + exact.
-  + exact.
-Admitted.
+  rewrite /=/dombi_and/sumR ?big_cons ?big_nil.
+  have [->|] := eqVneq ([[e1]]_Dombi) 0.
+  rewrite !mul0r. case: ifP; case: ifP; lra.
+  move => he1.
+  have [->|] := eqVneq ([[e2]]_Dombi) 0.
+  case: ifP; case: ifP; rewrite !mul0r !mulr0 //=; try lra.
+  move => _ _.
+  case: ifP; case: ifP; try lra.
+  move => he2.
+  have [->|] := eqVneq ([[e3]]_Dombi) 0.
+  case: ifP; case: ifP; rewrite !mul0r !mulr0; try lra.
+  admit.
+  rewrite mulr1 mulf_neq0; try lra. by rewrite he1. by rewrite he2.
+  move => he3.
+  (*here we dealt with all the zero cases*)
+  case: ifP. case: ifP; first last; rewrite ?mul0r ?mulr0; try lra.
+  move => _ h1.
+  case: ifP; case: ifP; rewrite ?mul0r ?mulr0; try lra.
+  - move => _ h2. admit.
+  - move => _ h2. admit.
+  - rewrite mulr1 mulf_neq0. lra. by rewrite he2. by rewrite he3.
+    case: ifP; case: ifP; case: ifP; rewrite ?mul0r ?mulr0; try lra.
+    + move => _ h1 _ h2. admit.
+    + move => _ h1. rewrite mulr1 mulf_neq0. lra. by rewrite he1. by rewrite he2.
+ Admitted.
 
 
 End dombi_lemmas.
