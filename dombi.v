@@ -270,19 +270,21 @@ Proof.
   move => he2.
   have [->|] := eqVneq ([[e3]]_Dombi) 0.
   case: ifP; case: ifP; rewrite !mul0r !mulr0; try lra.
-  admit.
+  move => _ _.
+  case: ifP; case: ifP; try lra.
   rewrite mulr1 mulf_neq0; try lra. by rewrite he1. by rewrite he2.
   move => he3.
   (*here we dealt with all the zero cases*)
   case: ifP. case: ifP; first last; rewrite ?mul0r ?mulr0; try lra.
   move => _ h1.
   case: ifP; case: ifP; rewrite ?mul0r ?mulr0; try lra.
-  - move => _ h2. admit.
-  - move => _ h2. admit.
-  - rewrite mulr1 mulf_neq0. lra. by rewrite he2. by rewrite he3.
+    move => _ h2. admit.
+    move => _ h2. admit.
+    rewrite mulr1 mulf_neq0. lra. by rewrite he2. by rewrite he3.
     case: ifP; case: ifP; case: ifP; rewrite ?mul0r ?mulr0; try lra.
-    + move => _ h1 _ h2. admit.
-    + move => _ h1. rewrite mulr1 mulf_neq0. lra. by rewrite he1. by rewrite he2.
+    move => _ h1 _ h2. apply /eqP. rewrite eq_sym invr_eq0.
+    rewrite !addr0. admit.
+      move => _ h1. rewrite mulr1 mulf_neq0. lra. by rewrite he1. by rewrite he2.
  Admitted.
 
 
