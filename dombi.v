@@ -58,10 +58,11 @@ dependent induction e using expr_ind'.
   rewrite /sumR; apply/andP; split.
   + case: ifP; rewrite /dombi_and/sumR.
     - move => h1. rewrite -exprN1 exprz_ge0 //=.
-      
+      rewrite big_map addr_ge0//= sumr_ge0 //=.
+      (*need to extract this knowledge from H*)
       admit.
     - lra.
-  +  case: ifP; rewrite /dombi_and.
+  +  case: ifP; rewrite /dombi_and/sumR.
     - admit.
     - lra.
 - move: H. rewrite /=; move=> /List.Forall_forall H.
@@ -229,33 +230,6 @@ case:ifPn.
 Qed.
 
 
-(*not really needed since I proved n-ary versions first, will delete later*)
-(*Lemma Dombi_andC (e1 e2 : expr Bool_N) :
-  [[ e1 `/\ e2 ]]_Dombi = [[ e2 `/\ e1 ]]_Dombi.
-Proof.
-rewrite /=/dombi_and/sumR ?big_cons ?big_nil. 
-rewrite !addr0.
-case: ifPn; move => h; case: ifP.
-- by rewrite -(addrC _ ((1 - [[e1]]_Dombi) / [[e1]]_Dombi)). 
-- (* real_leNgt. *) admit. (*use h for contradiction*)
-- admit. (*use h for contradiction*)
-- lra.
-Admitted.
-
-
-Lemma Dombi_orC (e1 e2 : expr Bool_N) :
-  [[ e1 `\/ e2 ]]_Dombi = [[ e2 `\/ e1 ]]_Dombi.
-Proof.
-rewrite /=/dombi_or/sumR ?big_cons ?big_nil. 
-rewrite !addr0. 
-case: ifPn; move => h; case: ifP.
-- by rewrite (addrC _ (((1 - [[e1]]_Dombi)^-1 * [[e1]]_Dombi))). 
-- admit. (*use h for contradiction*)
-- admit. (*use h for contradiction*)
-- lra.
-Admitted.*)
-
-
 Theorem Dombi_andA (e1 e2 e3 : expr Bool_N) : 
   [[ (e1 `/\ e2) `/\ e3]]_Dombi = [[ e1 `/\ (e2 `/\ e3) ]]_Dombi.
 Proof.
@@ -276,14 +250,23 @@ Proof.
   move => he3.
   (*here we dealt with all the zero cases*)
   case: ifP. case: ifP; first last; rewrite ?mul0r ?mulr0; try lra.
+  set a1 := (1 - [[e1]]_Dombi) / [[e1]]_Dombi.
+  set a2 := (1 - [[e2]]_Dombi) / [[e2]]_Dombi.
+  set a3 := (1 - [[e3]]_Dombi) / [[e3]]_Dombi.
   move => _ h1.
   case: ifP; case: ifP; rewrite ?mul0r ?mulr0; try lra.
-    move => _ h2. admit.
-    move => _ h2. admit.
-    rewrite mulr1 mulf_neq0. lra. by rewrite he2. by rewrite he3.
+  - move => _ h2. rewrite !addr0. 
+    admit.
+  - move => _ h2. apply /eqP. rewrite invr_eq0.
+    rewrite !addr0 (*addr0_eq*). admit.
+  - rewrite mulr1 mulf_neq0. lra. by rewrite he2. by rewrite he3.
     case: ifP; case: ifP; case: ifP; rewrite ?mul0r ?mulr0; try lra.
     move => _ h1 _ h2. apply /eqP. rewrite eq_sym invr_eq0.
-    rewrite !addr0. admit.
+    rewrite !addr0.
+    set a1 := (1 - [[e1]]_Dombi) / [[e1]]_Dombi.
+    set a2 := (1 - [[e2]]_Dombi) / [[e2]]_Dombi.
+    set a3 := (1 - [[e3]]_Dombi) / [[e3]]_Dombi.
+    rewrite addrA. rewrite addr_eq0.  admit.
       move => _ h1. rewrite mulr1 mulf_neq0. lra. by rewrite he1. by rewrite he2.
  Admitted.
 
