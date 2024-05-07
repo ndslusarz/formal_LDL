@@ -374,7 +374,10 @@ Fixpoint dombi_translation {t} (e : @expr R t) {struct e} : type_translation t :
         * ({[ E ]} : type_translation (Bool_T _))) Es))^-1)^-1 *)
        
 
-    | `~ E1 => (1 + ((1 -v) * v^-1)^2 * {[ E1 ]} * (1 - {[ E1 ]})^-1 )^-1
+   | `~ E1 =>
+       if  {[ E1 ]} != 1 then
+         (1 + ((1 -v) * v^-1)^2 * {[ E1 ]} * (1 - {[ E1 ]})^-1 )^-1
+       else 0
 
     | E1 `== E2 => if {[ E1 ]} == -{[ E2 ]} then ({[ E1 ]} == {[ E2 ]})%:R else maxr (1 - `|({[ E1 ]} - {[ E2 ]}) / ({[ E1 ]} + {[ E2 ]})|) 0
     | E1 `<= E2 => if {[ E1 ]} == -{[ E2 ]} then ({[ E1 ]} <= {[ E2 ]})%R%:R else maxr (1 - maxr (({[ E1 ]} - {[ E2 ]}) / `|{[ E1 ]} + {[ E2 ]}|) 0) 0

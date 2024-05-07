@@ -57,12 +57,14 @@ dependent induction e using expr_ind'.
 - move: H. rewrite /=; move=> /List.Forall_forall H.
   rewrite /sumR; apply/andP; split.
   + case: ifP; rewrite /dombi_and/sumR.
-    - move => h1. rewrite -exprN1 exprz_ge0 //=.
-      rewrite big_map addr_ge0//= sumr_ge0 //=.
+    - move => h1. (*rewrite -exprN1 exprz_ge0 //=.
+      rewrite big_map addr_ge0//= sumr_ge0 //=.*)
       (*need to extract this knowledge from H*)
       admit.
     - lra.
-  +  case: ifP; rewrite /dombi_and/sumR.
+      +  case: ifP; rewrite /dombi_and/sumR.
+         
+       (*rewrite prodf_seq_neq0.*)
     - admit.
     - lra.
 - move: H. rewrite /=; move=> /List.Forall_forall H.
@@ -82,12 +84,43 @@ dependent induction e using expr_ind'.
   - by rewrite le_maxr lexx orbT/= le_maxl ler01 gerBl// normr_ge0 andTb.
 Admitted.
 
+ (* move=> /negbT; rewrite -leNgt => -> /=.
+      rewrite big_map -lerBrDr subrr subr_le0 sum_01// => e el0.
+      by rewrite (andP (H e _ _ _ _)).2 //; exact/In_in.
+  + rewrite /sumR/maxr. case: ifP.
+    * by lra.
+    * move=> /negbT; rewrite -leNgt => -> /=.
+      by rewrite big_map gerBl ?powR_ge0.
+  + apply/andP; split.
+    * rewrite /minR big_seq.
+      rewrite le_bigmin// => i /mapP[x xl0 ->].
+      by apply: (andP (@H _ _ _ _ _)).1 => //; rewrite -In_in.
+    * rewrite /minR big_map big_seq.
+      rewrite bigmin_idl.
+      suff : forall (x y : R), minr x y <= x => // x y.
+      by rewrite /minr; case: ifPn; lra.
+  + rewrite /prodR.
+    apply: prod01 => e.
+    move/mapP => [x xl0 ->].
+    by apply: H _ _ _ _ _ => //; rewrite -In_in.*)
+
+Lemma expneg11  :
+  forall x : R, x ^-1 = 1 -> x = 1.
+Proof.
+move => x.
+
+Admitted.
+
 Lemma dombi_nary_inversion_andE1 (s : seq (expr (Bool_N))) :
   [[ ldl_and s ]]_Dombi = 1 ->
     forall i, (i < size s)%N -> [[ nth (ldl_bool _ false) s i ]]_Dombi = 1.
 Proof.
-  have := dombi_translate_Bool_T_01.
-  move => H1 H2 i i0 /=.
+  have H := dombi_translate_Bool_T_01.
+  move/eqP. rewrite /= /dombi_and/sumR.
+  case: ifP.
+  - move => h1.
+    (*rewrite expneg11.*) admit.
+  - move => h. (*contradiction*)
 Admitted.
 
 Lemma dombi_nary_inversion_andE0 (s : seq (expr (Bool_N))) :
@@ -145,7 +178,13 @@ dependent induction e using expr_ind' .
     have [i il0 <-] := xnth (ldl_bool _ false).
     by apply/negPf; apply: H => //; rewrite ?h// -In_in mem_nth.
 - move=>/=h; rewrite (IHe e erefl JMeq_refl (~~ b)) ?negbK//.
-  move: h. case: b => /=. admit. admit.
+  move: h. case: b => /=; case: ifP; move => he; try lra.
+  (*rewrite (expneg11. *)
+  admit.
+  (*move => /eqP. rewrite invr_eq0 addr_eq0.*)
+  (*rewrite powR_eq0.*)
+  move => /eqP. 
+     (*use he*) admit.
 - case: c; rewrite //=; rewrite -!dombi_translations_Real_coincide;
   set t1 := _ e1; set t2 := _ e2.
   + case: ifPn => [/eqP ->|e12eq].
@@ -224,7 +263,7 @@ Lemma Dombi_orC_nary (s1 s2 : seq (expr Bool_N)) :
   perm_eq s1 s2 -> [[ldl_or s1]]_Dombi = [[ldl_or s2]]_Dombi.
 Proof.
 move=> pi; rewrite /=/dombi_or/sumR !big_map (perm_big _ pi)/=.
-case:ifPn. 
+case: ifPn. 
 - move => h. rewrite (perm_big _ pi)//=.
 - lra.
 Qed.
@@ -258,15 +297,18 @@ Proof.
   - move => _ h2. rewrite !addr0. 
     admit.
   - move => _ h2. apply /eqP. rewrite invr_eq0.
-    rewrite !addr0 (*addr0_eq*). admit.
+    apply /eqP. rewrite !addr0. rewrite addrC -addrA.
+    (*rewrite (addr0_eq ( _ + (a3 + 1) = _)).*) admit.
   - rewrite mulr1 mulf_neq0. lra. by rewrite he2. by rewrite he3.
     case: ifP; case: ifP; case: ifP; rewrite ?mul0r ?mulr0; try lra.
-    move => _ h1 _ h2. apply /eqP. rewrite eq_sym invr_eq0.
-    rewrite !addr0.
     set a1 := (1 - [[e1]]_Dombi) / [[e1]]_Dombi.
     set a2 := (1 - [[e2]]_Dombi) / [[e2]]_Dombi.
     set a3 := (1 - [[e3]]_Dombi) / [[e3]]_Dombi.
-    rewrite addrA. rewrite addr_eq0.  admit.
+    move => _ h1 _ h2. apply /eqP. rewrite eq_sym invr_eq0.
+    rewrite !addr0.
+    (* move /(negbT h2) => h2. (*interesting error when calling this???*)
+    rewrite !addrA addr0 negbTE.
+    rewrite addrA. rewrite addr_eq0. *) admit.
       move => _ h1. rewrite mulr1 mulf_neq0. lra. by rewrite he1. by rewrite he2.
  Admitted.
 
