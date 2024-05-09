@@ -306,7 +306,7 @@ Proof.
     set a3 := (1 - [[e3]]_Dombi) / [[e3]]_Dombi.
     move => _ h1 _ h2. apply /eqP. rewrite eq_sym invr_eq0.
     rewrite !addr0.
-    (* move /(negbT h2) => h2. (*interesting error when calling this???*)
+     (*move /(negbT h2) => h2. (*interesting error when calling this???*)
     rewrite !addrA addr0 negbTE.
     rewrite addrA. rewrite addr_eq0. *) admit.
       move => _ h1. rewrite mulr1 mulf_neq0. lra. by rewrite he1. by rewrite he2.
@@ -314,3 +314,27 @@ Proof.
 
 
 End dombi_lemmas.
+
+
+Section shadow_lifting_dombi_and.
+Context {R : realType}.
+Local Open Scope ring_scope.
+Local Open Scope classical_set_scope.
+Variable M : nat.
+Hypothesis M0 : M != 0%N.
+
+Definition dombi_and {R : fieldType} {n} (u : 'rV[R]_n) : R :=
+   (1 + \sum_(i < n)  ((1 - (u ``_ i)) * (u ``_ i)^-1)) ^-1.
+
+Lemma shadowlifting_dombi_andE p : p > 0 ->
+  forall i, ('d (@dombi_and R M.+1) '/d i) (const_mx p) = ((p * M%:R - M%:R - 1)^2)^-1.
+Proof.
+Admitted.
+
+Corollary shadow_lifting_dombi_and : shadow_lifting (@dombi_and R M.+1).
+Proof. move=> p p0 i; rewrite shadowlifting_dombi_andE//.  Admitted.
+(*add helper lemma on square root geq 0*)
+(*only true with additional assumption that p != (M+1)/M
+think through theoretically before proceeding*)
+
+End shadow_lifting_dombi_and.

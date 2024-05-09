@@ -52,7 +52,7 @@ Variable p : R.
 
 Local Notation "[[ e ]]_dl2" := (@dl2_translation R _ e).
 
-Lemma dl2_andC_nary c :
+Lemma dl2_andC_nary  (s1 s2 : seq (expr Bool_N)) :
   perm_eq s1 s2 -> [[ldl_and s1]]_dl2 = [[ldl_and s2]]_dl2.
 Proof.
 by move=> pi; rewrite /=/sumR !big_map (perm_big _ pi)/=.
@@ -378,8 +378,24 @@ Proof. by move=> p p0 i; rewrite shadowlifting_dl2_orE// exprn_gt0. Qed.
 
 End shadow_lifting_dl2_or.
 
+Section smoothness_dl2.
+Context {R : realType}.
+Local Open Scope ring_scope.
+Local Open Scope classical_set_scope.
+Variable M : nat.
+
+Lemma smooth_dl2_and : weakly_smooth (@dl2_and R M.+1).
+Proof.
+  rewrite /weakly_smooth/dl2_and. split.
+  - move => a. (*rewrite /(continuous a).*) (*ask*) admit.
+  - move => a. rewrite /weakly_smooth_cond. move => i j.
+Admitted.
+
+End smoothness_dl2.
+
 Section scale_invariance_dl2_and.
 Local Open Scope ring_scope.
+Local Open Scope ldl_scope.
 Local Open Scope classical_set_scope.
 Context {R : realType}.
  Variable M : nat.
@@ -387,13 +403,10 @@ Hypothesis M0 : M != 0%N.
 
 (* Definition dl2_and {R' : fieldType} {n} (v : 'rV[R']_n) :=
   (\sum_(i < n) v ``_ i)%R. *)
-
-(* Search ('rV_?n) "mul". *)
-
-(* Lemma scale_invariance_dl2_and (s : seq (expr Bool_N)):
+ (*Lemma scale_invariance_dl2_and (s : seq (expr Bool_N)):
   forall a, a * [[ldl_and s]]_dl2 = [[ldl_and (a * s)]]_dl2. *)
 
-(* Lemma scale_invariance_dl2_and (n : nat) :
-   forall a : R, forall v, a * (dl2_and v) = (dl2_and (a* v)). *)
+Lemma scale_invariance_dl2_and (n : nat) :
+   forall a : R, forall v, a * (dl2_and v) = (dl2_and (a* v)).
 
 End scale_invariance_and.

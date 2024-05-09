@@ -628,7 +628,9 @@ Admitted.
 
 Definition weakly_smooth_cond {R : realType} {n : nat} (a : 'rV[R]_n.+1) :=
   let m := \big[minr/1]_i a``_i in
-  forall i j, i != j -> a``_i != m /\ a``_j != m.
+  forall i j, i != j -> not ( a``_i = m /\ a``_j = m).
+(*forall i j, i != j -> a``_i != m /\ a``_j != m.*)
+(*nat: changed to follow paper*)
 
 Definition weakly_smooth {R : realType} (n : nat) (f : 'rV[R]_n.+1 -> R) :=
   (forall a, {for a, continuous f}) /\
