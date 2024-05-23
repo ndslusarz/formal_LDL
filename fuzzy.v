@@ -448,7 +448,7 @@ Proof. by move=> p p0 i; rewrite shadowlifting_product_andE// exprn_gt0. Qed.
 
 End shadow_lifting_product_and.
 
-Definition product_dl_mul {R : fieldType} (a b : R) := (a + b - a * b)%R.
+(* Definition product_dl_mul {R : fieldType} (a b : R) := (a + b - a * b)%R.
 
 Definition product_dl_prod {R : fieldType} {n} (s : 'rV[R]_n) :=
   (\big[product_dl_mul/0]_(i < n) s ``_ i)%R.
@@ -480,7 +480,7 @@ Admitted.
 Corollary shadow_lifting_product_or : shadow_lifting (@product_and R M.+1).
 Proof. Admitted.
 
-End shadow_lifting_product_or.
+End shadow_lifting_product_or.*)
 
 Section smoothness_product.
 Context {R : realType}.
@@ -490,7 +490,10 @@ Variable M : nat.
 
 Lemma smooth_product_and : weakly_smooth (@product_and R M.+1).
 Proof.
-rewrite /weakly_smooth.
+  rewrite /weakly_smooth/product_and. split. (*Locate mulrl_continuous.*)
+  - move => a. (*rewrite mulrl_continuous.*) admit.
+  - move => a. rewrite /weakly_smooth_cond. move => i j.
+
 Admitted.
 
 End smoothness_product.

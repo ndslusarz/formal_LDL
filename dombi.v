@@ -57,52 +57,39 @@ dependent induction e using expr_ind'.
 - move: H. rewrite /=; move=> /List.Forall_forall H.
   rewrite /sumR; apply/andP; split.
   + case: ifP; rewrite /dombi_and/sumR.
-    - move => h1. (*rewrite -exprN1 exprz_ge0 //=.
-      rewrite big_map addr_ge0//= sumr_ge0 //=.*)
+- move => h1. rewrite invr_ge0.
+  rewrite addr_ge0 //=.
       (*need to extract this knowledge from H*)
       admit.
     - lra.
       +  case: ifP; rewrite /dombi_and/sumR.
-         
+         move => h1. 
        (*rewrite prodf_seq_neq0.*)
     - admit.
     - lra.
 - move: H. rewrite /=; move=> /List.Forall_forall H.
-  rewrite /sumR; apply/andP; split.
-  + admit.
-  + admit.
-
+  rewrite /dombi_or/sumR; apply/andP; split.
+  + case: ifP.
+    * move => h1. rewrite invr_ge0 addr_ge0 //= invr_ge0. admit.
+    * lra.
+  + case: ifP.
+    *  move => h1. admit.
+    * lra.
 - move: IHe => /(_ e erefl JMeq_refl).
   rewrite //=. set a := [[e]]_Dombi.
-  move => a1; apply/andP; split.
-  + admit.
-  + admit.
+  move => a01; apply/andP; split.
+  + case: ifP; last first. lra.
+    rewrite invr_ge0. move => a1.
+    rewrite addr_ge0 //= !mulr_ge0 //= ?subr_ge0 ?invr_ge0;
+    move: v1 v2; lra.
+  + case: ifP; last first. lra.
+    move => a1. admit.
 - case: c => /=; case: ifP => ?.
   - by case: ([[e1]]_Dombi <= [[e2]]_Dombi)%R; rewrite lexx ler01.
   - by rewrite le_maxr lexx orbT/= le_maxl ler01 gerBl// le_maxr lexx orbT.
   - by case: ([[e1]]_Dombi == [[e2]]_Dombi); rewrite lexx ler01.
   - by rewrite le_maxr lexx orbT/= le_maxl ler01 gerBl// normr_ge0 andTb.
 Admitted.
-
- (* move=> /negbT; rewrite -leNgt => -> /=.
-      rewrite big_map -lerBrDr subrr subr_le0 sum_01// => e el0.
-      by rewrite (andP (H e _ _ _ _)).2 //; exact/In_in.
-  + rewrite /sumR/maxr. case: ifP.
-    * by lra.
-    * move=> /negbT; rewrite -leNgt => -> /=.
-      by rewrite big_map gerBl ?powR_ge0.
-  + apply/andP; split.
-    * rewrite /minR big_seq.
-      rewrite le_bigmin// => i /mapP[x xl0 ->].
-      by apply: (andP (@H _ _ _ _ _)).1 => //; rewrite -In_in.
-    * rewrite /minR big_map big_seq.
-      rewrite bigmin_idl.
-      suff : forall (x y : R), minr x y <= x => // x y.
-      by rewrite /minr; case: ifPn; lra.
-  + rewrite /prodR.
-    apply: prod01 => e.
-    move/mapP => [x xl0 ->].
-    by apply: H _ _ _ _ _ => //; rewrite -In_in.*)
 
 Lemma expneg11  :
   forall x : R, x ^-1 = 1 -> x = 1.
@@ -179,11 +166,9 @@ dependent induction e using expr_ind' .
     by apply/negPf; apply: H => //; rewrite ?h// -In_in mem_nth.
 - move=>/=h; rewrite (IHe e erefl JMeq_refl (~~ b)) ?negbK//.
   move: h. case: b => /=; case: ifP; move => he; try lra.
-  (*rewrite (expneg11. *)
+  (*rewrite expneg11. *)
   admit.
-  (*move => /eqP. rewrite invr_eq0 addr_eq0.*)
-  (*rewrite powR_eq0.*)
-  move => /eqP. 
+  move => /eqP. rewrite -invr0.
      (*use he*) admit.
 - case: c; rewrite //=; rewrite -!dombi_translations_Real_coincide;
   set t1 := _ e1; set t2 := _ e2.
@@ -287,7 +272,7 @@ Proof.
   case: ifP; case: ifP; try lra.
   rewrite mulr1 mulf_neq0; try lra. by rewrite he1. by rewrite he2.
   move => he3.
-  (*here we dealt with all the zero cases*)
+  (* dealt with all the zero cases*)
   case: ifP. case: ifP; first last; rewrite ?mul0r ?mulr0; try lra.
   set a1 := (1 - [[e1]]_Dombi) / [[e1]]_Dombi.
   set a2 := (1 - [[e2]]_Dombi) / [[e2]]_Dombi.
@@ -307,8 +292,7 @@ Proof.
     move => _ h1 _ h2. apply /eqP. rewrite eq_sym invr_eq0.
     rewrite !addr0.
      (*move /(negbT h2) => h2. (*interesting error when calling this???*)
-    rewrite !addrA addr0 negbTE.
-    rewrite addrA. rewrite addr_eq0. *) admit.
+     *) admit.
       move => _ h1. rewrite mulr1 mulf_neq0. lra. by rewrite he1. by rewrite he2.
  Admitted.
 
@@ -316,7 +300,7 @@ Proof.
 End dombi_lemmas.
 
 
-Section shadow_lifting_dombi_and.
+(* Section shadow_lifting_dombi_and.
 Context {R : realType}.
 Local Open Scope ring_scope.
 Local Open Scope classical_set_scope.
@@ -337,4 +321,4 @@ Proof. move=> p p0 i; rewrite shadowlifting_dombi_andE//.  Admitted.
 (*only true with additional assumption that p != (M+1)/M
 think through theoretically before proceeding*)
 
-End shadow_lifting_dombi_and.
+End shadow_lifting_dombi_and.*)
