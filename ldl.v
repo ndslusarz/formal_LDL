@@ -14,7 +14,7 @@ Require Import mathcomp_extra analysis_extra.
 (* This file provides a formalization of the LDL language. The inductive type *)
 (* `expr` defines the language itself, which is intrisically typed on the     *)
 (* types defined by `ldl_type`. Boolean formulas take an argument of type     *)
-(* `polarity`: `neg` allows negation in the expression, while `pos` disallows *)
+(* `flag`: `def` allows negation in the expression, while `undef` disallows *)
 (* it.                                                                        *)
 (*                                                                            *)
 (* ## Definitions                                                             *)
@@ -60,18 +60,18 @@ Reserved Notation "nu .-[[ e ]]_stl" (at level 10, format "nu .-[[ e ]]_stl").
 Reserved Notation "[[ e ]]_dl2e" (at level 10, format "[[ e ]]_dl2e").
 Reserved Notation "[[ e ]]_dl2" (at level 10, format "[[ e ]]_dl2").
 
-(* Polarity of formulas: pos allows only positive formulas, neg allows negation *)
-Inductive polarity := pos | neg.
+(* Polarity of formulas: undef does not allow negation, while def allows negation *)
+Inductive flag := def | undef.
 
 Inductive ldl_type :=
-| Bool_T of polarity
+| Bool_T of flag
 | Index_T of nat
 | Real_T
 | Vector_T of nat
 | Fun_T of nat & nat.
 
-Definition Bool_P := Bool_T pos.
-Definition Bool_N := Bool_T neg.
+Definition Bool_T_undef := Bool_T undef.
+Definition Bool_T_def := Bool_T def.
 
 Inductive comparison : Type := cmp_le | cmp_eq.
 
@@ -87,7 +87,7 @@ Inductive expr : ldl_type -> Type :=
   (* connectives *)
   | ldl_and : forall x, seq (expr (Bool_T x)) -> expr (Bool_T x)
   | ldl_or : forall x, seq (expr (Bool_T x)) -> expr (Bool_T x)
-  | ldl_not : expr Bool_N -> expr Bool_N
+  | ldl_not : expr Bool_T_def-> expr Bool_T_def
   (* comparisons *)
   | ldl_cmp : forall x, comparison -> expr Real_T -> expr Real_T -> expr (Bool_T x)
   (* networks and applications *)
@@ -133,7 +133,7 @@ Lemma expr_ind' (R : realType) :
     (forall n (t : n.-tuple R), P (Vector_T n) (ldl_vec t)) ->
     (forall b (l : seq (expr (Bool_T b))), List.Forall (fun x => P (Bool_T b) x) l -> P (Bool_T b) (ldl_and l)) ->
     (forall b (l : seq (expr (Bool_T b))), List.Forall (fun x => P (Bool_T b) x) l -> P (Bool_T b) (ldl_or l)) ->
-    (forall e : expr Bool_N, P Bool_N e -> P Bool_N (`~ e)) ->
+    (forall e : expr Bool_T_def, P Bool_T_def e -> P Bool_T_def (`~ e)) ->
     (forall (n m : nat) (t : n.-tuple R -> m.-tuple R), P (Fun_T n m) (ldl_fun t)) ->
     (forall (n m : nat) (e : expr (Fun_T n m)),
      P (Fun_T n m) e ->
