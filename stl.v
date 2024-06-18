@@ -100,7 +100,7 @@ by case: ifPn; first by rewrite addrC.
 Qed.
 
 Lemma stl_translations_Vector_coincide : forall n (e : @expr R (Vector_T n)),
-  nu.-[[ e ]]_stl = [[ e ]]b.
+  nu.-[[ e ]]_stl = [[ e ]]_B.
 Proof.
 dependent induction e => //=.
 dependent destruction e1.
@@ -108,11 +108,11 @@ by rewrite (IHe2 _ _ _ e2 erefl JMeq_refl).
 Qed.
 
 Lemma stl_translations_Index_coincide : forall n (e : expr (Index_T n)),
-  nu.-[[ e ]]_stl = [[ e ]]b.
+  nu.-[[ e ]]_stl = [[ e ]]_B.
 Proof. by dependent induction e. Qed.
 
 Lemma stl_translations_Real_coincide (e : expr Real_T):
-  nu.-[[ e ]]_stl = [[ e ]]b.
+  nu.-[[ e ]]_stl = [[ e ]]_B.
 Proof.
 dependent induction e => //=;
 rewrite ?(IHe1 e1 erefl JMeq_refl)
@@ -224,7 +224,7 @@ by apply: (maxrltx hmaxlt0); rewrite mem_nth.
 Qed.
 
 Lemma stl_soundness (e : expr Bool_T_undef) b :
-  is_stl b (nu.-[[ e ]]_stl) -> [[ e ]]b = b.
+  is_stl b (nu.-[[ e ]]_stl) -> [[ e ]]_B = b.
 Proof.
 dependent induction e using expr_ind'.
 - by move: b b0 => [] [] //=; rewrite ?leNgt ?ltrN10 ?ltr10.

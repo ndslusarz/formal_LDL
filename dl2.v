@@ -193,7 +193,7 @@ exact: dl2_translation_le0.
 Qed.
 
 Lemma dl2_translations_Vector_coincide: forall n (e : @expr R (Vector_T n)),
-  [[ e ]]_dl2 = [[ e ]]b.
+  [[ e ]]_dl2 = [[ e ]]_B.
 Proof.
 dependent induction e => //=.
 dependent destruction e1.
@@ -201,13 +201,13 @@ by rewrite (IHe2 _ _ e2 erefl JMeq_refl).
 Qed.
 
 Lemma dl2_translations_Index_coincide: forall n (e : expr (Index_T n)),
-  [[ e ]]_dl2 = [[ e ]]b.
+  [[ e ]]_dl2 = [[ e ]]_B.
 Proof.
 dependent induction e => //=.
 Qed.
 
 Lemma dl2_translations_Real_coincide (e : expr Real_T):
-  [[ e ]]_dl2 = [[ e ]]b.
+  [[ e ]]_dl2 = [[ e ]]_B.
 Proof.
 dependent induction e => //=;
 rewrite ?(IHe1 e1 erefl JMeq_refl) ?(IHe2 e2 erefl JMeq_refl) ?(IHe e erefl JMeq_refl) //=.
@@ -215,7 +215,7 @@ by rewrite dl2_translations_Vector_coincide dl2_translations_Index_coincide.
 Qed.
 
 Lemma dl2_soundness (e : expr Bool_T_undef) b :
-  is_dl2 b ([[ e ]]_dl2) -> [[ e ]]b = b.
+  is_dl2 b ([[ e ]]_dl2) -> [[ e ]]_B = b.
 Proof.
 dependent induction e using expr_ind'.
 - move: b b0 => [] [] //=; by rewrite ?lt_irreflexive ?lt_eqF ?ltrN10.

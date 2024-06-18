@@ -53,7 +53,7 @@ Import numFieldTopology.Exports.
 Local Open Scope classical_set_scope.
 
 Reserved Notation "{[ e ]}" (format "{[  e  ]}").
-Reserved Notation "[[ e ]]b" (at level 10, format "[[  e  ]]b").
+Reserved Notation "[[ e ]]_B" (at level 10, format "[[  e  ]]_B").
 Reserved Notation "[[ e ]]_ l" (at level 10, format "[[ e ]]_ l").
 Reserved Notation "nu .-[[ e ]]_stle" (at level 10, format "nu .-[[ e ]]_stle").
 Reserved Notation "nu .-[[ e ]]_stl" (at level 10, format "nu .-[[ e ]]_stl").
@@ -239,7 +239,7 @@ where "<< e >>" := (bool_translation e).
 
 End bool_translation.
 
-Notation "[[ e ]]b" := (bool_translation e) : ldl_scope.
+Notation "[[ e ]]_B" := (bool_translation e) : ldl_scope.
 
 Definition product_dl_mul {R : numDomainType} (a b : R) := (a + b - a * b)%R.
 

@@ -85,13 +85,13 @@ Hypothesis p1 : 1 <= p.
 Local Notation "[[ e ]]_ l" := (@translation R l p _ e).
 
 Lemma translations_Fun_coincide:
-  forall n m (e : expr (Fun_T n m)), [[ e ]]_l = [[ e ]]b.
+  forall n m (e : expr (Fun_T n m)), [[ e ]]_l = [[ e ]]_B.
 Proof.
 dependent induction e => //=.
 Qed.
 
 Lemma translations_Vector_coincide: forall n (e : @expr R (Vector_T n)),
-  [[ e ]]_l = [[ e ]]b.
+  [[ e ]]_l = [[ e ]]_B.
 Proof.
 dependent induction e => //=.
 dependent destruction e1.
@@ -99,13 +99,13 @@ by rewrite (IHe2 _ p1 _ e2 erefl JMeq_refl).
 Qed.
 
 Lemma translations_Index_coincide: forall n (e : expr (Index_T n)),
-  [[ e ]]_l = [[ e ]]b.
+  [[ e ]]_l = [[ e ]]_B.
 Proof.
 dependent induction e => //=.
 Qed.
 
 Lemma translations_Real_coincide (e : expr Real_T):
-  [[ e ]]_l = [[ e ]]b.
+  [[ e ]]_l = [[ e ]]_B.
 Proof.
 dependent induction e => //=;
 rewrite ?(IHe1 e1 erefl JMeq_refl) ?(IHe2 e2 erefl JMeq_refl) ?(IHe e erefl JMeq_refl) //=.
@@ -307,7 +307,7 @@ Qed.
 
 Lemma soundness (e : expr (Bool_T_def)) b :
   l <> Lukasiewicz -> l <> Yager ->
-    [[ e ]]_ l = [[ ldl_bool _ b ]]_ l -> [[ e ]]b = b.
+    [[ e ]]_ l = [[ ldl_bool _ b ]]_ l -> [[ e ]]_B = b.
 Proof.
 dependent induction e using expr_ind' => ll ly.
 - move: b b0 => [] [] //=; lra.
