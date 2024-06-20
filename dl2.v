@@ -11,6 +11,8 @@ Require Import mathcomp_extra analysis_extra ldl.
 (**md**************************************************************************)
 (* # Properties of DL2                                                        *)
 (*                                                                            *)
+(* Soundness, structural properties, shadow-lifting                           *)
+(*                                                                            *)
 (* ## Structural properties                                                   *)
 (* - dl2_andC_nary == n-ary commutativity of conjunction                      *)
 (* - dl2_andC == commutativity of conjunction                                 *)
