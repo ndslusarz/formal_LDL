@@ -24,7 +24,7 @@ Context {R : realType}.
 Variable nu : R.
 Hypothesis nu0 : 0 < nu.
 
-Lemma andI_stl (e : expr Bool_N) : nu.-[[e `/\ e]]_stl = nu.-[[e]]_stl.
+Lemma andI_stl (e : expr Bool_T_def) : nu.-[[e `/\ e]]_stl = nu.-[[e]]_stl.
 Proof.
 rewrite /= /stl_and /stl_and_gt0 /stl_and_lt0 /min_dev /sumR.
 rewrite !big_cons !big_nil/=.
@@ -44,7 +44,7 @@ case: ifPn => //h2.
 by apply le_anti; rewrite !leNgt; rewrite h1 h2.
 Qed.
 
-Lemma andC_stl (e1 e2 : expr Bool_N) :
+Lemma andC_stl (e1 e2 : expr Bool_T_def) :
   nu.-[[e1 `/\ e2]]_stl = nu.-[[e2 `/\ e1]]_stl.
 Proof.
 rewrite /= /stl_and /stl_and_gt0 /stl_and_lt0 /min_dev /sumR.
@@ -62,7 +62,7 @@ case: ifPn; first by rewrite addrC (addrC (expR (- nu * a1)) (expR (- nu * a2)))
 lra.
 Qed.
 
-Lemma orI_stl (e : expr Bool_N) : nu.-[[e `\/ e]]_stl = nu.-[[e]]_stl.
+Lemma orI_stl (e : expr Bool_T_def) : nu.-[[e `\/ e]]_stl = nu.-[[e]]_stl.
 Proof.
 rewrite /= /stl_or /stl_or_gt0 /stl_or_lt0 /max_dev
 /sumR !big_cons !big_nil/= !addr0.
@@ -82,7 +82,7 @@ case: ifPn => //h2.
 by apply le_anti; rewrite !leNgt h1 h2.
 Qed.
 
-Lemma orC_stl (e1 e2 : expr Bool_N) :
+Lemma orC_stl (e1 e2 : expr Bool_T_def) :
   nu.-[[e1 `\/ e2]]_stl  = nu.-[[e2 `\/ e1]]_stl.
 Proof.
 rewrite /= /stl_or /stl_or_gt0 /stl_or_lt0 /max_dev
@@ -100,7 +100,7 @@ by case: ifPn; first by rewrite addrC.
 Qed.
 
 Lemma stl_translations_Vector_coincide : forall n (e : @expr R (Vector_T n)),
-  nu.-[[ e ]]_stl = [[ e ]]b.
+  nu.-[[ e ]]_stl = [[ e ]]_B.
 Proof.
 dependent induction e => //=.
 dependent destruction e1.
@@ -108,11 +108,11 @@ by rewrite (IHe2 _ _ _ e2 erefl JMeq_refl).
 Qed.
 
 Lemma stl_translations_Index_coincide : forall n (e : expr (Index_T n)),
-  nu.-[[ e ]]_stl = [[ e ]]b.
+  nu.-[[ e ]]_stl = [[ e ]]_B.
 Proof. by dependent induction e. Qed.
 
 Lemma stl_translations_Real_coincide (e : expr Real_T):
-  nu.-[[ e ]]_stl = [[ e ]]b.
+  nu.-[[ e ]]_stl = [[ e ]]_B.
 Proof.
 dependent induction e => //=;
 rewrite ?(IHe1 e1 erefl JMeq_refl)
@@ -123,10 +123,10 @@ Qed.
 
 Definition is_stl b (x : R) := if b then x >= 0 else x < 0.
 
-Lemma stl_nary_inversion_andE1 (Es : seq (expr Bool_P)) :
+Lemma stl_nary_inversion_andE1 (Es : seq (expr Bool_T_undef)) :
   is_stl true (nu.-[[ ldl_and Es ]]_stl) ->
   forall i, (i < size Es)%N ->
-    is_stl true (nu.-[[ nth (ldl_bool pos false) Es i ]]_stl).
+    is_stl true (nu.-[[ nth (ldl_bool undef false) Es i ]]_stl).
 Proof.
 case: Es => // a l.
 rewrite /is_stl /= /stl_and /stl_and_gt0 /stl_and_lt0 /min_dev.
@@ -149,9 +149,9 @@ rewrite -leNgt; move/minrgex => h.
 by case: ifPn => _ _ i isize; rewrite h// mem_nth.
 Qed.
 
-Lemma stl_nary_inversion_andE0 (Es : seq (expr Bool_P)) :
+Lemma stl_nary_inversion_andE0 (Es : seq (expr Bool_T_undef)) :
   is_stl false (nu.-[[ ldl_and Es ]]_stl) ->
-  exists2 i, is_stl false (nu.-[[ nth (ldl_bool pos false) Es i ]]_stl) &
+  exists2 i, is_stl false (nu.-[[ nth (ldl_bool undef false) Es i ]]_stl) &
              (i < size Es)%N.
 Proof.
 case: Es => [|a l]; first by rewrite /= ltr10.
@@ -170,7 +170,7 @@ all: move=> i /andP[il _]; rewrite ?mulr_ge0 ?expR_ge0//.
 by apply: (minrgex hminge0); rewrite in_cons il orbT.
 Qed.
 
-Lemma stl_nary_inversion_orE1 (Es : seq (expr Bool_P)) :
+Lemma stl_nary_inversion_orE1 (Es : seq (expr Bool_T_undef)) :
   is_stl true (nu.-[[ ldl_or Es ]]_stl) ->
   exists2 i, is_stl true (nu.-[[ nth (ldl_bool _ false) Es i ]]_stl) &
              (i < size Es)%N.
@@ -205,10 +205,10 @@ exists (index x (a :: l)).
 by rewrite index_mem xmem.
 Qed.
 
-Lemma stl_nary_inversion_orE0 (Es : seq (expr Bool_P)) :
+Lemma stl_nary_inversion_orE0 (Es : seq (expr Bool_T_undef)) :
   is_stl false (nu.-[[ ldl_or Es ]]_stl) ->
   forall i, (i < size Es)%N ->
-    is_stl false (nu.-[[ nth (ldl_bool pos false) Es i ]]_stl).
+    is_stl false (nu.-[[ nth (ldl_bool undef false) Es i ]]_stl).
 Proof.
 case: Es => // a l.
 rewrite/is_stl/= /stl_or/stl_or_gt0/stl_or_lt0 big_map.
@@ -223,8 +223,8 @@ move => hmaxlt0 _ i isize.
 by apply: (maxrltx hmaxlt0); rewrite mem_nth.
 Qed.
 
-Lemma stl_soundness (e : expr Bool_P) b :
-  is_stl b (nu.-[[ e ]]_stl) -> [[ e ]]b = b.
+Lemma stl_soundness (e : expr Bool_T_undef) b :
+  is_stl b (nu.-[[ e ]]_stl) -> [[ e ]]_B = b.
 Proof.
 dependent induction e using expr_ind'.
 - by move: b b0 => [] [] //=; rewrite ?leNgt ?ltrN10 ?ltr10.
@@ -263,7 +263,7 @@ dependent induction e using expr_ind'.
     by rewrite oppr_lt0 normr_gt0 subr_eq0 => /negbTE.
 Qed.
 
-Lemma andC_stl_nary (s1 s2 : seq (expr Bool_N)) :
+Lemma andC_stl_nary (s1 s2 : seq (expr Bool_T_def)) :
   perm_eq s1 s2 -> nu.-[[ldl_and s1]]_stl = nu.-[[ldl_and s2]]_stl.
 Proof.
 case: s1; first by rewrite perm_sym => /perm_nilP ->.

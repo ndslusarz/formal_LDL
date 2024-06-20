@@ -52,37 +52,37 @@ Variable p : R.
 
 Local Notation "[[ e ]]_dl2" := (@dl2_translation R _ e).
 
-Lemma dl2_andC_nary (s1 s2 : seq (expr Bool_N)) :
+Lemma dl2_andC_nary (s1 s2 : seq (expr Bool_T_def)) :
   perm_eq s1 s2 -> [[ldl_and s1]]_dl2 = [[ldl_and s2]]_dl2.
 Proof.
 by move=> pi; rewrite /=/sumR !big_map (perm_big _ pi)/=.
 Qed.
 
-Lemma dl2_andC (e1 e2 : expr Bool_N) : [[ e1 `/\ e2 ]]_dl2 = [[ e2 `/\ e1 ]]_dl2.
+Lemma dl2_andC (e1 e2 : expr Bool_T_def) : [[ e1 `/\ e2 ]]_dl2 = [[ e2 `/\ e1 ]]_dl2.
 Proof.
 by rewrite /=/sumR ?big_cons ?big_nil /= addr0 addr0 addrC.
 Qed.
 
-Lemma dl2_andA (e1 e2 e3 : expr Bool_P) :
+Lemma dl2_andA (e1 e2 e3 : expr Bool_T_def) :
   [[ e1 `/\ (e2 `/\ e3) ]]_dl2 = [[ (e1 `/\ e2) `/\ e3 ]]_dl2.
 Proof.
 by rewrite /=/sumR ?big_cons ?big_nil !addr0 addrA.
 Qed.
 
-Lemma dl2_orC_nary (s1 s2 : seq (expr Bool_N)) :
+Lemma dl2_orC_nary (s1 s2 : seq (expr Bool_T_def)) :
   perm_eq s1 s2 -> [[ldl_or s1]]_dl2 = [[ldl_or s2]]_dl2.
 Proof.
 by move=> pi; rewrite /=/prodR !big_map (perm_big _ pi)/= (perm_size pi).
 Qed.
 
-Lemma dl2_orC (e1 e2 : expr Bool_P) :
+Lemma dl2_orC (e1 e2 : expr Bool_T_undef) :
   [[ e1 `\/ e2 ]]_dl2 = [[ e2 `\/ e1 ]]_dl2.
 Proof.
 rewrite /=/prodR !big_cons big_nil !mulr1; congr *%R.
 by rewrite mulrC.
 Qed.
 
-Lemma dl2_orA (e1 e2 e3 : expr Bool_P) :
+Lemma dl2_orA (e1 e2 e3 : expr Bool_T_undef) :
   [[ e1 `\/ (e2 `\/ e3) ]]_dl2 = [[ (e1 `\/ e2) `\/ e3 ]]_dl2.
 Proof.
 rewrite /=/prodR !big_cons big_nil !mulr1.
@@ -91,7 +91,7 @@ rewrite mulrCA.
 by rewrite !mulrA.
 Qed.
 
-Lemma dl2_translation_le0 e : [[ e ]]_dl2 <= 0 :> type_translation Bool_P.
+Lemma dl2_translation_le0 e : [[ e ]]_dl2 <= 0 :> type_translation Bool_T_undef.
 Proof.
 dependent induction e using expr_ind' => /=.
 - by case: b.
@@ -126,7 +126,7 @@ Qed.
 
 Definition is_dl2 b (x : R) := if b then x == 0 else x < 0.
 
-Lemma dl2_nary_inversion_andE1 (s : seq (expr (Bool_P))) :
+Lemma dl2_nary_inversion_andE1 (s : seq (expr (Bool_T_undef))) :
   is_dl2 true ([[ ldl_and s ]]_dl2) ->
   (forall i, (i < size s)%N -> is_dl2 true ([[ nth (ldl_bool _ false) s i ]]_dl2)).
 Proof.
@@ -147,7 +147,7 @@ rewrite naddr_eq0.
   by rewrite andbT => /mapP[/= e et] ->; exact: dl2_translation_le0.
 Qed.
 
-Lemma dl2_nary_inversion_andE0 (s : seq (expr (Bool_P))) :
+Lemma dl2_nary_inversion_andE0 (s : seq (expr (Bool_T_undef))) :
   is_dl2 false ([[ ldl_and s ]]_dl2) ->
   (exists i, (is_dl2 false ([[ nth (ldl_bool _ false) s i ]]_dl2)) && (i < size s)%nat).
 Proof.
@@ -162,7 +162,7 @@ move=> /[swap] /[apply] /orP[H|/ih[j /andP[j0 jt]]].
 by exists j.+1; rewrite /= j0.
 Qed.
 
-Lemma dl2_nary_inversion_orE1 (s : seq (expr (Bool_P))) :
+Lemma dl2_nary_inversion_orE1 (s : seq (expr (Bool_T_undef))) :
   is_dl2 true ([[ ldl_or s ]]_dl2) ->
   exists i, ([[ nth (ldl_bool _ false) s i ]]_dl2 == 0) && (i < size s)%nat.
 Proof.
@@ -176,7 +176,7 @@ have /ih[j /andP[Hj jt]] : [[ldl_or t]]_dl2 == 0 by rewrite /= /prodR H mulr0.
 by exists j.+1; rewrite /= Hj.
 Qed.
 
-Lemma dl2_nary_inversion_orE0 (Es : seq (expr (Bool_P)) ) :
+Lemma dl2_nary_inversion_orE0 (Es : seq (expr (Bool_T_undef)) ) :
     is_dl2 false ([[ ldl_or Es ]]_dl2)  -> (forall i, (i < size Es)%nat -> is_dl2 false ([[ nth (ldl_bool _ false) Es i ]]_dl2)).
 Proof.
 elim: Es => //= a l IH.
@@ -193,7 +193,7 @@ exact: dl2_translation_le0.
 Qed.
 
 Lemma dl2_translations_Vector_coincide: forall n (e : @expr R (Vector_T n)),
-  [[ e ]]_dl2 = [[ e ]]b.
+  [[ e ]]_dl2 = [[ e ]]_B.
 Proof.
 dependent induction e => //=.
 dependent destruction e1.
@@ -201,21 +201,21 @@ by rewrite (IHe2 _ _ e2 erefl JMeq_refl).
 Qed.
 
 Lemma dl2_translations_Index_coincide: forall n (e : expr (Index_T n)),
-  [[ e ]]_dl2 = [[ e ]]b.
+  [[ e ]]_dl2 = [[ e ]]_B.
 Proof.
 dependent induction e => //=.
 Qed.
 
 Lemma dl2_translations_Real_coincide (e : expr Real_T):
-  [[ e ]]_dl2 = [[ e ]]b.
+  [[ e ]]_dl2 = [[ e ]]_B.
 Proof.
 dependent induction e => //=;
 rewrite ?(IHe1 e1 erefl JMeq_refl) ?(IHe2 e2 erefl JMeq_refl) ?(IHe e erefl JMeq_refl) //=.
 by rewrite dl2_translations_Vector_coincide dl2_translations_Index_coincide.
 Qed.
 
-Lemma dl2_soundness (e : expr Bool_P) b :
-  is_dl2 b ([[ e ]]_dl2) -> [[ e ]]b = b.
+Lemma dl2_soundness (e : expr Bool_T_undef) b :
+  is_dl2 b ([[ e ]]_dl2) -> [[ e ]]_B = b.
 Proof.
 dependent induction e using expr_ind'.
 - move: b b0 => [] [] //=; by rewrite ?lt_irreflexive ?lt_eqF ?ltrN10.
