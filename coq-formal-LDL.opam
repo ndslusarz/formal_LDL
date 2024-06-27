@@ -5,9 +5,9 @@ opam-version: "2.0"
 maintainer: "Natalia Slusarz"
 version: "dev"
 
-homepage: "https://github.com/formal-LDL/formal-LDL"
-dev-repo: "git+https://github.com/formal-LDL/formal-LDL.git"
-bug-reports: "https://github.com/formal-LDL/formal-LDL/issues"
+homepage: "https://github.com/ndslusarz/formal-LDL"
+dev-repo: "git+https://github.com/ndslusarz/formal-LDL.git"
+bug-reports: "https://github.com/ndslusarz/formal-LDL/issues"
 license: "MIT License"
 
 synopsis: "Formalization of the Logic of Differentiable Logics (LDL) using the Coq proof-assistant and the Mathematical Components library."

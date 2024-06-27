@@ -6,8 +6,8 @@ Follow the instructions on https://github.com/coq-community/templates to regener
 
 [![Docker CI][docker-action-shield]][docker-action-link]
 
-[docker-action-shield]: https://github.com/formal-LDL/formal-LDL/actions/workflows/docker-action.yml/badge.svg?branch=master
-[docker-action-link]: https://github.com/formal-LDL/formal-LDL/actions/workflows/docker-action.yml
+[docker-action-shield]: https://github.com/ndslusarz/formal-LDL/actions/workflows/docker-action.yml/badge.svg?branch=master
+[docker-action-link]: https://github.com/ndslusarz/formal-LDL/actions/workflows/docker-action.yml
 
 
 
@@ -51,7 +51,7 @@ opam install coq-formal-LDL
 To instead build and install manually, do:
 
 ``` shell
-git clone https://github.com/formal-LDL/formal-LDL.git
+git clone https://github.com/ndslusarz/formal-LDL.git
 cd formal-LDL
 make   # or make -j <number-of-cores-on-your-machine> 
 make install
