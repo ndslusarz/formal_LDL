@@ -1,0 +1,76 @@
+---
+fullname: Formalisation of Differentiable Logics
+shortname: formal-LDL
+organization: formal-LDL
+community: false
+action: true
+nix: false
+coqdoc: false
+dune: false
+
+synopsis:
+  Formalization of the Logic of Differentiable Logics (LDL) using the Coq proof-assistant
+  and the Mathematical Components library.
+
+description: |-
+  This repository contains the formalization of the Logic of
+  Differentiable Logics (LDL) using the Coq proof-assistant and the
+  Mathematical Components library.
+  The LDL language is defined in `ldl.v`, along with its fuzzy, DL2, STL
+  and Boolean interpretations.  The files `fuzzy.v`, `dl2.v`,
+  `dl2_ereal.v`, `stl.v` and `stl_ereal.v` contain the relevant theorems
+  that hold for each interpretation: structural properties (idempotence,
+  commutativity and associativity of operators), soundness, and shadow-lifting.
+
+publications:
+- pub_url: https://arxiv.org/abs/2403.13700
+  pub_title: Taming Differentiable Logics with Coq Formalisation
+
+authors:
+- name: Reynald Affeldt
+  initial: true
+- name: Alessandro Bruni
+  initial: true
+- name: Natalia Slusarz
+  initial: true
+- name: Katrhin Stark
+  initial: true
+- name: Ekaterina Komendantskaya
+  initial: true
+
+maintainers:
+- name: Reynald Affeldt
+  initial: affeldt-aist
+- name: Alessandro Bruni
+  initial: hoheinzollern
+- name: Natalia Slusarz
+  nickname: ndslusarz
+
+opam-file-maintainer: Natalia Slusarz
+
+license:
+  fullname: MIT License
+  identifier: MIT License
+  file: LICENSE
+
+supported_coq_versions:
+  text: 8.18 to 8.19
+  opam: '{ (>= "8.16" & < "8.20~") | (= "dev") }'
+
+dependencies:
+- opam:
+    name: coq-mathcomp-ssreflect
+    version: '{>= "2.0"}'
+  description: |-
+    [MathComp](https://math-comp.github.io) 2.0
+- opam:
+    name: coq-mathcomp-analysis
+    version: '{>= "1.0.0"}'
+  description: |-
+    [MathComp Analysis](https://github.com/math-comp/analysis) 1.0.0
+- opam:
+    name: coq-mathcomp-algebra-tactics
+    version: '{>= "1.2.3"}'
+  description: |-
+    [MathComp Algebra Tactics](https://github.com/math-comp/algebra-tactics) 1.2.3
+---

@@ -1,0 +1,42 @@
+# This file was generated from `meta.yml`, please do not edit manually.
+# Follow the instructions on https://github.com/coq-community/templates to regenerate.
+
+opam-version: "2.0"
+maintainer: "Natalia Slusarz"
+version: "dev"
+
+homepage: "https://github.com/formal-LDL/formal-LDL"
+dev-repo: "git+https://github.com/formal-LDL/formal-LDL.git"
+bug-reports: "https://github.com/formal-LDL/formal-LDL/issues"
+license: "MIT License"
+
+synopsis: "Formalization of the Logic of Differentiable Logics (LDL) using the Coq proof-assistant and the Mathematical Components library."
+description: """
+This repository contains the formalization of the Logic of
+Differentiable Logics (LDL) using the Coq proof-assistant and the
+Mathematical Components library.
+The LDL language is defined in `ldl.v`, along with its fuzzy, DL2, STL
+and Boolean interpretations.  The files `fuzzy.v`, `dl2.v`,
+`dl2_ereal.v`, `stl.v` and `stl_ereal.v` contain the relevant theorems
+that hold for each interpretation: structural properties (idempotence,
+commutativity and associativity of operators), soundness, and shadow-lifting."""
+
+build: [make "-j%{jobs}%"]
+install: [make "install"]
+depends: [
+  "coq" { (>= "8.16" & < "8.20~") | (= "dev") }
+  "coq-mathcomp-ssreflect" {>= "2.0"}
+  "coq-mathcomp-analysis" {>= "1.0.0"}
+  "coq-mathcomp-algebra-tactics" {>= "1.2.3"}
+]
+
+tags: [
+  "logpath:"
+]
+authors: [
+  "Reynald Affeldt"
+  "Alessandro Bruni"
+  "Natalia Slusarz"
+  "Katrhin Stark"
+  "Ekaterina Komendantskaya"
+]
