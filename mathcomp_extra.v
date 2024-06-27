@@ -5,6 +5,12 @@ From mathcomp Require Import lra.
 (**md**************************************************************************)
 (* # Additions to MathComp                                                    *)
 (*                                                                            *)
+(* TODO: to be cleaned                                                        *)
+(*                                                                            *)
+(* row_of_seq s == row-vector of size "size s" where s is a list              *)
+(*      u ``_ i == notation to address the ith element of a row-vector        *)
+(*       minR s := \big[minr/1]_(i <- s) i                                    *)
+(*       maxR s := \big[maxr/1]_(i <- s) i                                    *)
 (******************************************************************************)
 
 Set Implicit Arguments.
@@ -45,9 +51,11 @@ Qed.
 Lemma invrM' {R : realFieldType} (x y : R) : x != 0 -> (x * y)^-1 = x^-1 * y^-1.
 Proof. nra. Qed.
 
+(* TODO: PR to MathComp *)
 Lemma scalerN1 {R : ringType} (p : R^o) : p *: -1 = - p.
 Proof. by transitivity (p * -1) => //; rewrite mulrN1. Qed.
 
+(* TODO: PR to MathComp *)
 Lemma naddr_lt0 {R : realDomainType} (x y : R) :
   x <= 0 -> y <= 0 -> x + y < 0 -> (x < 0) || (y < 0).
 Proof.
@@ -58,11 +66,18 @@ Qed.
 Definition row_of_seq {R : numDomainType} (s : seq R) : 'rV[R]_(size s) :=
   (\row_(i < size s) tnth (in_tuple s) i).
 
+Lemma seq_of_rV_const {R : fieldType} (p : R) n :
+  @MatrixFormula.seq_of_rV R n (const_mx p) = nseq n p.
+Proof.
+apply: (@eq_from_nth _ 0).
+  by rewrite MatrixFormula.size_seq_of_rV size_nseq.
+move=> k; rewrite MatrixFormula.size_seq_of_rV => kM.
+have -> := @MatrixFormula.nth_seq_of_rV R _ 0 (const_mx p) (Ordinal kM).
+by rewrite mxE nth_nseq kM.
+Qed.
+
 (* TODO(rei): this notation breaks the display of ball predicates *)
 Notation "u '``_' i" := (u 0%R i) : ring_scope.
-
-Definition dotmul {R : ringType} n (u v : 'rV[R]_n) : R := (u *m v^T)``_0.
-Notation "u *d w" := (dotmul u w).
 
 Section alias_for_bigops.
 Context {R : numDomainType}.
@@ -193,7 +208,6 @@ rewrite big_cons sgrM ltr0_sg ?h ?mem_head//= exprS ih// => e el.
 by rewrite h// in_cons el orbT.
 Qed.
 
-(* TODO(rei): not used *)
 Lemma bigsum_0x {R : realDomainType} (T : eqType) f :
   forall [s : seq T], (forall e, e \in s -> 0 <= f e) ->
     (\sum_(j <- s) f j == 0 <-> (forall e, e \in s -> f e = (0:R))).
@@ -234,15 +248,8 @@ Proof. by rewrite /minr; case: ifP=>//; lra. Qed.
 Section maxmin.
 Context {d} {R : orderType d}.
 
-(* TODO(Nat): need new name *)
-Lemma minrxxx (x : R) : Order.min x (Order.min x x) = Order.min x x.
-Proof. by rewrite !minxx. Qed.
-
 Lemma minrxyx (x y : R) : Order.min x (Order.min y x) = Order.min x y.
 Proof. by rewrite (minC y) minA minxx. Qed.
-
-Lemma maxrxxx (x : R) : Order.max x (Order.max x x) = Order.max x x.
-Proof. by rewrite !maxxx. Qed.
 
 Lemma maxrxyx (x y : R) : Order.max x (Order.max y x) = Order.max y x.
 Proof. by rewrite (maxC y) maxA maxxx. Qed.
@@ -270,8 +277,7 @@ Section big_order_maxmin.
 Local Open Scope order_scope.
 Context {d} {R : orderType d}.
 
-(* TODO: rename *)
-Lemma big_min_helper (T : eqType) (f : T -> R) a l :
+Let big_min_helper (T : eqType) (f : T -> R) a l :
   \big[Order.min/f a]_(j <- a :: l) f j =
     \big[Order.min/f a]_(j <- l) f j.
 Proof.
@@ -279,7 +285,7 @@ elim: l; first by rewrite big_cons big_nil minxx.
 by move=> a0 l; rewrite !big_cons => IH; rewrite minCA IH.
 Qed.
 
-Lemma big_min_helper2 (T : eqType) (f : T -> R) a a0 l :
+Let big_min_helper2 (T : eqType) (f : T -> R) a a0 l :
   Order.min (f a) (\big[Order.min/f a0]_(j <- l) f j) =
   Order.min (f a0) (\big[Order.min/f a]_(j <- l) f j).
 Proof.
@@ -304,7 +310,7 @@ rewrite in_cons => /predU1P[->|il]; first by rewrite !big_cons h big_min_helper 
 by rewrite !big_cons minCA h' ih// in_cons il orbT.
 Qed.
 
-Lemma big_max_helper (T : eqType) (f : T -> R) a l :
+Let big_max_helper (T : eqType) (f : T -> R) a l :
   \big[Order.max/f a]_(j <- a :: l) f j =
   \big[Order.max/f a]_(j <- l) f j.
 Proof.
@@ -312,7 +318,7 @@ elim: l; first by rewrite big_cons big_nil maxxx.
 by move=> a0 l; rewrite !big_cons => IH; rewrite maxCA IH.
 Qed.
 
-Lemma big_max_helper2 (T : eqType) (f : T -> R) a a0 l :
+Let big_max_helper2 (T : eqType) (f : T -> R) a a0 l :
   Order.max (f a) (\big[Order.max/f a0]_(j <- l) f j) =
   Order.max (f a0) (\big[Order.max/f a]_(j <- l) f j).
 Proof.
@@ -423,15 +429,14 @@ by exists i => //; rewrite !in_cons orbCA -in_cons ial orbT.
 Qed.
 
 Lemma bigmin_eqP (x : R) [I : eqType] (s : seq I) (F : I -> R) :
-  reflect (forall i : I, i \in s -> (x <= F i)) (\big[Order.min/x]_(i <- s) F i == x).
+  reflect (forall i : I, i \in s -> (x <= F i))
+          (\big[Order.min/x]_(i <- s) F i == x).
 Proof.
-have minrl : forall (x y : R), Order.min x y <= x => //. (* TODO: this should exist *)
-  by move => v w; rewrite /Order.min; case: ifPn; rewrite ?le_refl -?leNgt.
 apply: (iffP eqP) => [<- i|].
 - elim: s => // a s IH.
   rewrite in_cons => /predU1P[<-|si].
-  + by rewrite big_seq big_cons mem_head minrl.
-  + by rewrite big_cons minC; apply: le_trans (IH si); exact: minrl.
+  + by rewrite big_seq big_cons mem_head le_minl lexx.
+  + by rewrite big_cons minC le_minl IH.
 - elim: s => [h|i l IH h].
   + by rewrite big_nil.
   + rewrite big_cons IH ?min_r ?h ?mem_head// => a al.
@@ -565,13 +570,3 @@ rewrite (@perm_big_minr_helper4 a1 a2).
 Qed.
 
 End perm_big_minr.
-
-Lemma seq_of_rV_const {R : fieldType} (p : R) n :
-  @MatrixFormula.seq_of_rV R n (const_mx p) = nseq n p.
-Proof.
-apply: (@eq_from_nth _ 0).
-  by rewrite MatrixFormula.size_seq_of_rV size_nseq.
-move=> k; rewrite MatrixFormula.size_seq_of_rV => kM.
-have -> := @MatrixFormula.nth_seq_of_rV R _ 0 (const_mx p) (Ordinal kM).
-by rewrite mxE nth_nseq kM.
-Qed.

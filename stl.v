@@ -28,7 +28,7 @@ Lemma andI_stl (e : expr Bool_T_def) : nu.-[[e `/\ e]]_stl = nu.-[[e]]_stl.
 Proof.
 rewrite /= /stl_and /stl_and_gt0 /stl_and_lt0 /min_dev /sumR.
 rewrite !big_cons !big_nil/=.
-rewrite !minrxxx.
+rewrite !minrxyx.
 set a_min := minr (nu.-[[e]]_stl) (nu.-[[e]]_stl).
 set a := (nu.-[[e]]_stl - a_min) * a_min^-1.
 have a_min_e : a_min = nu.-[[e]]_stl.
@@ -66,7 +66,7 @@ Lemma orI_stl (e : expr Bool_T_def) : nu.-[[e `\/ e]]_stl = nu.-[[e]]_stl.
 Proof.
 rewrite /= /stl_or /stl_or_gt0 /stl_or_lt0 /max_dev
 /sumR !big_cons !big_nil/= !addr0.
-rewrite !maxrxxx.
+rewrite !maxrxyx.
 set a_max := maxr (nu.-[[e]]_stl) (nu.-[[e]]_stl).
 set a :=  ((a_max - nu.-[[e]]_stl) / a_max).
 have a_max_e : a_max = nu.-[[e]]_stl.
