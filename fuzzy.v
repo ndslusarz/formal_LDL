@@ -162,9 +162,9 @@ dependent induction e using expr_ind'.
   case dl => //=; set a := [[e]]_ _; lra.
 - case: c => /=; case: ifP => ?.
   - by case: ([[e1]]_dl <= [[e2]]_dl)%R; rewrite lexx ler01.
-  - by rewrite le_maxr lexx orbT/= le_maxl ler01 gerBl// le_maxr lexx orbT.
+  - by rewrite le_max lexx orbT/= ge_max ler01 gerBl// le_max lexx orbT.
   - by case: ([[e1]]_dl == [[e2]]_dl); rewrite lexx ler01.
-  - by rewrite le_maxr lexx orbT/= le_maxl ler01 gerBl// normr_ge0 andTb.
+  - by rewrite le_max lexx orbT/= ge_max ler01 gerBl// normr_ge0 andTb.
 Qed.
 
 Lemma nary_inversion_andE1 (s : seq (expr (Bool_T_def))) :
@@ -292,7 +292,7 @@ case: l => //=; move => H.
     apply: IH => //.
     move: h; rewrite !big_map big_cons {1}/maxr.
     case: ifPn => // /[swap] ->; rewrite -leNgt => bigle0.
-    by apply/eqP; rewrite eq_le bigle0 bigmax_idl le_maxr lexx.
+    by apply/eqP; rewrite eq_le bigle0 bigmax_idl le_max lexx.
 - rewrite /product_dl_prod big_map.
   elim: Es => // a l0 IH.
   rewrite big_cons => /eqP /product_dl_prod_inv0 h.

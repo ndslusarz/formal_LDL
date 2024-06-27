@@ -183,7 +183,7 @@ case: ifPn=>[hminlt0|].
       rewrite andbT invr_le0 invr_ge0 fine_le0 ?orbT ?(ltW hminlt0)//=.
       rewrite -ltey lte_add_pinfty//.
         by apply: lt_trans; first exact: hilt0.
-      by rewrite lte_oppl/= ltNye.
+      by rewrite lteNl/= ltNye.
     rewrite big_seq_cond.
     apply: lte_sum_pinfty => i /andP[iEs _].
     apply: expeR_lty.
