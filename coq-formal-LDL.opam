@@ -19,7 +19,9 @@ The LDL language is defined in `ldl.v`, along with its fuzzy, DL2, STL
 and Boolean interpretations.  The files `fuzzy.v`, `dl2.v`,
 `dl2_ereal.v`, `stl.v` and `stl_ereal.v` contain the relevant theorems
 that hold for each interpretation: structural properties (idempotence,
-commutativity and associativity of operators), soundness, and shadow-lifting."""
+commutativity and associativity of operators), soundness, and shadow-lifting.
+The files `matcomp_extra.v` and `analysis_extra.v` conatin extra lemmas related to
+the respective libraries, including L'Hopital and Cauchy MVT in the latter."""
 
 build: [make "-j%{jobs}%"]
 install: [make "install"]
@@ -37,6 +39,4 @@ authors: [
   "Reynald Affeldt"
   "Alessandro Bruni"
   "Natalia Slusarz"
-  "Katrhin Stark"
-  "Ekaterina Komendantskaya"
 ]

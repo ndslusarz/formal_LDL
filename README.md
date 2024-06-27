@@ -20,6 +20,8 @@ and Boolean interpretations.  The files `fuzzy.v`, `dl2.v`,
 `dl2_ereal.v`, `stl.v` and `stl_ereal.v` contain the relevant theorems
 that hold for each interpretation: structural properties (idempotence,
 commutativity and associativity of operators), soundness, and shadow-lifting.
+The files `matcomp_extra.v` and `analysis_extra.v` conatin extra lemmas related to
+the respective libraries, including L'Hopital and Cauchy MVT in the latter.
 
 ## Meta
 
@@ -27,8 +29,6 @@ commutativity and associativity of operators), soundness, and shadow-lifting.
   - Reynald Affeldt (initial)
   - Alessandro Bruni (initial)
   - Natalia Slusarz (initial)
-  - Katrhin Stark (initial)
-  - Ekaterina Komendantskaya (initial)
 - License: [MIT License](LICENSE)
 - Compatible Coq versions: 8.18 to 8.19
 - Additional dependencies:
