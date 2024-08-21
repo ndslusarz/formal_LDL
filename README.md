@@ -2,7 +2,7 @@
 This file was generated from `meta.yml`, please do not edit manually.
 Follow the instructions on https://github.com/coq-community/templates to regenerate.
 --->
-# Formalisation of Differentiable Logics
+# Formalisation of Differentiable Logics in Coq
 
 [![Docker CI][docker-action-shield]][docker-action-link]
 
@@ -20,27 +20,27 @@ and Boolean interpretations.  The files `fuzzy.v`, `dl2.v`,
 `dl2_ereal.v`, `stl.v` and `stl_ereal.v` contain the relevant theorems
 that hold for each interpretation: structural properties (idempotence,
 commutativity and associativity of operators), soundness, and shadow-lifting.
-The files `matcomp_extra.v` and `analysis_extra.v` conatin extra lemmas related to
+The files `mathcomp_extra.v` and `analysis_extra.v` contain extra lemmas related to
 the respective libraries, including L'Hopital and Cauchy MVT in the latter.
 
 ## Meta
 
 - Author(s):
+  - Natalia Slusarz (initial)
   - Reynald Affeldt (initial)
   - Alessandro Bruni (initial)
-  - Natalia Slusarz (initial)
 - License: [MIT License](LICENSE)
 - Compatible Coq versions: 8.18 to 8.19
 - Additional dependencies:
-  - [MathComp](https://math-comp.github.io) 2.0
-  - [MathComp Analysis](https://github.com/math-comp/analysis) 1.0.0
+  - [MathComp](https://math-comp.github.io) 2.2.0
+  - [MathComp Analysis](https://github.com/math-comp/analysis) 1.3.1
   - [MathComp Algebra Tactics](https://github.com/math-comp/algebra-tactics) 1.2.3
 - Related publication(s):
   - [Taming Differentiable Logics with Coq Formalisation](https://arxiv.org/abs/2403.13700) 
 
 ## Building and installation instructions
 
-The easiest way to install the latest released version of Formalisation of Differentiable Logics
+The easiest way to install the latest released version of Formalisation of Differentiable Logics in Coq
 is via [OPAM](https://opam.ocaml.org/doc/Install.html):
 
 ```shell
