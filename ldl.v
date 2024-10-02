@@ -41,6 +41,11 @@ Require Import mathcomp_extra analysis_extra.
 (* `shadow_lifting f` with `f : rV[R]_n.+1 -> R`                              *)
 (*   $\forall p, p > 0 \to \forall i, \frac{d\,f}{d\,x_i} [p; \cdots; p] > 0$ *)
 (*                                                                            *)
+(*## Examples                                                                 *)
+(* - example_eps_delta_robust - exanmple constraint -robustness - expressed   *)
+(*   using the custom language of `expr`                                      *)
+(* - example_hierarchichal - example group constraint expressed using the     *)
+(*   custom language of `expr`                                                *)
 (******************************************************************************)
 
 Set Implicit Arguments.
@@ -107,11 +112,10 @@ Notation "a `\/ b" := (ldl_or [:: a; b]) (at level 45).
 Notation "a `=> b" := (ldl_or [:: (ldl_not a); b]) (at level 55).
 Notation "`~ a"    := (ldl_not a) (at level 75).
 Definition ldl_add (R : realType) := ldl_fun (fun (t : 2.-tuple R) => [tuple [tnth t 0] + [tnth t 1] ])%R.
-(*TO DO: FIX AS above all lets and R*)
-Let ldl_mul {R : realType} := ldl_fun (fun (t : 2.-tuple R) => [tuple [tnth t 0] * [tnth t 1] ])%R.
-Let ldl_sub {R : realType} := ldl_fun (fun (t : 2.-tuple R)
+Definition ldl_mul (R : realType) := ldl_fun (fun (t : 2.-tuple R) => [tuple [tnth t 0] * [tnth t 1] ])%R.
+Definition ldl_sub (R : realType) := ldl_fun (fun (t : 2.-tuple R)
    => [tuple [tnth t 0] - [tnth t 1] ])%R.
-Let ldl_opp {R : realType}  := ldl_fun (fun (t : 1.-tuple R) => [tuple -[tnth t 0] ])%R.
+Definition ldl_opp (R : realType)  := ldl_fun (fun (t : 1.-tuple R) => [tuple -[tnth t 0] ])%R.
 Notation "a `+ b"  := (ldl_lookup (ldl_app ldl_add [tuple a; b]) 0) (at level 50).
 Notation "a `- b"  := (ldl_lookup (ldl_app ldl_sub [tuple a; b]) 0) (at level 45).
 Notation "a `* b"  := (ldl_lookup (ldl_app ldl_mul [tuple a; b]) 0) (at level 40).
@@ -297,14 +301,14 @@ Fixpoint translation {t} (e : @expr R t) {struct e} : type_translation t :=
    | ldl_idx n i => i
    | ldl_vec n t => t
 
-   | ldl_and b Es =>
+   | ldl_and _ Es =>
        match l with
        | Lukasiewicz => maxr (sumR (map translation Es) - (size Es)%:R+1) 0
        | Yager => maxr (1 - (sumR (map (fun E => (1 - ({[ E ]} : type_translation (Bool_T _)))`^p) Es))`^p^-1) 0
        | Godel => minR (map translation Es)
        | product => prodR (map translation Es)
        end
-   | ldl_or b Es =>
+   | ldl_or _ Es =>
        match l with
        | Lukasiewicz => minr (sumR (map translation Es)) 1
        | Yager => minr ((sumR (map (fun E => ({[ E ]} : type_translation (Bool_T _))`^p) Es))`^p^-1) 1
@@ -546,3 +550,139 @@ Definition shadow_lifting {R : realType} n (f : 'rV_n.+1 -> R) :=
   forall p, p > 0 -> forall i, ('d f '/d i) (const_mx p) > 0.
 
 End shadow_lifting.
+
+Section example_eps_delta_robust.
+Local Open Scope ldl_scope.
+Context {R : realType}.
+
+Let ldl_norm_infty (n : nat) : @expr R (Fun_T n.+1 1) := ldl_fun (fun (t : (n.+1).-tuple R) =>
+   [tuple \big[maxr/[tnth t 0] ]_(i <- t) i ])%R.
+
+Let ldl_vec_sub (n : nat) : @expr R (Vector_T n) -> @expr R (Vector_T n) -> @expr R (Vector_T n).
+Proof.
+elim.
+- move=> r. apply.
+- move=> p b. apply.
+- move=> m i. apply.
+- move=> m t1.
+  elim.
+  + move=> r. exact: (ldl_real 0).
+  + move=> p b. exact: (ldl_bool _ true).
+  + move=> l i. exact: (ldl_idx i).
+  + move=> l t2. exact: (ldl_vec [tuple nth 0 t1 i - nth 0 t2 i | i < l])%R.
+  + move=> p s. exact: (ldl_bool _ true).
+  + move=> p s. exact: (ldl_bool _ true).
+  + move=> e1 e2. exact: e1.
+  + move=> p c e1 e2 e3 e4. exact: (ldl_bool _ true).
+  + move=> l k f. exact: ldl_fun f.
+  + move=> l k e1 e2 v1 v2. exact: (ldl_vec [tuple 0 | i < k])%R.
+  + move=> l v1 v2 i1 i2. exact: (ldl_real 0).
+- move=> p s e. exact: e.
+- move=> p s e. exact: e.
+- move=> p s e. exact: e.
+- move=> p c e f1 e1 f2 e2. exact: e2.
+- move=> m l f e. exact: e.
+- move=> m l e1 f1 e2 f2. exact.
+- move=> m e1 f1 e2 f2. exact.
+Defined.
+
+Context (n m : nat) (eps delta : @expr R Real_T) (f : @expr R (Fun_T (n.+1) (m.+1)))
+  (v : @expr R (Vector_T (n.+1))) (x : @expr R (Vector_T (n.+1))).
+
+Definition eps_delta_robust :=
+    (((ldl_lookup (ldl_app (ldl_norm_infty n) (ldl_vec_sub x v)) (ldl_idx ord0)) `<= eps)
+       `=> ((ldl_lookup (ldl_app (ldl_norm_infty m) (ldl_vec_sub (ldl_app f x) (ldl_app f v))) (ldl_idx ord0))
+       `<= delta)).
+
+End example_eps_delta_robust.
+
+Section example_hierarchichal.
+Local Open Scope ldl_scope.
+Context {R : realType}.
+
+Let ldl_sum_real : @expr R Real_T -> @expr R Real_T -> @expr R Real_T.
+Proof.
+elim.
+- move=> r. apply.
+- move=> p b. apply.
+- move=> m i. apply.
+- move=> m t1.
+  elim.
+  + move=> r. exact: (ldl_real 0).
+  + move=> p b. exact: (ldl_bool _ true).
+  + move=> l i. exact: (ldl_idx i).
+  + move=> l t2. exact: (ldl_vec [tuple nth 0 t1 i - nth 0 t2 i | i < l])%R.
+  + move=> p s. exact: (ldl_bool _ true).
+  + move=> p s. exact: (ldl_bool _ true).
+  + move=> e1 e2. exact: e1.
+  + move=> p c e1 e2 e3 e4. exact: (ldl_bool _ true).
+  + move=> l k f. exact: ldl_fun f.
+  + move=> l k e1 e2 v1 v2. exact: (ldl_vec [tuple 0 | i < k])%R.
+  + move=> l v1 v2 i1 i2. exact: (ldl_real 0).
+- move=> p s e. exact: e.
+- move=> p s e. exact: e.
+- move=> p s e. exact: e.
+- move=> p c e f1 e1 f2 e2. exact: e2.
+- move=> m l f e. exact: e.
+- move=> m l e1 f1 e2 f2. exact.
+- move=> m e1 f1 e2 f2. exact.
+Defined.
+
+Let ldl_real_sub : @expr R Real_T -> @expr R Real_T -> @expr R Real_T.
+Proof.
+elim.
+- move=> r. apply.
+- move=> p b. apply.
+- move=> m i. apply.
+- move=> m t1.
+  elim.
+  + move=> r. exact: (ldl_real 0).
+  + move=> p b. exact: (ldl_bool _ true).
+  + move=> l i. exact: (ldl_idx i).
+  + move=> l t2. exact: (ldl_vec [tuple nth 0 t1 i - nth 0 t2 i | i < l])%R.
+  + move=> p s. exact: (ldl_bool _ true).
+  + move=> p s. exact: (ldl_bool _ true).
+  + move=> e1 e2. exact: e1.
+  + move=> p c e1 e2 e3 e4. exact: (ldl_bool _ true).
+  + move=> l k f. exact: ldl_fun f.
+  + move=> l k e1 e2 v1 v2. exact: (ldl_vec [tuple 0 | i < k])%R.
+  + move=> l v1 v2 i1 i2. exact: (ldl_real 0).
+- move=> p s e. exact: e.
+- move=> p s e. exact: e.
+- move=> p s e. exact: e.
+- move=> p c e f1 e1 f2 e2. exact: e2.
+- move=> m l f e. exact: e.
+- move=> m l e1 f1 e2 f2. exact.
+- move=> m e1 f1 e2 f2. exact.
+Defined.
+
+Fixpoint ldl_sum_vec (x : seq (@expr R Real_T)) :=
+  \big[ldl_sum_real/ldl_real 0]_(i <- x) i.
+(*  match x with
+  | nil => ldl_real 0
+  | a::l => ldl_sum_real a (ldl_sum_vec l)
+end.*)
+
+Definition prob_group (n m : nat)
+  (f : @expr R (Fun_T (n.+1) (m.+1)))
+  (x : @expr R (Vector_T (n.+1)))
+  (gs : seq (@expr R (Index_T (m.+1)))) :=
+  
+  ldl_sum_vec (map (ldl_lookup (ldl_app f x)) gs).
+
+Context (n m : nat) (eps : @expr R Real_T) (f : @expr R (Fun_T (n.+1) (m.+1)))
+  (x : @expr R (Vector_T (n.+1))) (Gs : seq (seq (@expr R (Index_T (m.+1)))))
+  (r : flag).
+
+Let fancy_or (eps p: @expr R Real_T) : expr (Bool_T r) :=
+      (p `<= eps) `\/ ((ldl_real 1%R `- p) `<= eps).
+
+
+ (*(ldl_cmp r cmp_le p eps) `\/ (ldl_cmp r cmp_le (ldl_real_sub (ldl_real 1%R) p) eps).*)
+
+
+Definition group_similiarity :=
+  ldl_and (map (fancy_or r eps) (map (prob_group f x) Gs)).
+
+
+End example_hierarchichal.
