@@ -111,11 +111,10 @@ Notation "a `/\ b" := (ldl_and [:: a; b]) (at level 45).
 Notation "a `\/ b" := (ldl_or [:: a; b]) (at level 45).
 Notation "a `=> b" := (ldl_or [:: (ldl_not a); b]) (at level 55).
 Notation "`~ a"    := (ldl_not a) (at level 75).
-Definition ldl_add (R : realType) := ldl_fun (fun (t : 2.-tuple R) => [tuple [tnth t 0] + [tnth t 1] ])%R.
-Definition ldl_mul (R : realType) := ldl_fun (fun (t : 2.-tuple R) => [tuple [tnth t 0] * [tnth t 1] ])%R.
-Definition ldl_sub (R : realType) := ldl_fun (fun (t : 2.-tuple R)
-   => [tuple [tnth t 0] - [tnth t 1] ])%R.
-Definition ldl_opp (R : realType)  := ldl_fun (fun (t : 1.-tuple R) => [tuple -[tnth t 0] ])%R.
+Definition ldl_add {R : realType} := ldl_fun (fun (t : 2.-tuple R) => [tuple [tnth t 0] + [tnth t 1] ])%R.
+Definition ldl_mul {R : realType} := ldl_fun (fun (t : 2.-tuple R) => [tuple [tnth t 0] * [tnth t 1] ])%R.
+Definition ldl_sub {R : realType} := ldl_fun (fun (t : 2.-tuple R) => [tuple [tnth t 0] - [tnth t 1] ])%R.
+Definition ldl_opp {R : realType}  := ldl_fun (fun (t : 1.-tuple R) => [tuple -[tnth t 0] ])%R.
 Notation "a `+ b"  := (ldl_lookup (ldl_app ldl_add [tuple a; b]) 0) (at level 50).
 Notation "a `- b"  := (ldl_lookup (ldl_app ldl_sub [tuple a; b]) 0) (at level 45).
 Notation "a `* b"  := (ldl_lookup (ldl_app ldl_mul [tuple a; b]) 0) (at level 40).
@@ -658,10 +657,7 @@ Defined.
 
 Fixpoint ldl_sum_vec (x : seq (@expr R Real_T)) :=
   \big[ldl_sum_real/ldl_real 0]_(i <- x) i.
-(*  match x with
-  | nil => ldl_real 0
-  | a::l => ldl_sum_real a (ldl_sum_vec l)
-end.*)
+
 
 Definition prob_group (n m : nat)
   (f : @expr R (Fun_T (n.+1) (m.+1)))
@@ -670,11 +666,16 @@ Definition prob_group (n m : nat)
   
   ldl_sum_vec (map (ldl_lookup (ldl_app f x)) gs).
 
-Context (n m : nat) (eps : @expr R Real_T) (f : @expr R (Fun_T (n.+1) (m.+1)))
-  (x : @expr R (Vector_T (n.+1))) (Gs : seq (seq (@expr R (Index_T (m.+1)))))
+Context (n m : nat)
+  (eps : @expr R Real_T)
+  (f : @expr R (Fun_T (n.+1) (m.+1)))
+  (x : @expr R (Vector_T (n.+1)))
+  (Gs : seq (seq (@expr R (Index_T (m.+1)))))
   (r : flag).
 
 Let fancy_or (eps p: @expr R Real_T) : expr (Bool_T r) :=
+      (*(p `<= eps) `\/ ((ldl_real_sub (ldl_real 1%R) p) `<= eps).*)
+      
       (p `<= eps) `\/ ((ldl_real 1%R `- p) `<= eps).
 
 
