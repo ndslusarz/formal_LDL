@@ -241,6 +241,52 @@ Fixpoint bool_translation {t} (e : @expr R t) : bool_type_translation t :=
   end
 where "<< e >>" := (bool_translation e).
 
+Reserved Notation "Q |- P" (no associativity, at level 61).
+
+(*Variables (Q P : seq (@expr R (Bool_T_def))).*)
+
+Inductive seq_calc_bool : seq (bool_type_translation Bool_T_def) 
+  -> seq (bool_type_translation Bool_T_def) -> Prop :=
+| init : forall Q P a ,
+    Q ++ [::<<a>>] |- <<a>> :: P
+| bot : forall Q P,
+    Q ++ [::<<(ldl_bool def false)>>] |- P
+| and_R : forall Q P a b,
+    Q |- << a>> :: P->    Q |- << b>> :: P ->
+                               Q |- <<(a `/\ b)>> :: P
+| andL :  forall Q P (a b : expr Bool_T_def),
+    Q ::[:: <<a>>; <<b>>] |- P ->
+                               Q ::[:: <<(a `/\ b)>>] |- P
+| orR1 : forall Q P a b,
+    Q |-  <<a>> :: P ->
+      Q |- << (a `\/ b)>> :: P
+| orR2 : forall Q P a b,
+    Q |-  <<b>> :: P ->
+      Q |- << (a `\/ b)>> :: P
+| orL :  forall Q P a b,
+    Q++[:: <<a>>]  |- P ->   Q++[:: <<b>>] |- P ->
+      Q ++ [::<<(a `\/ b)>>] |- P
+| implR : forall Q P a b,
+     Q++[::<<a>>] |- <<b>> ::P ->
+      Q |- <<(a `=> b)>> :: P
+| implL : forall Q P R a b,
+    Q |- <<a>> :: P ->   <<b>>::Q |- R ->
+      <<a `=> b>>::Q |-  P ++ R
+where "Q |- P" := (seq_calc_bool Q P).
+
+Reserved Notation "Γ ⊢ φ" (at level 90).
+Inductive Provable : env -> form -> Type :=
+| Atom :    ∀ Γ p, Γ • (Var p) ⊢ (Var p)
+| ExFalso : ∀ Γ φ, Γ • ⊥ ⊢ φ
+
+
+Proposition SC_consistent : ~ (nil ⇒ ⊥).
+Proof.
+intro. inversion H; repeat match goal with
+       | H0 : In _ nil |- _ => destruct H0
+       end.
+Qed.
+
 End bool_translation.
 
 Notation "[[ e ]]_B" := (bool_translation e) : ldl_scope.
@@ -676,7 +722,7 @@ Context (n m : nat)
 Let fancy_or (eps p: @expr R Real_T) : expr (Bool_T r) :=
       (*(p `<= eps) `\/ ((ldl_real_sub (ldl_real 1%R) p) `<= eps).*)
       
-      (p `<= eps) `\/ ((ldl_real 1%R `- p) `<= eps).
+     (* (p `<= eps) `\/ ((ldl_real 1%R `- p) `<= eps).*)
 
 
  (*(ldl_cmp r cmp_le p eps) `\/ (ldl_cmp r cmp_le (ldl_real_sub (ldl_real 1%R) p) eps).*)
