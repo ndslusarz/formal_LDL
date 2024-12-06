@@ -243,49 +243,74 @@ where "<< e >>" := (bool_translation e).
 
 Reserved Notation "Q |- P" (no associativity, at level 61).
 
-(*Variables (Q P : seq (@expr R (Bool_T_def))).*)
-
-Inductive seq_calc_bool : seq (bool_type_translation Bool_T_def) 
-  -> seq (bool_type_translation Bool_T_def) -> Prop :=
-| init : forall Q P a ,
-    Q ++ [::<<a>>] |- <<a>> :: P
+Inductive seq_calc_bool : seq (@expr R Bool_T_def) 
+  -> seq (@expr R Bool_T_def) -> Prop :=
+| init : forall Q P a,
+    Q ++ [::a] |- a :: P
 | bot : forall Q P,
-    Q ++ [::<<(ldl_bool def false)>>] |- P
+    Q ++ [::(ldl_bool def false)] |- P
+| top : forall Q,
+    Q |- [::(ldl_bool def true)]
 | and_R : forall Q P a b,
-    Q |- << a>> :: P->    Q |- << b>> :: P ->
-                               Q |- <<(a `/\ b)>> :: P
+    Q |- a :: P  ->  Q |- b :: P ->
+      Q |- (a `/\ b) :: P
 | andL :  forall Q P (a b : expr Bool_T_def),
-    Q ::[:: <<a>>; <<b>>] |- P ->
-                               Q ::[:: <<(a `/\ b)>>] |- P
+    Q ::[:: a; b] |- P ->
+      Q ::[:: (a `/\ b)] |- P
 | orR1 : forall Q P a b,
-    Q |-  <<a>> :: P ->
-      Q |- << (a `\/ b)>> :: P
+    Q |-  a :: P ->
+      Q |-  (a `\/ b) :: P
 | orR2 : forall Q P a b,
-    Q |-  <<b>> :: P ->
-      Q |- << (a `\/ b)>> :: P
+    Q |-  b :: P ->
+      Q |-  (a `\/ b) :: P
 | orL :  forall Q P a b,
-    Q++[:: <<a>>]  |- P ->   Q++[:: <<b>>] |- P ->
-      Q ++ [::<<(a `\/ b)>>] |- P
+    Q++[:: a]  |- P ->   Q++[:: b] |- P ->
+      Q ++ [::(a `\/ b)] |- P
 | implR : forall Q P a b,
-     Q++[::<<a>>] |- <<b>> ::P ->
-      Q |- <<(a `=> b)>> :: P
+     Q++[::a] |- b ::P ->
+      Q |- (a `=> b) :: P
 | implL : forall Q P R a b,
-    Q |- <<a>> :: P ->   <<b>>::Q |- R ->
-      <<a `=> b>>::Q |-  P ++ R
+    Q |- a :: P ->   b::Q |- R ->
+      a `=> b::Q |-  P ++ R
+| negR : forall Q P a,
+    Q ++ [::a] |- P ->
+      Q |- (`~ a) :: P
+| negL : forall Q P a,
+    Q |- a :: P ->
+      Q ++ [::(`~ a)]|- P
+(*structural rules*)
+| weakeningL : forall Q P a,
+    Q |- P -> 
+      Q ++ [::a] |- P
+| weakeningR : forall Q P a,
+    Q |- P -> 
+      Q |- a :: P
+| contractionL : forall Q P a,
+    Q ++ [::a;a] |- P -> 
+      Q ++ [::a] |- P
+| contractionR : forall Q P a,
+    Q  |- [::a;a] ++ P -> 
+      Q  |- a :: P
+| exchangeL : forall Q1 Q2 P a b,
+    Q1 ++ [::a;b] ++ Q2 |- P ->
+      Q1 ++ [::b;a] ++ Q2 |- P
+| exchangeR :forall Q P1 P2 a b,
+    Q |- P1 ++ [::a;b] ++ P2 ->
+      Q |- P1 ++ [::b;a] ++ P2
 where "Q |- P" := (seq_calc_bool Q P).
 
-Reserved Notation "Γ ⊢ φ" (at level 90).
-Inductive Provable : env -> form -> Type :=
-| Atom :    ∀ Γ p, Γ • (Var p) ⊢ (Var p)
-| ExFalso : ∀ Γ φ, Γ • ⊥ ⊢ φ
-
-
-Proposition SC_consistent : ~ (nil ⇒ ⊥).
+Proposition sc_bool_consistent : ~ (nil |- [:: (ldl_bool def false)]).
 Proof.
-intro. inversion H; repeat match goal with
-       | H0 : In _ nil |- _ => destruct H0
-       end.
-Qed.
+intro. inversion H. (*(match goal with
+       | H : nil |- _ => destruct H
+       end.*)
+Admitted.
+
+Lemma sound_sc_bool Q (p : @expr R Bool_T_def) :
+  <<p>> = <<ldl_bool def true>> -> Q |- [::p].
+Proof.
+rewrite/= => H1. dependent induction p. 
+Admitted.ny
 
 End bool_translation.
 
