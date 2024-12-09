@@ -251,21 +251,21 @@ Inductive seq_calc_bool : seq (@expr R Bool_T_def)
     Q ++ [::(ldl_bool def false)] |- P
 | top : forall Q,
     Q |- [::(ldl_bool def true)]
-| and_R : forall Q P a b,
-    Q |- a :: P  ->  Q |- b :: P ->
-      Q |- (a `/\ b) :: P
-| andL :  forall Q P (a b : expr Bool_T_def),
-    Q ::[:: a; b] |- P ->
-      Q ::[:: (a `/\ b)] |- P
-| orR1 : forall Q P a b,
+| and_R : forall Q P a bs,
+    Q |- a :: P  ->  Q |- bs :: P ->
+      Q |- (ldl_and [::a; bs]) :: P
+| andL :  forall Q P a bs,
+    Q ::[:: a; bs] |- P ->
+      Q ::[::ldl_and [::a; bs]] |- P
+| orR1 : forall Q P a bs,
     Q |-  a :: P ->
-      Q |-  (a `\/ b) :: P
-| orR2 : forall Q P a b,
-    Q |-  b :: P ->
-      Q |-  (a `\/ b) :: P
-| orL :  forall Q P a b,
-    Q++[:: a]  |- P ->   Q++[:: b] |- P ->
-      Q ++ [::(a `\/ b)] |- P
+      Q |-  (ldl_and [::a; bs]) :: P
+| orR2 : forall Q P a bs,
+    Q |-  bs :: P ->
+      Q |-  (ldl_and [::a; bs]) :: P
+| orL :  forall Q P a bs,
+    Q++[:: a]  |- P ->   Q++[:: bs] |- P ->
+      Q ++ [::ldl_and [::a; bs]] |- P
 | implR : forall Q P a b,
      Q++[::a] |- b ::P ->
       Q |- (a `=> b) :: P
@@ -301,16 +301,32 @@ where "Q |- P" := (seq_calc_bool Q P).
 
 Proposition sc_bool_consistent : ~ (nil |- [:: (ldl_bool def false)]).
 Proof.
-intro. inversion H. (*(match goal with
-       | H : nil |- _ => destruct H
-       end.*)
+intro. inversion H. move: H1;
+subst a; apply/eqP; rewrite -size_eq0. 
+(*-size_cat. rewrite -size0nil.*) (*lemma that non-empty list has lenght non zero*)
 Admitted.
 
+
 Lemma sound_sc_bool Q (p : @expr R Bool_T_def) :
-  <<p>> = <<ldl_bool def true>> -> Q |- [::p].
+ Q |- [::p] ->  <<p>> = <<ldl_bool def true>>.
 Proof.
-rewrite/= => H1. dependent induction p. 
-Admitted.ny
+rewrite/=. dependent induction p using expr_ind'; rewrite//=.
+- case b. by [].  
+  admit. (*prove consistency for this*)
+- rewrite List.Forall_forall in H. move => sqH.
+  admit.
+- rewrite List.Forall_forall in H. move => sqH. 
+  admit.
+- move => sqH. rewrite IHp //=. 
+  move: (IHp p).
+  apply IHp  in sqH; move: sqH; rewrite //=.
+  rewrite Bool.negb_true_iff => sqH.
+  rewrite sqH.
+  (*inversion sqH.*) admit.
+  admit. (*auxiliary lemma that we can either prove ~p or ~p but not both?*)
+- case: c; move => sqH.
+  + 
+Admitted.
 
 End bool_translation.
 
@@ -744,17 +760,17 @@ Context (n m : nat)
   (Gs : seq (seq (@expr R (Index_T (m.+1)))))
   (r : flag).
 
-Let fancy_or (eps p: @expr R Real_T) : expr (Bool_T r) :=
+(*Let fancy_or (eps p: @expr R Real_T) : expr (Bool_T r) :=
       (*(p `<= eps) `\/ ((ldl_real_sub (ldl_real 1%R) p) `<= eps).*)
       
      (* (p `<= eps) `\/ ((ldl_real 1%R `- p) `<= eps).*)
 
 
- (*(ldl_cmp r cmp_le p eps) `\/ (ldl_cmp r cmp_le (ldl_real_sub (ldl_real 1%R) p) eps).*)
+ (*(ldl_cmp r cmp_le p eps) `\/ (ldl_cmp r cmp_le (ldl_real_sub (ldl_real 1%R) p) eps).*)*)
 
 
-Definition group_similiarity :=
-  ldl_and (map (fancy_or r eps) (map (prob_group f x) Gs)).
+(*Definition group_similiarity :=
+  ldl_and (map (fancy_or r eps) (map (prob_group f x) Gs)).*)
 
 
 End example_hierarchichal.
