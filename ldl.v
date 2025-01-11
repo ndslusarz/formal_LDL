@@ -5,8 +5,9 @@ From mathcomp Require Import lra.
 From mathcomp Require Import all_classical.
 From mathcomp Require Import reals ereal signed.
 From mathcomp Require Import topology derive normedtype sequences
- exp measure lebesgue_measure lebesgue_integral hoelder.
+ exp measure lebesgue_measure lebesgue_integral hoelder finmap multiset.
 Require Import mathcomp_extra analysis_extra.
+From HB Require Import structures.
 
 (**md**************************************************************************)
 (* # Logics                                                                   *)
@@ -104,6 +105,12 @@ End expr.
 
 HB.instance Definition _ (R : realType) b :=
   @gen_eqMixin (@expr R (Bool_T b)).
+HB.instance Definition _ (R : realType) b := 
+  @gen_choiceMixin (@expr R (Bool_T b)). 
+(*Definition expr_finMixin :=
+  Eval simpl in [indFinMixin for expr].
+Canonical E_finType :=
+  Eval hnf in FinType E E_finMixin.*)
 
 Declare Scope ldl_scope.
 
@@ -219,6 +226,7 @@ End type_translation.
 Section bool_translation.
 Local Open Scope ring_scope.
 Local Open Scope ldl_scope.
+Local Open Scope mset. 
 Context {R : realType}.
 
 Fixpoint bool_translation {t} (e : @expr R t) : bool_type_translation t :=
@@ -242,91 +250,193 @@ Fixpoint bool_translation {t} (e : @expr R t) : bool_type_translation t :=
 where "<< e >>" := (bool_translation e).
 
 Reserved Notation "Q |- P" (no associativity, at level 61).
+Reserved Notation "Q |= P" (no associativity, at level 61).
 
-Inductive seq_calc_bool : seq (@expr R Bool_T_def) 
+(*Notation "[ 'mset' a ]" := (msetn 1 a)
+  (at level 0, a at level 99, format "[ 'mset'  a ]") : mset_scope.*)
+(*can't use this notation?*)
+
+Definition mset_seq (T : choiceType) (m: {mset T}) : seq T := m.
+
+Inductive seq_calc_bool_ms : {mset (@expr R Bool_T_def)}
+  -> {mset (@expr R Bool_T_def)} -> Prop :=
+| init : forall Q P a,
+     a +` Q |= a +` P
+| bot : forall Q P,
+    (ldl_bool def false) +` Q |= P
+| top : forall Q,
+    Q |= (msetn 1 (ldl_bool def true))
+| and_R : forall Q P a bs,
+    Q |= a +` P  ->  Q |= ( seq_mset bs) `+` P ->
+      Q |=  (ldl_and (a :: bs)) +` P
+| andL :  forall Q P l,
+    l `+` Q  |= P ->
+      (ldl_and l) +` Q |= P
+| orR1 : forall Q P a bs,
+    Q |=  a +` P ->
+      Q |=  (ldl_or [::a; bs]) +` P
+| orR2 : forall Q P a bs,
+    Q |=  (seq_mset bs) `+` P ->
+      Q |=  (ldl_or (a++bs)) +` P
+| orL :  forall Q P a bs,
+    a+`Q  |= P ->   Q `+` (seq_mset bs) |= P ->
+      (ldl_or (a:: bs))+`Q |= P
+| implR : forall Q P a b,
+     a+`Q |= b+`P ->
+      Q |= (a `=> b) +` P
+| implL : forall Q P R a b,
+    Q |= a +` P ->   b+`Q |= R ->
+      (a `=> b)+`Q |=  P `+` R (*find mseq to seq*)
+| negR : forall Q P a,
+    a+`Q  |= P ->
+      Q |= (`~ a) +` P
+| negL : forall Q P a,
+    Q |= a +` P ->
+      (`~ a)+`Q|= P
+where "Q |= P" := (seq_calc_bool_ms Q P).
+
+Print perm_eq_seq_mset.
+Print perm_eq.
+Set Printing All.
+Print perm_eq_seq_mset.
+Print EnumMset.f.
+Print seq_mset.
+Print perm_eq.
+(*Definition mset_seq (T : choiceType) (m: {mset T}) : seq T := m.*)
+(*not needed, seems to cast to seq on its own? see 
+perm_eq_seq_mset : forall {K : choiceType} (s : seq K), perm_eq (seq_mset s) s
+directly compares mset with seq up to permutation
+
+Nat: double check this*)
+
+Proposition sc_bool_consistent_weak : ~ (mset0 |= msetn 1(ldl_bool def false)).
+Proof.
+intro; inversion H.
+(*probably not useful need a stronger version?*)
+Admitted.
+
+Proposition sc_bool_consistent Q : Q != mset0 ->
+                                   ~ (Q |= msetn 1(ldl_bool def false)).
+Proof.
+move => Q0 H.  inversion H.
+Admitted.
+
+
+Lemma sound_sc_bool_mseq Q (p : @expr R Bool_T_def) :
+ Q |= (msetn 1 p) -> map bool_translation Q = nseq (size Q) (<<ldl_bool def true>>) 
+      -> <<p>> = <<ldl_bool def true>>.
+Proof.
+rewrite/=. dependent induction p using expr_ind'; rewrite//=;
+move => H1 H2.
+- move: H1; case b. by [].  
+ (* apply sc_bool_consistent.*) (*prove that can't prove false*)
+  admit.
+- rewrite big_all. (*inversion H1; rewrite//=.*)  admit. (*move: H1.  admit.*)
+  (*not doing absurd cases?*)
+- rewrite big_has. admit.
+- rewrite IHp //=. 
+  + move: (IHp p).
+    apply IHp  in H1; move: H1; rewrite //=.
+    * rewrite Bool.negb_true_iff => H1.
+      rewrite H1. admit.
+    * move => H. rewrite JMeq_refl. (*(IHp _ _ _ erefl JMeq_refl). rewrite JMeq_eq.*)
+  + admit.
+- move: H1; case: c.
+  + admit.
+  + admit.
+Admitted.
+
+(*Inductive seq_calc_bool : seq (@expr R Bool_T_def) 
   -> seq (@expr R Bool_T_def) -> Prop :=
 | init : forall Q P a,
-    Q ++ [::a] |- a :: P
+    a :: Q |- a :: P
 | bot : forall Q P,
-    Q ++ [::(ldl_bool def false)] |- P
+    (ldl_bool def false) :: Q |- P
 | top : forall Q,
     Q |- [::(ldl_bool def true)]
 | and_R : forall Q P a bs,
     Q |- a :: P  ->  Q |- bs :: P ->
       Q |- (ldl_and [::a; bs]) :: P
-| andL :  forall Q P a bs,
-    Q ::[:: a; bs] |- P ->
-      Q ::[::ldl_and [::a; bs]] |- P
+| andL :  forall Q P l,
+    l++Q  |- P ->
+      [::ldl_and l]++Q |- P
 | orR1 : forall Q P a bs,
     Q |-  a :: P ->
-      Q |-  (ldl_and [::a; bs]) :: P
+      Q |-  (ldl_or [::a; bs]) :: P
 | orR2 : forall Q P a bs,
     Q |-  bs :: P ->
-      Q |-  (ldl_and [::a; bs]) :: P
+      Q |-  (ldl_or [::a; bs]) :: P
 | orL :  forall Q P a bs,
-    Q++[:: a]  |- P ->   Q++[:: bs] |- P ->
-      Q ++ [::ldl_and [::a; bs]] |- P
+    a::Q  |- P ->   Q++[:: bs] |- P ->
+      [::ldl_or [::a; bs]]++Q |- P
 | implR : forall Q P a b,
-     Q++[::a] |- b ::P ->
+     a::Q |- b ::P ->
       Q |- (a `=> b) :: P
 | implL : forall Q P R a b,
     Q |- a :: P ->   b::Q |- R ->
-      a `=> b::Q |-  P ++ R
+      (a `=> b)::Q |-  P ++ R
 | negR : forall Q P a,
-    Q ++ [::a] |- P ->
+    a::Q  |- P ->
       Q |- (`~ a) :: P
 | negL : forall Q P a,
     Q |- a :: P ->
-      Q ++ [::(`~ a)]|- P
+      (`~ a)::Q|- P
 (*structural rules*)
-| weakeningL : forall Q P a,
+(*| weakeningL : forall Q P a,
     Q |- P -> 
-      Q ++ [::a] |- P
+      a::Q |- P
 | weakeningR : forall Q P a,
     Q |- P -> 
       Q |- a :: P
 | contractionL : forall Q P a,
-    Q ++ [::a;a] |- P -> 
-      Q ++ [::a] |- P
+    a::a::Q |- P -> 
+      a::Q |- P
 | contractionR : forall Q P a,
-    Q  |- [::a;a] ++ P -> 
+    Q  |- a::a::P -> 
       Q  |- a :: P
 | exchangeL : forall Q1 Q2 P a b,
     Q1 ++ [::a;b] ++ Q2 |- P ->
       Q1 ++ [::b;a] ++ Q2 |- P
 | exchangeR :forall Q P1 P2 a b,
     Q |- P1 ++ [::a;b] ++ P2 ->
-      Q |- P1 ++ [::b;a] ++ P2
+      Q |- P1 ++ [::b;a] ++ P2*)
 where "Q |- P" := (seq_calc_bool Q P).
 
 Proposition sc_bool_consistent : ~ (nil |- [:: (ldl_bool def false)]).
 Proof.
-intro. inversion H. move: H1;
-subst a; apply/eqP; rewrite -size_eq0. 
-(*-size_cat. rewrite -size0nil.*) (*lemma that non-empty list has lenght non zero*)
-Admitted.
+intro. inversion H. (*note: this proof just simplified itself into one line
+after changing the ordering in Context as per Alessandro's comment*)
+Qed.
 
 
 Lemma sound_sc_bool Q (p : @expr R Bool_T_def) :
- Q |- [::p] ->  <<p>> = <<ldl_bool def true>>.
+ Q |- [::p] -> map bool_translation Q = nseq (size Q) (<<ldl_bool def true>>) 
+      -> <<p>> = <<ldl_bool def true>>.
 Proof.
-rewrite/=. dependent induction p using expr_ind'; rewrite//=.
-- case b. by [].  
-  admit. (*prove consistency for this*)
-- rewrite List.Forall_forall in H. move => sqH.
+rewrite/=. dependent induction p using expr_ind'; rewrite//=;
+move => H1 H2.
+- move: H1; case b. by [].  
+  move: H2. case: Q. 
+  + admit.
+  + apply /sc_bool_consistent. admit. (*prove better consistency for this? not nil
+in context but Q which does not contain false?*)
+- rewrite List.Forall_forall in H.
   admit.
-- rewrite List.Forall_forall in H. move => sqH. 
+
+- rewrite List.Forall_forall in H.
   admit.
-- move => sqH. rewrite IHp //=. 
+- rewrite IHp //=. 
   move: (IHp p).
-  apply IHp  in sqH; move: sqH; rewrite //=.
-  rewrite Bool.negb_true_iff => sqH.
-  rewrite sqH.
-  (*inversion sqH.*) admit.
+  apply IHp  in H1; move: H1; rewrite //=.
+  rewrite Bool.negb_true_iff => H1.
+  rewrite H1.
+  admit.
   admit. (*auxiliary lemma that we can either prove ~p or ~p but not both?*)
-- case: c; move => sqH.
-  + 
-Admitted.
+  admit.
+- move: H1; case: c.
+  + move 
+  +
+Admitted.*)
 
 End bool_translation.
 
