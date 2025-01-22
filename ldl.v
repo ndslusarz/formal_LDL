@@ -15,14 +15,15 @@ From HB Require Import structures.
 (* This file provides a formalization of the LDL language. The inductive type *)
 (* `expr` defines the language itself, which is intrisically typed on the     *)
 (* types defined by `ldl_type`. Boolean formulas take an argument of type     *)
-(* `flag`: `def` allows negation in the expression, while `undef` disallows *)
+(* `flag`: `def` allows negation in the expression, while `undef` disallows   *)
 (* it.                                                                        *)
 (*                                                                            *)
 (* ## Definitions                                                             *)
 (* - `type_translation`: the real-valued translation of ldl_type into the     *)
 (*   corresponding type of the interpretation; maps `Bool_T` to $\mathbb R$   *)
-(* - `ereal_type_translation`: same as before, but maps `Bool_T` to $\bar{\mathbb R}}$ *)
-(* - `bool_type_translation`: type translation for the boolean interpretation; *)
+(* - `ereal_type_translation`: same as before, but maps 
+     `Bool_T` to $\bar{\mathbb R}}$                                           *)
+(* - `bool_type_translation`: type translation for the boolean interpretation;*)
 (*   maps `Bool_T` to `bool`                                                  *)
 (* - `bool_translation`: maps an LDL-formula to a Boolean formula, with the   *)
 (*   obvious interpretation                                                   *)
@@ -107,10 +108,6 @@ HB.instance Definition _ (R : realType) b :=
   @gen_eqMixin (@expr R (Bool_T b)).
 HB.instance Definition _ (R : realType) b := 
   @gen_choiceMixin (@expr R (Bool_T b)). 
-(*Definition expr_finMixin :=
-  Eval simpl in [indFinMixin for expr].
-Canonical E_finType :=
-  Eval hnf in FinType E E_finMixin.*)
 
 Declare Scope ldl_scope.
 
@@ -226,7 +223,7 @@ End type_translation.
 Section bool_translation.
 Local Open Scope ring_scope.
 Local Open Scope ldl_scope.
-Local Open Scope mset. 
+Local Open Scope mset_scope. 
 Context {R : realType}.
 
 Fixpoint bool_translation {t} (e : @expr R t) : bool_type_translation t :=
@@ -252,10 +249,6 @@ where "<< e >>" := (bool_translation e).
 Reserved Notation "Q |- P" (no associativity, at level 61).
 Reserved Notation "Q |= P" (no associativity, at level 61).
 
-(*Notation "[ 'mset' a ]" := (msetn 1 a)
-  (at level 0, a at level 99, format "[ 'mset'  a ]") : mset_scope.*)
-(*can't use this notation?*)
-
 Definition mset_seq (T : choiceType) (m: {mset T}) : seq T := m.
 
 Inductive seq_calc_bool_ms : {mset (@expr R Bool_T_def)}
@@ -265,9 +258,9 @@ Inductive seq_calc_bool_ms : {mset (@expr R Bool_T_def)}
 | bot : forall Q P,
     (ldl_bool def false) +` Q |= P
 | top : forall Q,
-    Q |= (msetn 1 (ldl_bool def true))
+    Q |= [mset (ldl_bool def true)]
 | and_R : forall Q P a bs,
-    Q |= a +` P  ->  Q |= ( seq_mset bs) `+` P ->
+    Q |= a +` P  ->  Q |= (seq_mset bs) `+` P ->
       Q |=  (ldl_and (a :: bs)) +` P
 | andL :  forall Q P l,
     l `+` Q  |= P ->
@@ -286,7 +279,7 @@ Inductive seq_calc_bool_ms : {mset (@expr R Bool_T_def)}
       Q |= (a `=> b) +` P
 | implL : forall Q P R a b,
     Q |= a +` P ->   b+`Q |= R ->
-      (a `=> b)+`Q |=  P `+` R (*find mseq to seq*)
+      (a `=> b)+`Q |=  P `+` R
 | negR : forall Q P a,
     a+`Q  |= P ->
       Q |= (`~ a) +` P
@@ -295,13 +288,13 @@ Inductive seq_calc_bool_ms : {mset (@expr R Bool_T_def)}
       (`~ a)+`Q|= P
 where "Q |= P" := (seq_calc_bool_ms Q P).
 
-Print perm_eq_seq_mset.
+(*Print perm_eq_seq_mset.
 Print perm_eq.
 Set Printing All.
 Print perm_eq_seq_mset.
 Print EnumMset.f.
 Print seq_mset.
-Print perm_eq.
+Print perm_eq.*)
 (*Definition mset_seq (T : choiceType) (m: {mset T}) : seq T := m.*)
 (*not needed, seems to cast to seq on its own? see 
 perm_eq_seq_mset : forall {K : choiceType} (s : seq K), perm_eq (seq_mset s) s
@@ -315,32 +308,75 @@ intro; inversion H.
 (*probably not useful need a stronger version?*)
 Admitted.
 
-Proposition sc_bool_consistent Q : Q != mset0 ->
-                                   ~ (Q |= msetn 1(ldl_bool def false)).
+Proposition sc_bool_consistent: 
+  forall q Q, q \in Q -> <<q>> = <<ldl_bool def true>> ->
+     ~ (Q |= [mset ldl_bool def false]).
 Proof.
-move => Q0 H.  inversion H.
+move => q Q Q0 Q1 H .  inversion H.
 Admitted.
 
+(*Lemma noncontra_weak Q p :
+   forall q, q \in Q -> <<q>> = <<ldl_bool def true>> 
+                   (*-> <<p>> = <<ldl_bool def true>> \/  <<p>> = <<ldl_bool def false>> *)
+  (*strong ver without above line? but will need to check all cases TO DO*)
+                   -> ~ (Q |= [mset (p `/\ `~p)]).
+Proof.
+move => q Q0 Q1. (*apply or_ind; rewrite //=. 
+case: p. *) dependent induction p using expr_ind'; rewrite//=.
+- case b. 
+(*apply sc_bool_consistent.
+have H := (sc_bool_consistent).
+destruct Q. *)
+Admitted.*)
+
+Lemma noncontra :
+  forall Q (p : expr Bool_T_def),  Q |= [mset (`~ p)] -> ~ (Q |= [mset p]).
+Proof.
+move => Q p. dependent induction p using expr_ind'; rewrite//=.
+(*simplyfy somehow?*)
+ Admitted.
 
 Lemma sound_sc_bool_mseq Q (p : @expr R Bool_T_def) :
- Q |= (msetn 1 p) -> map bool_translation Q = nseq (size Q) (<<ldl_bool def true>>) 
-      -> <<p>> = <<ldl_bool def true>>.
+forall q, q \in Q -> <<q>> = <<ldl_bool def true>> ->
+                Q |= [mset p] -> (*map bool_translation Q = nseq (size Q) (<<ldl_bool def true>>) *)
+                <<p>> = <<ldl_bool def true>>.
 Proof.
-rewrite/=. dependent induction p using expr_ind'; rewrite//=;
-move => H1 H2.
-- move: H1; case b. by [].  
- (* apply sc_bool_consistent.*) (*prove that can't prove false*)
-  admit.
-- rewrite big_all. (*inversion H1; rewrite//=.*)  admit. (*move: H1.  admit.*)
-  (*not doing absurd cases?*)
-- rewrite big_has. admit.
-- rewrite IHp //=. 
-  + move: (IHp p).
-    apply IHp  in H1; move: H1; rewrite //=.
+dependent induction p using expr_ind'; rewrite//=;
+move => q Q1 H1 H2.
+- move: H2; case b. by [].  
+  move => H2.
+  by apply (sc_bool_consistent Q1 ) in H2.
+- rewrite List.Forall_forall in H. 
+  rewrite big_map big_seq big_all_cond.
+  apply: allT => x//=.
+  apply/implyP => /nthP xnth.
+  have [i il0 <-] := xnth (ldl_bool _ true).
+  apply: H; rewrite//. rewrite  -In_in mem_nth//=.
+  admit. (*but looks correct just need to finnagle it*)
+  rewrite //=. (*also looks correct just confused abt nth*)
+    admit. 
+
+- rewrite List.Forall_forall in H. 
+  rewrite /= big_map big_has.
+  apply /hasPn. 
+    move/nthP => xnth. rewrite big_map big_has.
+  rewrite// i /eqP i0 isize.
+    apply/hasP; exists (nth (ldl_bool _ false) l0 i); first by rewrite mem_nth.
+  apply: allT => x//=.
+  apply/implyP => /nthP xnth.
+  have [i il0 <-] := xnth (ldl_bool _ true).
+  apply: H; rewrite//. rewrite  -In_in mem_nth//=.
+  
+ admit.
+- rewrite (IHp _ _ _ q) //=. (*H2 and part of IHp contradict, need noncontradiction I think*)
+  + move: (IHp p ). apply noncontra in H2. rewrite //=.
+    move => H. apply H2 in H. //=.
+    apply (IHp p)  in H1; move: H1; rewrite //=.
     * rewrite Bool.negb_true_iff => H1.
-      rewrite H1. admit.
-    * move => H. rewrite JMeq_refl. (*(IHp _ _ _ erefl JMeq_refl). rewrite JMeq_eq.*)
-  + admit.
+      (*apply JMeq_refl. (IHp _ _ JMeq_eq). rewrite JMeq_eq. rewrite contraT (_ -> 
+  false = true). . rewrite JMeq_eq. *) admit.
+    * move => H. rewrite (JMeq_eq _ ) . admit.
+  +  move: H1.  admit. (*needs noncontradiction?*)
 - move: H1; case: c.
   + admit.
   + admit.
