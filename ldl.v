@@ -246,7 +246,6 @@ Fixpoint bool_translation {t} (e : @expr R t) : bool_type_translation t :=
   end
 where "<< e >>" := (bool_translation e).
 
-Reserved Notation "Q |- P" (no associativity, at level 61).
 Reserved Notation "Q |= P" (no associativity, at level 61).
 
 Definition mset_seq (T : choiceType) (m: {mset T}) : seq T := m.
@@ -288,20 +287,6 @@ Inductive seq_calc_bool_ms : {mset (@expr R Bool_T_def)}
       (`~ a)+`Q|= P
 where "Q |= P" := (seq_calc_bool_ms Q P).
 
-(*Print perm_eq_seq_mset.
-Print perm_eq.
-Set Printing All.
-Print perm_eq_seq_mset.
-Print EnumMset.f.
-Print seq_mset.
-Print perm_eq.*)
-(*Definition mset_seq (T : choiceType) (m: {mset T}) : seq T := m.*)
-(*not needed, seems to cast to seq on its own? see 
-perm_eq_seq_mset : forall {K : choiceType} (s : seq K), perm_eq (seq_mset s) s
-directly compares mset with seq up to permutation
-
-Nat: double check this*)
-
 Context {K : choiceType}.
 Implicit Types  (A : {mset K}) (s : seq K).
 
@@ -328,20 +313,6 @@ Proof.
 move => q Q Q0 Q1 H. inversion H.
 Admitted.
 
-(*Lemma noncontra_weak Q p :
-   forall q, q \in Q -> <<q>> = <<ldl_bool def true>> 
-                   (*-> <<p>> = <<ldl_bool def true>> \/  <<p>> = <<ldl_bool def false>> *)
-  (*strong ver without above line? but will need to check all cases TO DO*)
-                   -> ~ (Q |= [mset (p `/\ `~p)]).
-Proof.
-move => q Q0 Q1. (*apply or_ind; rewrite //=. 
-case: p. *) dependent induction p using expr_ind'; rewrite//=.
-- case b. 
-(*apply sc_bool_consistent.
-have H := (sc_bool_consistent).
-destruct Q. *)
-Admitted.*)
-
 Lemma thingy:  
   forall (T : choiceType) (a p : T) P, a +` P = [mset p] -> p = a.
 Proof.
@@ -367,19 +338,43 @@ rewrite//=; intros. dependent induction H0; have HH := thingy.
 - move: (H p). move => H1. apply H1. 
    rewrite in_mset1D. have H2 := HH _ a p P.
   by rewrite H2//= eq_refl orTb.
-(*sounds correct neds to use x to prove that a = p cause [mset p] is one element mset*)
 - move: (H p). move => H1.
   apply H1. (*????*) admit.
 - have H1 := HH _ (ldl_bool def true) p P. 
   by rewrite H1//=. (*use x again same as first case once figured out*)
 - have IH1 := IHseq_calc_bool_ms1 H p.
   have IH2 := IHseq_calc_bool_ms2 H p.
+  have H1 := HH _ a p P.
+  rewrite IH1//=. admit.
  (*same stuff, need to figure out that helper lemma
 but with added Jmeq fun*)
+- move: (H (ldl_and l)). move => H1. 
+  have H2 := HH _ (ldl_and l) p Q.
+  rewrite H2.
+  * rewrite H1//=.
+    by rewrite in_mset1D//= eq_refl orTb.
+  * admit.
+- have IH := IHseq_calc_bool_ms H p.
+  have H2 := HH _ a p P.
+  rewrite IH//=. rewrite H2. (*JMeq_refl figure out*)
   admit.
-- move: (H p). 
-
-
+  admit.
+- have IH := IHseq_calc_bool_ms H p.
+  rewrite IH//=.
+  have H1 := HH _ (ldl_or (a ++ bs)) p P .
+  rewrite x in H1.
+  admit. (*JMeq again*)
+- admit.
+- admit.
+- admit. 
+- have H1 := HH _ (`~a) p P .
+  (*rewrite H1.
+  rewrite  IHseq_calc_bool_ms//=.
+  move => q.
+  rewrite (-mset1Dr _ _ a Q) in H.
+have IH :=  IHseq_calc_bool_ms H p.*)
+  admit.
+- admit.
 (*dependent induction  p using expr_ind'.
 move => q Q1 H1 H2; rewrite//=.
 - move: H2; case b. by [].  
@@ -524,10 +519,10 @@ Context {R : realType}.
 Context {K : choiceType}.
 Implicit Types  (A : {mset K}) (s : seq K).
 
-Reserved Notation "Q |- P" (no associativity, at level 61).
+Reserved Notation "Q1 | Q2 |- Q3" (no associativity, at level 65).
 
-Definition sequent Q P :  seq {mset (@expr R Bool_T_def)} 
-  := [:: Q; P].
+(*Definition sequent Q P :  seq {mset (@expr R Bool_T_def)} 
+  := [:: Q; P].*)
   
 (*Definition hyper_seq :=  {mset sequent}.
   
@@ -538,20 +533,22 @@ Definition add_hyp_seq (A B : hyper_seq) :=
 Notation "A `::` B" := (add_hyp_seq A B) (at level 45).
 Notation "a ::` A" := ([mset a] `::` A) (at level 45).*)
 
-Inductive seq_calc_godel : {mset seq {mset (@expr R Bool_T_def)}} 
--> {mset seq {mset (@expr R Bool_T_def)}}
+Inductive seq_calc_godel :  {mset (@expr R Bool_T_def)}
+-> {mset (@expr R Bool_T_def)} -> {mset (@expr R Bool_T_def)}
       -> Prop :=
-(*| id_g : forall Q a,
-    Q `+` [mset (a::a)]*)
-| bot_g : forall Q P T,
-    T `+` [mset ([::(ldl_bool def false)]) ] `+` Q |- P
+(*| id_g : forall (Q A : {mset (@expr R Bool_T_def)}),
+    Q | A |- A*)
+(*structural*)
+| e_w : forall Q P,
+    Q | P -> Q
 
-(*| init_g : forall Q P a,
-     a ::` Q |- a ::` P
-| bot_g : forall (Q P : hyper_seq),
-    [mset (ldl_bool def false)] `::` Q |- P
-| top_g : forall Q,
-    Q |- [mset (ldl_bool def true)]*)
+(*logical*)
+(*| bot_g : forall (Q P T : {mset (@expr R Bool_T_def)}),
+    T | (ldl_bool def false) +` Q |- P*)
+(*| top_g : forall Q P,
+    Q | P |- [mset (ldl_bool def true)]*)
+
+
 (*| and_R : forall Q P a bs,
     Q |= a +` P  ->  Q |= (seq_mset bs) `+` P ->
       Q |=  (ldl_and (a :: bs)) +` P
@@ -579,7 +576,7 @@ Inductive seq_calc_godel : {mset seq {mset (@expr R Bool_T_def)}}
 | negL : forall Q P a,
     Q |= a +` P ->
       (`~ a)+`Q|= P*)
-where "Q |- P" := (seq_calc_godel Q P).
+where "Q1 | Q2 |- Q3" := (seq_calc_godel Q1 Q2 Q3).
 
 End hypersequent_godel.
 
