@@ -340,9 +340,10 @@ rewrite//=; intros. dependent induction H0; have HH := thingy.
   apply H1. (*????*) admit.
 - have H1 := HH _ (ldl_bool def true) p P. 
   by rewrite H1//=. (*use x again same as first case once figured out*)
-- have IH1 := IHseq_calc_bool_ms1 H p.
+- have IH1 :=  IHseq_calc_bool_ms1 H p .
   have IH2 := IHseq_calc_bool_ms2 H p.
   have H1 := HH _ a p P.
+  have H2 := HH _ (ldl_and (a :: bs)) p P.
   rewrite IH1//=. admit.
  (*same stuff, need to figure out that helper lemma
 but with added Jmeq fun*)
@@ -516,18 +517,8 @@ Local Open Scope mset_scope.
 Context {R : realType}.
 Context {K : choiceType}.
 Implicit Types  (A : {mset K}) (s : seq K).
-
-(*Definition sequent Q P :  seq {mset (@expr R Bool_T_def)} 
-  := [:: Q; P].*)
-  
-(*Definition hyper_seq :=  {mset sequent}.
-  
-
-Definition add_hyp_seq (A B : hyper_seq) :=
-  A `+` B.
-
-Notation "A `::` B" := (add_hyp_seq A B) (at level 45).
-Notation "a ::` A" := ([mset a] `::` A) (at level 45).*)
+Variable p : R. 
+Local Notation "[[ e ]]_ l" := (translation l p e).
 
 (*head of sequence is always after entailment - need to either make a 
 notation for it or change type to? seq of seq of mset? sounds like 
@@ -613,9 +604,18 @@ Inductive seq_calc_godel :  {mset (seq {mset (@expr R Bool_T_def)})}
                  (a : @expr R Bool_T_def),
     seq_calc_godel (Q `+` [mset [::B; a +` A1]]) ->
     seq_calc_godel (Q `+` [mset [::[mset a]; A2]]) ->
-    seq_calc_godel (Q `+` [mset [::B; A1 `+` A2]])
-.
+    seq_calc_godel (Q `+` [mset [::B; A1 `+` A2]]).
 
+Lemma sound_hypersec_godel (Q P : {mset (seq {mset (@expr R Bool_T_def)})})
+                           (s : seq {mset (@expr R Bool_T_def)}) :
+(forall (q : expr (Bool_T def)), q \in (behead [mset (ldl_bool def true)] s) ->
+                                      [[q]]_Godel = [[ldl_bool def true]]_Godel) ->
+                seq_calc_godel (Q `+` [mset s] `+` P) -> 
+                forall (x : expr (Bool_T def)), x \in (head [mset (ldl_bool def true)] s) ->
+                [[x ]]_Godel = [[ldl_bool def true]]_Godel.
+Proof.
+
+Admitted.
 End hypersequent_godel.
 
 
