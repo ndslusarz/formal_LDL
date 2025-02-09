@@ -520,98 +520,100 @@ Implicit Types  (A : {mset K}) (s : seq K).
 Variable p : R. 
 Local Notation "[[ e ]]_ l" := (translation l p e).
 
-(*head of sequence is always after entailment - need to either make a 
-notation for it or change type to? seq of seq of mset? sounds like 
-that would be overlycomplicating it*)
+Reserved Notation "Q |- P" (no associativity, at level 61).
+Notation "Q |- P" := (Q, P).
+(*entailment as pair (A, B) where A |- B*)
 
-Inductive seq_calc_godel :  {mset (seq {mset (@expr R Bool_T_def)})}
+Inductive seq_calc_godel :  {mset ( {mset (@expr R Bool_T_def)} * {mset (@expr R Bool_T_def)})}
 (*-> {mset (seq {mset (@expr R Bool_T_def)})}*)
       -> Prop :=
-| id_g : forall (Q : {mset (seq {mset (@expr R Bool_T_def)})})
+| id_g : forall (Q :  {mset ( {mset (@expr R Bool_T_def)} * {mset (@expr R Bool_T_def)})})
                 (A : {mset (@expr R Bool_T_def)}),
-    seq_calc_godel (Q `+` [mset [::A; A]])
+    seq_calc_godel (Q `+` [mset (A |- A)])
 (*structural*)
-| ew_g : forall (Q P : {mset (seq {mset (@expr R Bool_T_def)})}),
+| ew_g : forall (Q P : {mset ( {mset (@expr R Bool_T_def)} * {mset (@expr R Bool_T_def)})}),
     seq_calc_godel Q ->
-    seq_calc_godel (Q `+` P)
-| ec_g : forall (Q P : {mset (seq {mset (@expr R Bool_T_def)})}),
-    seq_calc_godel (Q `+` P) ->
-    seq_calc_godel (Q `+` P `+` P)
-| comm_hyper_g : forall  (Q : {mset (seq {mset (@expr R Bool_T_def)})})
+    seq_calc_godel (Q `+` P) (*correct order*)
+| ec_g : forall (Q P : {mset ( {mset (@expr R Bool_T_def)} * {mset (@expr R Bool_T_def)})}),
+    seq_calc_godel (Q `+` P `+` P) ->
+    seq_calc_godel (Q `+` P) (*swap, wrong order, check all others*)
+| comm_hyper_g : forall  Q 
                   (A1 A2 B1 B2 C D: {mset (@expr R Bool_T_def)}),
-    seq_calc_godel (Q `+` [mset [::C; A1; A2]] `+` [mset [::D; B1; B2]])
-| comm_g : forall (Q : {mset (seq {mset (@expr R Bool_T_def)})})
+    seq_calc_godel (Q `+` [mset ((A1 `+` B1) |- C)]) ->
+    seq_calc_godel (Q `+` [mset ((A2 `+` B2) |- D)]) ->               
+    seq_calc_godel (Q `+` [mset ((A1 `+` A2) |- C)] `+` [mset ((B1 `+` B2) |- D)])
+| comm_g : forall Q 
                   (A B C : {mset (@expr R Bool_T_def)}),
-    seq_calc_godel (Q `+` [mset [::C; A; B; B]]) ->
-    seq_calc_godel (Q `+` [mset [::C; A; B]])
-| weak_g : forall (Q : {mset (seq {mset (@expr R Bool_T_def)})})
+    seq_calc_godel (Q `+` [mset ((A `+` B `+` B) |- C)]) ->
+    seq_calc_godel (Q `+` [mset ((A `+` B) |- C)])
+| weak_g : forall Q 
                   (A B C : {mset (@expr R Bool_T_def)}),
-    seq_calc_godel (Q `+` [mset [::C; A]]) ->
-    seq_calc_godel (Q `+` [mset [::C; A; B]]) 
+    seq_calc_godel (Q `+` [mset (A |- C)]) ->
+    seq_calc_godel (Q `+` [mset ((A `+` B) |- C)])
 (*logical*)
-| bot_g : forall (Q : {mset (seq {mset (@expr R Bool_T_def)})})
+| bot_g : forall Q 
                  (A B : {mset (@expr R Bool_T_def)}),
-    seq_calc_godel (Q `+` [mset [::B; ldl_bool def false +` A]])
-| top_g : forall (Q : {mset (seq {mset (@expr R Bool_T_def)})})
+    seq_calc_godel (Q `+` [mset ((ldl_bool def false +` A) |- B)])
+| top_g : forall Q 
                  (A : {mset (@expr R Bool_T_def)}),
-    seq_calc_godel (Q `+` [mset [::[mset (ldl_bool def true)]; A]])
-| andL_g1 : forall (Q : {mset (seq {mset (@expr R Bool_T_def)})})
+    seq_calc_godel (Q `+` [mset (A |- [mset (ldl_bool def true)])])
+| andL_g1 : forall Q 
                    (A B : {mset (@expr R Bool_T_def)})
                    (a b : @expr R Bool_T_def),
-    seq_calc_godel (Q `+` [mset [::A; (a +` B)]]) ->
-    seq_calc_godel (Q `+` [mset [::A; ((a `/\ b) +` B)]]) 
-| andL_g2 : forall (Q : {mset (seq {mset (@expr R Bool_T_def)})})
+    seq_calc_godel (Q `+` [mset ((a +` B) |- A)]) ->
+    seq_calc_godel (Q `+` [mset (((a `/\ b) +` B) |- A)]) 
+| andL_g2 : forall Q
                    (A B : {mset (@expr R Bool_T_def)})
                    (a b : @expr R Bool_T_def),
-    seq_calc_godel (Q `+` [mset [::A; (b +` B)]]) ->
-    seq_calc_godel (Q `+` [mset [::A; ((a `/\ b) +` B)]]) 
-| andR_g : forall (Q : {mset (seq {mset (@expr R Bool_T_def)})})
-                   (A B : {mset (@expr R Bool_T_def)})
-                   (a b : @expr R Bool_T_def),
-    seq_calc_godel (Q `+` [mset [::[mset a]; A]]) ->
-    seq_calc_godel (Q `+` [mset [::[mset b]; A]]) ->
-    seq_calc_godel (Q `+` [mset [::[mset (a `/\ b)]; A]])
-| orL_g : forall (Q : {mset (seq {mset (@expr R Bool_T_def)})})
-                   (A B : {mset (@expr R Bool_T_def)})
-                   (a b : @expr R Bool_T_def),
-    seq_calc_godel (Q `+` [mset [::A; (b +` B)]]) ->
-    seq_calc_godel (Q `+` [mset [::A; (a +` B)]]) ->
-    seq_calc_godel (Q `+` [mset [::A; ((a `\/ b) +` B)]])
-| orR_g1 : forall (Q : {mset (seq {mset (@expr R Bool_T_def)})})
-                   (A B : {mset (@expr R Bool_T_def)})
-                   (a b : @expr R Bool_T_def),
-    seq_calc_godel (Q `+` [mset [::[mset a]; A]]) ->
-    seq_calc_godel (Q `+` [mset [::[mset (a `\/ b)]; A]])
-| orR_g2 : forall (Q : {mset (seq {mset (@expr R Bool_T_def)})})
-                   (A B : {mset (@expr R Bool_T_def)})
-                   (a b : @expr R Bool_T_def),
-    seq_calc_godel (Q `+` [mset [::[mset b]; A]]) ->
-    seq_calc_godel (Q `+` [mset [::[mset (a `\/ b)]; A]])
-| negR_g : forall (Q : {mset (seq {mset (@expr R Bool_T_def)})})
-                   (A : {mset (@expr R Bool_T_def)})
-                   (a : @expr R Bool_T_def),
-    seq_calc_godel (Q `+` [mset [::[mset a]; A]]) ->
-    seq_calc_godel (Q `+` [mset [::[mset (`~ a )]; A]])
-| negL_g : forall (Q : {mset (seq {mset (@expr R Bool_T_def)})})
+    seq_calc_godel (Q `+` [mset ((b +` B) |- A)]) ->
+    seq_calc_godel (Q `+` [mset (((a `/\ b) +` B) |- A)])
+| andR_g : forall Q
+                  (A B : {mset (@expr R Bool_T_def)})
+                  (a b : @expr R Bool_T_def),
+    seq_calc_godel (Q `+` [mset (A |- [mset a])]) ->
+    seq_calc_godel (Q `+` [mset (A |- [mset b])]) ->
+    seq_calc_godel (Q `+` [mset (A |- [mset (a `/\ b)])])
+| orL_g : forall  Q
+                  (A B : {mset (@expr R Bool_T_def)})
+                  (a b : @expr R Bool_T_def),
+    seq_calc_godel (Q `+` [mset ((b +` B) |- A)]) ->
+    seq_calc_godel (Q `+` [mset ((a +` B) |- A)]) ->
+    seq_calc_godel (Q `+` [mset (((a `\/ b) +` B) |- A)])
+| orR_g1 : forall Q
+                  (A B : {mset (@expr R Bool_T_def)})
+                  (a b : @expr R Bool_T_def),
+    seq_calc_godel (Q `+` [mset (A |- [mset a])]) ->
+    seq_calc_godel (Q `+` [mset (A |- [mset (a `\/ b)])])
+| orR_g2 : forall Q
+                  (A B : {mset (@expr R Bool_T_def)})
+                  (a b : @expr R Bool_T_def),
+    seq_calc_godel (Q `+` [mset (A |- [mset b])]) ->
+    seq_calc_godel (Q `+` [mset (A |- [mset (a `\/ b)])])
+| negR_g : forall Q
+                  (A : {mset (@expr R Bool_T_def)})
+                  (a : @expr R Bool_T_def),
+    seq_calc_godel (Q `+` [mset (A |- [mset a])]) ->
+    seq_calc_godel (Q `+` [mset (A |- [mset (`~ a)])])
+| negL_g : forall Q
                   (A B: {mset (@expr R Bool_T_def)})
                   (a : @expr R Bool_T_def),
-    seq_calc_godel (Q `+` [mset [::A; (a +` B)]]) ->
-    seq_calc_godel (Q `+` [mset [::A; ((`~a) +` B)]])
+    seq_calc_godel (Q `+` [mset ((a +` B) |- A)]) ->
+    seq_calc_godel (Q `+` [mset (((`~a) +` B) |- A)])
 
 (*cut rule*)
-| cut_g : forall (Q : {mset (seq {mset (@expr R Bool_T_def)})})
+| cut_g : forall Q
                  (A1 A2 B: {mset (@expr R Bool_T_def)})
                  (a : @expr R Bool_T_def),
-    seq_calc_godel (Q `+` [mset [::B; a +` A1]]) ->
-    seq_calc_godel (Q `+` [mset [::[mset a]; A2]]) ->
-    seq_calc_godel (Q `+` [mset [::B; A1 `+` A2]]).
+    seq_calc_godel (Q `+` [mset ((a +` A1) |- B)]) ->
+    seq_calc_godel (Q `+` [mset (A2 |-[mset a])]) ->
+    seq_calc_godel (Q `+` [mset ((A1 `+` A2) |- B)]).
 
-Lemma sound_hypersec_godel (Q P : {mset (seq {mset (@expr R Bool_T_def)})})
-                           (s : seq {mset (@expr R Bool_T_def)}) :
-(forall (q : expr (Bool_T def)), q \in (behead [mset (ldl_bool def true)] s) ->
+Lemma sound_hypersec_godel (Q P : {mset ( {mset (@expr R Bool_T_def)} * {mset (@expr R Bool_T_def)})})
+                           (s : ({mset (@expr R Bool_T_def)} * {mset (@expr R Bool_T_def)}) ) :
+(forall (q : expr (Bool_T def)), q \in (snd s) ->
                                       [[q]]_Godel = [[ldl_bool def true]]_Godel) ->
                 seq_calc_godel (Q `+` [mset s] `+` P) -> 
-                forall (x : expr (Bool_T def)), x \in (head [mset (ldl_bool def true)] s) ->
+                forall (x : expr (Bool_T def)), x \in (fst s) ->
                 [[x ]]_Godel = [[ldl_bool def true]]_Godel.
 Proof.
 
