@@ -311,24 +311,35 @@ Proof.
 move => q Q Q0 Q1 H. inversion H.
 Admitted.
 
+(*mma noncontra :
+  forall Q (p : expr Bool_T_def),  Q |= [mset (`~ p)] -> ~ (Q |= [mset p]).
+Proof.
+move => Q p. dependent induction p using expr_ind'; rewrite//=.
+(*simplyfy somehow?*)
+ Admitted.*)
+
 Lemma thingy:  
   forall (T : choiceType) (a p : T) P, a +` P = [mset p] -> p = a.
 Proof.
 
 Admitted.
 
-Lemma noncontra :
-  forall Q (p : expr Bool_T_def),  Q |= [mset (`~ p)] -> ~ (Q |= [mset p]).
+Lemma mset_add_el:  
+  forall (T : choiceType) (a b : T) P, a +` P = b +` P -> a = b.
 Proof.
-move => Q p. dependent induction p using expr_ind'; rewrite//=.
-(*simplyfy somehow?*)
- Admitted.
 
-(*Lemma size_mset1 p:
-  size_mset *)
+Admitted.
 
-Lemma sound_sc_bool_mseq Q (p : @expr R Bool_T_def) :
-(forall q, q \in Q -> <<q>> = <<ldl_bool def true>>) ->
+Lemma helper1 (T : choiceType) (a b : T) P:
+  (a != b -> a \in b +` P ) -> a \in P.
+Admitted.
+
+Lemma expr_boolt_t (p : @expr R Bool_T_def) :
+   <<p>> = true -> p != ldl_bool def false.
+Admitted.
+
+Lemma sound_sc_bool_mseq (Q : {mset expr Bool_T_def}) (p : @expr R Bool_T_def) :
+(forall q, q \in Q -> (<<q>> = <<ldl_bool def true>>)) ->
                 Q |= [mset p] -> (*map bool_translation Q = nseq (size Q) (<<ldl_bool def true>>) *)
                 <<p>> = <<ldl_bool def true>>.
 Proof.
@@ -336,26 +347,29 @@ rewrite//=; intros. dependent induction H0; have HH := thingy.
 - move: (H p). move => H1. apply H1. 
    rewrite in_mset1D. have H2 := HH _ a p P.
   by rewrite H2//= eq_refl orTb.
-- move: (H p). move => H1.
-  apply H1. (*????*) admit.
+- have H1 := expr_boolt_t. rewrite -(H p) in H1. move: H1 p. rewrite //=.
+  (*actually nope prove contradiction in H but idk how*)
+   admit.
 - have H1 := HH _ (ldl_bool def true) p P. 
   by rewrite H1//=. (*use x again same as first case once figured out*)
 - have IH1 :=  IHseq_calc_bool_ms1 H p .
   have IH2 := IHseq_calc_bool_ms2 H p.
   have H1 := HH _ a p P.
   have H2 := HH _ (ldl_and (a :: bs)) p P.
-  rewrite IH1//=. admit.
+   admit.
  (*same stuff, need to figure out that helper lemma
 but with added Jmeq fun*)
-- move: (H (ldl_and l)). move => H1. 
+- have IH := IHseq_calc_bool_ms _ (ldl_and l).
+  move: (H (ldl_and l)). move => H1. 
   have H2 := HH _ (ldl_and l) p Q.
   rewrite H2.
   * rewrite H1//=.
     by rewrite in_mset1D//= eq_refl orTb.
   * admit.
 - have IH := IHseq_calc_bool_ms H p.
-  have H2 := HH _ a p P.
-  rewrite IH//=. rewrite H2. (*JMeq_refl figure out*)
+  have H2 := HH _ a p P. have H3 := mset_add_el. 
+  have H4 := H3 _ a bs P. rewrite -x in H2.
+  rewrite IH//=. rewrite -H2. (*JMeq_refl figure out*)
   admit.
   admit.
 - have IH := IHseq_calc_bool_ms H p.
@@ -608,15 +622,39 @@ Inductive seq_calc_godel :  {mset ( {mset (@expr R Bool_T_def)} * {mset (@expr R
     seq_calc_godel (Q `+` [mset (A2 |-[mset a])]) ->
     seq_calc_godel (Q `+` [mset ((A1 `+` A2) |- B)]).
 
+Proposition sc_godel_consistent (Q : {mset ( {mset (@expr R Bool_T_def)} * {mset (@expr R Bool_T_def)})})
+  (A :  {mset (@expr R Bool_T_def)}) :
+  ~ (seq_calc_godel (Q `+` [mset (A |- [mset (ldl_bool def false)])])).
+Proof.
+
+Admitted.
+
+Lemma noncontra_hs_godel :
+  forall (Q : {mset ( {mset (@expr R Bool_T_def)} * {mset (@expr R Bool_T_def)})})
+         (A :  {mset (@expr R Bool_T_def)})
+         (a : expr (Bool_T def)),  
+    seq_calc_godel (Q `+` [mset (A |- [mset ( `~a)])]) -> 
+    ~ (seq_calc_godel (Q `+` [mset (A |- [mset ( a)])])).
+Proof.
+move => Q A a H. (*dependent induction H.*)
+(*timeout?*)
+ Admitted.
+
 Lemma sound_hypersec_godel (Q P : {mset ( {mset (@expr R Bool_T_def)} * {mset (@expr R Bool_T_def)})})
                            (s : ({mset (@expr R Bool_T_def)} * {mset (@expr R Bool_T_def)}) ) :
 (forall (q : expr (Bool_T def)), q \in (snd s) ->
                                       [[q]]_Godel = [[ldl_bool def true]]_Godel) ->
-                seq_calc_godel (Q `+` [mset s] `+` P) -> 
+                seq_calc_godel (Q `+` [mset s] `+` P) -> (*does not work without P - but P not sufficient*)
                 forall (x : expr (Bool_T def)), x \in (fst s) ->
                 [[x ]]_Godel = [[ldl_bool def true]]_Godel.
 Proof.
-
+rewrite//=. intros. dependent induction H0. 
+- (*rewrite (H x0).*) (*something wrong in assumptions? perhaps? x doesn't look like enough to prove it...
+but without P also doesn't work*) admit.
+- have H2 := IHseq_calc_godel s H P Q.
+  rewrite H2//.
+  admit. (*again, sth wrong with x?*)
+- have H2 := IHseq_calc_godel s H P Q. rewrite H2//.
 Admitted.
 End hypersequent_godel.
 
