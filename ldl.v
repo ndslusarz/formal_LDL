@@ -346,7 +346,7 @@ Lemma sound_sc_bool_mseq (Q : {mset expr Bool_T_def}) (p : @expr R Bool_T_def) :
 (forall q, q \in Q -> <<q>> = <<ldl_bool def true>>) ->
 (* ~(<<ldl_bool def false>> \in (map bool_translation Q)) -> *)
 {in Q, forall q, <<q>> = <<ldl_bool def true>>} ->
-                Q |= [mset p] ->
+Q |= [mset p] ->
                 <<p>> = <<ldl_bool def true>>.
 Proof.
  intros. dependent induction H1; have HH := thingy.
