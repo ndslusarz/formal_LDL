@@ -107,11 +107,10 @@ Notation "a `\/ b" := (ldl_or [:: a; b]) (at level 45).
 Notation "a `=> b" := (ldl_or [:: (ldl_not a); b]) (at level 55).
 Notation "`~ a"    := (ldl_not a) (at level 75).
 Definition ldl_add (R : realType) := ldl_fun (fun (t : 2.-tuple R) => [tuple [tnth t 0] + [tnth t 1] ])%R.
-(*TO DO: FIX AS above all lets and R*)
-Let ldl_mul {R : realType} := ldl_fun (fun (t : 2.-tuple R) => [tuple [tnth t 0] * [tnth t 1] ])%R.
-Let ldl_sub {R : realType} := ldl_fun (fun (t : 2.-tuple R)
+Definition ldl_mul {R : realType} := ldl_fun (fun (t : 2.-tuple R) => [tuple [tnth t 0] * [tnth t 1] ])%R.
+Definition ldl_sub {R : realType} := ldl_fun (fun (t : 2.-tuple R)
    => [tuple [tnth t 0] - [tnth t 1] ])%R.
-Let ldl_opp {R : realType}  := ldl_fun (fun (t : 1.-tuple R) => [tuple -[tnth t 0] ])%R.
+Definition ldl_opp {R : realType}  := ldl_fun (fun (t : 1.-tuple R) => [tuple -[tnth t 0] ])%R.
 Notation "a `+ b"  := (ldl_lookup (ldl_app ldl_add [tuple a; b]) 0) (at level 50).
 Notation "a `- b"  := (ldl_lookup (ldl_app ldl_sub [tuple a; b]) 0) (at level 45).
 Notation "a `* b"  := (ldl_lookup (ldl_app ldl_mul [tuple a; b]) 0) (at level 40).

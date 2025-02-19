@@ -115,7 +115,7 @@ dependent induction e using expr_ind' => /=.
   move=> e el; rewrite lt_neqAle l0//=.
   by move/List.Forall_forall : H => /(_ e); apply => //; exact/In_in.
 - case: c => //=.
-  by rewrite lee_fin oppr_le0 le_maxr lexx orbT.
+  by rewrite lee_fin oppr_le0 le_max lexx orbT.
 Qed.
 
 Definition is_dl2 b (x : \bar R) := (if b then x == 0 else x < 0)%E.
@@ -252,7 +252,7 @@ dependent induction e using expr_ind'.
     by rewrite subr_gt0 => _; move/lt_geF.
   + by rewrite/is_dl2=>/eqP; case=>/eqP; rewrite oppr_eq0 normr_eq0 subr_eq0.
   + rewrite/is_dl2; rewrite lte_fin oppr_lt0 normr_gt0.
-    by rewrite subr_eq0; move/eqP => h; apply/eqP.
+    by rewrite subr_eq0 => /eqP h; apply/eqP.
 Qed.
 
 End dl2_lemmas.

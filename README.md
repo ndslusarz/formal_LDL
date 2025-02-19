@@ -30,10 +30,10 @@ the respective libraries, including L'Hopital and Cauchy MVT in the latter.
   - Reynald Affeldt (initial)
   - Alessandro Bruni (initial)
 - License: [MIT License](LICENSE)
-- Compatible Coq versions: 8.18 to 8.19
+- Compatible Coq versions: 8.20
 - Additional dependencies:
-  - [MathComp](https://math-comp.github.io) 2.2.0
-  - [MathComp Analysis](https://github.com/math-comp/analysis) 1.3.1
+  - [MathComp](https://math-comp.github.io) 2.3.0
+  - [MathComp Analysis](https://github.com/math-comp/analysis) 1.8.0
   - [MathComp Algebra Tactics](https://github.com/math-comp/algebra-tactics) 1.2.3
 - Related publication(s):
   - [Taming Differentiable Logics with Coq Formalisation](https://arxiv.org/abs/2403.13700) 

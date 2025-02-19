@@ -26,9 +26,9 @@ the respective libraries, including L'Hopital and Cauchy MVT in the latter."""
 build: [make "-j%{jobs}%"]
 install: [make "install"]
 depends: [
-  "coq" { (>= "8.16" & < "8.20~") | (= "dev") }
-  "coq-mathcomp-ssreflect" {>= "2.2.0"}
-  "coq-mathcomp-analysis" {>= "1.3.1"}
+  "coq" { (>= "8.20") | (= "dev") }
+  "coq-mathcomp-ssreflect" {>= "2.3.0"}
+  "coq-mathcomp-analysis" {>= "1.8.0"}
   "coq-mathcomp-algebra-tactics" {>= "1.2.3"}
 ]
 
