@@ -256,9 +256,10 @@ Inductive seq_calc_bool_ms : {mset (@expr R Bool_T_def)}
     (ldl_bool def false) +` Q |= P
 | top : forall Q P,
     Q |= (ldl_bool def true) +` P
-| and_R : forall Q P a bs,
-    Q |= a +` P  ->  Q |= (seq_mset bs) `+` P ->
-      Q |=  (ldl_and (a :: bs)) +` P
+| and_R : forall (Q P : {mset (@expr R Bool_T_def)}) (a : @expr R Bool_T_def)
+                 (bs : (@expr R Bool_T_def)),
+    Q |= a +` P  ->  Q |= ( bs) +` P ->
+      Q |=  (a `/\ bs) +` P
 | andL :  forall Q P l,
     l `+` Q  |= P ->
       (ldl_and l) +` Q |= P
@@ -317,6 +318,13 @@ Proof.
 
 Admitted.
 
+Lemma thingy1:  
+  forall (T : choiceType) (a b : T) P, a +` P = [mset b] -> a \in [mset b].
+Proof.
+
+Admitted.
+
+
 Lemma mset_add0:  
   forall (T : choiceType) (a p : T) P, a +` P = [mset p] ->  P = mset0.
 Proof.
@@ -324,7 +332,7 @@ Proof.
 Admitted.
 
 Lemma mset_add_el:  
-  forall (T : choiceType) (a b : T) P, a +` P = b +` P -> a = b.
+  forall (T : choiceType) (a b : T) P, a = b -> a +` P = b +` P.
 Proof.
 
 Admitted.
@@ -343,24 +351,67 @@ Admitted.
 (*proving this one may be tricky?*)
 
 Lemma sound_sc_bool_mseq (Q : {mset expr Bool_T_def}) (p : @expr R Bool_T_def) :
-(forall q, q \in Q -> <<q>> = <<ldl_bool def true>>) ->
+Q |= [mset p] -> ((forall (q : expr Bool_T_def), q \in Q -> <<q>> = <<ldl_bool def true>>) ->
 (* ~(<<ldl_bool def false>> \in (map bool_translation Q)) -> *)
 {in Q, forall q, <<q>> = <<ldl_bool def true>>} ->
-Q |= [mset p] ->
-                <<p>> = <<ldl_bool def true>>.
+                <<p>> = <<ldl_bool def true>>).
 Proof.
- intros. dependent induction H1; have HH := thingy.
-- move: (H p). move => H'. apply H'. 
+ rewrite //=. intros. dependent induction H; have HH := thingy.
+- move: (H0 p). move => H'. apply H'. 
    rewrite in_mset1D. have H2 := HH _ a p P.
   by rewrite H2//= eq_refl orTb.
-- have H1 := expr_boolt_t. 
+- have H2 := expr_boolt_t. 
   move: (H1 p). rewrite //=.
   move => p0. 
-  have H2 := H p. exfalso. move: H0. rewrite forall_cons_mset//=.
+  have H3 := H0 p. exfalso. move: H1. rewrite forall_cons_mset//=.
   by easy.
-- have H1 := HH _ (ldl_bool def true) p P. 
-  by rewrite H1//=.
-- have IHa :=  IHseq_calc_bool_ms1 H H0 p.
+- have H2 := HH _ (ldl_bool def true) p P. 
+  by rewrite H2//=.
+- (*have IH1 := IHseq_calc_bool_ms1 (a `/\ bs) _ H1 H2.
+  have IH2 := IHseq_calc_bool_ms2 (a `/\ bs) _ H1 H2.*)
+  have IH1' := IHseq_calc_bool_ms1 p _ H1 H2.
+  have IH2' := IHseq_calc_bool_ms2 p _ H1 H2.
+  have IH2'' := IHseq_calc_bool_ms2 (a `/\ bs) _ H1 H2.
+  (*move: IH1' IH2'.
+  case p1: <<p>>; rewrite //=.
+  rewrite {1}contraT.
+  have HH1 := mset_add_el. 
+  rewrite (HH1 _ (a) (a `/\ bs) P)//=. 
+  rewrite (HH1 _ (bs) (a `/\ bs) P)//=.*)
+
+
+  (*rewrite (HH _ (ldl_and (a :: bs)) p P) in x.*)
+  apply IH1'.
+
+  rewrite -x. 
+  have HH' := mset_add_el. 
+  rewrite (HH' _ (a) (a `/\ bs) P)//=.
+  have h1 e1 e2 : <<e1>> = <<e1 `/\ e2>> -> a = e1 `/\ e2.
+  admit. (*prove and move outside maybe? if reused especially*)
+  rewrite -(h1 a bs)//=. 
+  case a': (<<a>>); rewrite big_cons; last first.
+  * by rewrite Bool.andb_false_l.
+  * rewrite andTb. rewrite big_seq1. 
+    move: IH2''.
+    case b' : <<bs>>. rewrite//=.
+    rewrite //=.
+    rewrite big_cons a' andTb. 
+    rewrite big_seq1 b'//=. 
+    
+    apply /(-eqP).
+    rewrite /((-@contraT (bs +` P ~= [mset a `/\ bs] -> false = true))).
+    let ehm := (bs +` P ~= [mset a `/\ bs] -> false = true) in
+    rewrite ehm.
+    rewrite contraT.
+  (*have ldl_bool_andtf y z : *)
+    (*have HH2 := (HH _ (bs) (p) P).
+    move: IH2'.
+    have h2 := mset1P bs p.
+    have h3 := thingy1. have h3' := h3 _ bs p P.
+    case p': <<p>>; case bs0 : <<bs>>; rewrite //=.*)
+    + have h2 := mset1P bs p. admit.
+    + admit.
+(*have IHa :=  IHseq_calc_bool_ms1 p _ H0 H2.
   have IHb := IHseq_calc_bool_ms2 H H0 p.
   have H1 := HH _ a p P.
   have H2 := HH _ (ldl_and (a :: bs)) p P.
@@ -372,13 +423,13 @@ Proof.
      +  admit.
      + have h1 := mset_add0. rewrite (h1 _ a a P)//=.
        rewrite msetD0//=. rewrite -(HH _ a a P).
-  * by rewrite x. 
+  * by rewrite x. *)
 - have IH := IHseq_calc_bool_ms _ _ (ldl_and l).
   have IH2 := IHseq_calc_bool_ms _ _ p.
   move: (H (ldl_and l)). rewrite mset1D1.  move => H2.
   have H3 := HH _ (ldl_and l) p Q.
   rewrite IH2//=. move: (H p). move => H4.
-  * admit. admit.
+  *  admit. admit.
 (*  rewrite H2.
   * by rewrite H1//=.
   * have H3 := H p. admit.*)
