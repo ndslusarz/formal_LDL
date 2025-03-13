@@ -253,19 +253,19 @@ Reserved Notation "Q |- P" (no associativity, at level 61).
 
 Inductive seq_calc_bool : seq (@expr R Bool_T_def)
   -> seq (@expr R Bool_T_def) -> Prop :=
-| init : forall (Q P : seq (@expr R Bool_T_def)) (a : @expr R Bool_T_def),
+| init' : forall (Q P : seq (@expr R Bool_T_def)) (a : @expr R Bool_T_def),
      a :: Q |- a :: P
-| bot : forall (Q P : seq (@expr R Bool_T_def)),
+| bot' : forall (Q P : seq (@expr R Bool_T_def)),
     (ldl_bool def false) :: Q |- P
-| top : forall (Q P : seq (@expr R Bool_T_def)),
+| top' : forall (Q P : seq (@expr R Bool_T_def)),
     Q |- (ldl_bool def true) :: P
-| and_R : forall (Q P : seq (@expr R Bool_T_def)) (a b: @expr R Bool_T_def),
+| and_R' : forall (Q P : seq (@expr R Bool_T_def)) (a b: @expr R Bool_T_def),
     Q |- a :: P  ->  Q |- ( b) :: P ->
       Q |-  (a `/\ b) :: P
-| andL1 :  forall (Q P : seq (@expr R Bool_T_def)) (a b : @expr R Bool_T_def),
+| andL1' :  forall (Q P : seq (@expr R Bool_T_def)) (a b : @expr R Bool_T_def),
     a::Q  |- P ->
       (a `/\ b) :: Q |- P
-| andL2 :  forall (Q P : seq (@expr R Bool_T_def)) (a b : @expr R Bool_T_def),
+| andL2' :  forall (Q P : seq (@expr R Bool_T_def)) (a b : @expr R Bool_T_def),
     b::Q  |- P ->
       (a `/\ b) :: Q |- P
 (*| orR1 : forall (Q P : {mset (@expr R Bool_T_def)}) (a : @expr R Bool_T_def)
@@ -296,7 +296,7 @@ Inductive seq_calc_bool : seq (@expr R Bool_T_def)
       (`~ a)+`Q|= P*)
 where "Q |- P" := (seq_calc_bool Q P).
 
-Lemma sound_sc_bool_mseq' (Q P : seq (@expr R Bool_T_def)) (q p: @expr R Bool_T_def):
+Lemma sound_sc_bool' (Q P : seq (@expr R Bool_T_def)) (q p: @expr R Bool_T_def):
 q::Q |- p::P -> 
 (forall (x : expr Bool_T_def), (x \in q::Q) -> <<x>> = <<ldl_bool def true>>) ->
                <<p>> = <<ldl_bool def true>>.
@@ -319,6 +319,21 @@ rewrite//=; intros. dependent induction H.
   apply h; rewrite//=.
   move => x xa.
   apply H0. (*same issue as before - not enough info*)
+
+ Admitted.
+
+(*I'd argue this is correct because no y in P should eval to false if pre-condition holds
+though this essentially incorporates a version of consistency in soundness def*)
+Lemma sound_sc_bool'' (Q P : seq (@expr R Bool_T_def)) (q p: @expr R Bool_T_def):
+q::Q |- p::P -> 
+(forall (x : expr Bool_T_def), (x \in q::Q) -> <<x>> = <<ldl_bool def true>>) ->
+(forall (y : expr Bool_T_def), (y \in p::P) -> <<y>> = <<ldl_bool def true>>).
+Proof.
+rewrite//=; intros. dependent induction H.
+- apply H0.
+ (*from this case we can already see this won't be provable,
+I think
+ we don't have strong enough assumptions*)
 
  Admitted.
 
@@ -356,9 +371,7 @@ rewrite//=; intros. dependent induction H.
   }
   by rewrite A B.
 - have h := IHseq_calc_bool Q P a p.
-  apply h; rewrite//=.
-  move => x xa.
-  apply H0. (*same issue as before - not enough info*)
+  apply h; rewrite//=. (*same issue as before - not enough info*)
 
  Admitted.
 (*mset version
@@ -396,16 +409,17 @@ Inductive seq_calc_bool_ms : {mset (@expr R Bool_T_def)}
                  (b : (@expr R Bool_T_def)),
     a+`Q  |= P ->  b +` Q |= P ->
       (a `\/ b)+`Q |= P
-| implR : forall (Q P : {mset (@expr R Bool_T_def)}) (a : @expr R Bool_T_def)
+(*| implR : forall (Q P : {mset (@expr R Bool_T_def)}) (a : @expr R Bool_T_def)
                  (b : (@expr R Bool_T_def)),
      a+`Q |= b +`P ->
       Q |= (a `=> b) +` P
 | implL : forall (Q P S : {mset (@expr R Bool_T_def)}) (a : @expr R Bool_T_def)
                  (b : (@expr R Bool_T_def)),
     Q |= a +` P ->   b+`Q |= S ->
-      (a `=> b)+`Q |=  P `+` S
+      (a `=> b)+`Q |=  P `+` S*) 
+(*not in lnguage for now, may add because of residuums*)
 | negR : forall Q P a,
-    a+`Q  |= P ->
+    a +`Q  |= P ->
       Q |= (`~ a) +` P
 | negL : forall Q P a,
     Q |= a +` P ->
@@ -463,13 +477,81 @@ Admitted.
 Lemma trivial_thing:  
   forall (a b : expr Bool_T_def), a = b -> <<a>> = <<b>>.
 Proof.
+Admitted.
+
+Require Import List.
+
+Inductive formula := 
+| T
+| F 
+| And : formula -> formula -> formula 
+| Or : formula -> formula -> formula 
+| Imp : formula -> formula -> formula 
+| Neg : formula -> formula. 
+
+Fixpoint to_bool (f : formula) := 
+  match f with 
+  | T => true 
+  | F => false 
+  | And phi psi => andb (to_bool phi) (to_bool psi) 
+  | Or phi psi => orb (to_bool phi) (to_bool psi) 
+  | Imp phi psi => implb (to_bool phi) (to_bool psi) 
+  | Neg phi => negb (to_bool phi) 
+end.
+
+Definition equiv {X : Type} (xs : list X) ys := 
+  forall x, In x xs <-> In x ys.
+
+Inductive seq : list formula -> list formula -> Prop := 
+| init'' phi Gamma Delta: In phi Gamma -> In phi Delta -> seq Gamma Delta
+| left_conj'' Gamma phi psi Delta :
+      seq (phi :: Gamma) Delta -> 
+      seq (And phi psi :: Gamma) Delta
+| right_conj'' Gamma Delta phi psi : 
+    seq Gamma (phi :: Delta)
+    -> seq Gamma (psi :: Delta) 
+    -> seq Gamma (And phi psi :: Delta)
+| reorder Gamma Delta Gamma' Delta':
+     equiv Gamma Gamma'
+     -> equiv Delta Delta' ->
+     seq Gamma Delta -> seq Gamma' Delta'
+.
+
+
+Lemma soundness Gamma Delta :
+  seq Gamma Delta ->  
+  (forall x, In x Gamma -> to_bool x = true) 
+  -> exists x, In x Delta /\ to_bool x = true.
+Proof.
+  intros H. induction H; intros.
+  - exists phi. split; eauto. 
+  - apply IHseq.
+  intros. destruct H1. 
+  + subst. admit. (* easy *)
+  + admit.
+  - (* right conjunction *) 
+    destruct (IHseq1 H1) as [x1  [IH11  IH12]].
+    specialize (IHseq2 H1) as (x2&IH21&IH22).
+    destruct IH11. 
+    + subst. destruct IH21. 
+      * subst. 
+        exists (And x1 x2). 
+        simpl; split; eauto.
+        rewrite IH12 IH22. reflexivity.
+      * exists x2; simpl; split; eauto.
+    +  exists x1; simpl; split; eauto. 
+  - (* reorder case *) 
+    enough (exists x, In x Delta /\ to_bool x = true).
+    + destruct H3 as (x&H31&H32).
+      exists x. split; eauto. apply H0. assumption.
+    + apply IHseq. intros. apply H2. apply H. assumption.
 
 Admitted.
 
 Lemma sound_sc_bool_mseq' (Q P : {mset expr Bool_T_def}) :
 Q |= P -> 
 (forall (q : expr Bool_T_def), (q \in Q) -> <<q>> = <<ldl_bool def true>>) ->
-               exists (p : expr Bool_T_def) , (p \in P) && <<p>> = <<ldl_bool def true>>.
+               exists (p : expr Bool_T_def) , (p \in P) /\ <<p>> = <<ldl_bool def true>>.
 Proof.
  rewrite //=. intros. dependent induction H.
 - exists a. have H := H0 a. 
@@ -484,167 +566,113 @@ Proof.
   rewrite in_mset1D eq_refl orTb//=. 
   auto.
 - exists (ldl_bool def true).
-  rewrite in_mset1D eq_refl orTb andTb//=.
-  auto.
-- (* exists (a `/\ b). 
-  rewrite in_mset1D eq_refl orTb andTb.  *)
-  have ha := IHseq_calc_bool_ms1 H1.
-  have hb := IHseq_calc_bool_ms2 H1.
-  destruct ha as [x ha].
-  destruct hb as [y hb].
-  exists (a `/\ b). 
-  rewrite in_mset1D eq_refl orTb andTb.
-  have A : <<a>> = true. {
-    apply andb_prop in ha.
-    destruct ha as [xp x0].
-    rewrite in_mset1D in xp.
-    apply Bool.orb_prop in xp.
-    destruct xp as [xa | xp].
-    - admit.
-    - 
-  admit.}
-(*
-    apply andb_prop in h.
-    destruct h as [h1 h2].
-    by rewrite h2.*)admit.
-- apply IHseq_calc_bool_ms.
-  move => q q0.
-  rewrite in_msetD in q0.
-  have H1 := H0 (a `/\ b).
-  move: H1. 
-  rewrite in_mset1D  eq_refl orTb//= big_cons big_seq1.
-  move => H1.
-  apply H0. 
-  rewrite in_mset1D. 
-  move/Bool.orb_prop : q0;
-  move => [/eqP qab | qq].
-  rewrite in_mset2 in qab.
-  move/eqP/Bool.orb_prop : qab;
-  move => [/eqP qa | qb].
-  + have Ha := H0 a.
-
-
-
-Admitted.*)
-
-
-
-Lemma sound_sc_bool_mseq (Q P : {mset expr Bool_T_def}) :
-Q |= P -> 
-(forall (q : expr Bool_T_def), (q \in Q) && <<q>> = <<ldl_bool def true>>) ->
-               exists (p : expr Bool_T_def) , (p \in P) && <<p>> = <<ldl_bool def true>>.
-Proof.
- rewrite //=. intros. dependent induction H.
-- exists a. have H := H0 a. 
-  rewrite in_mset1D eq_refl orTb ?andTb.
-  by move: H; rewrite in_mset1D eq_refl orTb ?andTb//=.
-- exfalso.  move: H0.
-  rewrite//=. apply contrapT. rewrite  not_implyE.
-  rewrite not_andE notE. left. 
-  rewrite -existsNP.
-  exists (ldl_bool def false).
-  by rewrite in_mset1D eq_refl orTb andTb//=. 
-- exists (ldl_bool def true).
-  by rewrite in_mset1D eq_refl orTb andTb//=.
--  exists (a `/\ b). 
-  rewrite in_mset1D eq_refl orTb andTb.  
-    have h := (H1 (a `/\ b)).
-    apply andb_prop in h.
-    destruct h as [h1 h2].
-    by rewrite h2.
-- apply IHseq_calc_bool_ms.
-  move => q.
-  
-
-  have hq := H0 q.
-  apply andb_prop in hq.
-  destruct hq as [h1 h2].
-  rewrite h2 andbT.
-  rewrite in_msetD.
-  have ha := H0 a. apply andb_prop in ha. 
-  destruct ha as [ha1 ha2].
-  rewrite in_mset1D in ha1.
-  rewrite in_mset1D in h1.
-  move/Bool.orb_prop : h1;
-  move => [/eqP hq | qq]; first last.
-  + by rewrite qq orbT.
-  + move/Bool.orb_prop : ha1;
-  move => [/eqP haq | aqq]; first last.
-
-
-
-have hab := H0 (a `/\ b). apply andb_prop in hab. 
-  destruct hab as [_ hab2].
-  rewrite in_mset1D in hab1.
-  apply Bool.orb_prop in hab1.
-  destruct ha1 as [a1 |  qa];
-  destruct hb1 as [b1 |  qb].
-  + (*a1 and b1 r just false ergo False in assumptions*) admit.
-  + (*a1/b1 contra*) admit.
-  + (*a1 contra*) admit.
-  + have hh := H0 q.
-    apply andb_prop in hh.
-    destruct hh as [h1 h2].
-    rewrite h2 andbT.
-    rewrite in_mset1D in h1.
-    apply Bool.orb_prop in h1. 
-    destruct h1 as [hab' | hq'].
-     admit.
-     admit.*) admit.
-
-
-  (*have h := H0 q. apply andb_prop in h. 
-  destruct h as [h1 h2].
-  rewrite h2 andbT.
-  rewrite in_msetD. rewrite in_mset1D in h1.
-  apply Bool.orb_prop in h1.
-  destruct h1 as [ab |  q0].
-  + 
-  + admit. *)
-- exists (a `\/ b). 
-  rewrite in_mset1D eq_refl orTb andTb.  
-    have h := (H0 (a `\/ b)).
-    apply andb_prop in h.
-    destruct h as [h1 h2].
-    by rewrite h2.
-- exists (a `\/ b). 
-  rewrite in_mset1D eq_refl orTb andTb.  
-    have h := (H0 (a `\/ b)).
-    apply andb_prop in h.
-    destruct h as [h1 h2].
-    by rewrite h2.
+  by rewrite in_mset1D eq_refl orTb//=. 
+- destruct (IHseq_calc_bool_ms1 H1) as [x [IH11 IH12]].
+  destruct (IHseq_calc_bool_ms2 H1) as [y [IH21 IH22]].
+  rewrite in_mset1D in IH11. move/orP: IH11.
+  move => IH11.
+  destruct IH11.
+    + move/eqP: H2. move/esym => H2. subst. 
+      rewrite in_mset1D in IH21. move/orP: IH21.
+      move => IH21. destruct IH21. 
+      * move/eqP: H2. move/esym => H2.
+        subst. 
+        exists (x `/\ y). 
+        simpl; split; eauto.
+        - by rewrite in_mset1D eq_refl orTb.
+        - rewrite big_cons big_seq1. 
+          by rewrite IH12 IH22.
+      * exists y. rewrite IH22 in_mset1D H2 orbT. eauto.
+    +  exists x.  rewrite IH12 in_mset1D H2 orbT. eauto.
+- have H1 := (H0 (a `/\ b)). 
+  rewrite in_mset1D eq_refl orTb in H1.
+  simpl in H1.
+  rewrite big_cons big_seq1 in H1.
+  apply  IHseq_calc_bool_ms.
+  intros. rewrite in_mset1D in H2. move/orP: H2.
+      move => H2. destruct H2.
+      * move/eqP: H2. move => H2.
+        subst. apply andb_prop in H1.
+        + destruct H1 as [ha hb].
+          by apply ha.
+        + by [].
+      * apply H0. by rewrite in_mset1D H2 orbT.
+- have H1 := (H0 (a `/\ b)). 
+  rewrite in_mset1D eq_refl orTb in H1.
+  simpl in H1.
+  rewrite big_cons big_seq1 in H1.
+  apply  IHseq_calc_bool_ms.
+  intros. rewrite in_mset1D in H2. move/orP: H2.
+      move => H2. destruct H2.
+      * move/eqP: H2. move => H2.
+        subst. apply andb_prop in H1.
+        + destruct H1 as [ha hb].
+          by apply hb.
+        + by [].
+      * apply H0. by rewrite in_mset1D H2 orbT.
+- destruct (IHseq_calc_bool_ms H0) as [x [IH1 IH2]].
+  rewrite in_mset1D in IH1. move/orP: IH1.
+  move => IH1.
+  destruct IH1.
+    + move/eqP: H1. move => H1. subst. 
+      exists (a `\/ b).
+      rewrite in_mset1D eq_refl orTb//= big_cons big_seq1 IH2. 
+      by rewrite orTb//.
+    + exists x. 
+      by rewrite IH2 in_mset1D H1 orbT//.
+- destruct (IHseq_calc_bool_ms H0) as [x [IH1 IH2]].
+  rewrite in_mset1D in IH1. move/orP: IH1.
+  move => IH1.
+  destruct IH1.
+    + move/eqP: H1. move => H1. subst. 
+      exists (a `\/ b).
+      rewrite in_mset1D eq_refl orTb//= big_cons big_seq1 IH2. 
+      by rewrite orbT//.
+    + exists x. 
+      by rewrite IH2 in_mset1D H1 orbT//.
+- have H2 := (H1 (a `\/ b)). 
+  rewrite in_mset1D eq_refl orTb in H2.
+  simpl in H2.
+  rewrite big_cons big_seq1 in H2.
+  apply Bool.orb_prop in H2; rewrite//=.
+  destruct H2 as [ha | hb].
+  + apply  IHseq_calc_bool_ms1.
+    intros. rewrite in_mset1D in H2. move/orP: H2.
+      move => H2. destruct H2.
+      * move/eqP: H2. move => H2.
+        subst. by apply ha.
+      * apply H1. by rewrite in_mset1D H2 orbT.
+  + apply  IHseq_calc_bool_ms2.
+    intros. rewrite in_mset1D in H2. move/orP: H2.
+    move => H2. destruct H2.
+    * move/eqP: H2. move => H2.
+      subst. by apply hb.
+    * apply H1. by rewrite in_mset1D H2 orbT.
 - 
-
-apply IHseq_calc_bool_ms1. move => q.
-have hq := H1 q. apply andb_prop in hq. 
-  destruct hq as [hq1 hq2].
-  rewrite hq2 andbT.
-  rewrite in_mset1D.
+(*have hh : 
+ ((forall q : expr Bool_T_def, q \in Q -> <<q>> = true)
+    -> <<a>> = true ) -> (forall q : expr Bool_T_def, q \in a +` Q -> <<q>> = true). {
+    (*intros. 
+    rewrite in_mset1D in H2.
+    apply Bool.orb_prop in H2.
+    destruct H2 as [h1 | h2].
+    destruct H1 as [H11 H12].
+    + intros. move/eqP: h1. move => h1. subst. 
+      assumption.
+    + apply H1 in h2. assumption.*) admit.
+    }*)
+admit. 
+- have hh : (exists p : expr Bool_T_def, p \in P /\ <<p>> = true) -> 
+            (exists p : expr Bool_T_def, p \in a  +` P /\ <<p>> = true). {
+    admit.
+    }
+  apply hh in IHseq_calc_bool_ms.
+have H1 := H0 (`~ a).
   
-  rewrite in_mset1D in hq1.
-  apply Bool.orb_prop in hq1.
-  destruct hq1 as [q0 | q1]. (*have IH := IHseq_calc_bool_ms _ _ H0.
-  rewrite IH//=.
-  rewrite -x. (*the same as above, just another way around*)
-  (*have H3 := HH _ (seq_mset bs) p P .*)
-  (*possible issue with seq_mset*)*)
-  admit.
-- exists (a `=> b). 
-  rewrite in_mset1D eq_refl orTb andTb.  
-    have h := (H0 (a `=> b)).
-    apply andb_prop in h.
-    destruct h as [_ h2].
-    by rewrite h2.
-- admit.
-- exists (`~a). 
-  rewrite in_mset1D eq_refl orTb andTb.  
-    have h := (H0 (`~a)).
-    apply andb_prop in h.
-    destruct h as [_ h'].
-    by rewrite h'. 
-- 
-  admit.
+  rewrite in_mset1D eq_refl orTb in H1.
+  exists (`~ a).
 Admitted.
+
 
 End bool_translation.
 
