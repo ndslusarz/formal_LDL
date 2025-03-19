@@ -249,136 +249,6 @@ where "<< e >>" := (bool_translation e).
 Reserved Notation "Q |= P" (no associativity, at level 61).
 Reserved Notation "Q |- P" (no associativity, at level 61).
 
-(*sequence version*)
-
-Inductive seq_calc_bool : seq (@expr R Bool_T_def)
-  -> seq (@expr R Bool_T_def) -> Prop :=
-| init' : forall (Q P : seq (@expr R Bool_T_def)) (a : @expr R Bool_T_def),
-     a :: Q |- a :: P
-| bot' : forall (Q P : seq (@expr R Bool_T_def)),
-    (ldl_bool def false) :: Q |- P
-| top' : forall (Q P : seq (@expr R Bool_T_def)),
-    Q |- (ldl_bool def true) :: P
-| and_R' : forall (Q P : seq (@expr R Bool_T_def)) (a b: @expr R Bool_T_def),
-    Q |- a :: P  ->  Q |- ( b) :: P ->
-      Q |-  (a `/\ b) :: P
-| andL1' :  forall (Q P : seq (@expr R Bool_T_def)) (a b : @expr R Bool_T_def),
-    a::Q  |- P ->
-      (a `/\ b) :: Q |- P
-| andL2' :  forall (Q P : seq (@expr R Bool_T_def)) (a b : @expr R Bool_T_def),
-    b::Q  |- P ->
-      (a `/\ b) :: Q |- P
-(*| orR1 : forall (Q P : {mset (@expr R Bool_T_def)}) (a : @expr R Bool_T_def)
-                 (b : (@expr R Bool_T_def)),
-    Q |=  a +` P ->
-      Q |=  (a `\/ b) +` P
-| orR2 : forall (Q P : {mset (@expr R Bool_T_def)}) (a : @expr R Bool_T_def)
-                 (b : (@expr R Bool_T_def)),
-    Q |=  b +` P ->
-      Q |=  (a `\/ b) +` P
-| orL :  forall (Q P : {mset (@expr R Bool_T_def)}) (a : @expr R Bool_T_def)
-                 (b : (@expr R Bool_T_def)),
-    a+`Q  |= P ->  b +` Q |= P ->
-      (a `\/ b)+`Q |= P
-| implR : forall (Q P : {mset (@expr R Bool_T_def)}) (a : @expr R Bool_T_def)
-                 (b : (@expr R Bool_T_def)),
-     a+`Q |= b +`P ->
-      Q |= (a `=> b) +` P
-| implL : forall (Q P S : {mset (@expr R Bool_T_def)}) (a : @expr R Bool_T_def)
-                 (b : (@expr R Bool_T_def)),
-    Q |= a +` P ->   b+`Q |= S ->
-      (a `=> b)+`Q |=  P `+` S
-| negR : forall Q P a,
-    a+`Q  |= P ->
-      Q |= (`~ a) +` P
-| negL : forall Q P a,
-    Q |= a +` P ->
-      (`~ a)+`Q|= P*)
-where "Q |- P" := (seq_calc_bool Q P).
-
-Lemma sound_sc_bool' (Q P : seq (@expr R Bool_T_def)) (q p: @expr R Bool_T_def):
-q::Q |- p::P -> 
-(forall (x : expr Bool_T_def), (x \in q::Q) -> <<x>> = <<ldl_bool def true>>) ->
-               <<p>> = <<ldl_bool def true>>.
-Proof.
-rewrite//=; intros. dependent induction H.
-- apply H0. by rewrite mem_head.
-- exfalso. admit. (*might need a lemma or sth abt bool_translation but looks good*)
-- by rewrite//=.
-- have IH1 := IHseq_calc_bool1 Q P q a.
-  have IH2 := IHseq_calc_bool2 Q P q b.
-  rewrite //= big_cons big_seq1.
-  have A : <<a>> = true. {
-    by apply IH1; rewrite//=.
-    }
-  have B : <<b>> = true. {
-    by apply IH2; rewrite//=.
-  }
-  by rewrite A B.
-- have h := IHseq_calc_bool Q P a p.
-  apply h; rewrite//=.
-  move => x xa.
-  apply H0. (*same issue as before - not enough info*)
-
- Admitted.
-
-(*I'd argue this is correct because no y in P should eval to false if pre-condition holds
-though this essentially incorporates a version of consistency in soundness def*)
-Lemma sound_sc_bool'' (Q P : seq (@expr R Bool_T_def)) (q p: @expr R Bool_T_def):
-q::Q |- p::P -> 
-(forall (x : expr Bool_T_def), (x \in q::Q) -> <<x>> = <<ldl_bool def true>>) ->
-(forall (y : expr Bool_T_def), (y \in p::P) -> <<y>> = <<ldl_bool def true>>).
-Proof.
-rewrite//=; intros. dependent induction H.
-- apply H0.
- (*from this case we can already see this won't be provable,
-I think
- we don't have strong enough assumptions*)
-
- Admitted.
-
-(*experiment one on different pre-conditions
-changing pre-conditions for Q based on:
-- could theoretically pattern match on q::Q if I do separate andL1 andL2 instead 
-of a joint andL since that is the only case that adds two things to context
-- could then even just require <<q>> = true if the above is implemented I think
-but that would be a very bad version of soundness as it would permit false to exist within the Q
-which would be able to prove anything
-- but I do need to explicitly know that q is always evaluated to true
-- attempting the && because I believe I need this statement to be stronger*)
-
-Lemma sound_sc_bool_mseq'' (Q P : seq (@expr R Bool_T_def)) (q p: @expr R Bool_T_def):
-q::Q |- p::P -> 
-(forall (x : expr Bool_T_def), (x \in q::Q) && <<x>> = <<ldl_bool def true>>) ->
-               <<p>> = <<ldl_bool def true>>.
-Proof.
-rewrite//=; intros. dependent induction H.
-- have H := H0 p. 
-  apply andb_prop in H.
-  destruct H as [h1 h2]. by apply h2.
-- have H := H0 p. 
-  apply andb_prop in H.
-  destruct H as [h1 h2]. by apply h2. (*might need a lemma or sth abt bool_translation but looks good*)
-- by rewrite//=.
-- have IH1 := IHseq_calc_bool1 Q P q a.
-  have IH2 := IHseq_calc_bool2 Q P q b.
-  rewrite //= big_cons big_seq1.
-  have A : <<a>> = true. {
-    by apply IH1; rewrite//=.
-    }
-  have B : <<b>> = true. {
-    by apply IH2; rewrite//=.
-  }
-  by rewrite A B.
-- have h := IHseq_calc_bool Q P a p.
-  apply h; rewrite//=. (*same issue as before - not enough info*)
-
- Admitted.
-(*mset version
-amended to have two andL to see if I can pattern-macth on msets
-- though the question is wheter that has a point as I am now treating them
-half like sequences*)
-
 Inductive seq_calc_bool_ms : {mset (@expr R Bool_T_def)}
   -> {mset (@expr R Bool_T_def)} -> Prop :=
 | init : forall (Q P : {mset (@expr R Bool_T_def)}) (a : @expr R Bool_T_def),
@@ -409,6 +279,7 @@ Inductive seq_calc_bool_ms : {mset (@expr R Bool_T_def)}
                  (b : (@expr R Bool_T_def)),
     a+`Q  |= P ->  b +` Q |= P ->
       (a `\/ b)+`Q |= P
+(*not in lnguage for now, may add for fuzzy logic because of residuums*)
 (*| implR : forall (Q P : {mset (@expr R Bool_T_def)}) (a : @expr R Bool_T_def)
                  (b : (@expr R Bool_T_def)),
      a+`Q |= b +`P ->
@@ -416,11 +287,10 @@ Inductive seq_calc_bool_ms : {mset (@expr R Bool_T_def)}
 | implL : forall (Q P S : {mset (@expr R Bool_T_def)}) (a : @expr R Bool_T_def)
                  (b : (@expr R Bool_T_def)),
     Q |= a +` P ->   b+`Q |= S ->
-      (a `=> b)+`Q |=  P `+` S*) 
-(*not in lnguage for now, may add because of residuums*)
+      (a `=> b)+`Q |=  P `+` S
 | negR : forall Q P a,
     a +`Q  |= P ->
-      Q |= (`~ a) +` P
+      Q |= (`~ a) +` P*)
 | negL : forall Q P a,
     Q |= a +` P ->
       (`~ a)+`Q|= P
@@ -428,15 +298,6 @@ where "Q |= P" := (seq_calc_bool_ms Q P).
 
 Context {K : choiceType}.
 Implicit Types  (A : {mset K}) (s : seq K).
-
-Lemma ms_non0 a A :  a +` A != mset0.
-Proof.
-rewrite /mset0.
-(*rewrite -mproper0. rewrite mproper_sub. msub0set.
-rewrite mset_eq0P. => /(_ a).
-  rewrite msetE addm1.
-  by rewrite eqn_add2r eq_refl.rewrite /mset0.*) 
-Admitted.
 
 Proposition sc_bool_consistent_weak : ~ (mset0 |= [mset ldl_bool def false]).
 Proof.
@@ -456,97 +317,6 @@ wrong lemma statement*)
 
 Admitted.
 
-Lemma thingy:  
-  forall (T : choiceType) (a p : T) P, a +` P = [mset p] -> p = a.
-Proof.
-
-Admitted.
-
-Lemma mset_add0:  
-  forall (T : choiceType) (a p : T) P, a +` P = [mset p] ->  P = mset0.
-Proof.
-
-Admitted.
-
-Lemma mset_add_el:  
-  forall (T : choiceType) (a b : T) P, a +` P = b +` P <-> a = b.
-Proof.
-
-Admitted.
-
-Lemma trivial_thing:  
-  forall (a b : expr Bool_T_def), a = b -> <<a>> = <<b>>.
-Proof.
-Admitted.
-
-Require Import List.
-
-Inductive formula := 
-| T
-| F 
-| And : formula -> formula -> formula 
-| Or : formula -> formula -> formula 
-| Imp : formula -> formula -> formula 
-| Neg : formula -> formula. 
-
-Fixpoint to_bool (f : formula) := 
-  match f with 
-  | T => true 
-  | F => false 
-  | And phi psi => andb (to_bool phi) (to_bool psi) 
-  | Or phi psi => orb (to_bool phi) (to_bool psi) 
-  | Imp phi psi => implb (to_bool phi) (to_bool psi) 
-  | Neg phi => negb (to_bool phi) 
-end.
-
-Definition equiv {X : Type} (xs : list X) ys := 
-  forall x, In x xs <-> In x ys.
-
-Inductive seq : list formula -> list formula -> Prop := 
-| init'' phi Gamma Delta: In phi Gamma -> In phi Delta -> seq Gamma Delta
-| left_conj'' Gamma phi psi Delta :
-      seq (phi :: Gamma) Delta -> 
-      seq (And phi psi :: Gamma) Delta
-| right_conj'' Gamma Delta phi psi : 
-    seq Gamma (phi :: Delta)
-    -> seq Gamma (psi :: Delta) 
-    -> seq Gamma (And phi psi :: Delta)
-| reorder Gamma Delta Gamma' Delta':
-     equiv Gamma Gamma'
-     -> equiv Delta Delta' ->
-     seq Gamma Delta -> seq Gamma' Delta'
-.
-
-
-Lemma soundness Gamma Delta :
-  seq Gamma Delta ->  
-  (forall x, In x Gamma -> to_bool x = true) 
-  -> exists x, In x Delta /\ to_bool x = true.
-Proof.
-  intros H. induction H; intros.
-  - exists phi. split; eauto. 
-  - apply IHseq.
-  intros. destruct H1. 
-  + subst. admit. (* easy *)
-  + admit.
-  - (* right conjunction *) 
-    destruct (IHseq1 H1) as [x1  [IH11  IH12]].
-    specialize (IHseq2 H1) as (x2&IH21&IH22).
-    destruct IH11. 
-    + subst. destruct IH21. 
-      * subst. 
-        exists (And x1 x2). 
-        simpl; split; eauto.
-        rewrite IH12 IH22. reflexivity.
-      * exists x2; simpl; split; eauto.
-    +  exists x1; simpl; split; eauto. 
-  - (* reorder case *) 
-    enough (exists x, In x Delta /\ to_bool x = true).
-    + destruct H3 as (x&H31&H32).
-      exists x. split; eauto. apply H0. assumption.
-    + apply IHseq. intros. apply H2. apply H. assumption.
-
-Admitted.
 
 Lemma sound_sc_bool_mseq' (Q P : {mset expr Bool_T_def}) :
 Q |= P -> 
@@ -648,30 +418,21 @@ Proof.
     * move/eqP: H2. move => H2.
       subst. by apply hb.
     * apply H1. by rewrite in_mset1D H2 orbT.
-- 
-(*have hh : 
- ((forall q : expr Bool_T_def, q \in Q -> <<q>> = true)
-    -> <<a>> = true ) -> (forall q : expr Bool_T_def, q \in a +` Q -> <<q>> = true). {
-    (*intros. 
-    rewrite in_mset1D in H2.
-    apply Bool.orb_prop in H2.
-    destruct H2 as [h1 | h2].
-    destruct H1 as [H11 H12].
-    + intros. move/eqP: h1. move => h1. subst. 
-      assumption.
-    + apply H1 in h2. assumption.*) admit.
-    }*)
-admit. 
-- have hh : (exists p : expr Bool_T_def, p \in P /\ <<p>> = true) -> 
-            (exists p : expr Bool_T_def, p \in a  +` P /\ <<p>> = true). {
-    admit.
-    }
-  apply hh in IHseq_calc_bool_ms.
-have H1 := H0 (`~ a).
-  
+- have H1 := H0 (`~ a). 
   rewrite in_mset1D eq_refl orTb in H1.
-  exists (`~ a).
-Admitted.
+  destruct IHseq_calc_bool_ms as [x y]. 
+  + intros. apply H0.
+    by rewrite in_mset1D H2 orbT. 
+  + exists x. destruct y as [h1 h2].
+    rewrite h2.
+    rewrite in_mset1D in h1. move/orP: h1. move => [h1 | h3].
+    * move/eqP: h1. move => h1.
+      subst. rewrite //= in H1.
+      rewrite h2//= in H1.
+      exfalso.
+      move: H1. by auto.
+    * by rewrite h3.
+Qed.
 
 
 End bool_translation.
@@ -775,12 +536,13 @@ Reserved Notation "Q |- P" (no associativity, at level 61).
 Notation "Q |- P" := (Q, P).
 (*entailment as pair (A, B) where A |- B*)
 
+
 Inductive seq_calc_godel :  {mset ( {mset (@expr R Bool_T_def)} * {mset (@expr R Bool_T_def)})}
 (*-> {mset (seq {mset (@expr R Bool_T_def)})}*)
       -> Prop :=
 | id_g : forall (Q :  {mset ( {mset (@expr R Bool_T_def)} * {mset (@expr R Bool_T_def)})})
                 (A : {mset (@expr R Bool_T_def)}),
-    seq_calc_godel (Q `+` [mset (A |- A)])
+    seq_calc_godel ( (A |- A) +` Q)
 (*structural*)
 | ew_g : forall (Q P : {mset ( {mset (@expr R Bool_T_def)} * {mset (@expr R Bool_T_def)})}),
     seq_calc_godel Q ->
@@ -790,41 +552,41 @@ Inductive seq_calc_godel :  {mset ( {mset (@expr R Bool_T_def)} * {mset (@expr R
     seq_calc_godel (Q `+` P) (*swap, wrong order, check all others*)
 | comm_hyper_g : forall  Q 
                   (A1 A2 B1 B2 C D: {mset (@expr R Bool_T_def)}),
-    seq_calc_godel (Q `+` [mset ((A1 `+` B1) |- C)]) ->
-    seq_calc_godel (Q `+` [mset ((A2 `+` B2) |- D)]) ->               
+    seq_calc_godel (((A1 `+` B1) |- C) +` Q) ->
+    seq_calc_godel (((A2 `+` B2) |- D) +` Q) ->               
     seq_calc_godel (Q `+` [mset ((A1 `+` A2) |- C)] `+` [mset ((B1 `+` B2) |- D)])
 | comm_g : forall Q 
                   (A B C : {mset (@expr R Bool_T_def)}),
-    seq_calc_godel (Q `+` [mset ((A `+` B `+` B) |- C)]) ->
-    seq_calc_godel (Q `+` [mset ((A `+` B) |- C)])
+    seq_calc_godel (((A `+` B `+` B) |- C) +` Q) ->
+    seq_calc_godel (((A `+` B) |- C) +` Q)
 | weak_g : forall Q 
                   (A B C : {mset (@expr R Bool_T_def)}),
-    seq_calc_godel (Q `+` [mset (A |- C)]) ->
-    seq_calc_godel (Q `+` [mset ((A `+` B) |- C)])
+    seq_calc_godel ((A |- C) +` Q ) ->
+    seq_calc_godel (((A `+` B) |- C) +` Q )
 (*logical*)
 | bot_g : forall Q 
                  (A B : {mset (@expr R Bool_T_def)}),
-    seq_calc_godel (Q `+` [mset ((ldl_bool def false +` A) |- B)])
+    seq_calc_godel (((ldl_bool def false +` A) |- B) +` Q)
 | top_g : forall Q 
                  (A : {mset (@expr R Bool_T_def)}),
-    seq_calc_godel (Q `+` [mset (A |- [mset (ldl_bool def true)])])
+    seq_calc_godel ((A |- [mset (ldl_bool def true)]) +` Q )
 | andL_g1 : forall Q 
                    (A B : {mset (@expr R Bool_T_def)})
                    (a b : @expr R Bool_T_def),
-    seq_calc_godel (Q `+` [mset ((a +` B) |- A)]) ->
-    seq_calc_godel (Q `+` [mset (((a `/\ b) +` B) |- A)]) 
+    seq_calc_godel (((a +` B) |- A) +` Q ) ->
+    seq_calc_godel ((((a `/\ b) +` B) |- A) +` Q) 
 | andL_g2 : forall Q
                    (A B : {mset (@expr R Bool_T_def)})
                    (a b : @expr R Bool_T_def),
-    seq_calc_godel (Q `+` [mset ((b +` B) |- A)]) ->
-    seq_calc_godel (Q `+` [mset (((a `/\ b) +` B) |- A)])
+    seq_calc_godel (((b +` B) |- A) +` Q ) ->
+    seq_calc_godel ((((a `/\ b) +` B) |- A) +` Q )
 | andR_g : forall Q
                   (A B : {mset (@expr R Bool_T_def)})
                   (a b : @expr R Bool_T_def),
-    seq_calc_godel (Q `+` [mset (A |- [mset a])]) ->
-    seq_calc_godel (Q `+` [mset (A |- [mset b])]) ->
-    seq_calc_godel (Q `+` [mset (A |- [mset (a `/\ b)])])
-| orL_g : forall  Q
+    seq_calc_godel ( (A |- [mset a]) +` Q ) ->
+    seq_calc_godel ( (B |- [mset b]) +` Q) ->
+    seq_calc_godel ((A |- [mset (a `/\ b)]) +` Q )
+(*| orL_g : forall  Q
                   (A B : {mset (@expr R Bool_T_def)})
                   (a b : @expr R Bool_T_def),
     seq_calc_godel (Q `+` [mset ((b +` B) |- A)]) ->
@@ -849,7 +611,7 @@ Inductive seq_calc_godel :  {mset ( {mset (@expr R Bool_T_def)} * {mset (@expr R
                   (A B: {mset (@expr R Bool_T_def)})
                   (a : @expr R Bool_T_def),
     seq_calc_godel (Q `+` [mset ((a +` B) |- A)]) ->
-    seq_calc_godel (Q `+` [mset (((`~a) +` B) |- A)])
+    seq_calc_godel (Q `+` [mset (((`~a) +` B) |- A)])*)
 
 (*cut rule*)
 | cut_g : forall Q
@@ -859,24 +621,38 @@ Inductive seq_calc_godel :  {mset ( {mset (@expr R Bool_T_def)} * {mset (@expr R
     seq_calc_godel (Q `+` [mset (A2 |-[mset a])]) ->
     seq_calc_godel (Q `+` [mset ((A1 `+` A2) |- B)]).
 
-Proposition sc_godel_consistent (Q : {mset ( {mset (@expr R Bool_T_def)} * {mset (@expr R Bool_T_def)})})
-  (A :  {mset (@expr R Bool_T_def)}) :
-  ~ (seq_calc_godel (Q `+` [mset (A |- [mset (ldl_bool def false)])])).
-Proof.
+(*or should it not be equal to 1? greater then something? or just non-equal to zero*)
+Lemma sound_godel_1 (Q : {mset ( {mset (@expr R Bool_T_def)} * {mset (@expr R Bool_T_def)})}):
+seq_calc_godel Q -> 
+exists (q : ( {mset (@expr R Bool_T_def)} * {mset (@expr R Bool_T_def)})), q \in Q /\ 
+       (
+         (forall (x : expr (Bool_T def)), x \in (fst q) -> [[x]]_Godel = [[ldl_bool def true]]_Godel) ->
+         (exists (y : expr (Bool_T def)), y \in (snd q) /\ [[y]]_Godel = [[ldl_bool def true]]_Godel)
 
+       ).
+Proof.
+intros; rewrite//=. dependent induction H.
+- exists (A |- A). rewrite in_mset1D eq_refl orTb. split. by [].  
+  simpl. intros.
+  admit. (*if I can extract a variable from here then it's fine*)
+- admit. admit. 
+(*the interesting one, communication rule*)
+- destruct IHseq_calc_godel1 as [q1 [IH11 IH12]]. 
+  destruct IHseq_calc_godel2 as [q2 [IH21 IH22]].
+
+
+ admit.
+ admit. admit.
+- exists (ldl_bool def false +` A |- B).
+  rewrite in_mset1D eq_refl orTb. split. by [].
+  simpl. intros.
+(*hm, don't think this is sufficient?*)
 Admitted.
 
-Lemma noncontra_hs_godel :
-  forall (Q : {mset ( {mset (@expr R Bool_T_def)} * {mset (@expr R Bool_T_def)})})
-         (A :  {mset (@expr R Bool_T_def)})
-         (a : expr (Bool_T def)),  
-    seq_calc_godel (Q `+` [mset (A |- [mset ( `~a)])]) -> 
-    ~ (seq_calc_godel (Q `+` [mset (A |- [mset ( a)])])).
-Proof.
-move => Q A a H. (*dependent induction H.*)
-(*timeout?*)
- Admitted.
 
+
+(*
+nope, not this one, left as reminder, delete later
 Lemma sound_hypersec_godel (Q P : {mset ( {mset (@expr R Bool_T_def)} * {mset (@expr R Bool_T_def)})})
                            (s : ({mset (@expr R Bool_T_def)} * {mset (@expr R Bool_T_def)}) ) :
 (forall (q : expr (Bool_T def)), q \in (snd s) ->
@@ -885,14 +661,7 @@ Lemma sound_hypersec_godel (Q P : {mset ( {mset (@expr R Bool_T_def)} * {mset (@
                 forall (x : expr (Bool_T def)), x \in (fst s) ->
                 [[x ]]_Godel = [[ldl_bool def true]]_Godel.
 Proof.
-rewrite//=. intros. dependent induction H0. 
-- (*rewrite (H x0).*) (*something wrong in assumptions? perhaps? x doesn't look like enough to prove it...
-but without P also doesn't work*) admit.
-- have H2 := IHseq_calc_godel s H P Q.
-  rewrite H2//.
-  admit. (*again, sth wrong with x?*)
-- have H2 := IHseq_calc_godel s H P Q. rewrite H2//.
-Admitted.
+Admitted.*)
 End hypersequent_godel.
 
 
