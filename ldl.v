@@ -549,12 +549,18 @@ Inductive seq_calc_godel :  {mset ( {mset (@expr R Bool_T_def)} * {mset (@expr R
     seq_calc_godel (Q `+` P) (*correct order*)
 | ec_g : forall (Q P : {mset ( {mset (@expr R Bool_T_def)} * {mset (@expr R Bool_T_def)})}),
     seq_calc_godel (Q `+` P `+` P) ->
-    seq_calc_godel (Q `+` P) (*swap, wrong order, check all others*)
-| comm_hyper_g : forall  Q 
+    seq_calc_godel (Q `+` P)
+(*this was a single conclusion version*)
+(*| comm_hyper_g : forall  Q 
                   (A1 A2 B1 B2 C D: {mset (@expr R Bool_T_def)}),
     seq_calc_godel (((A1 `+` B1) |- C) +` Q) ->
     seq_calc_godel (((A2 `+` B2) |- D) +` Q) ->               
-    seq_calc_godel (Q `+` [mset ((A1 `+` A2) |- C)] `+` [mset ((B1 `+` B2) |- D)])
+    seq_calc_godel (Q `+` [mset ((A1 `+` A2) |- C)] `+` [mset ((B1 `+` B2) |- D)])*)
+| comm_hyper_g : forall  Q 
+                  (A1 A2 B1 B2 C1 C2 D1 D2: {mset (@expr R Bool_T_def)}),
+    seq_calc_godel (((A1 `+` B1) |- C1 `+` D1) +` Q) ->
+    seq_calc_godel (((A2 `+` B2) |- C2 `+` D2) +` Q) ->               
+    seq_calc_godel (Q `+` [mset ((A1 `+` A2) |- C1 `+` C2)] `+` [mset ((B1 `+` B2) |- D1 `+` D2)])
 | comm_g : forall Q 
                   (A B C : {mset (@expr R Bool_T_def)}),
     seq_calc_godel (((A `+` B `+` B) |- C) +` Q) ->
@@ -624,7 +630,8 @@ Inductive seq_calc_godel :  {mset ( {mset (@expr R Bool_T_def)} * {mset (@expr R
 (*or should it not be equal to 1? greater then something? or just non-equal to zero*)
 Lemma sound_godel_1 (Q : {mset ( {mset (@expr R Bool_T_def)} * {mset (@expr R Bool_T_def)})}):
 seq_calc_godel Q -> 
-exists (q : ( {mset (@expr R Bool_T_def)} * {mset (@expr R Bool_T_def)})), q \in Q /\ 
+exists (q : ( {mset (@expr R Bool_T_def)} * {mset (@expr R Bool_T_def)})), q \in Q 
+/\ 
        (
          (forall (x : expr (Bool_T def)), x \in (fst q) -> [[x]]_Godel = [[ldl_bool def true]]_Godel) ->
          (exists (y : expr (Bool_T def)), y \in (snd q) /\ [[y]]_Godel = [[ldl_bool def true]]_Godel)
@@ -633,22 +640,66 @@ exists (q : ( {mset (@expr R Bool_T_def)} * {mset (@expr R Bool_T_def)})), q \in
 Proof.
 intros; rewrite//=. dependent induction H.
 - exists (A |- A). rewrite in_mset1D eq_refl orTb. split. by [].  
-  simpl. intros.
-  admit. (*if I can extract a variable from here then it's fine*)
-- admit. admit. 
-(*the interesting one, communication rule*)
+  simpl. intros. exists (ldl_bool def true). rewrite//=. 
+  split; first last.  by rewrite//=. 
+  have H1 := H (ldl_bool def true). 
+  rewrite//= in H1. move: H1.
+  
+  admit. (*I just need to make erefl work*)
+- destruct IHseq_calc_godel as [q [IH1 IH2]].
+  exists q. rewrite in_msetD IH1 orTb. 
+  split. by []. 
+  by apply IH2.
+- destruct IHseq_calc_godel as [M [IH1 IH2]].   
+  exists M. (*trivial, rearrange*) admit. 
+(*the interesting one, communication ruleu*)
 - destruct IHseq_calc_godel1 as [q1 [IH11 IH12]]. 
   destruct IHseq_calc_godel2 as [q2 [IH21 IH22]].
-
-
+  have in_msetD3 : forall (q : K) (Q A B : {mset K}), q \in Q `+` A `+` B =
+                         (q \in Q) || (q \in A) || (q \in B). {
+    admit. 
+  } 
+  have h : exists qq, qq = q1 \/ qq = q2. {
+  exists q1. left. by apply Logic.eq_refl.}
+  destruct h as [qq Hq].
+  exists qq. (*I don't think this exists will work*)
+  split. 
+  + admit.
+  +
  admit.
  admit. admit.
 - exists (ldl_bool def false +` A |- B).
   rewrite in_mset1D eq_refl orTb. split. by [].
   simpl. intros.
-(*hm, don't think this is sufficient?*)
-Admitted.
+  have H1 := H (ldl_bool def false).
+  rewrite//= in H1.
+  exfalso. move: H1. apply contrapT. rewrite  not_implyE.
+  rewrite not_andE notE. left. 
+  rewrite in_mset1D eq_refl orTb//=.
+  rewrite  not_implyE. split. by []. 
+  
+  (*just searching for right lemma, got 1<>0*)
+  admit.
+- exists ((A |- [mset ldl_bool def true])).
+  split. admit. (*obvious, in_mset1D*)
+  rewrite//=; move => _. 
+  exists (ldl_bool def true). 
+  rewrite mset11. split; rewrite//=; by []. 
+- destruct IHseq_calc_godel as [Qa [IH1 IH2]].
+  exists (a `/\ b +` B |- A).
+  split. 
+  + admit. (*obvious, belongs*)
+  + rewrite//=. intros. 
+    have H1 := H0 (a `/\ b).
+    have h1 : a `/\ b \in a `/\ b +` B. {
+      by  rewrite in_mset1D eq_refl orTb.
+      }
+    have Hab := H1 h1. rewrite//= in Hab.
+    (*from this should be able to get that both a, b = 1 - given the proof of 
+      domain consistency that can be borrowed from fuzzy.v*)
 
+admit.
+Admitted.
 
 
 (*
@@ -663,6 +714,169 @@ Lemma sound_hypersec_godel (Q P : {mset ( {mset (@expr R Bool_T_def)} * {mset (@
 Proof.
 Admitted.*)
 End hypersequent_godel.
+
+Section hypersequent_lukasiewicz.
+Local Open Scope ring_scope.
+Local Open Scope ldl_scope.
+Local Open Scope mset_scope. 
+Context {R : realType}.
+Context {K : choiceType}.
+Implicit Types  (A : {mset K}) (s : seq K).
+Variable p : R. 
+Local Notation "[[ e ]]_ l" := (translation l p e).
+
+Reserved Notation "Q |- P" (no associativity, at level 61).
+Notation "Q |- P" := (Q, P).
+(*entailment as pair (A, B) where A |- B*)
+
+
+Inductive seq_calc_luka :  {mset ( {mset (@expr R Bool_T_def)} * {mset (@expr R Bool_T_def)})}
+(*-> {mset (seq {mset (@expr R Bool_T_def)})}*)
+      -> Prop :=
+| id_g : forall (Q :  {mset ( {mset (@expr R Bool_T_def)} * {mset (@expr R Bool_T_def)})})
+                (A : {mset (@expr R Bool_T_def)}),
+    seq_calc_luka ( (A |- A) +` Q)
+(*structural*)
+| ew_g : forall (Q P : {mset ( {mset (@expr R Bool_T_def)} * {mset (@expr R Bool_T_def)})}),
+    seq_calc_luka Q ->
+    seq_calc_luka (Q `+` P) (*correct order*)
+| ec_g : forall (Q P : {mset ( {mset (@expr R Bool_T_def)} * {mset (@expr R Bool_T_def)})}),
+    seq_calc_luka (Q `+` P `+` P) ->
+    seq_calc_luka (Q `+` P)
+(*add split and mix rules*)
+| comm_g : forall Q 
+                  (A B C : {mset (@expr R Bool_T_def)}),
+    seq_calc_luka (((A `+` B `+` B) |- C) +` Q) ->
+    seq_calc_luka (((A `+` B) |- C) +` Q)
+| weak_g : forall Q 
+                  (A B C : {mset (@expr R Bool_T_def)}),
+    seq_calc_luka ((A |- C) +` Q ) ->
+    seq_calc_luka (((A `+` B) |- C) +` Q )
+(*logical*)
+| bot_g : forall Q 
+                 (A B : {mset (@expr R Bool_T_def)}),
+    seq_calc_luka (((ldl_bool def false +` A) |- B) +` Q)
+| top_g : forall Q 
+                 (A : {mset (@expr R Bool_T_def)}),
+    seq_calc_luka ((A |- [mset (ldl_bool def true)]) +` Q )
+| andL_g1 : forall Q 
+                   (A B : {mset (@expr R Bool_T_def)})
+                   (a b : @expr R Bool_T_def),
+    seq_calc_luka (((a +` B) |- A) +` Q ) ->
+    seq_calc_luka ((((a `/\ b) +` B) |- A) +` Q) 
+| andL_g2 : forall Q
+                   (A B : {mset (@expr R Bool_T_def)})
+                   (a b : @expr R Bool_T_def),
+    seq_calc_luka (((b +` B) |- A) +` Q ) ->
+    seq_calc_luka ((((a `/\ b) +` B) |- A) +` Q )
+| andR_g : forall Q
+                  (A B : {mset (@expr R Bool_T_def)})
+                  (a b : @expr R Bool_T_def),
+    seq_calc_luka ( (A |- [mset a]) +` Q ) ->
+    seq_calc_luka ( (B |- [mset b]) +` Q) ->
+    seq_calc_luka ((A |- [mset (a `/\ b)]) +` Q )
+(*| orL_g : forall  Q
+                  (A B : {mset (@expr R Bool_T_def)})
+                  (a b : @expr R Bool_T_def),
+    seq_calc_godel (Q `+` [mset ((b +` B) |- A)]) ->
+    seq_calc_godel (Q `+` [mset ((a +` B) |- A)]) ->
+    seq_calc_godel (Q `+` [mset (((a `\/ b) +` B) |- A)])
+| orR_g1 : forall Q
+                  (A B : {mset (@expr R Bool_T_def)})
+                  (a b : @expr R Bool_T_def),
+    seq_calc_godel (Q `+` [mset (A |- [mset a])]) ->
+    seq_calc_godel (Q `+` [mset (A |- [mset (a `\/ b)])])
+| orR_g2 : forall Q
+                  (A B : {mset (@expr R Bool_T_def)})
+                  (a b : @expr R Bool_T_def),
+    seq_calc_godel (Q `+` [mset (A |- [mset b])]) ->
+    seq_calc_godel (Q `+` [mset (A |- [mset (a `\/ b)])])
+| negR_g : forall Q
+                  (A : {mset (@expr R Bool_T_def)})
+                  (a : @expr R Bool_T_def),
+    seq_calc_godel (Q `+` [mset (A |- [mset a])]) ->
+    seq_calc_godel (Q `+` [mset (A |- [mset (`~ a)])])
+| negL_g : forall Q
+                  (A B: {mset (@expr R Bool_T_def)})
+                  (a : @expr R Bool_T_def),
+    seq_calc_godel (Q `+` [mset ((a +` B) |- A)]) ->
+    seq_calc_godel (Q `+` [mset (((`~a) +` B) |- A)])*).
+
+Define 
+
+Lemma sound_luka_1 (Q : {mset ( {mset (@expr R Bool_T_def)} * {mset (@expr R Bool_T_def)})}):
+seq_calc_godel Q -> 
+exists (q : ( {mset (@expr R Bool_T_def)} * {mset (@expr R Bool_T_def)})), q \in Q 
+/\ 
+       (
+         (forall (x : expr (Bool_T def)), x \in (fst q) -> [[x]]_Godel = [[ldl_bool def true]]_Godel) ->
+         (exists (y : expr (Bool_T def)), y \in (snd q) /\ [[y]]_Godel = [[ldl_bool def true]]_Godel)
+
+       ).
+Proof.
+intros; rewrite//=. dependent induction H.
+- exists (A |- A). rewrite in_mset1D eq_refl orTb. split. by [].  
+  simpl. intros. exists (ldl_bool def true). rewrite//=. 
+  split; first last.  by rewrite//=. 
+  have H1 := H (ldl_bool def true). 
+  rewrite//= in H1. move: H1.
+  
+  admit. (*I just need to make erefl work*)
+- destruct IHseq_calc_godel as [q [IH1 IH2]].
+  exists q. rewrite in_msetD IH1 orTb. 
+  split. by []. 
+  by apply IH2.
+- destruct IHseq_calc_godel as [M [IH1 IH2]].   
+  exists M. (*trivial, rearrange*) admit. 
+(*the interesting one, communication ruleu*)
+- destruct IHseq_calc_godel1 as [q1 [IH11 IH12]]. 
+  destruct IHseq_calc_godel2 as [q2 [IH21 IH22]].
+  have in_msetD3 : forall (q : K) (Q A B : {mset K}), q \in Q `+` A `+` B =
+                         (q \in Q) || (q \in A) || (q \in B). {
+    admit. 
+  } 
+  have h : exists qq, qq = q1 \/ qq = q2. {
+  exists q1. left. by apply Logic.eq_refl.}
+  destruct h as [qq Hq].
+  exists qq. (*I don't think this exists will work*)
+  split. 
+  + admit.
+  +
+ admit.
+ admit. admit.
+- exists (ldl_bool def false +` A |- B).
+  rewrite in_mset1D eq_refl orTb. split. by [].
+  simpl. intros.
+  have H1 := H (ldl_bool def false).
+  rewrite//= in H1.
+  exfalso. move: H1. apply contrapT. rewrite  not_implyE.
+  rewrite not_andE notE. left. 
+  rewrite in_mset1D eq_refl orTb//=.
+  rewrite  not_implyE. split. by []. 
+  
+  (*just searching for right lemma, got 1<>0*)
+  admit.
+- exists ((A |- [mset ldl_bool def true])).
+  split. admit. (*obvious, in_mset1D*)
+  rewrite//=; move => _. 
+  exists (ldl_bool def true). 
+  rewrite mset11. split; rewrite//=; by []. 
+- destruct IHseq_calc_godel as [Qa [IH1 IH2]].
+  exists (a `/\ b +` B |- A).
+  split. 
+  + admit. (*obvious, belongs*)
+  + rewrite//=. intros. 
+    have H1 := H0 (a `/\ b).
+    have h1 : a `/\ b \in a `/\ b +` B. {
+      by  rewrite in_mset1D eq_refl orTb.
+      }
+    have Hab := H1 h1. rewrite//= in Hab.
+
+
+admit.
+Admitted.
+
+End hypersequent_lukasiewicz.
 
 
 Section dl2_ereal_translation.
