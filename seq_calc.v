@@ -443,14 +443,10 @@ Inductive seq_calc_luka :  {mset ( {mset (@expr R Bool_T_def)} * {mset (@expr R 
     seq_calc_luka (Q `+` P `+` P) ->
     seq_calc_luka (Q `+` P)
 (*add split and mix rules*)
-| comm_l : forall Q 
-                  (A B C : {mset (@expr R Bool_T_def)}),
-    seq_calc_luka (((A `+` B `+` B) |- C) +` Q) ->
-    seq_calc_luka (((A `+` B) |- C) +` Q)
-| weak_l : forall Q 
-                  (A B C : {mset (@expr R Bool_T_def)}),
-    seq_calc_luka ((A |- C) +` Q ) ->
-    seq_calc_luka (((A `+` B) |- C) +` Q )
+| split_l : forall Q 
+                  (A B C D: {mset (@expr R Bool_T_def)}),
+    seq_calc_luka (((A `+` B) |- (C `+` D)) +` Q) ->
+    seq_calc_luka ([mset (A |- C)] `+` [mset (B |- D)] `+` Q)
 (*logical*)
 | bot_l : forall Q 
                  (A B : {mset (@expr R Bool_T_def)}),
@@ -507,45 +503,40 @@ Definition eval_luka  (Q : {mset (@expr R Bool_T_def)})
 
 
 Lemma sound_luka_1 (Q : {mset ( {mset (@expr R Bool_T_def)} * {mset (@expr R Bool_T_def)})}):
-seq_calc_godel Q -> 
+seq_calc_luka Q -> 
 exists (q : ( {mset (@expr R Bool_T_def)} * {mset (@expr R Bool_T_def)})), q \in Q 
 /\ 
        (
-         (forall (x : expr (Bool_T def)), x \in (fst q) -> [[x]]_Godel = [[ldl_bool def true]]_Godel) ->
-         (exists (y : expr (Bool_T def)), y \in (snd q) /\ [[y]]_Godel = [[ldl_bool def true]]_Godel)
+
+         eval_luka (fst q) <= eval_luka (snd q)
 
        ).
 Proof.
 intros; rewrite//=. dependent induction H.
 - exists (A |- A). rewrite in_mset1D eq_refl orTb. split. by [].  
-  simpl. intros. exists (ldl_bool def true). rewrite//=. 
-  split; first last.  by rewrite//=. 
-  have H1 := H (ldl_bool def true). 
-  rewrite//= in H1. move: H1.
-  
-  admit. (*I just need to make erefl work*)
-- destruct IHseq_calc_godel as [q [IH1 IH2]].
+  simpl. by lra.
+- destruct IHseq_calc_luka as [q [IH1 IH2]].
   exists q. rewrite in_msetD IH1 orTb. 
   split. by []. 
   by apply IH2.
-- destruct IHseq_calc_godel as [M [IH1 IH2]].   
-  exists M. (*trivial, rearrange*) admit. 
-(*the interesting one, communication ruleu*)
-- destruct IHseq_calc_godel1 as [q1 [IH11 IH12]]. 
-  destruct IHseq_calc_godel2 as [q2 [IH21 IH22]].
-  have in_msetD3 : forall (q : K) (Q A B : {mset K}), q \in Q `+` A `+` B =
-                         (q \in Q) || (q \in A) || (q \in B). {
-    admit. 
-  } 
-  have h : exists qq, qq = q1 \/ qq = q2. {
-  exists q1. left. by apply Logic.eq_refl.}
-  destruct h as [qq Hq].
-  exists qq. (*I don't think this exists will work*)
-  split. 
-  + admit.
-  +
- admit.
- admit. admit.
+- destruct IHseq_calc_luka as [M [IH1 IH2]].   
+  exists M. rewrite !in_msetD in IH1. 
+  rewrite in_msetD. move/orP : IH1. 
+  by move => [h | h]; rewrite h ?orbT; split; rewrite//=. 
+- destruct IHseq_calc_luka as [q1 [IH1 IH2]]. 
+  rewrite in_msetD in IH1. move/orP : IH1.
+  move => [h1 | h2]; first last.
+  + exists q1. rewrite in_msetD h2 orbT.
+    split; rewrite//=. 
+  + rewrite in_mset1 in h1. move/eqP : h1.
+    move => h1. 
+    subst.
+    rewrite /eval_luka//= in IH2.
+    exists (A |- C).
+    rewrite in_msetD in_mset2 eq_refl !orTb. split. by [].
+    rewrite /eval_luka//=.
+    admit. (*bit gnarly math, but does work on paper I think due to the domain
+             being 0,1, will need helper lemmas*)
 - exists (ldl_bool def false +` A |- B).
   rewrite in_mset1D eq_refl orTb. split. by [].
   simpl. intros.
