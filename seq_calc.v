@@ -318,13 +318,7 @@ Inductive seq_calc_godel :  {mset ( {mset (@expr R Bool_T_def)} * {mset (@expr R
     seq_calc_godel (Q `+` [mset ((a +` B) |- A)]) ->
     seq_calc_godel (Q `+` [mset (((`~a) +` B) |- A)])*)
 
-(*cut rule*)
-| cut_g : forall Q
-                 (A1 A2 B: {mset (@expr R Bool_T_def)})
-                 (a : @expr R Bool_T_def),
-    seq_calc_godel (Q `+` [mset ((a +` A1) |- B)]) ->
-    seq_calc_godel (Q `+` [mset (A2 |-[mset a])]) ->
-    seq_calc_godel (Q `+` [mset ((A1 `+` A2) |- B)]).
+(*cut rule*).
 
 (*or should it not be equal to 1? greater then something? or just non-equal to zero*)
 Lemma sound_godel_1 (Q : {mset ( {mset (@expr R Bool_T_def)} * {mset (@expr R Bool_T_def)})}):
@@ -398,6 +392,94 @@ intros; rewrite//=. dependent induction H.
       domain consistency that can be borrowed from fuzzy.v*)
 
 admit.
+Admitted.
+
+(*generalise later?*)
+Lemma sum_in_msetD_expr (A B : {mset (@expr R Bool_T_def)}):
+    (\sum_(i <- [seq [[i]]_Godel | i <- A `+` B]) i) = 
+      (\sum_(i <- [seq [[i]]_Godel | i <- A]) i) + (\sum_(i <- [seq [[i]]_Godel | i <- B]) i).
+Proof.
+Admitted.
+
+(*based on Łukasiewicz definition*)
+Lemma sound_godel_2 (Q : {mset ( {mset (@expr R Bool_T_def)} * {mset (@expr R Bool_T_def)})}):
+seq_calc_godel Q -> 
+exists (q : ( {mset (@expr R Bool_T_def)} * {mset (@expr R Bool_T_def)})), q \in Q 
+/\ 
+(
+sumR (map (translation Godel p) (fst q)) <= sumR (map (translation Godel p) (snd q))
+ ).
+Proof.
+intros; rewrite//=. dependent induction H.
+- exists (A |- A). rewrite in_mset1D eq_refl orTb. split. by [].  
+  simpl. by lra.
+- destruct IHseq_calc_godel as [q [IH1 IH2]].
+  exists q. rewrite in_msetD IH1 orTb. 
+  split. by []. 
+  by apply IH2.
+- destruct IHseq_calc_godel as [M [IH1 IH2]].   
+  exists M. rewrite !in_msetD in IH1. 
+  rewrite in_msetD. move/orP : IH1. 
+  by move => [h | h]; rewrite h ?orbT; split; rewrite//=. 
+- destruct IHseq_calc_godel1 as [q1 [IH11 IH12]]. 
+  destruct IHseq_calc_godel2 as [q2 [IH21 IH22]].
+  rewrite in_mset1D in IH11.
+  rewrite in_mset1D in IH21.
+  move/orP: IH11. move/orP: IH21.
+  move => [h1 | h1] [h2 | h2]; rewrite//=.
+  + move/eqP: h1. move/eqP : h2.  
+    move => h1 h2. 
+    subst. 
+    have IH := lerD IH12 IH22.
+    rewrite /sumR //= in IH. 
+    rewrite !sum_in_msetD_expr in IH.
+    set (a1 := (\sum_(i <- [seq [[i]]_Godel | i <- A1]) i)) in *.
+    set (a2 := (\sum_(i <- [seq [[i]]_Godel | i <- A2]) i)) in *.
+    set (b1 := (\sum_(i <- [seq [[i]]_Godel | i <- B1]) i)) in *.
+    set (b2 := (\sum_(i <- [seq [[i]]_Godel | i <- B2]) i)) in *.
+    set (c1 := (\sum_(i <- [seq [[i]]_Godel | i <- C1]) i)) in *.
+    set (c2 := (\sum_(i <- [seq [[i]]_Godel | i <- C2]) i)) in *.
+    set (d1 := (\sum_(i <- [seq [[i]]_Godel | i <- D1]) i)) in *.
+    set (d2 := (\sum_(i <- [seq [[i]]_Godel | i <- D2]) i)) in *.
+    have helper : 
+    ((a1 + b1 + a2 + b2) <= (c1 + d1 + c2 +d2)) -> 
+    ((a1 + a2 + b1 + b2 - d1 - d2) <= (c1 + c2)).  {
+      lra. }
+    rewrite !addrA in IH.
+    apply helper in IH. move: helper. move => _. 
+    have le_or : forall (a b : R), a <= b \/ a >= b. { intros. lra.} 
+    have h1 := le_or (b1 + b2) (d1 + d2).
+    destruct h1 as [h1 | h1].
+    * exists (B1 `+` B2 |- D1 `+` D2). split. 
+      - by rewrite in_msetD//= mset11 orbT. 
+      - rewrite /sumR //= !sum_in_msetD_expr.
+        rewrite /b1/b2/d1/d2 in h1.
+        by apply h1. 
+    * have helper1 : d1 + d2 <= b1 + b2 -> (b1 + b2 - d1 - d2 >= 0). {
+        lra.}
+     apply helper1 in h1.
+      have helper2 : 0 <= (b1 + b2)%E - d1 - d2 ->
+        a1 + a2 + b1 + b2 - d1 - d2 <= c1 + c2 ->
+        a1 + a2  <= c1 + c2. {
+        intros. lra.} 
+      have hh := helper2 h1 IH.
+      exists (A1 `+` A2 |- C1 `+` C2). split. 
+      - by rewrite msetDAC in_msetD//= mset11 orbT. 
+(* if I do in_msetD//= mset11. without changing order
+ this times out? I didn't think it'd be complex enough*)
+      - rewrite /sumR //= !sum_in_msetD_expr.
+        rewrite /a1/a2/c1/c2 in hh.
+        by apply hh. 
+  + exists q1. 
+    rewrite !in_msetD h2 IH12. 
+    split; rewrite//=. 
+  + exists q2. 
+    rewrite !in_msetD h1 IH22. 
+    split; rewrite//=. 
+  + exists q1. 
+    rewrite !in_msetD h2 IH12. 
+    split; rewrite//=. 
+- 
 Admitted.
 
 
