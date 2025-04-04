@@ -965,15 +965,15 @@ Inductive seq_calc_luka' :  seq ( seq (@expr R Bool_T_def) * seq (@expr R Bool_T
 | id_l' : forall (Q :  seq ( seq (@expr R Bool_T_def) * seq (@expr R Bool_T_def)))
                 (A : seq (@expr R Bool_T_def)),
     seq_calc_luka' ( (A |- A) :: Q)
-(*| empty : forall (Q :  {mset ( {mset (@expr R Bool_T_def)} * {mset (@expr R Bool_T_def)})}),
-    seq_calc_luka ((mset0 |- mset0) +` Q)*)
+| empty' : forall (Q :  seq ( seq (@expr R Bool_T_def) * seq (@expr R Bool_T_def))),
+    seq_calc_luka' (([::] |- [::]) :: Q)
 (*structural*)
 | ew_l' : forall (Q P : seq ( seq (@expr R Bool_T_def) * seq (@expr R Bool_T_def))),
     seq_calc_luka' Q ->
-    seq_calc_luka' (Q ++ P) (*correct order*)
-(*| ec_l : forall (Q P : {mset ( {mset (@expr R Bool_T_def)} * {mset (@expr R Bool_T_def)})}),
-    seq_calc_luka (Q `+` P `+` P) ->
-    seq_calc_luka (Q `+` P)*)
+    seq_calc_luka' (Q ++ P) 
+| ec_l' : forall (Q P : seq ( seq (@expr R Bool_T_def) * seq (@expr R Bool_T_def))),
+    seq_calc_luka' (Q ++ P ++ P) ->
+    seq_calc_luka' (Q ++ P)
 (*add split and mix rules*)
 | split_l' : forall (Q : seq ( seq (@expr R Bool_T_def) * seq (@expr R Bool_T_def)))
                   (A B C D: seq (@expr R Bool_T_def)),
@@ -1000,11 +1000,11 @@ Inductive seq_calc_luka' :  seq ( seq (@expr R Bool_T_def) * seq (@expr R Bool_T
     seq_calc_luka' (((a ::  b :: B) |- A) :: Q ) ->
     seq_calc_luka' (((ldl_bool def false :: B) |- A) :: Q ) ->
     seq_calc_luka' ((((a `/\ b) :: B) |- A) :: Q)
-(*| andR_l : forall Q 
-                 (A B : {mset (@expr R Bool_T_def)})
+| andR_l' : forall (Q : seq ( seq (@expr R Bool_T_def) * seq (@expr R Bool_T_def)))
+                 (A B : seq (@expr R Bool_T_def))
                  (a b : @expr R Bool_T_def),
-    seq_calc_luka ( (A |- (a +` [mset b] `+` B)) +` [mset (A |- (ldl_bool def false +` B))] `+` Q )  ->
-    seq_calc_luka ((A |- (a `/\ b) +` B) +` Q )*)
+    seq_calc_luka'  ((A |- (a ::  b :: B)) :: (A |- (ldl_bool def false :: B)) :: Q)  ->
+    seq_calc_luka' ((A |- (a `/\ b) :: B) :: Q )
 .
 
 Lemma big_sum_cat [T : Type] (X Y : seq (@expr R Bool_T_def) ):
@@ -1042,17 +1042,18 @@ Proof.
 intros; rewrite//=. dependent induction H.
 - exists (A |- A). rewrite //= mem_head. split. by [].  
   simpl. by lra.
-(*- exists (mset0 |- mset0). 
-  rewrite in_mset1D eq_refl orTb. split. by []. 
-  rewrite /eval_luka//=.*)
+- exists ([::] |- [::]). 
+  rewrite mem_head.  split. by []. 
+  rewrite /eval_luka'//=.
 - destruct IHseq_calc_luka' as [q [IH1 IH2]].
   exists q. rewrite mem_cat IH1 orTb.
   split. by []. 
   by apply IH2.
-(*- destruct IHseq_calc_luka as [M [IH1 IH2]].   
-  exists M. rewrite !in_msetD in IH1. 
-  rewrite in_msetD. move/orP : IH1. 
-  by move => [h | h]; rewrite h ?orbT; split; rewrite//=. *)
+- destruct IHseq_calc_luka' as [M [IH1 IH2]].   
+  exists M. rewrite !mem_cat in IH1. 
+  rewrite mem_cat. move/orP : IH1. 
+  move => [h |/orP h].  rewrite h ?orbT; split; rewrite//=. 
+  move: h. move => [h | h]; rewrite h ?orbT; split; rewrite//=.
 - destruct IHseq_calc_luka' as [q1 [IH1 IH2]]. 
   rewrite in_cons in IH1. move/orP : IH1.
   move => [h1 | h2]; first last.
@@ -1106,7 +1107,7 @@ intros; rewrite//=. dependent induction H.
   have le_double : forall (a b c : R), a <= b <= c -> a <= b /\ b <= c. { intros. lra.}
   apply le_double in hb. destruct hb as [b0 b1].
   have helper : 0 <= (eval_luka' [::] + [[b]]_Lukasiewicz)%E - 1 ->
-                eval_luka' A - 1 <= (eval_luka' [::] + [[b]]_Lukasiewicz)%E - 1.{
+                eval_luka' A - 1 <= (eval_luka' [::] + [[b]]_Lukasiewicz)%E - 1. {
     intros. lra. }
   apply helper. rewrite /eval_luka'//= big_nil addr0.
   lra.
@@ -1153,17 +1154,17 @@ admit.*)
     by rewrite in_cons h2 IH12 orbT//=. 
   + exists q1. 
     by rewrite in_cons h2 IH12 orbT//=. 
-- destruct IHseq_calc_luka as [q [IH1 IH2]].
-  rewrite in_msetD in_mset2 in IH1. move/orP: IH1.
-  move => [/orP h | h].
-  + move: h. move => [/eqP h | /eqP h]; exists (A |- a `/\ b +` B);
-                     rewrite in_mset1D eq_refl orTb; split; rewrite//=.
+- destruct IHseq_calc_luka' as [q [IH1 IH2]].
+  rewrite in_cons in_cons in IH1. move/orP: IH1.
+  move => [/eqP h |/orP [/eqP h | h]].
+  +  exists (A |- a `/\ b :: B);
+                     rewrite mem_head; split; rewrite//=.
     * subst. rewrite //= in IH2.
 (*same helper as previous case, consider moving outside*)
-      have eval_1 : eval_luka ([mset a; b] `+` B) 
-                  = eval_luka B + [[a]]_Lukasiewicz + [[b]]_Lukasiewicz - 2. { admit.}
+      have eval_1 : eval_luka' [:: a, b & B] 
+                  = eval_luka' B + [[a]]_Lukasiewicz + [[b]]_Lukasiewicz - 2. { admit.}
       rewrite eval_1 in IH2.
-      rewrite eval_luka_add_el.
+      rewrite eval_luka_add_el'.
       have h := translate_Bool_T_01 Lukasiewicz (a `/\ b).
       have le_double : forall (a b c : R), a <= b <= c -> a <= b /\ b <= c. { intros. lra.}
       apply le_double in h. destruct h as [ab0 ab1].
@@ -1176,25 +1177,27 @@ admit.*)
         lra.
         }
         rewrite hh in h_max. move: hh. move => _.
-        have hh : eval_luka A <= (eval_luka B + [[a]]_Lukasiewicz + [[b]]_Lukasiewicz)%E - 2 ->
+        have hh : eval_luka' A <= (eval_luka' B + [[a]]_Lukasiewicz + [[b]]_Lukasiewicz)%E - 2 ->
                   ([[a]]_Lukasiewicz + [[b]]_Lukasiewicz)%E - 1 < 0 ->
-                  eval_luka A <= eval_luka B -1. {lra.}
+                  eval_luka' A <= eval_luka' B -1. {lra.}
         by  rewrite (hh IH2 h_max).
       + rewrite //= in h_max.
         * have hh : 
-             (eval_luka B + ((([[a]]_Lukasiewicz + [[b]]_Lukasiewicz)%E - 2)%R + 1%R))%E - 1 = 
-              eval_luka B + (([[a]]_Lukasiewicz + [[b]]_Lukasiewicz)%E - 2)%R. {lra.}
+             (eval_luka' B + ((([[a]]_Lukasiewicz + [[b]]_Lukasiewicz)%E - 2)%R + 1%R))%E - 1 = 
+              eval_luka' B + (([[a]]_Lukasiewicz + [[b]]_Lukasiewicz)%E - 2)%R. {lra.}
           rewrite hh.
           by rewrite !addrA IH2.
-    * subst. rewrite //= in IH2.
-      rewrite eval_luka_add_el.
-      rewrite eval_luka_add_el//= addr0 in IH2.
+    * exists (A |- a `/\ b :: B);
+                     rewrite mem_head; split; rewrite//=.
+      subst. rewrite //= in IH2.
+      rewrite eval_luka_add_el'.
+      rewrite eval_luka_add_el'//= addr0 in IH2.
       have h := translate_Bool_T_01 Lukasiewicz (a `/\ b).
       have le_double : forall (a b c : R), a <= b <= c -> a <= b /\ b <= c. { intros. lra.}
       apply le_double in h. destruct h as [ab0 ab1].
       lra.      
   + exists q. 
-    by rewrite !in_msetD h IH2 orbT//=. 
+    by rewrite in_cons h orbT IH2.
 
 Admitted.
 
