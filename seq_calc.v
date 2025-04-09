@@ -397,142 +397,30 @@ admit.
 Admitted.
 
 (*generalise later?*)
-Lemma sum_in_msetD_expr (A B : {mset (@expr R Bool_T_def)}):
-    (\sum_(i <- [seq [[i]]_Godel | i <- A `+` B]) i) = 
-      (\sum_(i <- [seq [[i]]_Godel | i <- A]) i) + (\sum_(i <- [seq [[i]]_Godel | i <- B]) i).
+(*Lemma sum_in_msetD_expr (A B : {mset (@expr R Bool_T_def)}):
+    
+(*(\sum_(i <- [seq [[i]]_Godel | i <- A `+` B]) i) = 
+      (\sum_(i <- [seq [[i]]_Godel | i <- A]) i) + (\sum_(i <- [seq [[i]]_Godel | i <- B]) i).*)
 Proof.
-Admitted.
+Admitted.*)
 
 (*proof is in fuzzy.v - either import from there or move proof here?*)
-(*Lemma translate_Bool_T_01 dl (e : expr Bool_T_def) :
+Lemma translate_Bool_T_01 dl (e : expr Bool_T_def) :
   0 <= [[ e ]]_ dl <= 1.
 Proof.
 Admitted.
 
-(*based on Łukasiewicz definition*)
+(*based on Łukasiewicz definition*) 
 Lemma sound_godel_2 (Q : {mset ( {mset (@expr R Bool_T_def)} * {mset (@expr R Bool_T_def)})}):
 seq_calc_godel Q -> 
 exists (q : ( {mset (@expr R Bool_T_def)} * {mset (@expr R Bool_T_def)})), q \in Q 
 /\ 
 (sumR (map (translation Godel p) (fst q)) <= sumR (map (translation Godel p) (snd q))).
 Proof.
-intros; rewrite//=. dependent induction H.
-- exists (A |- A). rewrite in_mset1D eq_refl orTb. split. by [].  
-  simpl. by lra.
-- destruct IHseq_calc_godel as [q [IH1 IH2]].
-  exists q. rewrite in_msetD IH1 orTb. 
-  split. by []. 
-  by apply IH2.
-- destruct IHseq_calc_godel as [M [IH1 IH2]].   
-  exists M. rewrite !in_msetD in IH1. 
-  rewrite in_msetD. move/orP : IH1. 
-  by move => [h | h]; rewrite h ?orbT; split; rewrite//=. 
-- destruct IHseq_calc_godel1 as [q1 [IH11 IH12]]. 
-  destruct IHseq_calc_godel2 as [q2 [IH21 IH22]].
-  rewrite in_mset1D in IH11.
-  rewrite in_mset1D in IH21.
-  move/orP: IH11. move/orP: IH21.
-  move => [h1 | h1] [h2 | h2]; rewrite//=.
-  + move/eqP: h1. move/eqP : h2.  
-    move => h1 h2. 
-    subst. 
-    have IH := lerD IH12 IH22.
-    rewrite /sumR //= in IH. 
-    rewrite !sum_in_msetD_expr in IH.
-    set (a1 := (\sum_(i <- [seq [[i]]_Godel | i <- A1]) i)) in *.
-    set (a2 := (\sum_(i <- [seq [[i]]_Godel | i <- A2]) i)) in *.
-    set (b1 := (\sum_(i <- [seq [[i]]_Godel | i <- B1]) i)) in *.
-    set (b2 := (\sum_(i <- [seq [[i]]_Godel | i <- B2]) i)) in *.
-    set (c1 := (\sum_(i <- [seq [[i]]_Godel | i <- C1]) i)) in *.
-    set (c2 := (\sum_(i <- [seq [[i]]_Godel | i <- C2]) i)) in *.
-    set (d1 := (\sum_(i <- [seq [[i]]_Godel | i <- D1]) i)) in *.
-    set (d2 := (\sum_(i <- [seq [[i]]_Godel | i <- D2]) i)) in *.
-    have helper : 
-    ((a1 + b1 + a2 + b2) <= (c1 + d1 + c2 +d2)) -> 
-    ((a1 + a2 + b1 + b2 - d1 - d2) <= (c1 + c2)).  {
-      lra. }
-    rewrite !addrA in IH.
-    apply helper in IH. move: helper. move => _. 
-    have le_or : forall (a b : R), a <= b \/ a >= b. { intros. lra.} 
-    have h1 := le_or (b1 + b2) (d1 + d2).
-    destruct h1 as [h1 | h1].
-    * exists (B1 `+` B2 |- D1 `+` D2). split. 
-      - by rewrite in_msetD//= mset11 orbT. 
-      - rewrite /sumR //= !sum_in_msetD_expr.
-        rewrite /b1/b2/d1/d2 in h1.
-        by apply h1. 
-    * have helper1 : d1 + d2 <= b1 + b2 -> (b1 + b2 - d1 - d2 >= 0). {
-        lra.}
-     apply helper1 in h1.
-      have helper2 : 0 <= (b1 + b2)%E - d1 - d2 ->
-        a1 + a2 + b1 + b2 - d1 - d2 <= c1 + c2 ->
-        a1 + a2  <= c1 + c2. {
-        intros. lra.} 
-      have hh := helper2 h1 IH.
-      exists (A1 `+` A2 |- C1 `+` C2). split. 
-      - by rewrite msetDAC in_msetD//= mset11 orbT. 
-(* if I do in_msetD//= mset11. without changing order
- this times out? I didn't think it'd be complex enough*)
-      - rewrite /sumR //= !sum_in_msetD_expr.
-        rewrite /a1/a2/c1/c2 in hh.
-        by apply hh. 
-  + exists q1. 
-    rewrite !in_msetD h2 IH12. 
-    split; rewrite//=. 
-  + exists q2. 
-    rewrite !in_msetD h1 IH22. 
-    split; rewrite//=. 
-  + exists q1. 
-    rewrite !in_msetD h2 IH12. 
-    split; rewrite//=. 
-- destruct IHseq_calc_godel as [q [IH1 IH2]].
-  rewrite in_mset1D in IH1. move/orP: IH1.
-  move => [/eqP h | h]. 
-  + subst. rewrite /sumR//= in IH2.
-    rewrite !sum_in_msetD_expr in IH2.
-    set (a := (\sum_(i <- [seq [[i]]_Godel | i <- A]) i)) in *.
-    set (b := (\sum_(i <- [seq [[i]]_Godel | i <- B]) i)) in *.
-    set (c := (\sum_(i <- [seq [[i]]_Godel | i <- C]) i)) in *.
-    have le_add2 : forall (a b c : R), b >= 0 -> a + b + b <= c -> a + b <= c. { intros. lra.} 
-    apply le_add2 in IH2; first last.
-    * rewrite /b//=. rewrite big_map sumr_ge0//=. move => i _.
-      have t01 := translate_Bool_T_01 Godel i.
-      have le_double : forall (a b c : R), a <= b <= c -> a <= b /\ b <= c. { intros. lra.}
-      apply le_double in t01. destruct t01 as [t0 t1].
-      by apply t0.
-    exists (A `+` B |- C). split. 
-    * by rewrite in_mset1D eq_refl orTb.
-    * rewrite /sumR//= sum_in_msetD_expr.
-      rewrite /a/b in IH2.
-      by apply IH2.
-  + exists q. 
-    rewrite !in_msetD h IH2. 
-    split; rewrite ?orbT //=.
-- destruct IHseq_calc_godel as [q [IH1 IH2]].
-  rewrite in_mset1D in IH1. move/orP: IH1.
-  move => [/eqP h | h].
-  + subst. rewrite//= in IH2.
-  admit.
-- exists (ldl_bool def false +` A |- B). 
-  
-admit.
-- admit.
-- admit.
-- admit.
-Admitted.*)
+
+Admitted.
 
 
-(*
-nope, not this one, left as reminder, delete later
-Lemma sound_hypersec_godel (Q P : {mset ( {mset (@expr R Bool_T_def)} * {mset (@expr R Bool_T_def)})})
-                           (s : ({mset (@expr R Bool_T_def)} * {mset (@expr R Bool_T_def)}) ) :
-(forall (q : expr (Bool_T def)), q \in (snd s) ->
-                                      [[q]]_Godel = [[ldl_bool def true]]_Godel) ->
-                seq_calc_godel (Q `+` [mset s] `+` P) -> (*does not work without P - but P not sufficient*)
-                forall (x : expr (Bool_T def)), x \in (fst s) ->
-                [[x ]]_Godel = [[ldl_bool def true]]_Godel.
-Proof.
-Admitted.*)
 End hypersequent_godel.
 
 Section hypersequent_lukasiewicz.
@@ -702,10 +590,10 @@ Admitted.
 
 
 (*proof is in fuzzy.v - either import from there or move proof here?*)
-Lemma translate_Bool_T_01 dl (e : expr Bool_T_def) :
+(*Lemma translate_Bool_T_01 dl (e : expr Bool_T_def) :
   0 <= [[ e ]]_ dl <= 1.
 Proof.
-Admitted.
+Admitted.*)
 
 
 Lemma sound_luka_1 (Q : {mset ( {mset (@expr R Bool_T_def)} * {mset (@expr R Bool_T_def)})}):
@@ -803,7 +691,7 @@ admit.
                   = eval_luka B + [[a]]_Lukasiewicz + [[b]]_Lukasiewicz - 2. { admit.}
     rewrite eval_1 in IH12.
     rewrite eval_luka_add_el.
-    have h := translate_Bool_T_01 Lukasiewicz (a `/\ b).
+    have h := @translate_Bool_T_01 R K p  Lukasiewicz (a `/\ b) .
     have le_double : forall (a b c : R), a <= b <= c -> a <= b /\ b <= c. { intros. lra.}
     apply le_double in h. destruct h as [ab0 ab1].
     rewrite//=/sumR big_cons big_seq1 /maxr.
@@ -833,7 +721,7 @@ admit.
                   = eval_luka B + [[a]]_Lukasiewicz + [[b]]_Lukasiewicz - 2. { admit.}
       rewrite eval_1 in IH2.
       rewrite eval_luka_add_el.
-      have h := translate_Bool_T_01 Lukasiewicz (a `/\ b).
+      have h := @translate_Bool_T_01 R K p Lukasiewicz (a `/\ b).
       have le_double : forall (a b c : R), a <= b <= c -> a <= b /\ b <= c. { intros. lra.}
       apply le_double in h. destruct h as [ab0 ab1].
       rewrite//=/sumR big_cons big_seq1 /maxr.
@@ -858,7 +746,7 @@ admit.
     * subst. rewrite //= in IH2.
       rewrite eval_luka_add_el.
       rewrite eval_luka_add_el//= addr0 in IH2.
-      have h := translate_Bool_T_01 Lukasiewicz (a `/\ b).
+      have h := @translate_Bool_T_01 R K p Lukasiewicz (a `/\ b).
       have le_double : forall (a b c : R), a <= b <= c -> a <= b /\ b <= c. { intros. lra.}
       apply le_double in h. destruct h as [ab0 ab1].
       lra.      
@@ -1022,12 +910,6 @@ typing it up*)
     seq_calc_luka' ((( A) |- (a `\/ b) :: B) :: Q)
 .
 
-Lemma big_sum_cat [T : Type] (X Y : seq (@expr R Bool_T_def) ):
- (\sum_(i <- (X ++ Y)) ([[i]]_Lukasiewicz -1 )) = 
-    (\sum_(i <- X) ([[i]]_Lukasiewicz -1)) + (\sum_(i <- Y) ([[i]]_Lukasiewicz -1)).
-Proof.
-
-Admitted.
 
 Definition eval_luka'  (Q : seq (@expr R Bool_T_def))
   := 1%R (*- (size  Q)%:R*) + (\sum_(i <- Q) ([[i]]_Lukasiewicz - 1%R)).
@@ -1069,7 +951,7 @@ rewrite /eval_luka'.
 have helper : forall (a : R), a<= 0 -> 1 + a <= 1. {intros. lra.}.
 rewrite helper//=. 
 rewrite sumr_le0//=. move => i _.
-have h := translate_Bool_T_01 Lukasiewicz (i).
+have h := @translate_Bool_T_01 R K p Lukasiewicz (i).
 have le_double : forall (a b c : R), a <= b <= c -> a <= b /\ b <= c. { intros. lra.}
 apply le_double in h. destruct h as [_ i1].
 lra.
@@ -1109,45 +991,31 @@ intros; rewrite//=. dependent induction H.
     split; rewrite//=. 
   + move/eqP : h1.
     move => h1. 
-    subst.
-    rewrite /eval_luka'//= in IH2.
-(*maybe fix here to use eval_luka_add as in other case, will be much neater, but same 
-proof structure*)
-    rewrite !big_sum_cat//= in IH2.
+    subst. rewrite !eval_luka_add' in IH2.
     have helper : 
-      (1%R + ((\sum_(i <- A) ([[i]]_Lukasiewicz - 1))%R + (\sum_(i <- B) ([[i]]_Lukasiewicz - 1))%R))%E <=
-    (1%R + ((\sum_(i <- C) ([[i]]_Lukasiewicz - 1))%R + (\sum_(i <- D) ([[i]]_Lukasiewicz - 1))%R))%E ->
-      (1%R + ((\sum_(i <- A) ([[i]]_Lukasiewicz - 1))%R + (\sum_(i <- B) ([[i]]_Lukasiewicz - 1))%R))%E 
-       - (\sum_(i <- D) ([[i]]_Lukasiewicz - 1))%R<=
-    (1%R + ((\sum_(i <- C) ([[i]]_Lukasiewicz - 1))%R))%E. {
-      set (A' := (\sum_(i <- A) ([[i]]_Lukasiewicz - 1))) in *.
-    set (B' := (\sum_(i <- B) ([[i]]_Lukasiewicz - 1))) in *.
-    set (C' := (\sum_(i <- C) ([[i]]_Lukasiewicz - 1))) in *.
-    set (D' := (\sum_(i <- D) ([[i]]_Lukasiewicz - 1))) in *.
+      (eval_luka' A + eval_luka' B)%E - 1 <= (eval_luka' C + eval_luka' D)%E - 1 ->
+      (eval_luka' A + eval_luka' B)%E - eval_luka' D - 1 <= ( eval_luka' C)%E  - 1 . {
     intros. 
     lra. }
-    apply helper in IH2. move: helper. move =>_.
-    rewrite !addrA in IH2. 
-    set (A' := (\sum_(i <- A) ([[i]]_Lukasiewicz - 1))) in *.
-    set (B' := (\sum_(i <- B) ([[i]]_Lukasiewicz - 1))) in *.
-    set (C' := (\sum_(i <- C) ([[i]]_Lukasiewicz - 1))) in *.
-    set (D' := (\sum_(i <- D) ([[i]]_Lukasiewicz - 1))) in *.
-    have h1 := le_or (1 + B') (1 + D').
+    apply helper in IH2.
+    move: helper. move =>_.
+    have h1 := le_or (1 + eval_luka' B) (1 + eval_luka' D).
     destruct h1 as [h1 | h1].
     * exists (B |- D). split. 
       - by rewrite !in_cons eq_refl !orbT. 
-      - by rewrite  //=/eval_luka'.
+      - by rewrite  //=; lra.
     * exists (A |- C). split. 
       - by rewrite !in_cons eq_refl !orTb. 
-      - rewrite  //=/eval_luka'.
-        have helper : 1 + D' <= 1 + B' -> (B' - D' >= 0). {
-        lra.}
+      - rewrite  //=.
+        have helper : forall (D' B' : R), 1 + D' <= 1 + B' -> (B' - D' >= 0). {
+        intros. lra.}
       apply helper in h1.
-      have helper2 : 0 <= B' - D' ->
-        1 + A' + B' - D' <= 1+ C' ->
-        1 + A'  <= 1 + C'. {
+      have helper2 : forall (A' B' C' D' : R), 0 <= B' - D' ->
+        A' + B' - D' - 1 <= C'-1 ->
+        A'  <=  C' . {
         intros. lra.} 
-      by rewrite (helper2 h1 IH2).
+      have hh := helper2 (eval_luka' A) (eval_luka' B) (eval_luka' C) (eval_luka' D).
+      by rewrite (hh h1 IH2).
 - destruct IHseq_calc_luka'1 as [q1 [IH11 IH12]].
   destruct IHseq_calc_luka'2 as [q2 [IH21 IH22]].
   rewrite in_cons in IH11. rewrite in_cons in IH21. 
@@ -1172,7 +1040,7 @@ proof structure*)
   rewrite mem_head. split. by [].
   rewrite //= !eval_luka_add_el' addr0.
   have h := eval_luka1' A.
-  have hb := translate_Bool_T_01 Lukasiewicz (b).
+  have hb := @translate_Bool_T_01 R K p Lukasiewicz (b).
   have le_double : forall (a b c : R), a <= b <= c -> a <= b /\ b <= c. { intros. lra.}
   apply le_double in hb. destruct hb as [b0 b1].
   have helper : 0 <= (eval_luka' [::] + [[b]]_Lukasiewicz)%E - 1 ->
@@ -1203,7 +1071,7 @@ proof structure*)
     rewrite //= in IH12.
     rewrite !eval_luka_add_el' in IH12.
     rewrite eval_luka_add_el'.
-    have h := translate_Bool_T_01 Lukasiewicz (a `/\ b).
+    have h := @translate_Bool_T_01 R K p Lukasiewicz (a `/\ b).
     have le_double : forall (a b c : R), a <= b <= c -> a <= b /\ b <= c. { intros. lra.}
     apply le_double in h. destruct h as [ab0 ab1].
     rewrite//=/sumR big_cons big_seq1 /maxr.
@@ -1227,7 +1095,7 @@ proof structure*)
     * subst. rewrite //= in IH2.
       rewrite !eval_luka_add_el' in IH2.
       rewrite eval_luka_add_el'.
-      have h := translate_Bool_T_01 Lukasiewicz (a `/\ b).
+      have h := @translate_Bool_T_01 R K p Lukasiewicz (a `/\ b).
       have le_double : forall (a b c : R), a <= b <= c -> a <= b /\ b <= c. { intros. lra.}
       apply le_double in h. destruct h as [ab0 ab1].
       rewrite//=/sumR big_cons big_seq1 /maxr.
@@ -1254,7 +1122,7 @@ proof structure*)
       subst. rewrite //= in IH2.
       rewrite eval_luka_add_el'.
       rewrite eval_luka_add_el'//= addr0 in IH2.
-      have h := translate_Bool_T_01 Lukasiewicz (a `/\ b).
+      have h := @translate_Bool_T_01 R K p Lukasiewicz (a `/\ b).
       have le_double : forall (a b c : R), a <= b <= c -> a <= b /\ b <= c. { intros. lra.}
       apply le_double in h. destruct h as [ab0 ab1].
       lra.      
@@ -1470,15 +1338,7 @@ intros; rewrite//=. dependent induction H.
   + rewrite in_mset1 in h1. move/eqP : h1.
     move => h1. 
     subst.
-    rewrite /eval_product//= in IH2.
-    exists (A |- C).
-    rewrite in_msetD in_mset2 eq_refl !orTb. split. by [].
-    rewrite /eval_luka//=/sumR.
-    rewrite /sumR !sum_in_msetD_expr_Luka in IH2.
-    set (A' := \sum_(i <- [seq [[i]]_Lukasiewicz | i <- A]) i) in *.
-    set (B' := \sum_(i <- [seq [[i]]_Lukasiewicz | i <- B]) i) in *.
-    set (C' := \sum_(i <- [seq [[i]]_Lukasiewicz | i <- C]) i) in *.
-    set (D' := \sum_(i <- [seq [[i]]_Lukasiewicz | i <- D]) i) in *.
+ 
 
 Admitted.
 
