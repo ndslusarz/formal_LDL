@@ -404,21 +404,207 @@ Admitted.
 Proof.
 Admitted.*)
 
-(*proof is in fuzzy.v - either import from there or move proof here?*)
+(*(*proof is in fuzzy.v - either import from there or move proof here?*)
 Lemma translate_Bool_T_01 dl (e : expr Bool_T_def) :
   0 <= [[ e ]]_ dl <= 1.
 Proof.
+Admitted.*)
+
+Inductive seq_calc_godel' :  seq ( seq (@expr R Bool_T_def) * seq (@expr R Bool_T_def))
+      -> Prop :=
+| id_g' : forall (Q :  seq ( seq (@expr R Bool_T_def) * seq (@expr R Bool_T_def)))
+                (A : seq (@expr R Bool_T_def)),
+    seq_calc_godel' ( (A |- A) :: Q)
+(*structural*)
+(*| ew_g : forall (Q P : {mset ( {mset (@expr R Bool_T_def)} * {mset (@expr R Bool_T_def)})}),
+    seq_calc_godel Q ->
+    seq_calc_godel (Q `+` P) (*correct order*)
+| ec_g : forall (Q P : {mset ( {mset (@expr R Bool_T_def)} * {mset (@expr R Bool_T_def)})}),
+    seq_calc_godel (Q `+` P `+` P) ->
+    seq_calc_godel (Q `+` P)*)
+(*this was a single conclusion version*)
+(*| comm_hyper_g : forall  Q 
+                  (A1 A2 B1 B2 C D: {mset (@expr R Bool_T_def)}),
+    seq_calc_godel (((A1 `+` B1) |- C) +` Q) ->
+    seq_calc_godel (((A2 `+` B2) |- D) +` Q) ->               
+    seq_calc_godel (Q `+` [mset ((A1 `+` A2) |- C)] `+` [mset ((B1 `+` B2) |- D)])*)
+| comm_hyper_g' : forall (Q :  seq ( seq (@expr R Bool_T_def) * seq (@expr R Bool_T_def)))
+                  (A1 A2 B1 B2 C1 C2 D1 D2: seq (@expr R Bool_T_def)),
+    seq_calc_godel' (((A1 ++ B1) |- C1 ++ D1) :: Q) ->
+    seq_calc_godel' (((A2 ++ B2) |- C2 ++ D2) :: Q) ->               
+    seq_calc_godel' ( ((A1 ++ A2) |- C1 ++ C2) :: ((B1 ++ B2) |- D1 ++ D2) :: Q)
+(*| comm_g : forall Q 
+                  (A B C : {mset (@expr R Bool_T_def)}),
+    seq_calc_godel (((A `+` B `+` B) |- C) +` Q) ->
+    seq_calc_godel (((A `+` B) |- C) +` Q)
+| weak_g : forall Q 
+                  (A B C : {mset (@expr R Bool_T_def)}),
+    seq_calc_godel ((A |- C) +` Q ) ->
+    seq_calc_godel (((A `+` B) |- C) +` Q )*)
+(*logical*)
+(*| bot_g : forall Q 
+                 (A B : {mset (@expr R Bool_T_def)}),
+    seq_calc_godel (((ldl_bool def false +` A) |- B) +` Q)*)
+| bot_g' : forall (Q :  seq ( seq (@expr R Bool_T_def) * seq (@expr R Bool_T_def)))
+                 (B : seq (@expr R Bool_T_def)),
+    seq_calc_godel' ((([::ldl_bool def false] ) |- B) :: Q)
+(*| top_g : forall Q 
+                 (A : {mset (@expr R Bool_T_def)}),
+    seq_calc_godel ((A |- [mset (ldl_bool def true)]) +` Q )
+| andL_g1 : forall Q 
+                   (A B : {mset (@expr R Bool_T_def)})
+                   (a b : @expr R Bool_T_def),
+    seq_calc_godel (((a +` B) |- A) +` Q ) ->
+    seq_calc_godel ((((a `/\ b) +` B) |- A) +` Q) 
+| andL_g2 : forall Q
+                   (A B : {mset (@expr R Bool_T_def)})
+                   (a b : @expr R Bool_T_def),
+    seq_calc_godel (((b +` B) |- A) +` Q ) ->
+    seq_calc_godel ((((a `/\ b) +` B) |- A) +` Q )*)
+| andR_g' : forall (Q :  seq ( seq (@expr R Bool_T_def) * seq (@expr R Bool_T_def)))
+                  (A B : seq (@expr R Bool_T_def))
+                  (a b : @expr R Bool_T_def),
+    seq_calc_godel' ( (A |- [:: a]) :: Q ) ->
+    seq_calc_godel' ( (B |- [:: b]) :: Q) ->
+    seq_calc_godel' ((A |- [:: (a `/\ b)]) :: Q )
+(*| orL_g : forall  Q
+                  (A B : {mset (@expr R Bool_T_def)})
+                  (a b : @expr R Bool_T_def),
+    seq_calc_godel (Q `+` [mset ((b +` B) |- A)]) ->
+    seq_calc_godel (Q `+` [mset ((a +` B) |- A)]) ->
+    seq_calc_godel (Q `+` [mset (((a `\/ b) +` B) |- A)])
+| orR_g1 : forall Q
+                  (A B : {mset (@expr R Bool_T_def)})
+                  (a b : @expr R Bool_T_def),
+    seq_calc_godel (Q `+` [mset (A |- [mset a])]) ->
+    seq_calc_godel (Q `+` [mset (A |- [mset (a `\/ b)])])
+| orR_g2 : forall Q
+                  (A B : {mset (@expr R Bool_T_def)})
+                  (a b : @expr R Bool_T_def),
+    seq_calc_godel (Q `+` [mset (A |- [mset b])]) ->
+    seq_calc_godel (Q `+` [mset (A |- [mset (a `\/ b)])])
+| negR_g : forall Q
+                  (A : {mset (@expr R Bool_T_def)})
+                  (a : @expr R Bool_T_def),
+    seq_calc_godel (Q `+` [mset (A |- [mset a])]) ->
+    seq_calc_godel (Q `+` [mset (A |- [mset (`~ a)])])
+| negL_g : forall Q
+                  (A B: {mset (@expr R Bool_T_def)})
+                  (a : @expr R Bool_T_def),
+    seq_calc_godel (Q `+` [mset ((a +` B) |- A)]) ->
+    seq_calc_godel (Q `+` [mset (((`~a) +` B) |- A)])*)
+.
+
+(*mma maxr_add_l' (Q : seq (@expr R Bool_T_def)) (q : (@expr R Bool_T_def)) :
+  eval_luka' (q :: Q) = eval_luka' Q + [[q]]_Lukasiewicz  - 1.
+Proof.
+rewrite /eval_luka'//=. rewrite big_cons//=. 
+lra.
+Qed.*)
+
+
+Lemma big_minr_if (A B : seq (@expr R Bool_T_def)) : 
+  if \big[minr/1]_(j <- (A)) [[j]]_Godel <= \big[minr/1]_(j <- (B)) [[j]]_Godel then
+                \big[minr/1]_(j <- (A ++ B)) [[j]]_Godel = \big[minr/1]_(j <- (A)) [[j]]_Godel else
+                \big[minr/1]_(j <- (A ++ B)) [[j]]_Godel = \big[minr/1]_(j <- (B)) [[j]]_Godel.
+Proof.
 Admitted.
+
+Lemma big_maxr_if (A B : seq (@expr R Bool_T_def)) : 
+  if \big[maxr/0]_(j <- (A)) [[j]]_Godel >=  \big[maxr/0]_(j <- (B)) [[j]]_Godel then
+                \big[maxr/0]_(j <- (A ++ B)) [[j]]_Godel = \big[maxr/0]_(j <- (A)) [[j]]_Godel else
+                \big[maxr/0]_(j <- (A ++ B)) [[j]]_Godel = \big[maxr/0]_(j <- (B)) [[j]]_Godel.
+Proof.
+Admitted. 
+
+(*Lemma big_minr_maxr_le1 (A B C D : seq (@expr R Bool_T_def)) : 
+  \big[minr/1]_(j <- (A)) [[j]]_Godel <=  \big[maxr/0]_(j <- (B)) [[j]]_Godel ->
+  \big[minr/1]_(j <- (A ++ C)) [[j]]_Godel <=  \big[maxr/0]_(j <- (B ++ D)) [[j]]_Godel.
+Proof.
+Admitted.
+
+Lemma big_minr_maxr_le2 (A B C D : seq (@expr R Bool_T_def)) : 
+  \big[minr/1]_(j <- (C)) [[j]]_Godel <=  \big[maxr/0]_(j <- (D)) [[j]]_Godel ->
+  \big[minr/1]_(j <- (A ++ C)) [[j]]_Godel <=  \big[maxr/0]_(j <- (B ++ D)) [[j]]_Godel.
+Proof.
+Admitted.
+
+Lemma big_minr_maxr_le3 (A B C D : seq (@expr R Bool_T_def)) : 
+  \big[minr/1]_(j <- (C)) [[j]]_Godel <=  \big[maxr/0]_(j <- (B)) [[j]]_Godel ->
+  \big[minr/1]_(j <- (A ++ C)) [[j]]_Godel <=  \big[maxr/0]_(j <- (B ++ D)) [[j]]_Godel.
+Proof.
+Admitted.
+
+Lemma big_minr_maxr_le4 (A B C D : seq (@expr R Bool_T_def)) : 
+  \big[minr/1]_(j <- (A)) [[j]]_Godel <=  \big[maxr/0]_(j <- (D)) [[j]]_Godel ->
+  \big[minr/1]_(j <- (A ++ C)) [[j]]_Godel <=  \big[maxr/0]_(j <- (B ++ D)) [[j]]_Godel.
+Proof.
+Admitted.*)
+
+Lemma big_minr_godel1 (A B: seq (@expr R Bool_T_def)) : 
+   \big[minr/1]_(j <- (A ++ B)) [[j]]_Godel = 1 <->
+  \big[minr/1]_(j <- (A )) [[j]]_Godel = 1 /\ \big[minr/1]_(j <- (B )) [[j]]_Godel = 1.
+Proof.
+Admitted.
+
+Lemma big_maxr_godel1 (A B: seq (@expr R Bool_T_def)) : 
+   \big[maxr/0]_(j <- (A ++ B)) [[j]]_Godel = 1 <->
+  \big[maxr/0]_(j <- (A )) [[j]]_Godel = 1 \/ \big[maxr/0]_(j <- (B )) [[j]]_Godel = 1.
+Proof.
+Admitted.
+
 
 (*based on Łukasiewicz definition*) 
-Lemma sound_godel_2 (Q : {mset ( {mset (@expr R Bool_T_def)} * {mset (@expr R Bool_T_def)})}):
-seq_calc_godel Q -> 
-exists (q : ( {mset (@expr R Bool_T_def)} * {mset (@expr R Bool_T_def)})), q \in Q 
+Lemma sound_godel_2 (Q : seq ( seq (@expr R Bool_T_def) * seq (@expr R Bool_T_def))):
+seq_calc_godel' Q -> 
+exists (q : ( seq (@expr R Bool_T_def) * seq (@expr R Bool_T_def))), q \in Q 
 /\ 
-(sumR (map (translation Godel p) (fst q)) <= sumR (map (translation Godel p) (snd q))).
+minR (map (translation Godel p) (fst q))  = 1 /\ maxR (map (translation Godel p) (snd q)) = 1.
 Proof.
-
+intros; rewrite//=. dependent induction H.
+- exists (A |- A). rewrite //= mem_head. split. by []. 
+  rewrite /minR/maxR.
+  simpl. admit. (*simple*)
+- destruct IHseq_calc_godel'1 as [q1 [IH11 IH12]].
+  destruct IHseq_calc_godel'2 as [q2 [IH21 IH22]].
+  rewrite in_cons in IH11. rewrite in_cons in IH21. 
+  move/orP : IH11. move/orP: IH21.
+  move => [/eqP h2 | h2]; move => [/eqP h1 | h1].
+  + subst. 
+    rewrite //=/maxR/minR !big_map in IH12.
+    rewrite //=/maxR/minR !big_map in IH22.
+    destruct IH12 as [ih11 ih12]. 
+    destruct IH22 as [ih21 ih22]. 
+    rewrite //=/maxR/minR.
+    rewrite big_minr_godel1 in ih11.
+    destruct ih11 as [ha1 hb1].
+    rewrite big_minr_godel1 in ih21.
+    destruct ih21 as [ha2 hb2]. 
+    have hcd1 := big_maxr_if C1 D1.
+    have hcd2 := big_maxr_if C2 D2.
+    move: hcd1 hcd2.
+    case: ifP; case: ifP; intros;
+    rewrite hcd1 in ih12; rewrite hcd2 in ih22;
+    (try by (exists (A1 ++ A2 |- C1 ++ C2);  rewrite mem_head//=; split; first by [];
+      rewrite //=!big_map; split;
+    rewrite ?big_minr_godel1 ?ha1 ?ha2//=; rewrite ?big_maxr_godel1;
+    rewrite ?ih12 ?ih22; auto)).
+    exists (B1 ++ B2 |- D1 ++ D2);  rewrite !in_cons//= eq_refl !orTb !orbT; split; first by [];
+      rewrite //=!big_map; split;
+    rewrite ?big_minr_godel1 ?ha1 ?ha2//=; rewrite ?big_maxr_godel1;
+    rewrite ?ih12 ?ih22; auto.
+  + exists q1. 
+     rewrite !in_cons h1 !orbT; split; first by []; apply IH12. 
+  + exists q2. 
+     rewrite !in_cons h2 !orbT; split; first by []; apply IH22. 
+  + exists q1. 
+     rewrite !in_cons h1 !orbT; split; first by []; apply IH12. 
+ 
+      
 Admitted.
+
+
+
 
 
 End hypersequent_godel.
@@ -527,7 +713,10 @@ Inductive seq_calc_luka :  {mset ( {mset (@expr R Bool_T_def)} * {mset (@expr R 
     seq_calc_godel (Q `+` [mset ((a +` B) |- A)]) ->
     seq_calc_godel (Q `+` [mset (((`~a) +` B) |- A)])*).
 
-Lemma sum_in_msetD_expr_Luka (A B : {mset (@expr R Bool_T_def)}):
+(*-------------------------------------------------------------------------------------------------
+commented out mset version
+---------------------------------------------------------------------------------------------------*)
+(*Lemma sum_in_msetD_expr_Luka (A B : {mset (@expr R Bool_T_def)}):
     (\sum_(i <- [seq [[i]]_Lukasiewicz | i <- A `+` B]) i) = 
       (\sum_(i <- [seq [[i]]_Lukasiewicz | i <- A]) i)%R + (\sum_(i <- [seq [[i]]_Lukasiewicz | i <- B]) i)%R.
 Proof.
@@ -586,17 +775,10 @@ Lemma size_msetAdd (A B : {mset K}) : (size (A `+` B))%E = size A + size B.
 Proof.
 
 
-Admitted.
-
-
-(*proof is in fuzzy.v - either import from there or move proof here?*)
-(*Lemma translate_Bool_T_01 dl (e : expr Bool_T_def) :
-  0 <= [[ e ]]_ dl <= 1.
-Proof.
 Admitted.*)
 
-
-Lemma sound_luka_1 (Q : {mset ( {mset (@expr R Bool_T_def)} * {mset (@expr R Bool_T_def)})}):
+(*commented out - this is the mset version*)
+(*Lemma sound_luka_1 (Q : {mset ( {mset (@expr R Bool_T_def)} * {mset (@expr R Bool_T_def)})}):
 seq_calc_luka Q -> 
 exists (q : ( {mset (@expr R Bool_T_def)} * {mset (@expr R Bool_T_def)})), q \in Q 
 /\ 
@@ -832,7 +1014,7 @@ admit.
       set (A' := (1%R + (size A)%:R)%E - \sum_(i <- [seq [[i]]_Lukasiewicz | i <- A]) i) in *.
       set (B' := ((1%R + (size B)%:R)%E - \sum_(i <- [seq [[i]]_Lukasiewicz | i <- B]) i)) in *.
       have h :=*)
-Admitted.
+Admitted.*)
 
 
 (*testing a sequence version because I am loosing my patience rapidly*)
@@ -937,8 +1119,8 @@ have helper1:
 =  (1%R + (\sum_(i <- P) ([[i]]_Lukasiewicz - 1))%R + ((\sum_(i <- Q) ([[i]]_Lukasiewicz - 1))%R))%E. {
 lra. }
 rewrite helper1.
-(*have sumr : GRing.GRing_add__canonical__Monoid_Law R = +%R. { auto.}*)
-have big_sum' : forall (P : seq (expr Bool_T_def)), \big[GRing.GRing_add__canonical__Monoid_Law R/0%R]_(i <- P) ([[i]]_Lukasiewicz - 1)%R  = 
+have big_sum' : forall (P : seq (expr Bool_T_def)),
+ \big[GRing.GRing_add__canonical__Monoid_Law R/0%R]_(i <- P) ([[i]]_Lukasiewicz - 1)%R  = 
                   (\sum_(i <- P) ([[i]]_Lukasiewicz - 1))%R . {
 by rewrite unlock//=.}
 rewrite !big_sum'. lra.
@@ -960,14 +1142,8 @@ Qed.
 
 Lemma sound_luka_' (Q : seq ( seq (@expr R Bool_T_def) * seq (@expr R Bool_T_def))):
 seq_calc_luka' Q -> 
-exists (q : ( seq (@expr R Bool_T_def) * seq (@expr R
- Bool_T_def))), q \in Q 
-/\ 
-       (
-
-         eval_luka' (fst q) <= eval_luka' (snd q)
-
-       ).
+exists (q : ( seq (@expr R Bool_T_def) * seq (@expr RBool_T_def))),
+  q \in Q /\ (eval_luka' (fst q) <= eval_luka' (snd q)).
 Proof.
 intros; rewrite//=. dependent induction H.
 - exists (A |- A). rewrite //= mem_head. split. by [].  
@@ -1035,7 +1211,6 @@ intros; rewrite//=. dependent induction H.
     by rewrite in_cons h2 IH22 orbT//=. 
   + exists q1. 
     by rewrite in_cons h1 IH12 orbT//=. 
-(*- admit. commented out for now*)
 - exists (ldl_bool def false :: A |- [:: b]).
   rewrite mem_head. split. by [].
   rewrite //= !eval_luka_add_el' addr0.
@@ -1302,11 +1477,6 @@ Inductive seq_calc_product :  {mset ( {mset (@expr R Bool_T_def)} * {mset (@expr
     seq_calc_godel (Q `+` [mset ((a +` B) |- A)]) ->
     seq_calc_godel (Q `+` [mset (((`~a) +` B) |- A)])*).
 
-Lemma sum_in_msetD_expr_product (A B : {mset (@expr R Bool_T_def)}):
-    (\sum_(i <- [seq [[i]]_product | i <- A `+` B]) i) = 
-      (\sum_(i <- [seq [[i]]_product | i <- A]) i)%R + (\sum_(i <- [seq [[i]]_product | i <- B]) i)%R.
-Proof.
-Admitted.
 
 Definition eval_product  (Q : {mset (@expr R Bool_T_def)})
   := (\prod_(i <- [seq [[i]]_product | i <- Q]) i).
