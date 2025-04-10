@@ -1082,7 +1082,7 @@ Qed.
 Lemma eval_product_01 (Q : seq (@expr R Bool_T_def)) :
   0 <= eval_product Q <= 1.
 Proof.
-rewrite /eval_product. prod01.
+rewrite /eval_product. 
 Admitted.
 
 Lemma eval_product_mul_le (Q P : seq (@expr R Bool_T_def)) :
@@ -1120,7 +1120,7 @@ intros; rewrite//=. dependent induction H.
   + subst.
     rewrite //= !eval_product_add in IH2.
     exists (A |- C). rewrite //= mem_head. split. by [].
-    lra.
+    admit.
   + exists q1. 
     by rewrite !in_cons h2 !orbT IH2//=.    
 

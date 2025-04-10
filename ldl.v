@@ -110,7 +110,7 @@ Notation "a `/\ b" := (ldl_and [:: a; b]) (at level 45).
 Notation "a `\/ b" := (ldl_or [:: a; b]) (at level 45).
 Notation "a `=> b" := (ldl_or [:: (ldl_not a); b]) (at level 55).
 Notation "`~ a"    := (ldl_not a) (at level 75).
-Definition ldl_add {R : realType} := ldl_fun (fun (t : 2.-tuple R) => [tuple [tnth t 0] + [tnth t 1] ])%R.
+Definition ldl_add (R : realType) := ldl_fun (fun (t : 2.-tuple R) => [tuple [tnth t 0] + [tnth t 1] ])%R.
 Definition ldl_mul {R : realType} := ldl_fun (fun (t : 2.-tuple R) => [tuple [tnth t 0] * [tnth t 1] ])%R.
 Definition ldl_sub {R : realType} := ldl_fun (fun (t : 2.-tuple R) => [tuple [tnth t 0] - [tnth t 1] ])%R.
 Definition ldl_opp {R : realType}  := ldl_fun (fun (t : 1.-tuple R) => [tuple -[tnth t 0] ])%R.
