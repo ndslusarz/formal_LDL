@@ -391,31 +391,25 @@ Inductive seq_calc_godel' :  seq ( seq (@expr R Bool_T_def) * seq (@expr R Bool_
                 (A : seq (@expr R Bool_T_def)),
     seq_calc_godel' ( (A |- A) :: Q)
 (*structural*)
-(*| ew_g : forall (Q P : {mset ( {mset (@expr R Bool_T_def)} * {mset (@expr R Bool_T_def)})}),
-    seq_calc_godel Q ->
-    seq_calc_godel (Q `+` P) (*correct order*)
-| ec_g : forall (Q P : {mset ( {mset (@expr R Bool_T_def)} * {mset (@expr R Bool_T_def)})}),
-    seq_calc_godel (Q `+` P `+` P) ->
-    seq_calc_godel (Q `+` P)*)
-(*this was a single conclusion version*)
-(*| comm_hyper_g : forall  Q 
-                  (A1 A2 B1 B2 C D: {mset (@expr R Bool_T_def)}),
-    seq_calc_godel (((A1 `+` B1) |- C) +` Q) ->
-    seq_calc_godel (((A2 `+` B2) |- D) +` Q) ->               
-    seq_calc_godel (Q `+` [mset ((A1 `+` A2) |- C)] `+` [mset ((B1 `+` B2) |- D)])*)
+| ew_g' : forall (Q P : seq ( seq (@expr R Bool_T_def) * seq (@expr R Bool_T_def))),
+    seq_calc_godel' Q ->
+    seq_calc_godel' (Q ++ P) (*correct order*)
+| ec_g' : forall (Q P : seq ( seq (@expr R Bool_T_def) * seq (@expr R Bool_T_def))),
+    seq_calc_godel' (Q ++ P ++ P) ->
+    seq_calc_godel' (Q ++ P)
 | comm_hyper_g' : forall (Q :  seq ( seq (@expr R Bool_T_def) * seq (@expr R Bool_T_def)))
                   (A1 A2 B1 B2 C D: seq (@expr R Bool_T_def)),
     seq_calc_godel' (((A1 ++ B1) |- C) :: Q) ->
     seq_calc_godel' (((A2 ++ B2) |- D) :: Q) ->               
     seq_calc_godel' ( ((A1 ++ A2) |- C) :: ((B1 ++ B2) |- D) :: Q)
-(*| comm_g : forall Q 
-                  (A B C : {mset (@expr R Bool_T_def)}),
-    seq_calc_godel (((A `+` B `+` B) |- C) +` Q) ->
-    seq_calc_godel (((A `+` B) |- C) +` Q)
-| weak_g : forall Q 
-                  (A B C : {mset (@expr R Bool_T_def)}),
-    seq_calc_godel ((A |- C) +` Q ) ->
-    seq_calc_godel (((A `+` B) |- C) +` Q )*)
+| comm_g' : forall (Q : seq ( seq (@expr R Bool_T_def) * seq (@expr R Bool_T_def)))
+                  (A B C : seq (@expr R Bool_T_def)),
+    seq_calc_godel' (((A ++ B ++ B) |- C) :: Q) ->
+    seq_calc_godel' (((A ++ B) |- C) :: Q)
+| weak_g' : forall (Q : seq ( seq (@expr R Bool_T_def) * seq (@expr R Bool_T_def)))
+                  (A B C : seq (@expr R Bool_T_def)),
+    seq_calc_godel' ((A |- C) :: Q ) ->
+    seq_calc_godel' (((A ++ B) |- C) :: Q )
 (*logical*)
 (*| bot_g : forall Q 
                  (A B : {mset (@expr R Bool_T_def)}),
@@ -537,9 +531,17 @@ exists (q : ( seq (@expr R Bool_T_def) * seq (@expr R Bool_T_def))), q \in Q
 Proof.
 intros; rewrite//=. dependent induction H.
 - exists (A |- A). rewrite //= mem_head. split. by []. 
-  rewrite /minR/maxR.
+  rewrite /minR.
   lra. (*simple*)
-
+- destruct IHseq_calc_godel' as [q [IH1 IH2]].
+  exists q. rewrite mem_cat IH1 orTb.
+  split. by []. 
+  by apply IH2.
+- destruct IHseq_calc_godel' as [M [IH1 IH2]].   
+  exists M. rewrite !mem_cat in IH1. 
+  rewrite mem_cat. move/orP : IH1. 
+  move => [h |/orP h].  rewrite h ?orbT; split; rewrite//=. 
+  move: h. move => [h | h]; rewrite h ?orbT; split; rewrite//=.
 - destruct IHseq_calc_godel'1 as [q1 [IH11 IH12]].
   destruct IHseq_calc_godel'2 as [q2 [IH21 IH22]].
   rewrite in_cons in IH11. rewrite in_cons in IH21. 
@@ -570,6 +572,25 @@ intros; rewrite//=. dependent induction H.
         rewrite -minr_lt_godel in H11; rewrite -minr_lt_godel in H22;
         destruct H11 as [H11 H11']; destruct H22 as [H22 H22']; lra.}
      apply contrapT. auto.
+  + exists q1. 
+    by rewrite !in_cons h1 IH12 !orbT//=. 
+  + exists q2. 
+    by rewrite !in_cons h2 IH22 !orbT//=. 
+  + exists q1. 
+    by rewrite !in_cons h1 IH12 !orbT//=. 
+- destruct IHseq_calc_godel' as [q [IH1 IH2]].
+  rewrite in_cons in IH1. move/orP : IH1.
+  move => [/eqP IH1 | IH1].
+  + exists (A ++ B |- C).
+    subst. rewrite in_cons eq_refl orTb. split; first by [].
+    rewrite //= /minR !big_map.
+    rewrite //= /minR !big_map in IH2.
+    have min_weak : 
+      \big[minr/1]_(j <- (A ++ B ++ B)) [[j]]_Godel = \big[minr/1]_(j <- (A ++ B)) [[j]]_Godel. { 
+      admit.
+          }
+    rewrite min_weak in IH2. by exact IH2.
+-  
 
  
       
