@@ -224,6 +224,13 @@ Reserved Notation "Q |- P" (no associativity, at level 61).
 Notation "Q |- P" := (Q, P).
 (*entailment as pair (A, B) where A |- B*)
 
+Notation "[[ e ]]_ l" := (@translation R l p _ e).
+
+(*proved and imported from fuzzy - move her or import once fixed bugs in fuzzy*)
+Lemma translate_Bool_T_01 dl (e : expr Bool_T_def) :
+  0 <= [[ e ]]_ dl <= 1.
+Proof.
+Admitted.
 
 Inductive seq_calc_godel :  {mset ( {mset (@expr R Bool_T_def)} * {mset (@expr R Bool_T_def)})}
 (*-> {mset (seq {mset (@expr R Bool_T_def)})}*)
@@ -311,7 +318,6 @@ Inductive seq_calc_godel :  {mset ( {mset (@expr R Bool_T_def)} * {mset (@expr R
     seq_calc_godel (Q `+` [mset (((`~a) +` B) |- A)])*)
 .
 
-(*or should it not be equal to 1? greater then something? or just non-equal to zero*)
 Lemma sound_godel_1 (Q : {mset ( {mset (@expr R Bool_T_def)} * {mset (@expr R Bool_T_def)})}):
 seq_calc_godel Q -> 
 exists (q : ( {mset (@expr R Bool_T_def)} * {mset (@expr R Bool_T_def)})), q \in Q 
@@ -411,57 +417,44 @@ Inductive seq_calc_godel' :  seq ( seq (@expr R Bool_T_def) * seq (@expr R Bool_
     seq_calc_godel' ((A |- C) :: Q ) ->
     seq_calc_godel' (((A ++ B) |- C) :: Q )
 (*logical*)
-(*| bot_g : forall Q 
-                 (A B : {mset (@expr R Bool_T_def)}),
-    seq_calc_godel (((ldl_bool def false +` A) |- B) +` Q)*)
 | bot_g' : forall (Q :  seq ( seq (@expr R Bool_T_def) * seq (@expr R Bool_T_def)))
-                 (B : seq (@expr R Bool_T_def)),
-    seq_calc_godel' ((([::ldl_bool def false] ) |- B) :: Q)
-(*| top_g : forall Q 
-                 (A : {mset (@expr R Bool_T_def)}),
-    seq_calc_godel ((A |- [mset (ldl_bool def true)]) +` Q )
-| andL_g1 : forall Q 
-                   (A B : {mset (@expr R Bool_T_def)})
+                 (A B : seq (@expr R Bool_T_def)),
+    seq_calc_godel' (((ldl_bool def false :: A) |- B) :: Q)
+| top_g' : forall Q 
+                 (A : seq (@expr R Bool_T_def)),
+    seq_calc_godel' ((A |- [::ldl_bool def true]) :: Q )
+| andL_g' : forall Q 
+                   (A B : seq (@expr R Bool_T_def))
                    (a b : @expr R Bool_T_def),
-    seq_calc_godel (((a +` B) |- A) +` Q ) ->
-    seq_calc_godel ((((a `/\ b) +` B) |- A) +` Q) 
-| andL_g2 : forall Q
-                   (A B : {mset (@expr R Bool_T_def)})
-                   (a b : @expr R Bool_T_def),
-    seq_calc_godel (((b +` B) |- A) +` Q ) ->
-    seq_calc_godel ((((a `/\ b) +` B) |- A) +` Q )*)
+    seq_calc_godel' (((a :: B) |- A) :: ((b :: B) |- A):: Q ) ->
+    seq_calc_godel' ((((a `/\ b) :: B) |- A) :: Q) 
 | andR_g' : forall (Q :  seq ( seq (@expr R Bool_T_def) * seq (@expr R Bool_T_def)))
-                  (A B : seq (@expr R Bool_T_def))
+                  (A  : seq (@expr R Bool_T_def))
                   (a b : @expr R Bool_T_def),
     seq_calc_godel' ( (A |- [:: a]) :: Q ) ->
-    seq_calc_godel' ( (B |- [:: b]) :: Q) ->
+    seq_calc_godel' ( (A |- [:: b]) :: Q) ->
     seq_calc_godel' ((A |- [:: (a `/\ b)]) :: Q )
-(*| orL_g : forall  Q
-                  (A B : {mset (@expr R Bool_T_def)})
+| orL_g' : forall  Q
+                  (A B : seq (@expr R Bool_T_def))
                   (a b : @expr R Bool_T_def),
-    seq_calc_godel (Q `+` [mset ((b +` B) |- A)]) ->
-    seq_calc_godel (Q `+` [mset ((a +` B) |- A)]) ->
-    seq_calc_godel (Q `+` [mset (((a `\/ b) +` B) |- A)])
-| orR_g1 : forall Q
-                  (A B : {mset (@expr R Bool_T_def)})
+    seq_calc_godel' ( ((b :: B) |- A) :: Q) ->
+    seq_calc_godel' ( ((a :: B) |- A) :: Q) ->
+    seq_calc_godel' (((a `\/ b) :: B |- A) :: Q)
+| orR_g' : forall Q
+                  (A  : seq (@expr R Bool_T_def))
                   (a b : @expr R Bool_T_def),
-    seq_calc_godel (Q `+` [mset (A |- [mset a])]) ->
-    seq_calc_godel (Q `+` [mset (A |- [mset (a `\/ b)])])
-| orR_g2 : forall Q
-                  (A B : {mset (@expr R Bool_T_def)})
-                  (a b : @expr R Bool_T_def),
-    seq_calc_godel (Q `+` [mset (A |- [mset b])]) ->
-    seq_calc_godel (Q `+` [mset (A |- [mset (a `\/ b)])])
+    seq_calc_godel' (( A |- [::a] ) :: ( A |- [::b]) :: Q ) ->
+    seq_calc_godel' (( A |- [::(a `\/ b)] ) :: Q) 
 | negR_g : forall Q
-                  (A : {mset (@expr R Bool_T_def)})
+                  (A  : seq (@expr R Bool_T_def))
                   (a : @expr R Bool_T_def),
-    seq_calc_godel (Q `+` [mset (A |- [mset a])]) ->
-    seq_calc_godel (Q `+` [mset (A |- [mset (`~ a)])])
+    seq_calc_godel' ((a :: A |- [:: ldl_bool def false]) :: Q) ->
+    seq_calc_godel' ((A |- [:: (`~ a)]) :: Q)
 | negL_g : forall Q
-                  (A B: {mset (@expr R Bool_T_def)})
+                  (A1 A2 B  : seq (@expr R Bool_T_def))
                   (a : @expr R Bool_T_def),
-    seq_calc_godel (Q `+` [mset ((a +` B) |- A)]) ->
-    seq_calc_godel (Q `+` [mset (((`~a) +` B) |- A)])*)
+    seq_calc_godel' ((A1 |- [:: a]) :: Q) ->
+    seq_calc_godel' (( (`~ a) :: A1 ++ A2 |- B) :: Q)
 .
 
 
@@ -471,15 +464,10 @@ Lemma big_minr_if (A B : seq (@expr R Bool_T_def)) :
                 \big[minr/1]_(j <- (A ++ B)) [[j]]_Godel = \big[minr/1]_(j <- (A)) [[j]]_Godel else
                 \big[minr/1]_(j <- (A ++ B)) [[j]]_Godel = \big[minr/1]_(j <- (B)) [[j]]_Godel.
 Proof.
-
+case: ifP; move => H.
+- 
+- 
 Admitted.
-
-Lemma big_maxr_if (A B : seq (@expr R Bool_T_def)) : 
-  if \big[maxr/0]_(j <- (A)) [[j]]_Godel >=  \big[maxr/0]_(j <- (B)) [[j]]_Godel then
-                \big[maxr/0]_(j <- (A ++ B)) [[j]]_Godel = \big[maxr/0]_(j <- (A)) [[j]]_Godel else
-                \big[maxr/0]_(j <- (A ++ B)) [[j]]_Godel = \big[maxr/0]_(j <- (B)) [[j]]_Godel.
-Proof.
-Admitted. 
 
 
 Lemma big_minr_godel1 (A B: seq (@expr R Bool_T_def)) : 
@@ -491,6 +479,27 @@ Admitted.
 Lemma big_maxr_godel1 (A B: seq (@expr R Bool_T_def)) : 
    \big[maxr/0]_(j <- (A ++ B)) [[j]]_Godel = 1 <->
   \big[maxr/0]_(j <- (A )) [[j]]_Godel = 1 \/ \big[maxr/0]_(j <- (B )) [[j]]_Godel = 1.
+Proof.
+Admitted.
+
+Lemma big_maxr_godel_le1 (A : seq (@expr R Bool_T_def)) : 
+   \big[maxr/0]_(j <- (A)) [[j]]_Godel <= 1.
+Proof.
+Admitted.
+
+Lemma big_minr_godel_le1 (A : seq (@expr R Bool_T_def)) : 
+   \big[minr/1]_(j <- (A)) [[j]]_Godel <= 1.
+Proof.
+Admitted.
+
+
+Lemma big_maxr_godel0 (A : seq (@expr R Bool_T_def)) : 
+   0 <= \big[maxr/0]_(j <- (A)) [[j]]_Godel = 1 .
+Proof.
+Admitted.
+
+Lemma big_minr_godel0 (A : seq (@expr R Bool_T_def)) : 
+   0 <= \big[minr/1]_(j <- (A)) [[j]]_Godel = 1 .
 Proof.
 Admitted.
 
@@ -596,13 +605,325 @@ intros; rewrite//=. dependent induction H.
       
 Admitted.
 
-Notation "[[ e ]]_ l" := (@translation R l p _ e).
-
-(*proved and imported from fuzzy - move her or import once fixed bugs in fuzzy*)
-Lemma translate_Bool_T_01 dl (e : expr Bool_T_def) :
-  0 <= [[ e ]]_ dl <= 1.
+Lemma minr_maxr_lt_godel (A B C: seq (@expr R Bool_T_def)) :
+  \big[maxr/0]_(j <- C) [[j]]_Godel < \big[minr/1]_(j <- (A)) [[j]]_Godel /\ 
+    \big[maxr/0]_(j <- C) [[j]]_Godel < \big[minr/1]_(j <- ( B)) [[j]]_Godel <->
+ (\big[maxr/0]_(j <- C) [[j]]_Godel < \big[minr/1]_(j <- (A ++ B)) [[j]]_Godel).
 Proof.
+split.
+- move => [h1 h2].
+  have h := big_minr_if A B. move: h.
+  case: ifP; intros; rewrite h//=.
+- move => h. 
+  have H := big_minr_if A B. move: H.
+  case: ifP; intros;
+  rewrite H in h; rewrite h;
+  split; first by []; lra.
+Qed.
+
+Lemma minr_maxr_le_godel (A B C: seq (@expr R Bool_T_def)) :
+ (\big[minr/1]_(j <- (A ++ B)) [[j]]_Godel <= \big[maxr/0]_(j <- C) [[j]]_Godel) ->
+  (\big[minr/1]_(j <- A) [[j]]_Godel <= \big[minr/1]_(j <- (B)) [[j]]_Godel /\
+    \big[minr/1]_(j <- A) [[j]]_Godel <= \big[maxr/0]_(j <- (C)) [[j]]_Godel )\/ 
+    (\big[minr/1]_(j <- B) [[j]]_Godel <= \big[maxr/0]_(j <- ( C)) [[j]]_Godel /\
+\big[minr/1]_(j <- B) [[j]]_Godel <= \big[minr/1]_(j <- (A)) [[j]]_Godel).
+Proof.
+intros. have h := big_minr_if A B. move: h.
+case: ifP; intros. 
+- rewrite h in H. left. by rewrite H//=.
+- right. rewrite h in H. rewrite H. split; first by []. lra.
+Qed.
+
+Lemma sound_godel_4 (Q : seq ( seq (@expr R Bool_T_def) * seq (@expr R Bool_T_def))):
+seq_calc_godel' Q -> 
+exists (q : ( seq (@expr R Bool_T_def) * seq (@expr R Bool_T_def))), q \in Q 
+/\ 
+(minR (map (translation Godel p) (fst q))  <=  maxR (map (translation Godel p) (snd q))).
+Proof.
+intros; rewrite//=. dependent induction H.
+- exists (A |- A). rewrite //= mem_head. split. by []. 
+  rewrite /minR/maxR !big_map. admit. (*need helper lemma*)
+   (*simple*)
+- destruct IHseq_calc_godel' as [q [IH1 IH2]].
+  exists q. rewrite mem_cat IH1 orTb.
+  split. by []. 
+  by apply IH2.
+- destruct IHseq_calc_godel' as [M [IH1 IH2]].   
+  exists M. rewrite !mem_cat in IH1. 
+  rewrite mem_cat. move/orP : IH1. 
+  move => [h |/orP h].  rewrite h ?orbT; split; rewrite//=. 
+  move: h. move => [h | h]; rewrite h ?orbT; split; rewrite//=.
+- destruct IHseq_calc_godel'1 as [q1 [IH11 IH12]].
+  destruct IHseq_calc_godel'2 as [q2 [IH21 IH22]].
+  rewrite in_cons in IH11. rewrite in_cons in IH21. 
+  move/orP : IH11. move/orP: IH21.
+  move => [/eqP h2 | h2]; move => [/eqP h1 | h1].
+  + subst. 
+    rewrite //=/minR/maxR !big_map in IH12.
+    rewrite //=/minR/maxR !big_map in IH22.
+    rewrite //=/maxR/minR. 
+    have helper : forall (a b : R), a < b <-> ~(b <= a). {intros. lra.}
+          have contr_comp : forall (a b : R), a < b -> b <= a -> false. {
+          intros. lra.}
+    have hq : exists q : seq (expr Bool_T_def) * seq (expr Bool_T_def),
+        q = (A1 ++ A2 |- C) \/ q = B1 ++ B2 |- D. {
+      exists (A1 ++ A2 |- C). auto.}
+    have h:  ~(exists q : seq (expr Bool_T_def) * seq (expr Bool_T_def),
+    (q \in [:: A1 ++ A2 |- C, B1 ++ B2 |- D & Q] /\ \big[minr/1]_(i <- [seq [[i]]_Godel | i <- q.1]) i <= 
+               \big[maxr/0]_(i <- [seq [[i]]_Godel | i <- q.2]) i)) -> false. {
+        apply minr_maxr_le_godel in IH12; destruct IH12 as [h1 | h1];
+        apply minr_maxr_le_godel in IH22; destruct IH22 as [h2 | h2];
+        destruct h1 as [h1 h1']; destruct h2 as [h2 h2'];intro;
+        rewrite -forallNP in H1;
+        have H11 :=  H1 (A1 ++ A2 |- C); rewrite not_andE in H11;
+        have H22 := H1 (B1 ++ B2 |- D); rewrite not_andE in H22;
+        rewrite mem_head //= !big_map in H11; destruct H11 as [H11 | H11];
+        rewrite  !in_cons eq_refl orbT //= !big_map in H22; destruct H22 as [H22 | H22]; auto;
+        rewrite -helper in H11; rewrite -helper in H22;
+        rewrite -minr_maxr_lt_godel in H11; rewrite -minr_maxr_lt_godel in H22;
+        destruct H11 as [H11 H11']; destruct H22 as [H22 H22']; lra.}
+     apply contrapT. auto.
+  + exists q1. 
+    by rewrite !in_cons h1 IH12 !orbT//=. 
+  + exists q2. 
+    by rewrite !in_cons h2 IH22 !orbT//=. 
+  + exists q1. 
+    by rewrite !in_cons h1 IH12 !orbT//=. 
+- destruct IHseq_calc_godel' as [q [IH1 IH2]].
+  rewrite in_cons in IH1. move/orP : IH1.
+  move => [/eqP IH1 | IH1].
+  + exists (A ++ B |- C).
+    subst. rewrite in_cons eq_refl orTb. split; first by [].
+    rewrite //= /minR !big_map.
+    rewrite //= /minR !big_map in IH2.
+    have min_weak : 
+      \big[minr/1]_(j <- (A ++ B ++ B)) [[j]]_Godel = \big[minr/1]_(j <- (A ++ B)) [[j]]_Godel. { 
+      admit.
+          }
+    rewrite min_weak in IH2. by exact IH2.
+  + exists q. 
+    by rewrite !in_cons IH1 IH2 !orbT//=.
+- destruct IHseq_calc_godel' as [q [IH1 IH2]].
+  rewrite in_cons in IH1. move/orP : IH1.
+  move => [/eqP IH1 | IH1].
+  + exists (A ++ B |- C).
+    subst. rewrite in_cons eq_refl orTb. split; first by [].
+    rewrite //= /minR !big_map.
+    rewrite //= /minR !big_map in IH2.
+    have h := (big_minr_if A B). move: h.
+    case: ifP; intros.
+    * rewrite -h in IH2. by exact IH2.
+    * rewrite h. 
+      have le_false : forall (a b : R), a<= b = false -> b <= a. {intros. lra.}
+      apply le_false in n. 
+      have lerT : forall (a b c : R), a <= c -> b <= a -> b <= c. {intros. lra.}
+      by rewrite (lerT _ _ _ IH2 n).
+  + exists q. 
+    by rewrite !in_cons IH1 IH2 !orbT//=.
+- exists (ldl_bool def false :: A |- B). 
+  rewrite in_cons eq_refl orTb. split; first by [].
+  rewrite /minR/maxR//= !big_cons !big_map.
+  have h : forall (a : R), 0 <= a -> minr 0 (a) = 0. {
+    intros. rewrite /minr; case: ifP; rewrite//=; intros; lra.}
+  rewrite h.
+  * by rewrite big_maxr_godel0.
+  * by rewrite big_minr_godel0.
+-  exists (A |- [:: ldl_bool def true]).
+   rewrite in_cons eq_refl orTb. split; first by [].
+   rewrite /minR/maxR//= !big_cons !big_map big_nil.
+   rewrite /maxr; case: ifP; intros.
+   + exfalso. lra. 
+   + by rewrite big_minr_godel_le1.
+- destruct IHseq_calc_godel' as [q [IH1 IH2]].
+  rewrite !in_cons in IH1. move/orP : IH1.
+  move => [/eqP IH1 | IH1].
+  + exists (a `/\ b :: B |- A).
+    subst. rewrite in_cons eq_refl orTb. split; first by [].
+    rewrite //= /minR/maxR !big_cons big_nil !big_map.
+    rewrite //= /minR/maxR !big_cons !big_map in IH2.
+    have hb : (minr ([[b]]_Godel) 1) = [[b]]_Godel. {
+      have h := translate_Bool_T_01 Godel b.
+      rewrite /minr; case: ifP; rewrite//=; intros.
+      lra.}
+    rewrite {1}/minr; case: ifP; rewrite hb; move => h.
+    * have lerT : forall (a b c : R), a < b -> b <= c -> a <= c. {intros. lra.}
+      have lerT1 : forall (a b c : R), a <= b -> b <= c -> a <= c. {intros. lra.}
+      rewrite /minr; rewrite{1}/minr in h; move: h; case: ifP; intros;
+        move: IH2; rewrite {1}/minr; case: ifP; intros; rewrite//=; try lra.
+      - by rewrite (lerT _ _ _ h IH2).
+      - have helper : ([[a]]_Godel < [[b]]_Godel) = false ->
+                      [[b]]_Godel <= [[a]]_Godel. { intros. lra.}
+        apply helper in n. 
+        by rewrite (lerT1 _ _ _ n IH2).
+      - by rewrite (lerT _ _ _ h IH2).
+    * have lerT : forall (a b c : R), a < b -> b <= c -> a <= c. {intros. lra.}
+      have lerT1 : forall (a b c : R), a <= b -> b <= c -> a <= c. {intros. lra.}
+      rewrite{1}/minr in h; move: h; case: ifP; intros;
+      move: IH2; rewrite {1}/minr; case: ifP; intros; rewrite//=; try lra.
+      - move: i0. by rewrite h//=.
+      - have helper : forall (a b : R), a < b = false ->
+                      b <= a. { intros. lra.}
+        apply helper in n. apply helper in h.
+        have ler_mix : forall (a b A B : R), b<= a ->
+                       B <= b -> a <= A -> B <= A. {intros. lra.}
+        by rewrite (ler_mix _ _ _ _ n h IH2).
+  + move/orP: IH1. move => [/eqP IH1 | IH1]. exists (a `/\ b :: B |- A).
+    subst. rewrite in_cons eq_refl orTb. split; first by [].
+    rewrite //= /minR/maxR !big_cons big_nil !big_map.
+    rewrite //= /minR/maxR !big_cons !big_map in IH2.
+    have hb : (minr ([[b]]_Godel) 1) = [[b]]_Godel. {
+      have h := translate_Bool_T_01 Godel b.
+      rewrite /minr; case: ifP; rewrite//=; intros.
+      lra.}
+    rewrite {1}/minr; case: ifP; rewrite hb; move => h.
+    * have lerT : forall (a b c : R), a < b -> b <= c -> a <= c. {intros. lra.}
+      have lerT1 : forall (a b c : R), a <= b -> b <= c -> a <= c. {intros. lra.}
+      rewrite /minr; rewrite{1}/minr in h; move: h; case: ifP; intros;
+        move: IH2; rewrite {1}/minr; case: ifP; intros; rewrite//=; try lra.
+      - by rewrite (lerT _ _ _ i IH2).
+      - by rewrite (lerT _ _ _ h IH2).
+    * have lerT : forall (a b c : R), a < b -> b <= c -> a <= c. {intros. lra.}
+      have lerT1 : forall (a b c : R), a <= b -> b <= c -> a <= c. {intros. lra.}
+      rewrite{1}/minr in h; move: h; case: ifP; intros;
+      move: IH2; rewrite {1}/minr; case: ifP; intros; rewrite//=; try lra.
+  +  exists q. 
+    by rewrite !in_cons IH1 IH2 !orbT//=.
+- destruct IHseq_calc_godel'1 as [q1 [IH11 IH12]].
+  destruct IHseq_calc_godel'2 as [q2 [IH21 IH22]].
+  rewrite in_cons in IH11. rewrite in_cons in IH21. 
+  move/orP : IH11. move/orP: IH21.
+  move => [/eqP h2 | h2]; move => [/eqP h1 | h1].
+  + subst. 
+    rewrite //=/minR/maxR !big_map big_cons big_nil in IH12.
+    rewrite //=/minR/maxR !big_map big_cons big_nil in IH22.
+    have hb_max : forall (x : @expr R Bool_T_def), (maxr ([[x]]_Godel) 0) = [[x]]_Godel. {
+      intros.
+      have h := translate_Bool_T_01 Godel x.
+      rewrite /maxr; case: ifP; rewrite//=; intros.
+      lra.}
+    have hb_min : forall (x : @expr R Bool_T_def), (minr ([[x]]_Godel) 1) = [[x]]_Godel. {
+      intros.
+      have h := translate_Bool_T_01 Godel x.
+      rewrite /minr; case: ifP; rewrite//=; intros.
+      lra.}
+    rewrite hb_max in IH12. rewrite hb_max in IH22.
+    exists (A |- [:: a `/\ b]).
+    subst. rewrite in_cons eq_refl orTb. split; first by [].
+    rewrite //= /minR/maxR !big_cons !big_nil !big_map.
+    rewrite hb_min {2}/minr.
+    by case: ifP; intros; rewrite hb_max; lra.
+  + exists q1. 
+    by rewrite !in_cons h1 IH12 !orbT//=. 
+  + exists q2. 
+    by rewrite !in_cons h2 IH22 !orbT//=. 
+  + exists q1. 
+    by rewrite !in_cons h1 IH12 !orbT//=.
+- destruct IHseq_calc_godel'1 as [q1 [IH11 IH12]].
+  destruct IHseq_calc_godel'2 as [q2 [IH21 IH22]].
+  rewrite in_cons in IH11. rewrite in_cons in IH21. 
+  move/orP : IH11. move/orP: IH21.
+  move => [/eqP h2 | h2]; move => [/eqP h1 | h1].
+  + subst. 
+    rewrite //=/minR/maxR !big_map big_cons in IH12.
+    rewrite //=/minR/maxR !big_map big_cons in IH22.
+    exists (a `\/ b :: B |- A).
+    subst. rewrite in_cons eq_refl orTb. split; first by [].
+    rewrite //= /minR/maxR !big_cons !big_nil !big_map.
+    have hb_max : forall (x : @expr R Bool_T_def), (maxr ([[x]]_Godel) 0) = [[x]]_Godel. {
+      intros.
+      have h := translate_Bool_T_01 Godel x.
+      rewrite /maxr; case: ifP; rewrite//=; intros.
+      lra.}
+    rewrite hb_max {1}/maxr{1}/minr. case: ifP; case: ifP; intros.
+    * rewrite {1}/minr in IH12; move: IH12; case: ifP; intros.
+      lra. rewrite big_map i0 in n. exfalso. rewrite//=.
+    * rewrite {1}/minr !big_map in IH22; move: IH22; case: ifP; intros; rewrite//=.
+      rewrite i in n0. exfalso. rewrite//=.
+    * rewrite {1}/minr !big_map in IH12; move: IH12; case: ifP; intros; rewrite//=.
+      exfalso. rewrite i0 in n. rewrite //=.
+    * rewrite {1}/minr !big_map in IH22; move: IH22; case: ifP; intros; rewrite//=.
+      rewrite i in n0. exfalso. rewrite//=.    
+  + exists q1. 
+    by rewrite !in_cons h1 IH12 !orbT//=. 
+  + exists q2. 
+    by rewrite !in_cons h2 IH22 !orbT//=. 
+  + exists q1. 
+    by rewrite !in_cons h1 IH12 !orbT//=.
+- destruct IHseq_calc_godel' as [q [IH1 IH2]].
+  rewrite !in_cons in IH1. move/orP : IH1.
+    have hb_max : forall (x : @expr R Bool_T_def), (maxr ([[x]]_Godel) 0) = [[x]]_Godel. {
+      intros.
+      have h := translate_Bool_T_01 Godel x.
+      rewrite /maxr; case: ifP; rewrite//=; intros.
+      lra.}
+  move => [/eqP IH1 | IH1].
+  + exists (A |- [:: a `\/ b]).
+    subst. rewrite in_cons eq_refl orTb. split; first by [].
+    rewrite //= /minR/maxR !big_cons big_nil !big_map.
+    rewrite //= /minR/maxR !big_cons !big_map big_nil in IH2.
+    rewrite hb_max {2}/maxr. rewrite hb_max in IH2.
+    case: ifP; intros; rewrite hb_max//=.
+    have lerT : forall (a b A : R), a < b -> A <= a -> A <= b. {intros. lra.}
+    by rewrite (lerT _ _ _ i IH2).
+  + move/orP: IH1. move => [/eqP IH1 | IH1]. 
+    exists (A |- [:: a `\/ b]).
+    subst. rewrite in_cons eq_refl orTb. split; first by [].
+    rewrite //= /minR/maxR !big_cons big_nil !big_map.
+    rewrite //= /minR/maxR !big_cons !big_map big_nil in IH2.
+    rewrite hb_max in IH2. rewrite hb_max {2}/maxr.
+    case: ifP; intros; rewrite hb_max//=.
+    have abf : forall (a b : R), a < b = false -> b <= a. {intros. lra.}
+    apply abf in n.
+    have lerT : forall (a b A : R), b <= a -> A <= b -> A <= a. {intros. lra.}
+    by rewrite (lerT _ _ _ n IH2).
+  +  exists q. 
+    by rewrite !in_cons IH1 IH2 !orbT//=.
+- destruct IHseq_calc_godel' as [q [IH1 IH2]].
+  rewrite !in_cons in IH1. move/orP : IH1.
+  move => [/eqP IH1 | IH1].
+  + exists (A |- [:: `~ a]).
+    subst. rewrite in_cons eq_refl orTb. split; first by [].
+    rewrite //= /minR/maxR !big_cons big_nil !big_map.
+    rewrite //= /minR/maxR !big_cons !big_map big_nil in IH2.
+    have maxr00 : maxr 0 0 = 0. {intros; rewrite/maxr; case:ifP; intros; rewrite//=.}
+    rewrite maxr00 in IH2.
+    rewrite /maxr; case: ifP; intros; rewrite//=; 
+    rewrite {1}/minr in IH2; move: IH2; case: ifP; intros; rewrite//=.
+    * lra.
+    * have h := translate_Bool_T_01 Godel a.
+      have helper : [[a]]_Godel <= 0 -> 0 <= [[a]]_Godel <= 1 -> [[a]]_Godel = 0.
+      {intros. lra.}
+      apply helper in IH2. rewrite IH2 subr0.
+      by rewrite (big_minr_godel_le1 A). by rewrite h.
+    * have helper : (1 - [[a]]_Godel < 0) = false -> (1 - [[a]]_Godel >= 0).
+      {intros. lra.}
+      apply helper in n.
+      have hh : \big[minr/1]_(j <- A) [[j]]_Godel <= 0 ->
+                0 <= 1 - [[a]]_Godel ->
+                \big[minr/1]_(j <- A) [[j]]_Godel <= 1 - [[a]]_Godel. {intros. 
+                                                                       lra.}
+      rewrite (hh IH2)//=. 
+  +  exists q. 
+    by rewrite !in_cons IH1 IH2 !orbT//=.
+- destruct IHseq_calc_godel' as [q [IH1 IH2]].
+  rewrite !in_cons in IH1. move/orP : IH1.
+  move => [/eqP IH1 | IH1].
+  + exists ((`~ a) :: A1 ++ A2 |- B).
+    subst. rewrite in_cons eq_refl orTb. split; first by [].
+    rewrite //= /minR/maxR !big_cons !big_map.
+    rewrite //= /minR/maxR !big_cons !big_map big_nil in IH2.
+    have hb_max : forall (x : @expr R Bool_T_def), (maxr ([[x]]_Godel) 0) = [[x]]_Godel. {
+      intros.
+      have h := translate_Bool_T_01 Godel x.
+      rewrite /maxr; case: ifP; rewrite//=; intros.
+      lra.}
+    rewrite hb_max in IH2.
+    admit.
+
+  +  exists q. 
+    by rewrite !in_cons IH1 IH2 !orbT//=.
 Admitted.
+
 
 End hypersequent_godel.
 
@@ -610,6 +931,7 @@ Section hypersequent_lukasiewicz.
 Local Open Scope ring_scope.
 Local Open Scope ldl_scope.
 Local Open Scope mset_scope. 
+
 Context {R : realType}.
 Context {K : choiceType}.
 Implicit Types  (A : {mset K}) (s : seq K).
