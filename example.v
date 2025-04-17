@@ -19,7 +19,7 @@ Local Open Scope classical_set_scope.
 
 Require Import ldl.
 
-Section example.
+Section example_robust.
 Local Open Scope ldl_scope.
 Context {R : realType}.
 
@@ -41,6 +41,7 @@ elim.
   + move=> p s. exact: (ldl_bool _ true).
   + move=> p s. exact: (ldl_bool _ true).
   + move=> e1 e2. exact: e1.
+  + move=> e1 e2 e3 e4. exact: e1.
   + move=> p c e1 e2 e3 e4. exact: (ldl_bool _ true).
   + move=> l k f. exact: ldl_fun f.
   + move=> l k e1 e2 v1 v2. exact: (ldl_vec [tuple 0 | i < k])%R.
@@ -48,6 +49,7 @@ elim.
 - move=> p s e. exact: e.
 - move=> p s e. exact: e.
 - move=> p s e. exact: e.
+- move=> p c e f1 e1. exact: e1.
 - move=> p c e f1 e1 f2 e2. exact: e2.
 - move=> m l f e. exact: e.
 - move=> m l e1 f1 e2 f2. exact.
@@ -62,9 +64,9 @@ Definition eps_delta_robust :=
        `=> ((ldl_lookup (ldl_app (ldl_norm_infty m) (ldl_vec_sub (ldl_app f x) (ldl_app f v))) (ldl_idx ord0))
        `<= delta)).
 
-End example.
+End example_robust.
 
-Section example2.
+Section example_hierarchical.
 Local Open Scope ldl_scope.
 Context {R : realType}.
 
@@ -83,6 +85,7 @@ elim.
   + move=> p s. exact: (ldl_bool _ true).
   + move=> p s. exact: (ldl_bool _ true).
   + move=> e1 e2. exact: e1.
+  + move=> e1 e2 e3 e4. exact: e1.
   + move=> p c e1 e2 e3 e4. exact: (ldl_bool _ true).
   + move=> l k f. exact: ldl_fun f.
   + move=> l k e1 e2 v1 v2. exact: (ldl_vec [tuple 0 | i < k])%R.
@@ -90,6 +93,7 @@ elim.
 - move=> p s e. exact: e.
 - move=> p s e. exact: e.
 - move=> p s e. exact: e.
+- move=> p c e f1 e1. exact: e1.
 - move=> p c e f1 e1 f2 e2. exact: e2.
 - move=> m l f e. exact: e.
 - move=> m l e1 f1 e2 f2. exact.
@@ -111,6 +115,7 @@ elim.
   + move=> p s. exact: (ldl_bool _ true).
   + move=> p s. exact: (ldl_bool _ true).
   + move=> e1 e2. exact: e1.
+  + move=> e1 e2 e3 e4. exact: e1.
   + move=> p c e1 e2 e3 e4. exact: (ldl_bool _ true).
   + move=> l k f. exact: ldl_fun f.
   + move=> l k e1 e2 v1 v2. exact: (ldl_vec [tuple 0 | i < k])%R.
@@ -118,6 +123,7 @@ elim.
 - move=> p s e. exact: e.
 - move=> p s e. exact: e.
 - move=> p s e. exact: e.
+- move=> p c e f1 e1. exact: e1.
 - move=> p c e f1 e1 f2 e2. exact: e2.
 - move=> m l f e. exact: e.
 - move=> m l e1 f1 e2 f2. exact.
@@ -156,4 +162,4 @@ Definition group_similiarity :=
   ldl_and (map (fancy_or r eps) (map (prob_group f x) Gs)).
 
 
-End example2.
+End example_hierarchical.

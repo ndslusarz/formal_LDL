@@ -857,7 +857,7 @@ Proof.
  intros. lra.
 Qed.
 
-Lemma sound_luka_impl' (Q : seq ( seq (@expr R Bool_T_def) * seq (@expr R Bool_T_def))):
+Lemma sound_luka_impl (Q : seq ( seq (@expr R Bool_T_def) * seq (@expr R Bool_T_def))):
 seq_calc_luka_impl Q -> 
 exists (q : ( seq (@expr R Bool_T_def) * seq (@expr R Bool_T_def))),
   q \in Q /\ (eval_luka' (fst q) <= eval_luka' (snd q)).
@@ -971,7 +971,7 @@ intros; rewrite//=. dependent induction H.
     by rewrite in_cons h1 IH12 orbT//=. 
 Qed.
 
-Lemma sound_luka_' (Q : seq ( seq (@expr R Bool_T_def) * seq (@expr R Bool_T_def))):
+Lemma sound_luka (Q : seq ( seq (@expr R Bool_T_def) * seq (@expr R Bool_T_def))):
 seq_calc_luka' Q -> 
 exists (q : ( seq (@expr R Bool_T_def) * seq (@expr R Bool_T_def))),
   q \in Q /\ (eval_luka' (fst q) <= eval_luka' (snd q)).
@@ -1217,6 +1217,9 @@ intros; rewrite//=. dependent induction H.
   + exists q1. 
     by rewrite in_cons h1 IH12 orbT//=.
 Qed.
+
+Lemma equivalence_luka (Q : seq ( seq (@expr R Bool_T_def) * seq (@expr R Bool_T_def))):
+  sound_luka_impl (@seq_calc_luka_impl Q) -> sound_luka (seq_calc_luka' Q).
 
 
 End hypersequent_lukasiewicz.
