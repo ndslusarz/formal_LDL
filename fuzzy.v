@@ -163,6 +163,11 @@ dependent induction e using expr_ind'.
     by apply: H => //; rewrite -In_in.
 - move: IHe => /(_ e erefl JMeq_refl).
   case dl => //=; set a := [[e]]_ _; lra.
+- move: IHe1 => /(_ e1 erefl JMeq_refl).
+  move: IHe2 => /(_ e2 erefl JMeq_refl).
+  case: dl; rewrite /=; move => H1 H2.
+  + rewrite /minr. case: ifP; lra.
+  + lra. lra. lra. (*temporary*)
 - case: c => /=; case: ifP => ?.
   - by case: ([[e1]]_dl <= [[e2]]_dl)%R; rewrite lexx ler01.
   - by rewrite le_max lexx orbT/= ge_max ler01 gerBl// le_max lexx orbT.
@@ -308,7 +313,7 @@ case: l => //=; move => H.
     exact: product_dl_mul_seq_01.
 Qed.
 
-Lemma soundness (e : expr (Bool_T_def)) b :
+Lemma adequacy (e : expr (Bool_T_def)) b :
   l <> Lukasiewicz -> l <> Yager ->
     [[ e ]]_ l = [[ ldl_bool _ b ]]_ l -> [[ e ]]_B = b.
 Proof.
@@ -346,6 +351,7 @@ dependent induction e using expr_ind' => ll ly.
     by apply/negPf; apply: H => //; rewrite ?h// -In_in mem_nth.
 - move=>/=h; rewrite (IHe e erefl JMeq_refl (~~ b) ll ly) ?negbK//.
   move: h; case: b => /=; lra.
+- admit. (*for once I have Godel and product impl in *)
 - case: c; rewrite //=; rewrite -!translations_Real_coincide;
   set t1 := _ e1; set t2 := _ e2.
   + case: ifPn => [/eqP ->|e12eq].
@@ -397,7 +403,7 @@ dependent induction e using expr_ind' => ll ly.
         lra.
       rewrite eqr_norml.
       nra.
-Qed.
+Admitted.
 
 End translation_lemmas.
 

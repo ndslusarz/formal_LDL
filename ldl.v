@@ -68,6 +68,8 @@ Reserved Notation "[[ e ]]_dl2e" (at level 10, format "[[ e ]]_dl2e").
 Reserved Notation "[[ e ]]_dl2" (at level 10, format "[[ e ]]_dl2").
 
 (* Polarity of formulas: undef does not allow negation, while def allows negation *)
+(* this flag also encompasess implication - if negation is not defined, the same
+is true for implication*)
 Inductive flag := def | undef.
 
 Inductive ldl_type :=
@@ -95,6 +97,7 @@ Inductive expr : ldl_type -> Type :=
   | ldl_and : forall x, seq (expr (Bool_T x)) -> expr (Bool_T x)
   | ldl_or : forall x, seq (expr (Bool_T x)) -> expr (Bool_T x)
   | ldl_not : expr Bool_T_def-> expr Bool_T_def
+  | ldl_impl : expr Bool_T_def-> expr Bool_T_def-> expr Bool_T_def
   (* comparisons *)
   | ldl_cmp : forall x, comparison -> expr Real_T -> expr Real_T -> expr (Bool_T x)
   (* networks and applications *)
@@ -108,7 +111,8 @@ Declare Scope ldl_scope.
 
 Notation "a `/\ b" := (ldl_and [:: a; b]) (at level 45).
 Notation "a `\/ b" := (ldl_or [:: a; b]) (at level 45).
-Notation "a `=> b" := (ldl_or [:: (ldl_not a); b]) (at level 55).
+Notation "a `=> b" := (ldl_impl a b) (at level 55).
+(*Notation "a `=> b" := (ldl_or [:: (ldl_not a); b]) (at level 55).*)
 Notation "`~ a"    := (ldl_not a) (at level 75).
 Definition ldl_add (R : realType) := ldl_fun (fun (t : 2.-tuple R) => [tuple [tnth t 0] + [tnth t 1] ])%R.
 Definition ldl_mul {R : realType} := ldl_fun (fun (t : 2.-tuple R) => [tuple [tnth t 0] * [tnth t 1] ])%R.
@@ -137,6 +141,7 @@ Lemma expr_ind' (R : realType) :
     (forall b (l : seq (expr (Bool_T b))), List.Forall (fun x => P (Bool_T b) x) l -> P (Bool_T b) (ldl_and l)) ->
     (forall b (l : seq (expr (Bool_T b))), List.Forall (fun x => P (Bool_T b) x) l -> P (Bool_T b) (ldl_or l)) ->
     (forall e : expr Bool_T_def, P Bool_T_def e -> P Bool_T_def (`~ e)) ->
+    (forall e1 e2 : expr Bool_T_def, P Bool_T_def e1 -> P Bool_T_def e2 -> P Bool_T_def (e1 `=> e2)) ->
     (forall (n m : nat) (t : n.-tuple R -> m.-tuple R), P (Fun_T n m) (ldl_fun t)) ->
     (forall (n m : nat) (e : expr (Fun_T n m)),
      P (Fun_T n m) e ->
@@ -148,7 +153,7 @@ Lemma expr_ind' (R : realType) :
      P Real_T e -> forall e0 : expr Real_T, P Real_T e0 -> P (Bool_T b) (ldl_cmp b c e e0)) ->
     forall (s : ldl_type) (e : expr s), P s e.
 Proof.
-move => P H H0 H1 H2 H3 H4 H7 H11 H12 H13 H14 s e.
+move => P H H0 H1 H2 H3 H4 H7 H11 H12 H13 H14 H15 s e.
 revert e.
 revert s.
 fix F1 2.
@@ -173,10 +178,11 @@ destruct e.
       - apply F1.
       - apply IHl.
   * apply H7; eauto.
-  * apply H14; eauto.
-  * apply H11.
-  * apply H12; eauto.
+  * apply H11; eauto.
+  * apply H15; eauto.
+  * apply H12.
   * apply H13; eauto.
+  * apply H14; eauto.
 Qed.
 
 Local Close Scope ldl_scope.
@@ -231,6 +237,7 @@ Fixpoint bool_translation {t} (e : @expr R t) : bool_type_translation t :=
   | ldl_and b Es => \big[andb/true]_(i <- map bool_translation Es) i
   | ldl_or b Es => \big[orb/false]_(i <- map bool_translation Es) i
   | `~ E1 => ~~ << E1 >>
+  | E1 `=>E2 => << E1 >> ==> << E2>>
 
   | E1 `== E2 => << E1 >> == << E2 >>
   | E1 `<= E2 => << E1 >> <= << E2 >>
@@ -316,6 +323,13 @@ Fixpoint translation {t} (e : @expr R t) {struct e} : type_translation t :=
        end
 
     | `~ E1 => 1 - {[ E1 ]}
+    | E1 `=> E2 =>
+        match l with
+       | Lukasiewicz => minr (1 - (translation E1) + (translation E2)) 1
+       | Yager => 1 (*temporary*)
+       | Godel => 1 (*temporary*)
+       | product => 1 (*temporary*)
+       end
 
     | E1 `== E2 => if {[ E1 ]} == -{[ E2 ]} then ({[ E1 ]} == {[ E2 ]})%:R else maxr (1 - `|({[ E1 ]} - {[ E2 ]}) / ({[ E1 ]} + {[ E2 ]})|) 0
     | E1 `<= E2 => if {[ E1 ]} == -{[ E2 ]} then ({[ E1 ]} <= {[ E2 ]})%R%:R else maxr (1 - maxr (({[ E1 ]} - {[ E2 ]}) / `|{[ E1 ]} + {[ E2 ]}|) 0) 0
@@ -344,6 +358,7 @@ Fixpoint dl2_ereal_translation {t} (e : @expr R t) {struct e} : ereal_type_trans
   | ldl_and _ Es => sumE (map dl2_ereal_translation Es)
   | ldl_or _ Es => ((- 1) ^+ (size Es).+1)%:E * prodE (map dl2_ereal_translation Es)
   | `~ E1 => +oo (* default value, all lemmas are for negation-free formulas *)
+  | E1 `=> E2 => +oo (* default value, all lemmas are for implication-free formulas *)
 
   | E1 `== E2 => (- `| {[ E1 ]} - {[ E2 ]}|)%:E
   | E1 `<= E2 => (- maxr ({[ E1 ]} - {[ E2 ]}) 0)%:E
@@ -373,6 +388,7 @@ Fixpoint dl2_translation {t} (e : @expr R t) {struct e} : type_translation t :=
   | ldl_and _ Es => sumR (map dl2_translation Es)
   | ldl_or _ s => (- 1) ^+ (size s).+1 * prodR (map dl2_translation s)
   | `~ E1 => 0 (* default value, all lemmas are for negation-free formulas *)
+  | E1 `=> E2 => 0 (* default value, all lemmas are for implication-free formulas *)
 
   | E1 `== E2 => (- `| {[ E1 ]} - {[ E2 ]}|)
   | E1 `<= E2 => (- maxr ({[ E1 ]} - {[ E2 ]}) 0)
@@ -438,6 +454,7 @@ Fixpoint stl_ereal_translation {t} (e : expr t) : ereal_type_translation t :=
           (fine (sumE (map (fun a => expeR (nu%:E * (a'_i a))) A)))^-1%:E
         else 0
   | `~ E1 => - {[ E1 ]}
+  | E1 `=> E2 => 0 (*temporary*)
 
   (*comparisons*)
   | E1 `== E2 => (- `| {[ E1 ]} - {[ E2 ]}|)%:E
@@ -528,6 +545,7 @@ Fixpoint stl_translation {t} (e : expr t) : type_translation t :=
       let a_max: R := \big[maxr/a0]_(i <- A) i in
       stl_or a_max a0 A
   | `~ E1 => - {[ E1 ]}
+  | E1 `=> E2 => 0 (*temporary*)
 
   | E1 `== E2 => - `| {[ E1 ]} - {[ E2 ]}|
   | E1 `<= E2 => {[ E2 ]} - {[ E1 ]}
@@ -572,6 +590,7 @@ elim.
   + move=> p s. exact: (ldl_bool _ true).
   + move=> p s. exact: (ldl_bool _ true).
   + move=> e1 e2. exact: e1.
+  + move=> e1 e2 e3 e4. exact: e1.
   + move=> p c e1 e2 e3 e4. exact: (ldl_bool _ true).
   + move=> l k f. exact: ldl_fun f.
   + move=> l k e1 e2 v1 v2. exact: (ldl_vec [tuple 0 | i < k])%R.
@@ -579,6 +598,7 @@ elim.
 - move=> p s e. exact: e.
 - move=> p s e. exact: e.
 - move=> p s e. exact: e.
+- move=> p s e f1 e1. exact: e1.
 - move=> p c e f1 e1 f2 e2. exact: e2.
 - move=> m l f e. exact: e.
 - move=> m l e1 f1 e2 f2. exact.
@@ -614,6 +634,7 @@ elim.
   + move=> p s. exact: (ldl_bool _ true).
   + move=> p s. exact: (ldl_bool _ true).
   + move=> e1 e2. exact: e1.
+  + move=> e1 e2 e3 e4. exact: e1.
   + move=> p c e1 e2 e3 e4. exact: (ldl_bool _ true).
   + move=> l k f. exact: ldl_fun f.
   + move=> l k e1 e2 v1 v2. exact: (ldl_vec [tuple 0 | i < k])%R.
@@ -621,6 +642,7 @@ elim.
 - move=> p s e. exact: e.
 - move=> p s e. exact: e.
 - move=> p s e. exact: e.
+- move=> p s e f1 e1. exact: e1.
 - move=> p c e f1 e1 f2 e2. exact: e2.
 - move=> m l f e. exact: e.
 - move=> m l e1 f1 e2 f2. exact.
@@ -642,6 +664,7 @@ elim.
   + move=> p s. exact: (ldl_bool _ true).
   + move=> p s. exact: (ldl_bool _ true).
   + move=> e1 e2. exact: e1.
+  + move=> e1 e2 e3 e4. exact: e1.
   + move=> p c e1 e2 e3 e4. exact: (ldl_bool _ true).
   + move=> l k f. exact: ldl_fun f.
   + move=> l k e1 e2 v1 v2. exact: (ldl_vec [tuple 0 | i < k])%R.
@@ -649,6 +672,7 @@ elim.
 - move=> p s e. exact: e.
 - move=> p s e. exact: e.
 - move=> p s e. exact: e.
+- move=> p s e f1 e1. exact: e1.
 - move=> p c e f1 e1 f2 e2. exact: e2.
 - move=> m l f e. exact: e.
 - move=> m l e1 f1 e2 f2. exact.
