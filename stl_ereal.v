@@ -36,6 +36,9 @@ Import Num.Def Num.Theory GRing.Theory.
 Import Order.TTheory.
 Import numFieldTopology.Exports.
 
+HB.instance Definition _ (R : realType) b :=
+  @gen_eqMixin (@expr R (Bool_T b)).
+
 Section stl_lemmas.
 Local Open Scope ring_scope.
 Context {R : realType}.

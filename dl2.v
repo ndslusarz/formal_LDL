@@ -43,6 +43,8 @@ Import Num.Def Num.Theory GRing.Theory.
 Import Order.TTheory.
 Import numFieldTopology.Exports.
 
+HB.instance Definition _ (R : realType) b :=
+  @gen_eqMixin (@expr R (Bool_T b)).
 
 Section dl2_lemmas.
 Local Open Scope ldl_scope.

@@ -9,6 +9,7 @@ From mathcomp Require Import topology derive normedtype sequences
  exp measure lebesgue_measure lebesgue_integral hoelder finmap multiset.
 Require Import mathcomp_extra analysis_extra ldl.
 
+
 Set Implicit Arguments.
 Unset Strict Implicit.
 Unset Printing Implicit Defensive.
@@ -1409,7 +1410,7 @@ rewrite /eval_product//=. rewrite big_cat.
 by rewrite unlock//=.
 Qed.
 
-Lemma eval_product_01 (Q : seq (@expr R Bool_T_def)) :
+Lemma eval_product_01 (Q : seq (@expr R Bool_T_def)) : 
   0 <= eval_product Q <= 1.
 Proof.
 rewrite /eval_product. 
@@ -1585,7 +1586,7 @@ intros; rewrite//=. dependent induction H.
     by exact hh.
   + exists q1. 
     by rewrite !in_cons IH1 IH2 !orbT//=. 
--admit.
+- admit.
 - destruct IHseq_calc_product as [q1 [IH1 IH2]].
   rewrite in_cons in IH1. move/orP : IH1.
   move => [/eqP IH1 | IH1].

@@ -17,6 +17,9 @@ Import Num.Def Num.Theory GRing.Theory.
 Import Order.TTheory.
 Import numFieldNormedType.Exports.
 
+HB.instance Definition _ (R : realType) b :=
+  @gen_eqMixin (@expr R (Bool_T b)).
+
 Section stl_lemmas.
 Local Open Scope ldl_scope.
 Local Open Scope ring_scope.

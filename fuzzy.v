@@ -75,6 +75,9 @@ Import Num.Def Num.Theory GRing.Theory.
 Import Order.TTheory.
 Import numFieldTopology.Exports.
 
+HB.instance Definition _ (R : realType) b :=
+  @gen_eqMixin (@expr R (Bool_T b)).
+
 Section translation_lemmas.
 Local Open Scope ring_scope.
 Local Open Scope ldl_scope.
@@ -121,7 +124,7 @@ dependent induction e using expr_ind'.
   + rewrite /sumR/maxr. case: ifP.
     * by lra.
     * move=> /negbT; rewrite -leNgt => -> /=.
-      rewrite big_map -lerBrDr subrr subr_le0 sum_01// => e el0.
+      rewrite big_map -lerBrDr subrr subr_le0; rewrite sum_01// => e el0.
       by rewrite (andP (H e _ _ _ _)).2 //; exact/In_in.
   + rewrite /sumR/maxr. case: ifP.
     * by lra.
