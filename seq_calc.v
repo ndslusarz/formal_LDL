@@ -1313,7 +1313,7 @@ intros; rewrite//=. dependent induction H.
                      (eval_luka' B + ([[a]]_Lukasiewicz + [[b]]_Lukasiewicz))%E - 1. {lra.}
        rewrite -really.
        by rewrite IH22.
-     * move : IH22. move => _. (*this assumption unnecessary.  investigate the rule on paper*)
+     * move : IH22. move => _.
        lra.
   + exists q2. 
     by rewrite in_cons h2 IH22 orbT//=. 
@@ -1341,8 +1341,8 @@ Proof.
   exact: sound_luka.
 Qed.
 
-Axiom neg_impl : 
-forall (e : @expr R Bool_T_def), (`~ e) = (e `=> ldl_bool def false).
+
+Axiom neg_impl  :forall (e : @expr R Bool_T_def), (`~ e) = (e `=> ldl_bool def false).
 
 Axiom true_false :  (@ldl_bool R def true) = (`~ ldl_bool def false).
 
@@ -1353,7 +1353,7 @@ Axiom or_impl :
 forall (a b : @expr R Bool_T_def), (a `\/ b) = ((`~ a) `=> b).
 
 Lemma luka_neg_impl_admissable (e : @expr R Bool_T_def):
-  [[`~ e]]_Lukasiewicz = [[e `=> ldl_bool def false]]_Lukasiewicz.
+ [[`~ e]]_Lukasiewicz = [[e `=> ldl_bool def false]]_Lukasiewicz.
 Proof.
 rewrite//= addr0 /minr. case: ifP; intros.
 - lra. 
@@ -1384,18 +1384,59 @@ case: ifP; case: ifP; rewrite//= => h1 h2; try lra.
   apply helper2 in h2.
   lra.
 - rewrite /sumR !big_cons big_nil addr0 in h2.
-  rewrite /sumR !big_cons big_nil addr0.
-  admit.
+  rewrite /sumR !big_cons big_nil addr0. 
+  have helper : 1 - ((1 - [[a]]_Lukasiewicz)%R + (1 - [[b]]_Lukasiewicz)%R)%E = 
+                  1 - ((2 - [[a]]_Lukasiewicz - [[b]]_Lukasiewicz)%R)%E. {lra.}
+  rewrite helper.
+  have helper2 : 1 - (2 - [[a]]_Lukasiewicz - [[b]]_Lukasiewicz) =
+                   -1 + [[a]]_Lukasiewicz + [[b]]_Lukasiewicz. {lra.}
+  rewrite helper2.
+  have helper3 : ((([[a]]_Lukasiewicz + [[b]]_Lukasiewicz)%E - 2)%R + 1%R)%E = 
+                   ([[a]]_Lukasiewicz + [[b]]_Lukasiewicz)%E - 1. {lra.}
+  rewrite helper3. lra.
 - rewrite /sumR !big_cons big_nil addr0 in h2.
   rewrite /sumR !big_cons big_nil addr0//=.
-Admitted.
+  have helper3 : ((([[a]]_Lukasiewicz + [[b]]_Lukasiewicz)%E - 2)%R + 1%R)%E = 
+                   ([[a]]_Lukasiewicz + [[b]]_Lukasiewicz)%E - 1. {lra.}
+  rewrite helper3//=. rewrite helper3 in h2.
+  have helper : (([[a]]_Lukasiewicz + [[b]]_Lukasiewicz)%E - 1 < 0) = false ->
+                ([[a]]_Lukasiewicz + [[b]]_Lukasiewicz)%E  >= 1. {intros. lra.}
+  apply helper in h2.
+  have helper2 : (((1 - [[a]]_Lukasiewicz)%R + (1 - [[b]]_Lukasiewicz)%R)%E < 1) = false ->
+                 [[a]]_Lukasiewicz + [[b]]_Lukasiewicz <= 1.  {intros. lra.}
+  apply helper2 in h1.
+  lra. 
+Qed.
 
 Lemma luka_or_impl_admissable (a b: @expr R Bool_T_def):
   [[a `\/ b]]_Lukasiewicz = [[(`~a) `=> b]]_Lukasiewicz.
 Proof.
 rewrite//=/maxr/minr.
+have helper : ((1 - (1 - [[a]]_Lukasiewicz))%R + [[b]]_Lukasiewicz)%E =
+                   [[a]]_Lukasiewicz + [[b]]_Lukasiewicz. {lra.}
 case: ifP; case: ifP; rewrite//= => h1 h2.
-Admitted.
+- rewrite /sumR !big_cons big_nil addr0.
+  by rewrite helper//=.
+- rewrite /sumR !big_cons big_nil addr0.
+  rewrite helper in h1.
+  rewrite /sumR !big_cons big_nil addr0 in h2.
+  have helper1 : (([[a]]_Lukasiewicz + [[b]]_Lukasiewicz)%E < 1) = false ->
+                  (([[a]]_Lukasiewicz + [[b]]_Lukasiewicz)%E >= 1). {intros. lra.}
+  apply helper1 in h1.
+  exfalso.
+  have contra' : 1 <= ([[a]]_Lukasiewicz + [[b]]_Lukasiewicz)%E ->
+                 ([[a]]_Lukasiewicz + [[b]]_Lukasiewicz)%E < 1 ->
+                 False. {intros. lra.}
+  have H := contra' h1 h2. move: H.
+  by contra.
+- rewrite /sumR !big_cons big_nil addr0 in h2.
+  rewrite helper.
+  have helper1 : (([[a]]_Lukasiewicz + [[b]]_Lukasiewicz)%E < 1) = false ->
+                  (([[a]]_Lukasiewicz + [[b]]_Lukasiewicz)%E >= 1). {intros. lra.}
+  apply helper1 in h2.
+  rewrite helper in h1.
+  lra.
+Qed.
 
 (*specific exchange rules for simpler cases*)
 Lemma luka_exL_nil: forall (Q : seq ( seq (@expr R Bool_T_def) * seq (@expr R Bool_T_def)))
