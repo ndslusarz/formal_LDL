@@ -282,7 +282,9 @@ Lemma big_minr_if (A B : seq (@expr R Bool_T_def)) :
                 \big[minr/1]_(j <- (A ++ B)) [[j]]_Godel = \big[minr/1]_(j <- (B)) [[j]]_Godel.
 Proof.
 case: ifP; move => H.
-- 
+-
+have h:= @big_cat R  1 _  _  A B _ (@translation R Godel p _).
+
 - 
 Admitted.
 
@@ -442,6 +444,7 @@ intros; rewrite//=. dependent induction H.
     rewrite //= /minR !big_map in IH2.
     have min_weak : 
       \big[minr/1]_(j <- (A ++ B ++ B)) [[j]]_Godel = \big[minr/1]_(j <- (A ++ B)) [[j]]_Godel. { 
+      
       admit.
           }
     rewrite min_weak in IH2. by exact IH2.
@@ -738,7 +741,7 @@ Inductive seq_calc_luka_impl :  seq ( seq (@expr R Bool_T_def) * seq (@expr R Bo
                  (A : seq (@expr R Bool_T_def))
                  (b : @expr R Bool_T_def),
     seq_calc_luka_impl (((ldl_bool def false :: A) |- [:: b]) :: Q)
-(*new formulation, not standard conjunction rule*)
+(*new formulation, not standard rule*)
 |implL_l : forall (Q : seq ( seq (@expr R Bool_T_def) * seq (@expr R Bool_T_def)))
                    (A B : seq (@expr R Bool_T_def))
                    (a b : @expr R Bool_T_def),
@@ -978,10 +981,24 @@ intros; rewrite//=. dependent induction H.
     by rewrite in_cons h2 IH22 orbT//=. 
   + exists q1. 
     by rewrite in_cons h1 IH12 orbT//=. 
-- destruct IHseq_calc_luka_impl as [q1 [IH1 IH2]].
-
-admit.
-- admit.
+- destruct IHseq_calc_luka_impl as [q [IH1 IH2]].
+  rewrite in_cons in IH1. move/orP : IH1.
+  move => [/eqP h | h].
+  + subst. exists ((X ++ B ++ A ++ Y |- C)).
+    rewrite mem_head. split. by [].
+    rewrite//= !eval_luka_add' in IH2.
+    rewrite//= !eval_luka_add'. lra.
+  + exists q. 
+    by rewrite in_cons h IH2 orbT//=.
+- destruct IHseq_calc_luka_impl as [q [IH1 IH2]].
+  rewrite in_cons in IH1. move/orP : IH1.
+  move => [/eqP h | h].
+  + subst. exists (C |- X ++ B ++ A ++ Y).
+    rewrite mem_head. split. by [].
+    rewrite//= !eval_luka_add' in IH2.
+    rewrite//= !eval_luka_add'. lra.
+  + exists q. 
+    by rewrite in_cons h IH2 orbT//=.
 - exists (ldl_bool def false :: A |- [:: b]).
   rewrite mem_head. split. by [].
   rewrite //= !eval_luka_add_el' addr0.
@@ -1023,7 +1040,7 @@ admit.
     by rewrite in_cons h2 IH22 orbT//=. 
   + exists q1. 
     by rewrite in_cons h1 IH12 orbT//=. 
-Admitted.
+Qed.
 
 Lemma sound_luka (Q : seq ( seq (@expr R Bool_T_def) * seq (@expr R Bool_T_def))):
 seq_calc_luka' Q -> 
@@ -1049,7 +1066,18 @@ intros; rewrite//=. dependent induction H.
   rewrite mem_cat. move/orP : IH1. 
   move => [h |/orP h].  rewrite h ?orbT; split; rewrite//=. 
   move: h. move => [h | h]; rewrite h ?orbT; split; rewrite//=.
-- admit.
+- destruct IHseq_calc_luka' as [q [IH1 IH2]].
+   rewrite in_cons in IH1. 
+   move/orP : IH1. 
+  move => [/eqP h | h].
+  + exists (A ++ C |- B).
+    subst. rewrite //= in IH2.
+    rewrite in_cons eq_refl orTb. split. by [].
+    rewrite //= eval_luka_add'.
+    have hc := eval_luka1' C.
+    lra.
+  + exists q. 
+    by rewrite in_cons h IH2 orbT//=. 
 - destruct IHseq_calc_luka' as [q1 [IH1 IH2]]. 
   rewrite in_cons in IH1. move/orP : IH1.
   move => [h1 | h2]; first last.
@@ -1101,8 +1129,24 @@ intros; rewrite//=. dependent induction H.
     by rewrite in_cons h2 IH22 orbT//=. 
   + exists q1. 
     by rewrite in_cons h1 IH12 orbT//=. 
-- admit.
-- admit.
+- destruct IHseq_calc_luka' as [q [IH1 IH2]].
+  rewrite in_cons in IH1. move/orP : IH1.
+  move => [/eqP h | h].
+  + subst. exists ((X ++ B ++ A ++ Y |- C)).
+    rewrite mem_head. split. by [].
+    rewrite//= !eval_luka_add' in IH2.
+    rewrite//= !eval_luka_add'. lra.
+  + exists q. 
+    by rewrite in_cons h IH2 orbT//=.
+- destruct IHseq_calc_luka' as [q [IH1 IH2]].
+  rewrite in_cons in IH1. move/orP : IH1.
+  move => [/eqP h | h].
+  + subst. exists (C |- X ++ B ++ A ++ Y).
+    rewrite mem_head. split. by [].
+    rewrite//= !eval_luka_add' in IH2.
+    rewrite//= !eval_luka_add'. lra.
+  + exists q. 
+    by rewrite in_cons h IH2 orbT//=.
 - exists (ldl_bool def false :: A |- [:: b]).
   rewrite mem_head. split. by [].
   rewrite //= !eval_luka_add_el' addr0.
@@ -1277,7 +1321,7 @@ intros; rewrite//=. dependent induction H.
     by rewrite in_cons h1 IH12 orbT//=. 
   + exists q1. 
     by rewrite in_cons h1 IH12 orbT//=.
-Admitted.
+Qed.
 
 
 
