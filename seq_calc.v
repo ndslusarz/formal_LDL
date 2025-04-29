@@ -28,6 +28,23 @@ HB.instance Definition _ (R : realType) b :=
 Reserved Notation "Q |= P" (no associativity, at level 61).
 Reserved Notation "Q |- P" (no associativity, at level 61).
 
+Section connectives_axioms.
+Local Open Scope ring_scope.
+Local Open Scope ldl_scope.
+Context {R : realType}.
+
+Axiom neg_impl  :forall (e : @expr R Bool_T_def), (`~ e) = (e `=> ldl_bool def false).
+
+Axiom true_false :  (@ldl_bool R def true) = (`~ ldl_bool def false).
+
+Axiom and_impl : 
+forall (a b: @expr R Bool_T_def), (a `/\ b) = (`~ (a `=> `~b)).
+
+Axiom or_impl : 
+forall (a b : @expr R Bool_T_def), (a `\/ b) = ((`~ a) `=> b).
+
+End connectives_axioms.
+
 
 Section seq_calc_bool.
 Local Open Scope ring_scope.
@@ -213,6 +230,9 @@ Inductive seq_calc_godel :  seq ( seq (@expr R Bool_T_def) * seq (@expr R Bool_T
                 (A : seq (@expr R Bool_T_def)),
     seq_calc_godel ( (A |- A) :: Q)
 (*structural*)
+| eex_g : forall (Q P S1 S2: seq ( seq (@expr R Bool_T_def) * seq (@expr R Bool_T_def))),
+    seq_calc_godel (S1 ++ P ++ Q ++ S2) ->
+    seq_calc_godel (S1 ++ Q ++ P ++ S2)
 | ew_g : forall (Q P : seq ( seq (@expr R Bool_T_def) * seq (@expr R Bool_T_def))),
     seq_calc_godel Q ->
     seq_calc_godel (Q ++ P) (*correct order*)
@@ -232,6 +252,14 @@ Inductive seq_calc_godel :  seq ( seq (@expr R Bool_T_def) * seq (@expr R Bool_T
                   (A B C : seq (@expr R Bool_T_def)),
     seq_calc_godel ((A |- C) :: Q ) ->
     seq_calc_godel (((A ++ B) |- C) :: Q )
+| exL_g : forall (Q : seq ( seq (@expr R Bool_T_def) * seq (@expr R Bool_T_def)))
+                  (A B C X Y : seq (@expr R Bool_T_def)),
+    seq_calc_godel (((X ++ A ++ B ++ Y) |- C) :: Q) ->
+    seq_calc_godel (((X ++ B ++ A ++ Y) |- C) :: Q) 
+| exR_g : forall (Q : seq ( seq (@expr R Bool_T_def) * seq (@expr R Bool_T_def)))
+                  (A B C X Y : seq (@expr R Bool_T_def)),
+    seq_calc_godel ((C |- (X ++ A ++ B ++ Y)) :: Q) ->
+    seq_calc_godel ((C |- (X ++ B ++ A ++ Y)) :: Q)
 (*logical*)
 | bot_g : forall (Q :  seq ( seq (@expr R Bool_T_def) * seq (@expr R Bool_T_def)))
                  (A B : seq (@expr R Bool_T_def)),
@@ -281,6 +309,9 @@ Inductive seq_calc_godel' :  seq ( seq (@expr R Bool_T_def) * seq (@expr R Bool_
                 (A : seq (@expr R Bool_T_def)),
     seq_calc_godel' ( (A |- A) :: Q)
 (*structural*)
+| eex_g' : forall (Q P S1 S2: seq ( seq (@expr R Bool_T_def) * seq (@expr R Bool_T_def))),
+    seq_calc_godel' (S1 ++ P ++ Q ++ S2) ->
+    seq_calc_godel' (S1 ++ Q ++ P ++ S2)
 | ew_g' : forall (Q P : seq ( seq (@expr R Bool_T_def) * seq (@expr R Bool_T_def))),
     seq_calc_godel' Q ->
     seq_calc_godel' (Q ++ P) (*correct order*)
@@ -300,6 +331,14 @@ Inductive seq_calc_godel' :  seq ( seq (@expr R Bool_T_def) * seq (@expr R Bool_
                   (A B C : seq (@expr R Bool_T_def)),
     seq_calc_godel' ((A |- C) :: Q ) ->
     seq_calc_godel' (((A ++ B) |- C) :: Q )
+| exL_g' : forall (Q : seq ( seq (@expr R Bool_T_def) * seq (@expr R Bool_T_def)))
+                  (A B C X Y : seq (@expr R Bool_T_def)),
+    seq_calc_godel' (((X ++ A ++ B ++ Y) |- C) :: Q) ->
+    seq_calc_godel' (((X ++ B ++ A ++ Y) |- C) :: Q) 
+| exR_g' : forall (Q : seq ( seq (@expr R Bool_T_def) * seq (@expr R Bool_T_def)))
+                  (A B C X Y : seq (@expr R Bool_T_def)),
+    seq_calc_godel' ((C |- (X ++ A ++ B ++ Y)) :: Q) ->
+    seq_calc_godel' ((C |- (X ++ B ++ A ++ Y)) :: Q)
 (*logical*)
 | bot_g' : forall (Q :  seq ( seq (@expr R Bool_T_def) * seq (@expr R Bool_T_def)))
                  (A B : seq (@expr R Bool_T_def)),
@@ -345,23 +384,69 @@ Inductive seq_calc_godel' :  seq ( seq (@expr R Bool_T_def) * seq (@expr R Bool_
 Lemma big_maxr_godel_le1 (A : seq (@expr R Bool_T_def)) : 
    \big[maxr/0]_(j <- (A)) [[j]]_Godel <= 1.
 Proof.
-Admitted.
+have h := @translate_Bool_T_01 R p Godel (ldl_or A).
+rewrite //= /maxR big_map in h.
+have reshape : 0 <= \big[maxr/0]_(j <- A) [[j]]_Godel <= 1 ->
+               \big[maxr/0]_(j <- A) [[j]]_Godel <= 1. intros. lra.
+apply reshape in h.
+by exact h.
+Qed.
 
 Lemma big_minr_godel_le1 (A : seq (@expr R Bool_T_def)) : 
    \big[minr/1]_(j <- (A)) [[j]]_Godel <= 1.
 Proof.
-Admitted.
+have h := @translate_Bool_T_01 R p Godel (ldl_and A).
+rewrite //= /minR big_map in h.
+have reshape : 0 <= \big[minr/1]_(j <- A) [[j]]_Godel <= 1 ->
+               \big[minr/1]_(j <- A) [[j]]_Godel <= 1. intros. lra.
+apply reshape in h.
+by exact h.
+Qed.
 
 
 Lemma big_maxr_godel0 (A : seq (@expr R Bool_T_def)) : 
    0 <= \big[maxr/0]_(j <- (A)) [[j]]_Godel = 1 .
 Proof.
-Admitted.
+have h := @translate_Bool_T_01 R p Godel (ldl_or A).
+rewrite //= /maxR big_map in h.
+have reshape : 0 <= \big[maxr/0]_(j <- A) [[j]]_Godel <= 1 ->
+               0 <= \big[maxr/0]_(j <- A) [[j]]_Godel. intros. lra.
+apply reshape in h.
+by exact h.
+Qed.
 
 Lemma big_minr_godel0 (A : seq (@expr R Bool_T_def)) : 
    0 <= \big[minr/1]_(j <- (A)) [[j]]_Godel = 1 .
 Proof.
-Admitted.
+have h := @translate_Bool_T_01 R p Godel (ldl_and A).
+rewrite //= /minR big_map in h.
+have reshape : 0 <= \big[minr/1]_(j <- A) [[j]]_Godel <= 1 ->
+               0 <= \big[minr/1]_(j <- A) [[j]]_Godel. intros. lra.
+apply reshape in h.
+by exact h.
+Qed.
+
+Lemma minrA : forall (x y z : R), minr x (minr y z) = minr (minr x y) z.
+Proof.
+intros. rewrite /minr.
+repeat case: ifP; intros; lra.
+Qed.
+
+Lemma big_min_cat_godel (A B: seq (@expr R Bool_T_def)):
+\big[minr/1]_(j <- (A ++ B)) [[j]]_Godel = 
+  minr (\big[minr/1]_(j <- (A)) [[j]]_Godel) (\big[minr/1]_(j <- (B)) [[j]]_Godel).
+Proof.
+elim: A => [|x xs IH].
+  - rewrite /= big_nil//=. 
+    have H := big_minr_godel_le1 B.
+    rewrite {2}/minr. case: ifP; intros; try lra.
+    have triv: \big[minr/1]_(j <- B) [[j]]_Godel <= 1 ->
+               1 < \big[minr/1]_(j <- B) [[j]]_Godel ->
+               \big[minr/1]_(j <- B) [[j]]_Godel = 1. intros. lra. 
+    by apply (triv H i). 
+  - simpl. rewrite  !big_cons -minrA. f_equal.
+    by exact IH.
+Qed.
 
 
 Lemma big_minr_if (A B : seq (@expr R Bool_T_def)) : 
@@ -369,89 +454,37 @@ Lemma big_minr_if (A B : seq (@expr R Bool_T_def)) :
                 \big[minr/1]_(j <- (A ++ B)) [[j]]_Godel = \big[minr/1]_(j <- (A)) [[j]]_Godel else
                 \big[minr/1]_(j <- (A ++ B)) [[j]]_Godel = \big[minr/1]_(j <- (B)) [[j]]_Godel.
 Proof.
-(*i think instead of case analysis I can get this to work if I set up minr as Monoid.Law - then
-I can use big_cat lemma*)
-case: ifPn.
-
-(*- induction A; induction B.
-  + rewrite !big_nil//=.
-  + rewrite !big_nil big_cons.
-    rewrite !big_nil cat0s in IHB.
-    rewrite !big_nil big_cons in H.
-    rewrite {1}/minr in H. move: H.
-    rewrite {3}/minr.
-    case: ifP; intros; rewrite//=.
-    * have h := big_minr_godel_le1 B.
-      have ha : [[a]]_Godel < \big[minr/1]_(j <- B) [[j]]_Godel ->
-              \big[minr/1]_(j <- B) [[j]]_Godel <= 1 ->
-              [[a]]_Godel <= 1. {intros. lra.}
-      apply (ha i) in h.
-      lra.
-    * apply IHB in H.
-      by exact H.
-  + rewrite cats0 !big_cons.
-    rewrite cats0 big_nil in IHA.
-    rewrite big_cons big_nil in H.
-    rewrite {1}/minr in H. move: H.
-    rewrite {3}/minr.
-    case: ifP; intros;rewrite//=.
-    * rewrite {1}/minr; case: ifP; rewrite//=; intros.
-      have ha : ([[a]]_Godel < \big[minr/1]_(j <- A) [[j]]_Godel) = false ->
-                ([[a]]_Godel >= \big[minr/1]_(j <- A) [[j]]_Godel). {intros. lra.}
-      apply ha in n.
-      exfalso. 
-      have contr : [[a]]_Godel < \big[minr/1]_(j <- A) [[j]]_Godel ->
-                    \big[minr/1]_(j <- A) [[j]]_Godel <= [[a]]_Godel ->
-                   False. {intros. lra.}
-      apply (contr i) in n.
-      auto.
-    * rewrite {2}/minr; case: ifP; rewrite//=; intros.
-      have ha : ([[a]]_Godel < \big[minr/1]_(j <- A) [[j]]_Godel) = false ->
-                ([[a]]_Godel >= \big[minr/1]_(j <- A) [[j]]_Godel). {intros. lra.}
-      apply ha in n.
-      exfalso. 
-      have contr : [[a]]_Godel < \big[minr/1]_(j <- A) [[j]]_Godel ->
-                    \big[minr/1]_(j <- A) [[j]]_Godel <= [[a]]_Godel ->
-                   False. {intros. lra.}
-      apply (contr i) in n.
-      auto.
-  + 
-
-have H' := H.
-    rewrite (big_cons _ _ a0 B) {2}/minr in H.
-    move: H.
-    case: ifP; intros.
-    *
-    **)
-
-- (*rewrite big_cat.
-
-set (t := \big[minr/1]_(j <- ((a :: A) ++ a0 :: B)) [[j]]_Godel) in *.
-  rewrite big_cons {1}/minr.
-  subst t. case: ifPn; intros.
-  +
-  +
-rewrite big_cons {1}/minr in H. move: H.
-  case: ifP; intros.
-  +
-  + 
-- induction A; induction B.*)
-
-- 
-Admitted.
+have H := big_min_cat_godel A B. 
+rewrite {2}/minr in H. rewrite//=.
+move: H. case: ifP;
+case: ifPn; intros; rewrite//=; try lra.
+- have hab : ~~ (\big[minr/1]_(j <- A) [[j]]_Godel <= \big[minr/1]_(j <- B) [[j]]_Godel) ->
+             \big[minr/1]_(j <- A) [[j]]_Godel < \big[minr/1]_(j <- B) [[j]]_Godel ->
+             False. intros. lra.
+  apply (hab n) in i. contradiction.
+- have hab : \big[minr/1]_(j <- A) [[j]]_Godel <= \big[minr/1]_(j <- B) [[j]]_Godel ->
+             (\big[minr/1]_(j <- A) [[j]]_Godel < \big[minr/1]_(j <- B) [[j]]_Godel) = false ->
+             (\big[minr/1]_(j <- A) [[j]]_Godel = \big[minr/1]_(j <- B) [[j]]_Godel).
+  intros. lra.
+  apply (hab i) in n.
+  rewrite n//=. 
+Qed.
 
 
-Lemma big_minr_godel1 (A B: seq (@expr R Bool_T_def)) : 
+(*Lemma big_minr_godel1 (A B: seq (@expr R Bool_T_def)) : 
    \big[minr/1]_(j <- (A ++ B)) [[j]]_Godel = 1 <->
   \big[minr/1]_(j <- (A )) [[j]]_Godel = 1 /\ \big[minr/1]_(j <- (B )) [[j]]_Godel = 1.
 Proof.
+split.
+- rewrite big_min_cat_godel {1}/minr.
+  case: ifP; intros; rewrite//=. 
 Admitted.
 
 Lemma big_maxr_godel1 (A B: seq (@expr R Bool_T_def)) : 
    \big[maxr/0]_(j <- (A ++ B)) [[j]]_Godel = 1 <->
   \big[maxr/0]_(j <- (A )) [[j]]_Godel = 1 \/ \big[maxr/0]_(j <- (B )) [[j]]_Godel = 1.
 Proof.
-Admitted.
+Admitted.*)
 
 Lemma minr_lt_godel (A B C: seq (@expr R Bool_T_def)) :
   \big[minr/1]_(j <- C) [[j]]_Godel < \big[minr/1]_(j <- (A)) [[j]]_Godel /\ 
@@ -522,6 +555,17 @@ intros; rewrite//=. dependent induction H.
   rewrite /minR/maxR !big_map. 
    admit. (*need helper lemma*)
    (*simple*)
+- destruct IHseq_calc_godel as [M [IH1 IH2]]. 
+  exists M. 
+  rewrite !mem_cat //= in IH1.
+  rewrite !mem_cat. split; first last.
+  by rewrite IH2//=. move/orP: IH1.
+  move => [IH1 | /orP IH1].
+  rewrite IH1//=.
+  destruct IH1 as [IH1 | IH1].
+  rewrite IH1 !orbT//=.
+  move/orP: IH1.
+  move => [IH1 | IH1]; rewrite IH1 ?orTb ?orbT//=.
 - destruct IHseq_calc_godel as [q [IH1 IH2]].
   exists q. rewrite mem_cat IH1 orTb.
   split. by []. 
@@ -599,6 +643,22 @@ intros; rewrite//=. dependent induction H.
       by rewrite (lerT _ _ _ IH2 n).
   + exists q. 
     by rewrite !in_cons IH1 IH2 !orbT//=.
+- destruct IHseq_calc_godel as [q [IH1 IH2]].
+  rewrite in_cons in IH1. move/orP : IH1.
+  move => [/eqP IH1 | IH1].
+  + exists (X ++ B ++ A ++ Y |- C). 
+    subst. rewrite in_cons eq_refl orTb. split; first by [].
+    rewrite //= /minR/maxR !big_map.
+    rewrite //= /minR/maxR !big_map in IH2.
+    rewrite !big_min_cat_godel {3}/minr.
+    rewrite !big_min_cat_godel {3}/minr in IH2.
+    move: IH2.
+    admit. (*I know one way to do it, but it'd be brute-forcing cases
+            - to do: come up with a smarter way if possible*)
+    admit.
+-admit. (*same*)
+
+
 - exists (ldl_bool def false :: A |- B). 
   rewrite in_cons eq_refl orTb. split; first by [].
   rewrite /minR/maxR//= !big_cons !big_map.
@@ -881,6 +941,17 @@ intros; rewrite//=. dependent induction H.
 - exists (A |- A). rewrite //= mem_head. split. by []. 
   rewrite /minR/maxR !big_map. admit. (*need helper lemma*)
    (*simple*)
+- destruct IHseq_calc_godel' as [M [IH1 IH2]]. 
+  exists M. 
+  rewrite !mem_cat //= in IH1.
+  rewrite !mem_cat. split; first last.
+  by rewrite IH2//=. move/orP: IH1.
+  move => [IH1 | /orP IH1].
+  rewrite IH1//=.
+  destruct IH1 as [IH1 | IH1].
+  rewrite IH1 !orbT//=.
+  move/orP: IH1.
+  move => [IH1 | IH1]; rewrite IH1 ?orTb ?orbT//=.
 - destruct IHseq_calc_godel' as [q [IH1 IH2]].
   exists q. rewrite mem_cat IH1 orTb.
   split. by []. 
@@ -958,6 +1029,10 @@ intros; rewrite//=. dependent induction H.
       by rewrite (lerT _ _ _ IH2 n).
   + exists q. 
     by rewrite !in_cons IH1 IH2 !orbT//=.
+-
+    admit. (*I know one way to do it, but it'd be brute-forcing cases
+             - to do: come up with a smarter way if possible*)
+-admit. (*same*)
 - exists (ldl_bool def false :: A |- B). 
   rewrite in_cons eq_refl orTb. split; first by [].
   rewrite /minR/maxR//= !big_cons !big_map.
@@ -1218,19 +1293,42 @@ intros; rewrite//=. dependent induction H.
     by rewrite !in_cons h1 IH12 !orbT//=.
 Admitted.
 
-Axiom neg_impl  :forall (e : @expr R Bool_T_def), (`~ e) = (e `=> ldl_bool def false).
-
 Lemma godel_neg_impl_admissable (e : @expr R Bool_T_def):
  [[`~ e]]_Godel = [[e `=> ldl_bool def false]]_Godel.
 Proof.
 rewrite//=.
 Qed. 
 
-Lemma equivalence_luka (Q : seq ( seq (@expr R Bool_T_def) * seq (@expr R Bool_T_def))):
-  seq_calc_luka' Q -> seq_calc_luka_impl Q.
+Lemma equivalence_godel (Q : seq ( seq (@expr R Bool_T_def) * seq (@expr R Bool_T_def))):
+  seq_calc_godel' Q -> seq_calc_godel Q.
 Proof.
-
-
+intros.
+dependent induction H. 
+- apply id_g.
+- apply eex_g. by exact IHseq_calc_godel'.
+- apply ew_g. by exact IHseq_calc_godel'.
+- apply ec_g. by exact IHseq_calc_godel'.
+- apply comm_hyper_g. 
+  + by exact IHseq_calc_godel'1. 
+  + by exact IHseq_calc_godel'2. 
+- apply comm_g. by exact IHseq_calc_godel'.
+- apply weak_g. by exact IHseq_calc_godel'.
+- apply exL_g. by exact IHseq_calc_godel'.
+- apply exR_g. by exact IHseq_calc_godel'.
+- apply bot_g. 
+- apply top_g.
+- apply andL_g. by exact IHseq_calc_godel'.
+- apply andR_g.
+  + by exact IHseq_calc_godel'1. 
+  + by exact IHseq_calc_godel'2. 
+- apply orL_g.
+  + by exact IHseq_calc_godel'1. 
+  + by exact IHseq_calc_godel'2. 
+- apply orR_g. by exact IHseq_calc_godel'.
+- rewrite neg_impl. apply implR_g; rewrite//=.
+- rewrite neg_impl. apply implL_g; rewrite//=.
+Qed.
+ 
 End hypersequent_godel.
 
 Section hypersequent_lukasiewicz.
@@ -1898,17 +1996,6 @@ intros; rewrite//=. dependent induction H.
   + exists q1. 
     by rewrite in_cons h1 IH12 orbT//=.
 Qed.
-
-
-Axiom neg_impl  :forall (e : @expr R Bool_T_def), (`~ e) = (e `=> ldl_bool def false).
-
-Axiom true_false :  (@ldl_bool R def true) = (`~ ldl_bool def false).
-
-Axiom and_impl : 
-forall (a b: @expr R Bool_T_def), (a `/\ b) = (`~ (a `=> `~b)).
-
-Axiom or_impl : 
-forall (a b : @expr R Bool_T_def), (a `\/ b) = ((`~ a) `=> b).
 
 Lemma luka_neg_impl_admissable (e : @expr R Bool_T_def):
  [[`~ e]]_Lukasiewicz = [[e `=> ldl_bool def false]]_Lukasiewicz.
