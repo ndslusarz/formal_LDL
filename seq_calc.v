@@ -404,8 +404,8 @@ by exact h.
 Qed.
 
 
-Lemma big_maxr_godel0 (A : seq (@expr R Bool_T_def)) : 
-   0 <= \big[maxr/0]_(j <- (A)) [[j]]_Godel = 1 .
+Lemma big_maxr_godel_ge0 (A : seq (@expr R Bool_T_def)) : 
+   0 <= \big[maxr/0]_(j <- (A)) [[j]]_Godel .
 Proof.
 have h := @translate_Bool_T_01 R p Godel (ldl_or A).
 rewrite //= /maxR big_map in h.
@@ -415,8 +415,8 @@ apply reshape in h.
 by exact h.
 Qed.
 
-Lemma big_minr_godel0 (A : seq (@expr R Bool_T_def)) : 
-   0 <= \big[minr/1]_(j <- (A)) [[j]]_Godel = 1 .
+Lemma big_minr_godel_ge0 (A : seq (@expr R Bool_T_def)) : 
+   0 <= \big[minr/1]_(j <- (A)) [[j]]_Godel .
 Proof.
 have h := @translate_Bool_T_01 R p Godel (ldl_and A).
 rewrite //= /minR big_map in h.
@@ -427,6 +427,12 @@ by exact h.
 Qed.
 
 Lemma minrA : forall (x y z : R), minr x (minr y z) = minr (minr x y) z.
+Proof.
+intros. rewrite /minr.
+repeat case: ifP; intros; lra.
+Qed.
+
+Lemma minrC : forall (x y : R), minr x y = minr y x.
 Proof.
 intros. rewrite /minr.
 repeat case: ifP; intros; lra.
@@ -445,6 +451,28 @@ elim: A => [|x xs IH].
                \big[minr/1]_(j <- B) [[j]]_Godel = 1. intros. lra. 
     by apply (triv H i). 
   - simpl. rewrite  !big_cons -minrA. f_equal.
+    by exact IH.
+Qed.
+
+Lemma maxrA : forall (x y z : R), maxr x (maxr y z) = maxr (maxr x y) z.
+Proof.
+intros. rewrite /maxr.
+repeat case: ifP; intros; lra.
+Qed.
+
+Lemma big_max_cat_godel (A B: seq (@expr R Bool_T_def)):
+\big[maxr/0]_(j <- (A ++ B)) [[j]]_Godel = 
+  maxr (\big[maxr/0]_(j <- (A)) [[j]]_Godel) (\big[maxr/0]_(j <- (B)) [[j]]_Godel).
+Proof.
+elim: A => [|x xs IH].
+  - rewrite /= big_nil//=. 
+    have H := big_maxr_godel_ge0 B.
+    rewrite {2}/maxr. case: ifP; intros; try lra.
+    have triv: 0 <= \big[maxr/0]_(j <- B) [[j]]_Godel  ->
+               (0 < \big[maxr/0]_(j <- B) [[j]]_Godel) = false ->
+               \big[maxr/0]_(j <- B) [[j]]_Godel = 0. intros. lra. 
+    by apply (triv H n). 
+  - simpl. rewrite  !big_cons -maxrA. f_equal.
     by exact IH.
 Qed.
 
@@ -620,9 +648,8 @@ intros; rewrite//=. dependent induction H.
     rewrite //= /minR !big_map in IH2.
     have min_weak : 
       \big[minr/1]_(j <- (A ++ B ++ B)) [[j]]_Godel = \big[minr/1]_(j <- (A ++ B)) [[j]]_Godel. { 
-      
-      admit.
-          }
+      rewrite !big_min_cat_godel {1}/minr {2}/minr {7}/minr {11}/minr. repeat case: ifP; 
+      intros; rewrite//=; lra. }
     rewrite min_weak in IH2. by exact IH2.
   + exists q. 
     by rewrite !in_cons IH1 IH2 !orbT//=.
@@ -650,23 +677,45 @@ intros; rewrite//=. dependent induction H.
     subst. rewrite in_cons eq_refl orTb. split; first by [].
     rewrite //= /minR/maxR !big_map.
     rewrite //= /minR/maxR !big_map in IH2.
-    rewrite !big_min_cat_godel {3}/minr.
-    rewrite !big_min_cat_godel {3}/minr in IH2.
+    rewrite !big_min_cat_godel {1}/minr {2}/minr {3}/minr {8}/minr {13}/minr {14}/minr {19}/minr.
+    rewrite !big_min_cat_godel {1}/minr {2}/minr {3}/minr {8}/minr {13}/minr {14}/minr {19}/minr in IH2.
     move: IH2.
-    admit. (*I know one way to do it, but it'd be brute-forcing cases
-            - to do: come up with a smarter way if possible*)
-    admit.
--admit. (*same*)
-
-
+    repeat case: ifP; intros; rewrite//=; try lra.
+    have h : (\big[minr/1]_(j <- B) [[j]]_Godel < \big[minr/1]_(j <- A) [[j]]_Godel) = false ->
+             (\big[minr/1]_(j <- A) [[j]]_Godel < \big[minr/1]_(j <- B) [[j]]_Godel) = false ->
+             (\big[minr/1]_(j <- A) [[j]]_Godel = \big[minr/1]_(j <- B) [[j]]_Godel). intros. lra.
+    apply (h n) in n1.
+    rewrite n1. by exact IH2.
+(*to do: this is  be brute-forcing cases
+            -  come up with a smarter way if possible*)
+  + exists q. 
+    by rewrite !in_cons IH1 IH2 !orbT//=.
+- destruct IHseq_calc_godel as [q [IH1 IH2]].
+  rewrite in_cons in IH1. move/orP : IH1.
+  move => [/eqP IH1 | IH1].
+  + exists (C |- X ++ B ++ A ++ Y).
+    subst. rewrite in_cons eq_refl orTb. split; first by [].
+    rewrite //= /minR/maxR !big_map.
+    rewrite //= /minR/maxR !big_map in IH2.
+    rewrite !big_max_cat_godel {1}/maxr {2}/maxr {3}/maxr {7}/maxr {12}/maxr {13}/maxr {18}/maxr.
+    rewrite !big_max_cat_godel {1}/maxr {2}/maxr {3}/maxr {7}/maxr {12}/maxr {13}/maxr {18}/maxr in IH2.
+    move: IH2.
+    repeat case: ifP; intros; rewrite//=; try lra.
+    have h : (\big[maxr/0]_(j <- B) [[j]]_Godel < \big[maxr/0]_(j <- A) [[j]]_Godel) = false ->
+             (\big[maxr/0]_(j <- A) [[j]]_Godel < \big[maxr/0]_(j <- B) [[j]]_Godel) = false ->
+             (\big[maxr/0]_(j <- A) [[j]]_Godel = \big[maxr/0]_(j <- B) [[j]]_Godel). intros. lra.
+    apply (h n0) in n2.
+    rewrite -n2. by exact IH2.
+  + exists q. 
+    by rewrite !in_cons IH1 IH2 !orbT//=.
 - exists (ldl_bool def false :: A |- B). 
   rewrite in_cons eq_refl orTb. split; first by [].
   rewrite /minR/maxR//= !big_cons !big_map.
   have h : forall (a : R), 0 <= a -> minr 0 (a) = 0. {
     intros. rewrite /minr; case: ifP; rewrite//=; intros; lra.}
   rewrite h.
-  * by rewrite big_maxr_godel0.
-  * by rewrite big_minr_godel0.
+  * by rewrite big_maxr_godel_ge0.
+  * by rewrite big_minr_godel_ge0.
 -  exists (A |- [:: ldl_bool def true]).
    rewrite in_cons eq_refl orTb. split; first by [].
    rewrite /minR/maxR//= !big_cons !big_map big_nil.
@@ -1006,9 +1055,8 @@ intros; rewrite//=. dependent induction H.
     rewrite //= /minR !big_map in IH2.
     have min_weak : 
       \big[minr/1]_(j <- (A ++ B ++ B)) [[j]]_Godel = \big[minr/1]_(j <- (A ++ B)) [[j]]_Godel. { 
-      
-      admit.
-          }
+      rewrite !big_min_cat_godel {1}/minr {2}/minr {7}/minr {11}/minr. repeat case: ifP; 
+      intros; rewrite//=; lra. }
     rewrite min_weak in IH2. by exact IH2.
   + exists q. 
     by rewrite !in_cons IH1 IH2 !orbT//=.
@@ -1029,10 +1077,44 @@ intros; rewrite//=. dependent induction H.
       by rewrite (lerT _ _ _ IH2 n).
   + exists q. 
     by rewrite !in_cons IH1 IH2 !orbT//=.
--
-    admit. (*I know one way to do it, but it'd be brute-forcing cases
-             - to do: come up with a smarter way if possible*)
--admit. (*same*)
+- destruct IHseq_calc_godel as [q [IH1 IH2]].
+  rewrite in_cons in IH1. move/orP : IH1.
+  move => [/eqP IH1 | IH1].
+  + exists (X ++ B ++ A ++ Y |- C). 
+    subst. rewrite in_cons eq_refl orTb. split; first by [].
+    rewrite //= /minR/maxR !big_map.
+    rewrite //= /minR/maxR !big_map in IH2.
+    rewrite !big_min_cat_godel {1}/minr {2}/minr {3}/minr {8}/minr {13}/minr {14}/minr {19}/minr.
+    rewrite !big_min_cat_godel {1}/minr {2}/minr {3}/minr {8}/minr {13}/minr {14}/minr {19}/minr in IH2.
+    move: IH2.
+    repeat case: ifP; intros; rewrite//=; try lra.
+    have h : (\big[minr/1]_(j <- B) [[j]]_Godel < \big[minr/1]_(j <- A) [[j]]_Godel) = false ->
+             (\big[minr/1]_(j <- A) [[j]]_Godel < \big[minr/1]_(j <- B) [[j]]_Godel) = false ->
+             (\big[minr/1]_(j <- A) [[j]]_Godel = \big[minr/1]_(j <- B) [[j]]_Godel). intros. lra.
+    apply (h n) in n1.
+    rewrite n1. by exact IH2.
+(*to do: this is  be brute-forcing cases
+            -  come up with a smarter way if possible*)
+  + exists q. 
+    by rewrite !in_cons IH1 IH2 !orbT//=.
+- destruct IHseq_calc_godel as [q [IH1 IH2]].
+  rewrite in_cons in IH1. move/orP : IH1.
+  move => [/eqP IH1 | IH1].
+  + exists (C |- X ++ B ++ A ++ Y).
+    subst. rewrite in_cons eq_refl orTb. split; first by [].
+    rewrite //= /minR/maxR !big_map.
+    rewrite //= /minR/maxR !big_map in IH2.
+    rewrite !big_max_cat_godel {1}/maxr {2}/maxr {3}/maxr {7}/maxr {12}/maxr {13}/maxr {18}/maxr.
+    rewrite !big_max_cat_godel {1}/maxr {2}/maxr {3}/maxr {7}/maxr {12}/maxr {13}/maxr {18}/maxr in IH2.
+    move: IH2.
+    repeat case: ifP; intros; rewrite//=; try lra.
+    have h : (\big[maxr/0]_(j <- B) [[j]]_Godel < \big[maxr/0]_(j <- A) [[j]]_Godel) = false ->
+             (\big[maxr/0]_(j <- A) [[j]]_Godel < \big[maxr/0]_(j <- B) [[j]]_Godel) = false ->
+             (\big[maxr/0]_(j <- A) [[j]]_Godel = \big[maxr/0]_(j <- B) [[j]]_Godel). intros. lra.
+    apply (h n0) in n2.
+    rewrite -n2. by exact IH2.
+  + exists q. 
+    by rewrite !in_cons IH1 IH2 !orbT//=.
 - exists (ldl_bool def false :: A |- B). 
   rewrite in_cons eq_refl orTb. split; first by [].
   rewrite /minR/maxR//= !big_cons !big_map.
