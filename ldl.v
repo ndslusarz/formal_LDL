@@ -322,13 +322,22 @@ Fixpoint translation {t} (e : @expr R t) {struct e} : type_translation t :=
        | product => product_dl_prod (map translation Es)
        end
 
-    | `~ E1 => 1 - {[ E1 ]}
+    (*| `~ E1 => 1 - {[ E1 ]}*)
+    | `~ E1 => 
+        match l with
+       | Lukasiewicz => 1 - {[ E1 ]}
+       | Yager => 1 - {[ E1 ]}
+       | Godel => if {[ E1 ]} > 0 then 0 else 1
+       | product => if {[ E1 ]} > 0 then 0 else 1
+       end
+(*add product' and godel' which have the S-negation and S-implication*)
+
     | E1 `=> E2 =>
         match l with
        | Lukasiewicz => minr (1 - (translation E1) + (translation E2)) 1
        | Yager => 1 (*temporary*)
-       | Godel => 1 (*temporary*)
-       | product => 1 (*temporary*)
+       | Godel => if (translation E2) < (translation E1) then (translation E2) else 1 
+       | product => if (translation E2) < (translation E1) then (translation E2) * (translation E1)^-1 else 1 
        end
 
     | E1 `== E2 => if {[ E1 ]} == -{[ E2 ]} then ({[ E1 ]} == {[ E2 ]})%:R else maxr (1 - `|({[ E1 ]} - {[ E2 ]}) / ({[ E1 ]} + {[ E2 ]})|) 0

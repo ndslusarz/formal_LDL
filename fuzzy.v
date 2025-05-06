@@ -162,12 +162,16 @@ dependent induction e using expr_ind'.
   + rewrite /product_dl_prod big_map product_dl_mul_seq_01=> //i il0.
     by apply: H => //; rewrite -In_in.
 - move: IHe => /(_ e erefl JMeq_refl).
-  case dl => //=; set a := [[e]]_ _; lra.
+  case dl => //=; set a := [[e]]_ _; try lra.
+  + move => h. case: ifP; lra.
+  + move => h. case: ifP; lra.
 - move: IHe1 => /(_ e1 erefl JMeq_refl).
   move: IHe2 => /(_ e2 erefl JMeq_refl).
   case: dl; rewrite /=; move => H1 H2.
   + rewrite /minr. case: ifP; lra.
-  + lra. lra. lra. (*temporary*)
+  + lra. (*temporary*)
+  + case: ifP; intros; lra.
+  + case: ifP; intros; rewrite ?divr_ge0 ?ler_pdivrMr //=; lra.
 - case: c => /=; case: ifP => ?.
   - by case: ([[e1]]_dl <= [[e2]]_dl)%R; rewrite lexx ler01.
   - by rewrite le_max lexx orbT/= ge_max ler01 gerBl// le_max lexx orbT.
@@ -313,6 +317,7 @@ case: l => //=; move => H.
     exact: product_dl_mul_seq_01.
 Qed.
 
+(*rewrire this for godel_s and product_s*)
 Lemma adequacy (e : expr (Bool_T_def)) b :
   l <> Lukasiewicz -> l <> Yager ->
     [[ e ]]_ l = [[ ldl_bool _ b ]]_ l -> [[ e ]]_B = b.
@@ -350,7 +355,10 @@ dependent induction e using expr_ind' => ll ly.
     have [i il0 <-] := xnth (ldl_bool _ false).
     by apply/negPf; apply: H => //; rewrite ?h// -In_in mem_nth.
 - move=>/=h; rewrite (IHe e erefl JMeq_refl (~~ b) ll ly) ?negbK//.
-  move: h; case: b => /=; lra.
+  move: h; case: b => /=;
+  case: l; rewrite//=; try case: ifPn; intros; try lra.
+  have H := (translate_Bool_T_01 Godel e).
+  lra. admit.  admit. admit. 
 - admit. (*for once I have Godel and product impl in *)
 - case: c; rewrite //=; rewrite -!translations_Real_coincide;
   set t1 := _ e1; set t2 := _ e2.
