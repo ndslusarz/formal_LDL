@@ -1782,7 +1782,7 @@ intros; rewrite//=. dependent induction H.
     by exact IH2.
   + exists q1. 
     by rewrite !in_cons IH1 IH2 !orbT//=.
-- admit. 
+(*- admit. 
 - destruct IHseq_calc_product' as [q1 [IH1 IH2]].
   rewrite in_cons in IH1; move/orP : IH1.
   move => [/eqP IH1 | IH1].
@@ -1835,8 +1835,27 @@ intros; rewrite//=. dependent induction H.
     rewrite /eval_product in hh.
     by exact hh.
   + exists q1. 
-    by rewrite !in_cons IH1 IH2 !orbT//=. 
-- admit.
+    by rewrite !in_cons IH1 IH2 !orbT//=. *)
+- destruct IHseq_calc_product'1 as [q1 [IH11 IH12]].
+  destruct IHseq_calc_product'2 as [q2 [IH21 IH22]].
+  rewrite in_cons in IH11. rewrite in_cons in IH21. 
+  move/orP : IH11; move/orP: IH21;
+  move => [/eqP h2 | h2]; move => [/eqP h1 | h1].
+  + subst.
+    exists (A |- (`~ a) :: B).
+    rewrite in_cons eq_refl orTb; split; first by [].
+    rewrite //= !eval_product_add_el//= mul0r in IH22. 
+    rewrite //= in IH12. 
+    rewrite//= eval_product_add_el//=. 
+    case: ifP; intros.
+    * rewrite mul0r. nra.
+    * rewrite mul1r//=.
+  + exists q1. 
+    by rewrite !in_cons h1 IH12 !orbT//=. 
+  + exists q2. 
+    by rewrite !in_cons h2 IH22 !orbT//=. 
+  + exists q1. 
+    by rewrite !in_cons h1 IH12 !orbT//=. 
 - destruct IHseq_calc_product' as [q1 [IH1 IH2]].
   rewrite in_cons in IH1. move/orP : IH1.
   move => [/eqP IH1 | IH1].
@@ -1866,8 +1885,7 @@ intros; rewrite//=. dependent induction H.
       by apply (helper IH2) in hA; exact hA.
   + exists q1. 
     by rewrite !in_cons IH1 IH2 !orbT//=. 
--(*will have another neg*)
-Admitted.
+Qed.
 
 Lemma product_true_false_admissable :
   [[@ldl_bool R def true]]_product = [[`~ ldl_bool def false]]_product.
@@ -1881,7 +1899,10 @@ Proof.
 rewrite//=. repeat case: ifP; intros; by rewrite ?mul0r//=.
 Qed.
 
-Lemma product_or_impl_admissable (a b  : @expr R Bool_T_def):
+(*this is not true. I cannot construct the or in any way from
+the connectives I have*)
+(*because of this, the equivalence cannot be proven*)
+(*Lemma product_or_impl_admissable (a b  : @expr R Bool_T_def):
   [[a `\/ b]]_product = [[(`~a) `=> b]]_product.
 Proof.
 rewrite//=; repeat case: ifP; intros.
@@ -1889,7 +1910,7 @@ rewrite//=; repeat case: ifP; intros.
   lra.
 - rewrite divr1 /product_dl_prod !big_cons big_nil.
   rewrite /product_dl_mul !addr0 !mulr0 !subr0//=.
-Admitted.
+Admitted.*)
 
 
 Lemma equivalence_product (Q : seq ( seq (@expr R Bool_T_def) * seq (@expr R Bool_T_def))):
@@ -1913,16 +1934,17 @@ dependent induction H.
 - rewrite true_false neg_impl. apply implR_p. 
   + have h : [::] ++ A = A. {rewrite//=.}
     rewrite -h. 
-    apply w_p. apply empty.
-  + apply bot_l.
-
+    apply w_p. apply empty_p.
+  + have h : ldl_bool def false :: A = [::ldl_bool def false] ++ A.
+    {rewrite//=.}
+    rewrite h . apply w_p. apply id_p.
 - apply andL_p. by exact IHseq_calc_product'.
 - apply andR_p. by exact IHseq_calc_product'.
-- admit.
-- admit.
-- admit.
+(*- admit.
+- admit.*)
+- rewrite neg_impl. apply implR_p; rewrite//=. 
 - apply negL_p. by exact IHseq_calc_product'.
-Admitted.
+Qed.
 
  End hypersequent_product.
 
