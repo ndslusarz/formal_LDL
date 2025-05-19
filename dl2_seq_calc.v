@@ -145,6 +145,12 @@ Proof.
 rewrite /eval_dl2_and//=/sumR !big_map !big_cat//=.
 Qed.
 
+Lemma eval_dl2_and_cons  (P : seq (@expr R Bool_T_undef)) (q: (@expr R Bool_T_undef)):
+ eval_dl2_and (q :: P) = [[q]]_dl2 + eval_dl2_and P.
+Proof.
+rewrite /eval_dl2_and//=/sumR !big_cons//=.
+Qed.
+
 Lemma eval_dl2_or_cat  (Q P : seq (@expr R Bool_T_undef)) :
  eval_dl2_or (Q ++ P) = (-1) * eval_dl2_or Q * eval_dl2_or P.
 Proof.
@@ -162,6 +168,11 @@ have H : (-1) ^+ (1 + (size Q).+1 + (size P).+1)%:R =
            (-1) ^+ (size Q + size P).+1.
 {intros. rewrite h1. admit.
 
+Admitted.
+
+Lemma eval_dl2_or_cons  (P : seq (@expr R Bool_T_undef)) (q: (@expr R Bool_T_undef)):
+ eval_dl2_or (q :: P) = - [[q]]_dl2 * eval_dl2_and P.
+Proof.
 Admitted.
 
 Lemma eval_dl2_and_le0 (Q : seq (@expr R Bool_T_undef)):
@@ -243,4 +254,67 @@ intros; rewrite//=. dependent induction H.
     by rewrite !in_cons h2 IH22 !orbT//=. 
   + exists q1. 
     by rewrite !in_cons h1 IH12 !orbT//=. 
+- destruct IHseq_calc_dl2 as [q [IH1 IH2]].
+  rewrite in_cons in IH1. 
+  move/orP : IH1. 
+  move => [/eqP h | h].
+  + exists (X ++ B ++ A ++ Y |- C).
+    subst.
+    rewrite mem_head; split; first by [].
+    rewrite//=  !eval_dl2_and_cat in IH2.
+    rewrite//= !eval_dl2_and_cat. lra.
+  + exists q. 
+    by rewrite in_cons h IH2 orbT//=.
+- destruct IHseq_calc_dl2 as [q [IH1 IH2]].
+  rewrite in_cons in IH1. move/orP : IH1.
+  move => [/eqP h | h].
+  + subst. exists (C |- X ++ B ++ A ++ Y).
+    rewrite mem_head; split; first by [].
+    rewrite//= !eval_dl2_or_cat in IH2.
+    rewrite//= !eval_dl2_or_cat. lra.
+  + exists q. 
+    by rewrite in_cons h IH2 orbT//=.
+- exists (A |- ldl_bool undef true :: B).
+  rewrite mem_head; split; first by [].
+  rewrite//= /eval_dl2_or//=/prodR big_cons !mul0r !mulr0  (eval_dl2_and_le0 A)//=.
+- destruct IHseq_calc_dl2_1 as [q1 [IH11 IH12]].
+  destruct IHseq_calc_dl2_2 as [q2 [IH21 IH22]].
+  rewrite in_cons in IH11. rewrite in_cons in IH21. 
+  move/orP : IH11. move/orP: IH21.
+  move => [/eqP h2 | h2]; move => [/eqP h1 | h1].
+  + subst. exists (a `/\ b :: A |- B).
+    rewrite//= eval_dl2_and_cons in IH12.
+    rewrite//= eval_dl2_and_cons in IH22.
+    rewrite mem_head; split; first by [].
+    rewrite//= eval_dl2_and_cons//=/sumR !big_cons big_nil addr0. 
+    have ha := dl2_translation_le0 a.
+    have hb := dl2_translation_le0 b. 
+    have h : ([[a]]_dl2 + eval_dl2_and A)%E <= eval_dl2_or B ->
+             ([[a]]_dl2 + [[b]]_dl2 + eval_dl2_and A)%E <= eval_dl2_or B. lra.
+    rewrite (h IH12)//=.
+  + exists q1. 
+    by rewrite !in_cons h1 IH12 !orbT//=. 
+  + exists q2. 
+    by rewrite !in_cons h2 IH22 !orbT//=. 
+  + exists q1. 
+    by rewrite !in_cons h1 IH12 !orbT//=. 
+- destruct IHseq_calc_dl2_1 as [q1 [IH11 IH12]].
+  destruct IHseq_calc_dl2_2 as [q2 [IH21 IH22]].
+  rewrite in_cons in IH11. rewrite in_cons in IH21. 
+  move/orP : IH11. move/orP: IH21.
+  move => [/eqP h2 | h2]; move => [/eqP h1 | h1].
+ + subst. exists (A |- a `/\ b :: B).
+   rewrite mem_head; split; first by [].
+   rewrite//= eval_dl2_or_cons in IH12.
+   rewrite//= eval_dl2_or_cons in IH22.
+   rewrite//= eval_dl2_or_cons//= /sumR!big_cons big_nil addr0.
+   lra.
+
+  + exists q1. 
+    by rewrite !in_cons h1 IH12 !orbT//=. 
+  + exists q2. 
+    by rewrite !in_cons h2 IH22 !orbT//=. 
+  + exists q1. 
+    by rewrite !in_cons h1 IH12 !orbT//=. 
+Qed.
 End dl2_hyperseq_calc.
