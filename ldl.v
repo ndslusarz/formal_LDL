@@ -329,7 +329,7 @@ Fixpoint translation {t} (e : @expr R t) {struct e} : type_translation t :=
 
     (*| `~ E1 => 1 - {[ E1 ]}*)
     | `~ E1 => 
-        match l with
+       match l with
        | Lukasiewicz => 1 - {[ E1 ]}
        | Yager => 1 - {[ E1 ]}
        | Godel => if {[ E1 ]} > 0 then 0 else 1
@@ -337,7 +337,6 @@ Fixpoint translation {t} (e : @expr R t) {struct e} : type_translation t :=
        | GodelS => 1 - {[ E1 ]}
        | productS => 1 - {[ E1 ]}
        end
-(*add product' and godel' which have the S-negation and S-implication*)
 
     | E1 `=> E2 =>
         match l with
@@ -346,7 +345,7 @@ Fixpoint translation {t} (e : @expr R t) {struct e} : type_translation t :=
        | Godel => if (translation E2) < (translation E1) then (translation E2) else 1 
        | product => if (translation E2) < (translation E1) then (translation E2) * (translation E1)^-1 else 1
        | GodelS => maxr (1 - (translation E1)) (translation E2)
-       | productS => 1 - ( 1 - (translation E1)) * (translation E2)
+       | productS => 1 - ( 1 - (translation E2)) * (translation E1)
        end
 
     | E1 `== E2 => if {[ E1 ]} == -{[ E2 ]} then ({[ E1 ]} == {[ E2 ]})%:R else maxr (1 - `|({[ E1 ]} - {[ E2 ]}) / ({[ E1 ]} + {[ E2 ]})|) 0
@@ -378,7 +377,7 @@ Fixpoint dl2_ereal_translation {t} (e : @expr R t) {struct e} : ereal_type_trans
   | ldl_and _ Es => sumE (map dl2_ereal_translation Es)
   | ldl_or _ Es => ((- 1) ^+ (size Es).+1)%:E * prodE (map dl2_ereal_translation Es)
   | `~ E1 => +oo (* default value, all lemmas are for negation-free formulas *)
-  | E1 `=> E2 => if {[ E1 ]} == 0 then {[ E2 ]} + {[ E1 ]} else 0
+  | E1 `=> E2 => if {[ E1 ]} == 0 then {[ E2 ]} else 0
 
   | E1 `== E2 => (- `| {[ E1 ]} - {[ E2 ]}|)%:E
   | E1 `<= E2 => (- maxr ({[ E1 ]} - {[ E2 ]}) 0)%:E

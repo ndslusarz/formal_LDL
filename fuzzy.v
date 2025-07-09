@@ -216,8 +216,8 @@ dependent induction e using expr_ind'.
     have h1 : forall (a b : R), 0 <= a <= 1 ->
                               0 <= b <= 1 ->
                               0 <= a  * b <= 1. intros; nra.
-    have h' := @h ([[e1]]_productS) H2. 
-    have h1' := h1 _ _ h' H1.
+    have h' := @h ([[e2]]_productS) H1. 
+    have h1' := h1 _ _ h' H2.
     have H := h _ h1'. rewrite//=.
 - case: c => /=; case: ifP => ?.
   - by case: ([[e1]]_dl <= [[e2]]_dl)%R; rewrite lexx ler01.
@@ -430,7 +430,57 @@ case: l => //=; move => H.
     exact: product_dl_mul_seq_01.
 Qed.
 
-(*rewrire this for godel_s and product_s*)
+Lemma inversion_implE1 (E1 E2 : expr (Bool_T_def)) :
+  l <> Lukasiewicz -> l <> Yager -> l <> Godel -> l <> product ->
+  [[  E1 `=> E2 ]]_ l = 1 ->
+     ([[ E1 ]]_ l == 0) || ([[ E2 ]]_ l == 1).
+Proof.
+case: l => //=; move =>  _ _ _ _.
+- rewrite /maxr; case: ifP; move => h; move/eqP => he2; first by rewrite he2 orbT//=.
+  have h' : 1 - [[E1]]_GodelS == 1 -> [[E1]]_GodelS == 0. intros; lra.
+  by rewrite (h' he2) orTb.
+- have H1 := translate_Bool_T_01 productS E1.
+  have H2 := translate_Bool_T_01 productS E2.
+  move/eqP => h. 
+  have h' : forall (a : R), 1 - a == 1 -> a == 0. intros; lra.
+  apply h' in h. 
+  rewrite mulf_eq0 in h. 
+  by move/orP: h => [/eqP|/eqP]; move=> h; try apply subr0_eq in h;
+  rewrite h eq_refl ?orTb ?orbT.
+Qed.
+
+Lemma inversion_implE0 (E1 E2 : expr (Bool_T_def)) :
+  l <> Lukasiewicz -> l <> Yager -> l <> Godel -> l <> product ->
+  [[  E1 `=> E2 ]]_ l = 0 ->
+     ([[ E1 ]]_ l == 1) && ([[ E2 ]]_ l == 0).
+Proof.
+case: l => //=; move =>  _ _ _ _.
+- rewrite /maxr; case: ifP; move => h; move/eqP => he2.
+  + rewrite he2 andbT. have H := translate_Bool_T_01 GodelS E1. 
+    exfalso. 
+    have h' : [[E2]]_GodelS == 0 ->
+              1 - [[E1]]_GodelS < [[E2]]_GodelS ->
+              0 <= [[E1]]_GodelS <= 1 -> False. intros. lra.
+    apply (h' he2 h H).
+  + move: he2. move /eqP => he2; apply subr0_eq in he2.
+    rewrite he2 eq_refl andTb.
+    have H := translate_Bool_T_01 GodelS E2. 
+    rewrite -he2 in h. 
+    have h' : (1 - 1 < [[E2]]_GodelS) = false ->
+              0 <= [[E2]]_GodelS <= 1 ->
+              [[E2]]_GodelS == 0. intros; lra.
+    by rewrite (h' h H).
+- move/eqP => h. 
+  have H1 := translate_Bool_T_01 productS E1.
+  have H2 := translate_Bool_T_01 productS E2.
+  have h' : forall (a : R), 1 - a == 0 -> a == 1. intros; lra.
+  apply h' in h. 
+  have mul01 : forall (a b : R), 0 <=  a <= 1 -> 0 <= b <= 1 ->
+                                 (1 - a) * b == 1 ->
+                                 (b == 1) && (a == 0). intros; nra.
+  by rewrite (mul01 _ _ H2 H1 h).
+Qed.
+
 Lemma adequacy (e : expr (Bool_T_def)) b :
   l <> Lukasiewicz -> l <> Yager -> l <> Godel -> l <> product ->
     [[ e ]]_ l = [[ ldl_bool _ b ]]_ l -> [[ e ]]_B = b.
@@ -467,13 +517,20 @@ dependent induction e using expr_ind' => ll ly lg lp.
     move/nthP => xnth.
     have [i il0 <-] := xnth (ldl_bool _ false).
     by apply/negPf; apply: H => //; rewrite ?h// -In_in mem_nth.
-- move=>/=h; rewrite (IHe e erefl JMeq_refl (~~ b) ll ly) ?negbK//.
-  move: h; case: b => /=;
-  case: l; rewrite//=; try case: ifPn; intros; try lra.
-  have H := (translate_Bool_T_01 Godel e).
-  lra. have H := translate_Bool_T_01 product e. lra.
-   admit. admit. 
-- admit. (*for once I have Godel and product S-impl in *)
+- move=>/=h; rewrite (IHe e erefl JMeq_refl (~~ b) ll ly lg lp) ?negbK//.
+  move: ll ly lg lp h; case: l; rewrite//=;case: b => //=; lra.
+- rewrite [ [[ldl_bool _ b]]_l]/=.
+  move: b => [].
+  + move/(inversion_implE1 _ _ ll ly lg lp); rewrite//=; move/orP => [/eqP H1 |/eqP H2].
+    * rewrite implybE. rewrite //= in IHe1. rewrite (IHe1 e1 erefl JMeq_refl (false) ll ly lg lp H1).
+      have tf : ~~ false = true. by rewrite//=.
+      rewrite tf orTb//=.
+    * rewrite implybE. rewrite //= in IHe2. 
+      by rewrite (IHe2 e2 erefl JMeq_refl (true) ll ly lg lp H2) orbT.
+  + move/(inversion_implE0 _ _ ll ly lg lp); rewrite//=; move/andP => [/eqP H1  /eqP H2].
+    rewrite implybE Bool.orb_false_intro//=. 
+    * rewrite //= in IHe1. by rewrite (IHe1 e1 erefl JMeq_refl (true) ll ly lg lp H1)//=.
+    * rewrite //= in IHe2. by rewrite (IHe2 e2 erefl JMeq_refl (false) ll ly lg lp H2)//=.
 - case: c; rewrite //=; rewrite -!translations_Real_coincide;
   set t1 := _ e1; set t2 := _ e2.
   + case: ifPn => [/eqP ->|e12eq].
@@ -525,7 +582,7 @@ dependent induction e using expr_ind' => ll ly lg lp.
         lra.
       rewrite eqr_norml.
       nra.
-Admitted.
+Qed.
 
 End translation_lemmas.
 
