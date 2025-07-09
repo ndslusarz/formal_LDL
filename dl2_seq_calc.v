@@ -26,23 +26,6 @@ HB.instance Definition _ (R : realType) b :=
 Reserved Notation "Q |= P" (no associativity, at level 61).
 Reserved Notation "Q |- P" (no associativity, at level 61).
 
-Section connectives_axioms.
-Local Open Scope ring_scope.
-Local Open Scope ldl_scope.
-Context {R : realType}.
-
-Axiom neg_impl  :forall (e : @expr R Bool_T_def), (`~ e) = (e `=> ldl_bool def false).
-
-Axiom true_false :  (@ldl_bool R def true) = (`~ ldl_bool def false).
-
-Axiom and_impl : 
-forall (a b: @expr R Bool_T_def), (a `/\ b) = (`~ (a `=> `~b)).
-
-Axiom or_impl : 
-forall (a b : @expr R Bool_T_def), (a `\/ b) = ((`~ a) `=> b).
-
-End connectives_axioms.
-
 
 Section dl2_hyperseq_calc.
 Local Open Scope ring_scope.
@@ -163,7 +146,7 @@ have h : -1 * ((-1) ^+ (size Q).+1 * \prod_(j <- Q) [[j]]_dl2) * ((-1) ^+ (size 
 nra.
 rewrite h (*-(expr1 (-1))*) -exprD -exprD size_cat.
 have h1: (1 + (size Q).+1 + (size P).+1)%N = (size Q + size P).+1 + 2. 
-rewrite//=.  admit. 
+rewrite//=.   admit. 
 have H : (-1) ^+ (1 + (size Q).+1 + (size P).+1)%:R = 
            (-1) ^+ (size Q + size P).+1.
 {intros. rewrite h1. admit.
@@ -171,9 +154,11 @@ have H : (-1) ^+ (1 + (size Q).+1 + (size P).+1)%:R =
 Admitted.
 
 Lemma eval_dl2_or_cons  (P : seq (@expr R Bool_T_undef)) (q: (@expr R Bool_T_undef)):
- eval_dl2_or (q :: P) = - [[q]]_dl2 * eval_dl2_and P.
+ eval_dl2_or (q :: P) = - [[q]]_dl2 * eval_dl2_or P.
 Proof.
-Admitted.
+rewrite -cat1s eval_dl2_or_cat//=.
+rewrite {1}/eval_dl2_or//= sqrrN expr1n /prodR big_cons big_nil mulr1 mul1r//= mulN1r//=. 
+Qed.
 
 Lemma eval_dl2_and_le0 (Q : seq (@expr R Bool_T_undef)):
   eval_dl2_and Q <= 0.

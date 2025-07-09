@@ -97,7 +97,7 @@ Inductive expr : ldl_type -> Type :=
   | ldl_and : forall x, seq (expr (Bool_T x)) -> expr (Bool_T x)
   | ldl_or : forall x, seq (expr (Bool_T x)) -> expr (Bool_T x)
   | ldl_not : expr Bool_T_def-> expr Bool_T_def
-  | ldl_impl : expr Bool_T_def-> expr Bool_T_def-> expr Bool_T_def
+  | ldl_impl :forall x, expr (Bool_T x) -> expr (Bool_T x) -> expr (Bool_T x)
   (* comparisons *)
   | ldl_cmp : forall x, comparison -> expr Real_T -> expr Real_T -> expr (Bool_T x)
   (* networks and applications *)
@@ -141,7 +141,8 @@ Lemma expr_ind' (R : realType) :
     (forall b (l : seq (expr (Bool_T b))), List.Forall (fun x => P (Bool_T b) x) l -> P (Bool_T b) (ldl_and l)) ->
     (forall b (l : seq (expr (Bool_T b))), List.Forall (fun x => P (Bool_T b) x) l -> P (Bool_T b) (ldl_or l)) ->
     (forall e : expr Bool_T_def, P Bool_T_def e -> P Bool_T_def (`~ e)) ->
-    (forall e1 e2 : expr Bool_T_def, P Bool_T_def e1 -> P Bool_T_def e2 -> P Bool_T_def (e1 `=> e2)) ->
+    (forall b (e1 e2 : expr (Bool_T b)), P (Bool_T b) e1 -> P (Bool_T b) e2 ->
+                                               P (Bool_T b) (e1 `=> e2)) ->
     (forall (n m : nat) (t : n.-tuple R -> m.-tuple R), P (Fun_T n m) (ldl_fun t)) ->
     (forall (n m : nat) (e : expr (Fun_T n m)),
      P (Fun_T n m) e ->
@@ -187,7 +188,7 @@ Qed.
 
 Local Close Scope ldl_scope.
 
-Inductive DL := Lukasiewicz | Yager | Godel | product.
+Inductive DL := Lukasiewicz | Yager | Godel | product | GodelS | productS.
 
 Section type_translation.
 Context {R : realType}.
@@ -313,6 +314,8 @@ Fixpoint translation {t} (e : @expr R t) {struct e} : type_translation t :=
        | Yager => maxr (1 - (sumR (map (fun E => (1 - ({[ E ]} : type_translation (Bool_T _)))`^p) Es))`^p^-1) 0
        | Godel => minR (map translation Es)
        | product => prodR (map translation Es)
+       | GodelS => minR (map translation Es)
+       | productS => prodR (map translation Es)
        end
    | ldl_or _ Es =>
        match l with
@@ -320,6 +323,8 @@ Fixpoint translation {t} (e : @expr R t) {struct e} : type_translation t :=
        | Yager => minr ((sumR (map (fun E => ({[ E ]} : type_translation (Bool_T _))`^p) Es))`^p^-1) 1
        | Godel => maxR (map translation Es)
        | product => product_dl_prod (map translation Es)
+       | GodelS => maxR (map translation Es)
+       | productS => product_dl_prod (map translation Es)
        end
 
     (*| `~ E1 => 1 - {[ E1 ]}*)
@@ -329,6 +334,8 @@ Fixpoint translation {t} (e : @expr R t) {struct e} : type_translation t :=
        | Yager => 1 - {[ E1 ]}
        | Godel => if {[ E1 ]} > 0 then 0 else 1
        | product => if {[ E1 ]} > 0 then 0 else 1
+       | GodelS => 1 - {[ E1 ]}
+       | productS => 1 - {[ E1 ]}
        end
 (*add product' and godel' which have the S-negation and S-implication*)
 
@@ -337,7 +344,9 @@ Fixpoint translation {t} (e : @expr R t) {struct e} : type_translation t :=
        | Lukasiewicz => minr (1 - (translation E1) + (translation E2)) 1
        | Yager => 1 (*temporary*)
        | Godel => if (translation E2) < (translation E1) then (translation E2) else 1 
-       | product => if (translation E2) < (translation E1) then (translation E2) * (translation E1)^-1 else 1 
+       | product => if (translation E2) < (translation E1) then (translation E2) * (translation E1)^-1 else 1
+       | GodelS => maxr (1 - (translation E1)) (translation E2)
+       | productS => 1 - ( 1 - (translation E1)) * (translation E2)
        end
 
     | E1 `== E2 => if {[ E1 ]} == -{[ E2 ]} then ({[ E1 ]} == {[ E2 ]})%:R else maxr (1 - `|({[ E1 ]} - {[ E2 ]}) / ({[ E1 ]} + {[ E2 ]})|) 0
@@ -348,6 +357,8 @@ Fixpoint translation {t} (e : @expr R t) {struct e} : type_translation t :=
     | ldl_lookup n v i => tnth (translation v) (translation i)
     end
 where "{[ e ]}" := (translation e).
+
+
 
 End fuzzy_translation.
 
@@ -367,7 +378,7 @@ Fixpoint dl2_ereal_translation {t} (e : @expr R t) {struct e} : ereal_type_trans
   | ldl_and _ Es => sumE (map dl2_ereal_translation Es)
   | ldl_or _ Es => ((- 1) ^+ (size Es).+1)%:E * prodE (map dl2_ereal_translation Es)
   | `~ E1 => +oo (* default value, all lemmas are for negation-free formulas *)
-  | E1 `=> E2 => +oo (* default value, all lemmas are for implication-free formulas *)
+  | E1 `=> E2 => if {[ E1 ]} == 0 then {[ E2 ]} + {[ E1 ]} else 0
 
   | E1 `== E2 => (- `| {[ E1 ]} - {[ E2 ]}|)%:E
   | E1 `<= E2 => (- maxr ({[ E1 ]} - {[ E2 ]}) 0)%:E
@@ -397,7 +408,7 @@ Fixpoint dl2_translation {t} (e : @expr R t) {struct e} : type_translation t :=
   | ldl_and _ Es => sumR (map dl2_translation Es)
   | ldl_or _ s => (- 1) ^+ (size s).+1 * prodR (map dl2_translation s)
   | `~ E1 => 0 (* default value, all lemmas are for negation-free formulas *)
-  | E1 `=> E2 => 0 (* default value, all lemmas are for implication-free formulas *)
+  | E1 `=> E2 => if {[ E1 ]} == 0 then {[ E2 ]} + {[ E1 ]} else 0
 
   | E1 `== E2 => (- `| {[ E1 ]} - {[ E2 ]}|)
   | E1 `<= E2 => (- maxr ({[ E1 ]} - {[ E2 ]}) 0)
