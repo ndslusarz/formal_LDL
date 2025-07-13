@@ -195,7 +195,9 @@ dependent induction e using expr_ind'.
                               0 <= b <= 1 ->
                               0 <= ((1 - a)%R + b)%E. intros. lra.
     have h' := @h ([[e1]]_Lukasiewicz) ([[e2]]_Lukasiewicz) H2 H1. lra.
-  + lra. (*temporary*)
+  + rewrite /minr. case: ifP; last by lra. 
+    move=> /ltW ->.
+    by rewrite andbT powR_ge0.
   + case: ifP; intros; rewrite ?H2//=; lra.
   + case: ifP; intros; rewrite ?divr_ge0 ?ler_pdivrMr //= ?mul1r; try lra. 
     * have h : forall (a b : R), 0 <= a <= 1 ->
