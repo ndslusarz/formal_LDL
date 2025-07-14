@@ -155,17 +155,16 @@ by rewrite signr_odd//=.
 rewrite hh.
 have oddh : odd (1 + (size Q + 1) + (size P + 1)) = odd (size Q + (size P + 1)).
 have helper: (1 + (size Q + 1) + (size P + 1))%N = ((size Q + (size P + 1)) + 2)%N. {
-rewrite !(addnC 1 ). rewrite -(addnA (size Q + 1)%N). rewrite (addnC 1 )//=.
+rewrite !(addnC 1 ) -(addnA (size Q + 1)%N) (addnC 1 )//=.
 rewrite addnA. 
 have h1 : (1 + (size P + 1 + 1))%N = (size P + 1 + 2)%N. rewrite addnC//=. 
 have triv : 2%N  = 1%N + 1%N by rewrite //=. rewrite triv addnA//=. 
 have reshape : (size Q + 1 + (size P + 1) + 1)%N = (size Q +( 1 + (size P + 1 + 1)))%N 
   by rewrite !addnA//=.
 by rewrite reshape h1 !addnA//=. }
-
 rewrite helper addnA oddD addbF//=.
 rewrite oddh//=.}
-rewrite//=. rewrite H mulrA//=.
+rewrite H mulrA//=.
 Qed.
 
 Lemma eval_dl2_or_cons  (P : seq (@expr R Bool_T_undef)) (q: (@expr R Bool_T_undef)):

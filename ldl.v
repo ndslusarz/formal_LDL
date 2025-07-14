@@ -341,7 +341,7 @@ Fixpoint translation {t} (e : @expr R t) {struct e} : type_translation t :=
     | E1 `=> E2 =>
         match l with
        | Lukasiewicz => minr (1 - (translation E1) + (translation E2)) 1
-       | Yager => 1 (*temporary*)
+       | Yager => minr (((1 - (translation E1))`^p + (translation E2)`^p )`^p^-1) 1 (*temporary*)
        | Godel => if (translation E2) < (translation E1) then (translation E2) else 1 
        | product => if (translation E2) < (translation E1) then (translation E2) * (translation E1)^-1 else 1
        | GodelS => maxr (1 - (translation E1)) (translation E2)
@@ -473,7 +473,23 @@ Fixpoint stl_ereal_translation {t} (e : expr t) : ereal_type_translation t :=
           (fine (sumE (map (fun a => expeR (nu%:E * (a'_i a))) A)))^-1%:E
         else 0
   | `~ E1 => - {[ E1 ]}
-  | E1 `=> E2 => 0 (*temporary*)
+  | E1 `=> E2 => 
+      let a_max : \bar R := maxe (- {[ E1 ]}) {[ E2 ]} in
+      let a'_i (a_i : \bar R) := maxe_dev a_max a_i in
+      if a_max == -oo then -oo
+      else if a_max == +oo then +oo
+        else if a_max > 0 then
+          (a_max * expeR (a'_i (- {[ E1 ]})) * expeR (nu%:E * a'_i (- {[ E1 ]})) +
+             a_max * expeR (a'_i {[ E2 ]}) * expeR (nu%:E * a'_i {[ E2 ]})
+          )  * (fine (expeR (nu%:E * (a'_i (- {[ E1 ]}))) +
+            expeR (nu%:E * (a'_i {[ E2 ]}))
+          ))^-1%:E
+        else if a_max < 0 then
+          ((- {[ E1 ]}) * expeR (-nu%:E * (a'_i (- {[ E1 ]}))) + {[ E2 ]} * expeR (-nu%:E * (a'_i {[ E2 ]}))
+          ) * 
+          (fine (expeR (nu%:E * (a'_i (- {[ E1 ]}))) + expeR (nu%:E * (a'_i {[ E2 ]})))
+          )^-1%:E
+        else 0
 
   (*comparisons*)
   | E1 `== E2 => (- `| {[ E1 ]} - {[ E2 ]}|)%:E
@@ -543,6 +559,7 @@ Definition stl_or (a_max : R) h (t : seq R) : R :=
     stl_or_lt0 (h :: t)
   else 0.
 
+
 Fixpoint stl_translation {t} (e : expr t) : type_translation t :=
   match e in expr t return type_translation t with
   | ldl_bool _ true => 1
@@ -564,7 +581,21 @@ Fixpoint stl_translation {t} (e : expr t) : type_translation t :=
       let a_max: R := \big[maxr/a0]_(i <- A) i in
       stl_or a_max a0 A
   | `~ E1 => - {[ E1 ]}
-  | E1 `=> E2 => 0 (*temporary*)
+  | E1 `=> E2 => 
+      let a_max : R:= maxr (- {[ E1 ]}) {[ E2 ]} in
+      let a'_i (a_i : R) := (a_max - a_i) * (a_max)^-1 in
+      if a_max > 0 then
+        (a_max * expR (a'_i (- {[ E1 ]})) * expR (nu * a'_i (- {[ E1 ]})) +
+             a_max * expR (a'_i {[ E2 ]}) * expR (nu * a'_i {[ E2 ]})
+          )  * ((expR (nu * (a'_i (- {[ E1 ]}))) +
+            expR (nu * (a'_i {[ E2 ]}))
+          ))^-1
+      else if a_max < 0 then
+         ((- {[ E1 ]}) * expR (-nu * (a'_i (- {[ E1 ]}))) + {[ E2 ]} * expR (-nu * (a'_i {[ E2 ]}))
+          ) * 
+          ( (expR (nu * (a'_i (- {[ E1 ]}))) + expR (nu * (a'_i {[ E2 ]})))
+          )^-1
+      else 0
 
   | E1 `== E2 => - `| {[ E1 ]} - {[ E2 ]}|
   | E1 `<= E2 => {[ E2 ]} - {[ E1 ]}
