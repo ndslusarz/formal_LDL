@@ -3,7 +3,7 @@ Require Import Coq.Program.Equality.
 From mathcomp Require Import all_ssreflect all_algebra.
 From mathcomp Require Import lra.
 From mathcomp Require Import all_classical.
-From mathcomp Require Import reals ereal signed.
+From mathcomp Require Import reals ereal interval_inference.
 From mathcomp Require Import topology derive normedtype sequences
  exp measure lebesgue_measure lebesgue_integral hoelder.
 Require Import mathcomp_extra analysis_extra.
@@ -19,7 +19,7 @@ Local Open Scope classical_set_scope.
 
 Require Import ldl.
 
-Section example.
+Section example_robust.
 Local Open Scope ldl_scope.
 Context {R : realType}.
 
@@ -41,6 +41,7 @@ elim.
   + move=> p s. exact: (ldl_bool _ true).
   + move=> p s. exact: (ldl_bool _ true).
   + move=> e1 e2. exact: e1.
+  + move=> e1 e2 e3 e4 e5. exact: e2.
   + move=> p c e1 e2 e3 e4. exact: (ldl_bool _ true).
   + move=> l k f. exact: ldl_fun f.
   + move=> l k e1 e2 v1 v2. exact: (ldl_vec [tuple 0 | i < k])%R.
@@ -48,6 +49,7 @@ elim.
 - move=> p s e. exact: e.
 - move=> p s e. exact: e.
 - move=> p s e. exact: e.
+- move=> p c e f1 e1. exact: e1.
 - move=> p c e f1 e1 f2 e2. exact: e2.
 - move=> m l f e. exact: e.
 - move=> m l e1 f1 e2 f2. exact.
@@ -57,14 +59,14 @@ Defined.
 Context (n m : nat) (eps delta : @expr R Real_T) (f : @expr R (Fun_T (n.+1) (m.+1)))
   (v : @expr R (Vector_T (n.+1))) (x : @expr R (Vector_T (n.+1))).
 
-Definition eps_delta_robust :=
-    (((ldl_lookup (ldl_app (ldl_norm_infty n) (ldl_vec_sub x v)) (ldl_idx ord0)) `<= eps)
-       `=> ((ldl_lookup (ldl_app (ldl_norm_infty m) (ldl_vec_sub (ldl_app f x) (ldl_app f v))) (ldl_idx ord0))
+Definition eps_delta_robust (fl : @flag) :=
+    (@ldl_impl _ fl ((ldl_lookup (ldl_app (ldl_norm_infty n) (ldl_vec_sub x v)) (ldl_idx ord0)) `<= eps)
+        ((ldl_lookup (ldl_app (ldl_norm_infty m) (ldl_vec_sub (ldl_app f x) (ldl_app f v))) (ldl_idx ord0))
        `<= delta)).
 
-End example.
+End example_robust.
 
-Section example2.
+Section example_hierarchical.
 Local Open Scope ldl_scope.
 Context {R : realType}.
 
@@ -83,6 +85,7 @@ elim.
   + move=> p s. exact: (ldl_bool _ true).
   + move=> p s. exact: (ldl_bool _ true).
   + move=> e1 e2. exact: e1.
+  + move=> f e1 e2 e3 e4. exact: e1.
   + move=> p c e1 e2 e3 e4. exact: (ldl_bool _ true).
   + move=> l k f. exact: ldl_fun f.
   + move=> l k e1 e2 v1 v2. exact: (ldl_vec [tuple 0 | i < k])%R.
@@ -90,6 +93,7 @@ elim.
 - move=> p s e. exact: e.
 - move=> p s e. exact: e.
 - move=> p s e. exact: e.
+- move=> p c e f1 e1. exact: e1.
 - move=> p c e f1 e1 f2 e2. exact: e2.
 - move=> m l f e. exact: e.
 - move=> m l e1 f1 e2 f2. exact.
@@ -111,6 +115,7 @@ elim.
   + move=> p s. exact: (ldl_bool _ true).
   + move=> p s. exact: (ldl_bool _ true).
   + move=> e1 e2. exact: e1.
+  + move=> f e1 e2 e3 e4. exact: e1.
   + move=> p c e1 e2 e3 e4. exact: (ldl_bool _ true).
   + move=> l k f. exact: ldl_fun f.
   + move=> l k e1 e2 v1 v2. exact: (ldl_vec [tuple 0 | i < k])%R.
@@ -118,6 +123,7 @@ elim.
 - move=> p s e. exact: e.
 - move=> p s e. exact: e.
 - move=> p s e. exact: e.
+- move=> p c e f1 e1. exact: e1.
 - move=> p c e f1 e1 f2 e2. exact: e2.
 - move=> m l f e. exact: e.
 - move=> m l e1 f1 e2 f2. exact.
@@ -146,14 +152,9 @@ Context (n m : nat) (eps : @expr R Real_T) (f : @expr R (Fun_T (n.+1) (m.+1)))
 Let fancy_or (r : @flag) (eps p: @expr R Real_T) :=
  (ldl_cmp r cmp_le p eps) `\/ (ldl_cmp r cmp_le (ldl_real_sub (ldl_real 1%R) p) eps).
 
-(*could not get the notation to work
- - could not resolve implicit argument of type flag
-unsure how to solve that
-*)
-(* (p `<= eps) `\/ ((ldl_real_sub (ldl_real 1%R) p) `<= eps).*)
 
 Definition group_similiarity :=
   ldl_and (map (fancy_or r eps) (map (prob_group f x) Gs)).
 
 
-End example2.
+End example_hierarchical.

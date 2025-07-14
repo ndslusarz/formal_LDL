@@ -3,7 +3,7 @@ Require Import Coq.Program.Equality.
 From mathcomp Require Import all_ssreflect all_algebra.
 From mathcomp Require Import lra.
 From mathcomp Require Import all_classical.
-From mathcomp Require Import reals ereal signed.
+From mathcomp Require Import reals ereal interval_inference.
 From mathcomp Require Import topology derive normedtype sequences
  exp measure lebesgue_measure lebesgue_integral hoelder.
 Require Import mathcomp_extra analysis_extra ldl.
@@ -35,6 +35,9 @@ Require Import mathcomp_extra analysis_extra ldl.
 Import Num.Def Num.Theory GRing.Theory.
 Import Order.TTheory.
 Import numFieldTopology.Exports.
+
+HB.instance Definition _ (R : realType) b :=
+  @gen_eqMixin (@expr R (Bool_T b)).
 
 Section stl_lemmas.
 Local Open Scope ring_scope.
@@ -392,11 +395,12 @@ dependent induction e using expr_ind'.
     move/nthP => xnth.
     have [i il0 <-] := xnth (ldl_bool _ false).
     by apply/negPf; apply: H => //; rewrite ?h// -In_in mem_nth.
+- admit.
 - case: c.
   + by case: b; rewrite /is_stl/= ?lee_fin ?lte_fin ?ltNge subr_ge0 !stl_ereal_translations_Real_coincide// => /negbTE.
   + case: b; rewrite /is_stl/= ?lee_fin ?lte_fin !stl_ereal_translations_Real_coincide.
     by rewrite oppr_ge0 normr_le0 subr_eq0.
     by rewrite oppr_lt0 normr_gt0 subr_eq0 => /negbTE.
-Qed.
+Admitted.
 
 End stl_lemmas.

@@ -1,0 +1,422 @@
+From HB Require Import structures.
+From HB Require Import structures.
+Require Import Coq.Program.Equality.
+From mathcomp Require Import all_ssreflect all_algebra.
+From mathcomp Require Import lra.
+From mathcomp Require Import all_classical.
+From mathcomp Require Import reals ereal interval_inference.
+From mathcomp Require Import topology derive normedtype sequences
+ exp measure lebesgue_measure lebesgue_integral hoelder finmap multiset.
+Require Import mathcomp_extra analysis_extra ldl dl2.
+
+
+Set Implicit Arguments.
+Unset Strict Implicit.
+Unset Printing Implicit Defensive.
+
+Import Num.Def Num.Theory GRing.Theory.
+Import Order.TTheory.
+Import numFieldTopology.Exports.
+
+Reserved Notation "{[ e ]}" (format "{[  e  ]}").
+
+HB.instance Definition _ (R : realType) b := 
+  @gen_choiceMixin (@expr R (Bool_T b)). 
+
+Reserved Notation "Q |= P" (no associativity, at level 61).
+Reserved Notation "Q |- P" (no associativity, at level 61).
+
+
+Section dl2_hyperseq_calc.
+Local Open Scope ring_scope.
+Local Open Scope ldl_scope.
+Local Open Scope mset_scope. 
+Context {R : realType}.
+Context {K : choiceType}.
+Implicit Types  (A : {mset K}) (s : seq K).
+Variable p : R. 
+Local Notation "[[ e ]]_dl2" := (@dl2_translation R  _ e).
+
+Reserved Notation "Q |- P" (no associativity, at level 61).
+Notation "Q |- P" := (Q, P).
+
+Inductive seq_calc_dl2 :  seq ( seq (@expr R Bool_T_undef) * seq (@expr R Bool_T_undef))
+(*-> {mset (seq {mset (@expr R Bool_T_def)})}*)
+      -> Prop :=
+| id_dl2 : forall (Q :  seq ( seq (@expr R Bool_T_undef) * seq (@expr R Bool_T_undef)))
+                (a : @expr R Bool_T_undef),
+    seq_calc_dl2 ( ([::a] |- [:: a]) :: Q)
+(*structural*)
+| eex_dl2 : forall (Q P S1 S2: seq ( seq (@expr R Bool_T_undef) * seq (@expr R Bool_T_undef))),
+    seq_calc_dl2 (S1 ++ P ++ Q ++ S2) ->
+    seq_calc_dl2 (S1 ++ Q ++ P ++ S2)
+| ew_dl2 : forall (Q P : seq ( seq (@expr R Bool_T_undef) * seq (@expr R Bool_T_undef))),
+    seq_calc_dl2 Q ->
+    seq_calc_dl2 (Q ++ P) 
+| ec_dl2 : forall (Q P : seq ( seq (@expr R Bool_T_undef) * seq (@expr R Bool_T_undef))),
+    seq_calc_dl2 (Q ++ P ++ P) ->
+    seq_calc_dl2 (Q ++ P)
+| w_dl2 : forall (Q : seq ( seq (@expr R Bool_T_undef) * seq (@expr R Bool_T_undef)))
+                  (A B C : seq (@expr R Bool_T_undef)),
+    seq_calc_dl2 ((A |- B) :: Q) ->
+    seq_calc_dl2 ((A ++ C |- B) :: Q)
+| comm_hyper_dl2 : forall (Q :  seq ( seq (@expr R Bool_T_undef) * seq (@expr R Bool_T_undef)))
+                  (A1 A2 B1 B2 C D: seq (@expr R Bool_T_undef)),
+    seq_calc_dl2 (((A1 ++ B1) |- C) :: Q) ->
+    seq_calc_dl2 (((A2 ++ B2) |- D) :: Q) ->               
+    seq_calc_dl2 ( ((A1 ++ A2) |- C) :: ((B1 ++ B2) |- D) :: Q)
+(*exchange*)
+| exL_dl2 : forall (Q : seq ( seq (@expr R Bool_T_undef) * seq (@expr R Bool_T_undef)))
+                  (A B C X Y : seq (@expr R Bool_T_undef)),
+    seq_calc_dl2 (((X ++ A ++ B ++ Y) |- C) :: Q) ->
+    seq_calc_dl2 (((X ++ B ++ A ++ Y) |- C) :: Q) 
+| exR_dl2 : forall (Q : seq ( seq (@expr R Bool_T_undef) * seq (@expr R Bool_T_undef)))
+                  (A B C X Y : seq (@expr R Bool_T_undef)),
+    seq_calc_dl2 ((C |- (X ++ A ++ B ++ Y)) :: Q) ->
+    seq_calc_dl2 ((C |- (X ++ B ++ A ++ Y)) :: Q)
+(*logical*)
+| top_dl2 : forall Q 
+                  (A B : seq (@expr R Bool_T_undef)),
+    seq_calc_dl2 ((A |- (ldl_bool undef true) :: B) :: Q)
+    
+| andL_dl2 : forall (Q : seq ( seq (@expr R Bool_T_undef) * seq (@expr R Bool_T_undef)))
+                   (A B : seq (@expr R Bool_T_undef))
+                   (a b : @expr R Bool_T_undef),
+    seq_calc_dl2 ((a :: A |- B) :: Q) ->
+    seq_calc_dl2 ((b :: A |- B) :: Q) ->
+    seq_calc_dl2 (((a `/\ b) :: A |- B) :: Q)
+| andR_dl2 : forall (Q : seq ( seq (@expr R Bool_T_undef) * seq (@expr R Bool_T_undef)))
+                   (A B : seq (@expr R Bool_T_undef))
+                   (a b : @expr R Bool_T_undef),
+    seq_calc_dl2 (([:: (ldl_bool undef true)] |- [::a] ) :: ([:: (ldl_bool undef true)] |- [::b] ) :: Q) ->
+    seq_calc_dl2 ((A |- a :: B ) :: Q) ->
+    seq_calc_dl2 ((A |- b :: B ) :: Q) ->
+    seq_calc_dl2 (( A |- (a `/\ b) :: B) :: Q)
+| orL_dl2 : forall (Q : seq ( seq (@expr R Bool_T_undef) * seq (@expr R Bool_T_undef)))
+                   (A B : seq (@expr R Bool_T_undef))
+                   (a b : @expr R Bool_T_undef),
+    seq_calc_dl2 ((A |-  B) :: Q) ->
+    seq_calc_dl2 ((a :: b :: A |-  B) :: Q) ->
+    seq_calc_dl2 (( (a `\/ b) :: A |- B) :: Q)
+| orR_dl2 : forall (Q : seq ( seq (@expr R Bool_T_undef) * seq (@expr R Bool_T_undef)))
+                   (A B : seq (@expr R Bool_T_undef))
+                   (a b : @expr R Bool_T_undef),
+    seq_calc_dl2 ((A |- a :: b ::  B) :: Q) ->
+    seq_calc_dl2 ((  A |- (a `\/ b) :: B) :: Q)
+|implL_dl2 : forall (Q : seq ( seq (@expr R Bool_T_undef) * seq (@expr R Bool_T_undef)))
+                   (A B : seq (@expr R Bool_T_undef))
+                   (a b : @expr R Bool_T_undef),
+    seq_calc_dl2 ((A |-  B) :: Q) ->
+    seq_calc_dl2 ((( b :: A) |- a:: B) :: Q ) ->
+    seq_calc_dl2 ((((a `=> b) :: A) |- B) :: Q)
+| implR_l : forall (Q : seq ( seq (@expr R Bool_T_undef) * seq (@expr R Bool_T_undef)))
+                 (A B : seq (@expr R Bool_T_undef))
+                 (a b : @expr R Bool_T_undef),
+    seq_calc_dl2 ((A|- B) :: Q ) ->
+    seq_calc_dl2  ((a::A |- b :: B) :: Q)  ->
+    seq_calc_dl2 ((A |- (a `=> b) :: B) :: Q )
+.
+
+Definition eval_dl2_and  (Q : seq (@expr R Bool_T_undef))
+  := [[(ldl_and Q)]]_dl2 .
+
+Definition eval_dl2_or  (Q : seq (@expr R Bool_T_undef))
+  := [[(ldl_or Q)]]_dl2 .
+
+Lemma eval_dl2_and_cat  (Q P : seq (@expr R Bool_T_undef)) :
+ eval_dl2_and (Q ++ P) = (eval_dl2_and Q + eval_dl2_and P)%R.
+Proof.
+rewrite /eval_dl2_and//=/sumR !big_map !big_cat//=.
+Qed.
+
+Lemma eval_dl2_and_cons  (P : seq (@expr R Bool_T_undef)) (q: (@expr R Bool_T_undef)):
+ eval_dl2_and (q :: P) = [[q]]_dl2 + eval_dl2_and P.
+Proof.
+rewrite /eval_dl2_and//=/sumR !big_cons//=.
+Qed.
+
+Lemma eval_dl2_or_cat  (Q P : seq (@expr R Bool_T_undef)) :
+ eval_dl2_or (Q ++ P) = (-1) * eval_dl2_or Q * eval_dl2_or P.
+Proof.
+rewrite /eval_dl2_or//=/prodR !big_map !big_cat//=.
+rewrite size_cat -addnS -addn1 -(addn1 (size Q))//=. 
+have h : -1 * ((-1) ^+ (size Q + 1) * \prod_(j <- Q) [[j]]_dl2) * ((-1) ^+ (size P + 1) * \prod_(j <- P) [[j]]_dl2) = 
+-1 * (-1) ^+ (size Q + 1) * (-1) ^+ (size P + 1) * \prod_(j <- Q) [[j]]_dl2 *  \prod_(j <- P) [[j]]_dl2. 
+nra.
+rewrite h.
+have H : -1 * (-1) ^+ (size Q + 1) * (-1) ^+ (size P + 1) = 
+           (-1) ^+ (size Q + (size P + 1)). {
+intros. 
+have o1 : (-1) ^+ 1 = -1; intros; rewrite//=.
+rewrite -{1}o1. rewrite -!exprD. 
+rewrite -signr_odd.
+have hh : (-1) ^+ (size Q + (size P + 1)) = (-1) ^+ odd (size Q + (size P + 1)). move => t1.
+by rewrite signr_odd//=.
+rewrite hh.
+have oddh : odd (1 + (size Q + 1) + (size P + 1)) = odd (size Q + (size P + 1)).
+have helper: (1 + (size Q + 1) + (size P + 1))%N = ((size Q + (size P + 1)) + 2)%N. {
+rewrite !(addnC 1 ) -(addnA (size Q + 1)%N) (addnC 1 )//=.
+rewrite addnA. 
+have h1 : (1 + (size P + 1 + 1))%N = (size P + 1 + 2)%N. rewrite addnC//=. 
+have triv : 2%N  = 1%N + 1%N by rewrite //=. rewrite triv addnA//=. 
+have reshape : (size Q + 1 + (size P + 1) + 1)%N = (size Q +( 1 + (size P + 1 + 1)))%N 
+  by rewrite !addnA//=.
+by rewrite reshape h1 !addnA//=. }
+rewrite helper addnA oddD addbF//=.
+rewrite oddh//=.}
+rewrite H mulrA//=.
+Qed.
+
+Lemma eval_dl2_or_cons  (P : seq (@expr R Bool_T_undef)) (q: (@expr R Bool_T_undef)):
+ eval_dl2_or (q :: P) = - [[q]]_dl2 * eval_dl2_or P.
+Proof.
+rewrite -cat1s eval_dl2_or_cat//=.
+rewrite {1}/eval_dl2_or//= sqrrN expr1n /prodR big_cons big_nil mulr1 mul1r//= mulN1r//=. 
+Qed.
+
+Lemma eval_dl2_and_le0 (Q : seq (@expr R Bool_T_undef)):
+  eval_dl2_and Q <= 0.
+Proof.
+have H := dl2_translation_le0 (ldl_and Q).
+rewrite /eval_dl2_and//=.
+Qed.
+
+Lemma eval_dl2_or_le0 (Q : seq (@expr R Bool_T_undef)):
+  eval_dl2_or Q <= 0.
+Proof.
+have H := dl2_translation_le0 (ldl_or Q).
+rewrite /eval_dl2_or//=.
+Qed.
+
+Lemma sound_dl2 (Q : seq ( seq (@expr R Bool_T_undef) * seq (@expr R Bool_T_undef))):
+seq_calc_dl2 Q -> 
+exists (q : ( seq (@expr R Bool_T_undef) * seq (@expr R Bool_T_undef))), q \in Q 
+/\ 
+eval_dl2_and (fst q)  <=  eval_dl2_or (snd q).
+Proof.
+intros; rewrite//=. dependent induction H.
+- exists ([:: a] |- [:: a]). rewrite //= mem_head; split. by [].  
+  rewrite /eval_dl2_and/eval_dl2_or//= /sumR/prodR. 
+  rewrite !big_cons !big_nil addr0 mulr1. 
+  by rewrite -(expr1 (-1)) sqrr_sign mul1r//=.
+- destruct IHseq_calc_dl2 as [M [IH1 IH2]]. 
+  exists M. 
+  rewrite !mem_cat //= in IH1.
+  rewrite !mem_cat. split; first last.
+  by rewrite IH2//=. move/orP: IH1.
+  move => [IH1 | /orP IH1].
+  rewrite IH1//=.
+  destruct IH1 as [IH1 | IH1].
+  rewrite IH1 !orbT//=.
+  move/orP: IH1.
+  move => [IH1 | IH1]; rewrite IH1 ?orTb ?orbT//=.
+- destruct IHseq_calc_dl2 as [q [IH1 IH2]].
+  exists q. rewrite mem_cat IH1 orTb.
+  split. by []. 
+  by apply IH2.
+- destruct IHseq_calc_dl2 as [M [IH1 IH2]].   
+  exists M. rewrite !mem_cat in IH1. 
+  rewrite mem_cat. move/orP : IH1. 
+  move => [h |/orP h].  rewrite h ?orbT; split; rewrite//=. 
+  move: h. move => [h | h]; rewrite h ?orbT; split; rewrite//=.
+- destruct IHseq_calc_dl2 as [q [IH1 IH2]].
+   rewrite in_cons in IH1. 
+   move/orP : IH1. 
+  move => [/eqP h | h].
+  + exists (A ++ C |- B).
+    subst. rewrite //= in IH2.
+    rewrite in_cons eq_refl orTb. split. by [].
+    rewrite //= eval_dl2_and_cat. 
+    have HC := eval_dl2_and_le0 C.
+    lra.
+  + exists q. 
+    by rewrite in_cons h IH2 orbT//=.
+- destruct IHseq_calc_dl2_1 as [q1 [IH11 IH12]].
+  destruct IHseq_calc_dl2_2 as [q2 [IH21 IH22]].
+  rewrite in_cons in IH11. rewrite in_cons in IH21. 
+  move/orP : IH11. move/orP: IH21.
+  move => [/eqP h2 | h2]; move => [/eqP h1 | h1].
+  + subst. 
+    rewrite //= eval_dl2_and_cat in IH12.
+    rewrite //= eval_dl2_and_cat in IH22.
+    have temp : eval_dl2_and A2 <= eval_dl2_and B1 \/ eval_dl2_and A2 > eval_dl2_and B1. lra.
+    destruct temp as [ab | ab].
+    * exists (A1 ++ A2 |- C).
+      rewrite !in_cons eq_refl !orTb //=. split; first by [].
+      rewrite eval_dl2_and_cat. lra.
+    * exists (B1 ++ B2 |- D).
+      rewrite !in_cons eq_refl !orTb orbT//=. split; first by [].
+      rewrite eval_dl2_and_cat. lra.
+  + exists q1. 
+    by rewrite !in_cons h1 IH12 !orbT//=. 
+  + exists q2. 
+    by rewrite !in_cons h2 IH22 !orbT//=. 
+  + exists q1. 
+    by rewrite !in_cons h1 IH12 !orbT//=. 
+- destruct IHseq_calc_dl2 as [q [IH1 IH2]].
+  rewrite in_cons in IH1. 
+  move/orP : IH1. 
+  move => [/eqP h | h].
+  + exists (X ++ B ++ A ++ Y |- C).
+    subst.
+    rewrite mem_head; split; first by [].
+    rewrite//=  !eval_dl2_and_cat in IH2.
+    rewrite//= !eval_dl2_and_cat. lra.
+  + exists q. 
+    by rewrite in_cons h IH2 orbT//=.
+- destruct IHseq_calc_dl2 as [q [IH1 IH2]].
+  rewrite in_cons in IH1. move/orP : IH1.
+  move => [/eqP h | h].
+  + subst. exists (C |- X ++ B ++ A ++ Y).
+    rewrite mem_head; split; first by [].
+    rewrite//= !eval_dl2_or_cat in IH2.
+    rewrite//= !eval_dl2_or_cat. lra.
+  + exists q. 
+    by rewrite in_cons h IH2 orbT//=.
+- exists (A |- ldl_bool undef true :: B).
+  rewrite mem_head; split; first by [].
+  rewrite//= /eval_dl2_or//=/prodR big_cons !mul0r !mulr0  (eval_dl2_and_le0 A)//=.
+- destruct IHseq_calc_dl2_1 as [q1 [IH11 IH12]].
+  destruct IHseq_calc_dl2_2 as [q2 [IH21 IH22]].
+  rewrite in_cons in IH11. rewrite in_cons in IH21. 
+  move/orP : IH11. move/orP: IH21.
+  move => [/eqP h2 | h2]; move => [/eqP h1 | h1].
+  + subst. exists (a `/\ b :: A |- B).
+    rewrite//= eval_dl2_and_cons in IH12.
+    rewrite//= eval_dl2_and_cons in IH22.
+    rewrite mem_head; split; first by [].
+    rewrite//= eval_dl2_and_cons//=/sumR !big_cons big_nil addr0. 
+    have ha := dl2_translation_le0 a.
+    have hb := dl2_translation_le0 b. 
+    have h : ([[a]]_dl2 + eval_dl2_and A)%E <= eval_dl2_or B ->
+             ([[a]]_dl2 + [[b]]_dl2 + eval_dl2_and A)%E <= eval_dl2_or B. lra.
+    rewrite (h IH12)//=.
+  + exists q1. 
+    by rewrite !in_cons h1 IH12 !orbT//=. 
+  + exists q2. 
+    by rewrite !in_cons h2 IH22 !orbT//=. 
+  + exists q1. 
+    by rewrite !in_cons h1 IH12 !orbT//=. 
+- destruct IHseq_calc_dl2_1 as [q1 [IH11 IH12]].
+  destruct IHseq_calc_dl2_2 as [q2 [IH21 IH22]].
+  destruct IHseq_calc_dl2_3 as [q3 [IH31 IH32]].
+  rewrite in_cons in IH11; rewrite in_cons in IH21; rewrite in_cons in IH31. 
+  move/orP : IH11; move/orP: IH21; move/orP: IH31.
+  have ha := dl2_translation_le0 a.
+  have hb := dl2_translation_le0 b. 
+  have ev_or : eval_dl2_or [::] = -1 by rewrite /eval_dl2_or//=/prodR  big_nil mulr1//=.
+  have ev_and : eval_dl2_and [::] = 0 by rewrite /eval_dl2_and//=/sumR  big_nil//=.
+  move => [/eqP h3 | h3]; move => [/eqP h2 | h2]; move => [/eqP h1 | h1].
+  + subst. exists (A |- a `/\ b :: B).
+    rewrite mem_head; split; first by [].
+    rewrite//= !eval_dl2_or_cons eval_dl2_and_cons !ev_or ev_and mulrNN mulr1 addr0//= in IH12.
+    rewrite//= !eval_dl2_or_cons  in IH22.
+    rewrite//= !eval_dl2_or_cons  in IH32.
+    rewrite//= eval_dl2_or_cons//= /sumR!big_cons big_nil addr0.
+    have a0 : [[a]]_dl2 = 0 by lra.
+    rewrite a0 add0r//=.
+  + subst. rewrite in_cons in h1; move/orP : h1; move => [/eqP h1 | h1].
+    * subst. exists (A |- a `/\ b :: B).
+      rewrite mem_head; split; first by [].
+      rewrite//= !eval_dl2_or_cons eval_dl2_and_cons !ev_or ev_and mulrNN mulr1 addr0//= in IH12.
+      rewrite//= !eval_dl2_or_cons  in IH22.
+      rewrite//= !eval_dl2_or_cons  in IH32.
+      rewrite//= eval_dl2_or_cons//= /sumR!big_cons big_nil addr0.
+      have b0 : [[b]]_dl2 = 0 by lra.
+      rewrite b0 addr0//=.
+    * exists q1. 
+      by rewrite !in_cons h1 IH12 !orbT//=.
+  + exists q2. 
+    by rewrite !in_cons h2 IH22 !orbT//=. 
+  + exists q2. 
+    by rewrite !in_cons h2 IH22 !orbT//=.   
+  + exists q3. 
+    by rewrite !in_cons h3 IH32 !orbT//=. 
+  + exists q3. 
+    by rewrite !in_cons h3 IH32 !orbT//=. 
+  + exists q3. 
+    by rewrite !in_cons h3 IH32 !orbT//=. 
+  + exists q3. 
+    by rewrite !in_cons h3 IH32 !orbT//=. 
+- destruct IHseq_calc_dl2_1 as [q1 [IH11 IH12]].
+  destruct IHseq_calc_dl2_2 as [q2 [IH21 IH22]].
+  rewrite in_cons in IH11. rewrite in_cons in IH21. 
+  move/orP : IH11. move/orP: IH21.
+  move => [/eqP h2 | h2]; move => [/eqP h1 | h1].
+  + subst. exists (a `\/ b :: A |- B). 
+    rewrite mem_head; split; first by [].
+    rewrite//= in IH12.
+    rewrite//= !eval_dl2_and_cons addrA in IH22.
+    rewrite//= eval_dl2_and_cons//=/prodR !big_cons big_nil mulr1. 
+    have ha := dl2_translation_le0 a.
+    have hb := dl2_translation_le0 b.
+    have hA := dl2_translation_le0 (ldl_and A).
+    have hB := dl2_translation_le0 (ldl_or B).
+    have h: ((-1) ^+ 3 * ([[a]]_dl2 * [[b]]_dl2))%R <= 0 by nra.
+    have h': (((-1) ^+ 3 * ([[a]]_dl2 * [[b]]_dl2))%R + eval_dl2_and A)%E <=
+                eval_dl2_and A. nra.
+    have le_t : forall (a b c: R), a <= b -> b <= c -> a <= c by intros; lra.
+    by apply (le_t _ _ _ h' IH12).
+  + exists q1. 
+    by rewrite !in_cons h1 IH12 !orbT//=. 
+  + exists q2. 
+    by rewrite !in_cons h2 IH22 !orbT//=. 
+  + exists q1. 
+    by rewrite !in_cons h1 IH12 !orbT//=.
+- destruct IHseq_calc_dl2 as [q [IH1 IH2]].
+  rewrite in_cons in IH1.
+  move/orP : IH1.
+  move => [/eqP h1 | h1].
+  + subst. exists (A |- a `\/ b :: B).
+    rewrite mem_head; split; first by [].
+    rewrite//= !eval_dl2_or_cons in IH2.
+    rewrite //= eval_dl2_or_cons//=/prodR !big_cons big_nil mulr1.
+    have h :- ((-1) ^+ 3 * ([[a]]_dl2 * [[b]]_dl2)) * eval_dl2_or B = 
+           - [[a]]_dl2 * (- [[b]]_dl2 * eval_dl2_or B). nra.
+    rewrite h//=.
+
+  + exists q. 
+    by rewrite in_cons h1 IH2 orbT//=.
+- destruct IHseq_calc_dl2_1 as [q1 [IH11 IH12]].
+  destruct IHseq_calc_dl2_2 as [q2 [IH21 IH22]].
+  rewrite in_cons in IH11. rewrite in_cons in IH21. 
+  move/orP : IH11. move/orP: IH21.
+  move => [/eqP h2 | h2]; move => [/eqP h1 | h1].
+  + subst. exists (a `=> b :: A |- B). 
+    rewrite mem_head; split; first by [].
+    rewrite//= in IH12.
+    rewrite//= eval_dl2_and_cons eval_dl2_or_cons in IH22.
+    rewrite//= eval_dl2_and_cons//=. case: ifP; move => /eqP hc.
+    * rewrite hc addr0. rewrite hc oppr0 mul0r in IH22.
+      have hb := dl2_translation_le0 b.
+      have h : ([[b]]_dl2 + eval_dl2_and A)%E <= eval_dl2_and A. lra.
+      have le_t : forall (a b c: R), a <= b -> b <= c -> a <= c by intros; lra.
+      by apply (le_t _ _ _ h IH12).
+    * by rewrite add0r//=.
+  + exists q1. 
+    by rewrite !in_cons h1 IH12 !orbT//=. 
+  + exists q2. 
+    by rewrite !in_cons h2 IH22 !orbT//=. 
+  + exists q1. 
+    by rewrite !in_cons h1 IH12 !orbT//=.
+- destruct IHseq_calc_dl2_1 as [q1 [IH11 IH12]].
+  destruct IHseq_calc_dl2_2 as [q2 [IH21 IH22]].
+  rewrite in_cons in IH11. rewrite in_cons in IH21. 
+  move/orP : IH11. move/orP: IH21.
+  move => [/eqP h2 | h2]; move => [/eqP h1 | h1].
+  + subst. exists (A |- a `=> b :: B). 
+    rewrite mem_head; split; first by [].
+    rewrite//= in IH12.
+    rewrite//= eval_dl2_and_cons eval_dl2_or_cons in IH22.
+    rewrite//= eval_dl2_or_cons//=. case: ifP; move => /eqP hc.
+    * rewrite hc add0r in IH22; rewrite hc addr0//=.
+    * have hA := dl2_translation_le0 (ldl_and A).
+      rewrite oppr0 mul0r//=.
+  + exists q1. 
+    by rewrite !in_cons h1 IH12 !orbT//=. 
+  + exists q2. 
+    by rewrite !in_cons h2 IH22 !orbT//=. 
+  + exists q1. 
+    by rewrite !in_cons h1 IH12 !orbT//=.
+Qed.
+End dl2_hyperseq_calc.

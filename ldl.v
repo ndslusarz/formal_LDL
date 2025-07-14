@@ -3,10 +3,11 @@ Require Import Coq.Program.Equality.
 From mathcomp Require Import all_ssreflect all_algebra.
 From mathcomp Require Import lra.
 From mathcomp Require Import all_classical.
-From mathcomp Require Import reals ereal signed.
+From mathcomp Require Import reals ereal.
 From mathcomp Require Import topology derive normedtype sequences
- exp measure lebesgue_measure lebesgue_integral hoelder.
+ exp measure lebesgue_measure lebesgue_integral hoelder finmap multiset.
 Require Import mathcomp_extra analysis_extra.
+From HB Require Import structures.
 
 (**md**************************************************************************)
 (* # Logics                                                                   *)
@@ -14,14 +15,15 @@ Require Import mathcomp_extra analysis_extra.
 (* This file provides a formalization of the LDL language. The inductive type *)
 (* `expr` defines the language itself, which is intrisically typed on the     *)
 (* types defined by `ldl_type`. Boolean formulas take an argument of type     *)
-(* `flag`: `def` allows negation in the expression, while `undef` disallows *)
+(* `flag`: `def` allows negation in the expression, while `undef` disallows   *)
 (* it.                                                                        *)
 (*                                                                            *)
 (* ## Definitions                                                             *)
 (* - `type_translation`: the real-valued translation of ldl_type into the     *)
 (*   corresponding type of the interpretation; maps `Bool_T` to $\mathbb R$   *)
-(* - `ereal_type_translation`: same as before, but maps `Bool_T` to $\bar{\mathbb R}}$ *)
-(* - `bool_type_translation`: type translation for the boolean interpretation; *)
+(* - `ereal_type_translation`: same as before, but maps 
+     `Bool_T` to $\bar{\mathbb R}}$                                           *)
+(* - `bool_type_translation`: type translation for the boolean interpretation;*)
 (*   maps `Bool_T` to `bool`                                                  *)
 (* - `bool_translation`: maps an LDL-formula to a Boolean formula, with the   *)
 (*   obvious interpretation                                                   *)
@@ -41,6 +43,11 @@ Require Import mathcomp_extra analysis_extra.
 (* `shadow_lifting f` with `f : rV[R]_n.+1 -> R`                              *)
 (*   $\forall p, p > 0 \to \forall i, \frac{d\,f}{d\,x_i} [p; \cdots; p] > 0$ *)
 (*                                                                            *)
+(*## Examples                                                                 *)
+(* - example_eps_delta_robust - exanmple constraint -robustness - expressed   *)
+(*   using the custom language of `expr`                                      *)
+(* - example_hierarchichal - example group constraint expressed using the     *)
+(*   custom language of `expr`                                                *)
 (******************************************************************************)
 
 Set Implicit Arguments.
@@ -61,6 +68,8 @@ Reserved Notation "[[ e ]]_dl2e" (at level 10, format "[[ e ]]_dl2e").
 Reserved Notation "[[ e ]]_dl2" (at level 10, format "[[ e ]]_dl2").
 
 (* Polarity of formulas: undef does not allow negation, while def allows negation *)
+(* this flag also encompasess implication - if negation is not defined, the same
+is true for implication*)
 Inductive flag := def | undef.
 
 Inductive ldl_type :=
@@ -88,6 +97,7 @@ Inductive expr : ldl_type -> Type :=
   | ldl_and : forall x, seq (expr (Bool_T x)) -> expr (Bool_T x)
   | ldl_or : forall x, seq (expr (Bool_T x)) -> expr (Bool_T x)
   | ldl_not : expr Bool_T_def-> expr Bool_T_def
+  | ldl_impl :forall x, expr (Bool_T x) -> expr (Bool_T x) -> expr (Bool_T x)
   (* comparisons *)
   | ldl_cmp : forall x, comparison -> expr Real_T -> expr Real_T -> expr (Bool_T x)
   (* networks and applications *)
@@ -97,19 +107,16 @@ Inductive expr : ldl_type -> Type :=
 
 End expr.
 
-HB.instance Definition _ (R : realType) b :=
-  @gen_eqMixin (@expr R (Bool_T b)).
-
 Declare Scope ldl_scope.
 
 Notation "a `/\ b" := (ldl_and [:: a; b]) (at level 45).
 Notation "a `\/ b" := (ldl_or [:: a; b]) (at level 45).
-Notation "a `=> b" := (ldl_or [:: (ldl_not a); b]) (at level 55).
+Notation "a `=> b" := (ldl_impl a b) (at level 55).
+(*Notation "a `=> b" := (ldl_or [:: (ldl_not a); b]) (at level 55).*)
 Notation "`~ a"    := (ldl_not a) (at level 75).
 Definition ldl_add (R : realType) := ldl_fun (fun (t : 2.-tuple R) => [tuple [tnth t 0] + [tnth t 1] ])%R.
 Definition ldl_mul {R : realType} := ldl_fun (fun (t : 2.-tuple R) => [tuple [tnth t 0] * [tnth t 1] ])%R.
-Definition ldl_sub {R : realType} := ldl_fun (fun (t : 2.-tuple R)
-   => [tuple [tnth t 0] - [tnth t 1] ])%R.
+Definition ldl_sub {R : realType} := ldl_fun (fun (t : 2.-tuple R) => [tuple [tnth t 0] - [tnth t 1] ])%R.
 Definition ldl_opp {R : realType}  := ldl_fun (fun (t : 1.-tuple R) => [tuple -[tnth t 0] ])%R.
 Notation "a `+ b"  := (ldl_lookup (ldl_app ldl_add [tuple a; b]) 0) (at level 50).
 Notation "a `- b"  := (ldl_lookup (ldl_app ldl_sub [tuple a; b]) 0) (at level 45).
@@ -134,6 +141,8 @@ Lemma expr_ind' (R : realType) :
     (forall b (l : seq (expr (Bool_T b))), List.Forall (fun x => P (Bool_T b) x) l -> P (Bool_T b) (ldl_and l)) ->
     (forall b (l : seq (expr (Bool_T b))), List.Forall (fun x => P (Bool_T b) x) l -> P (Bool_T b) (ldl_or l)) ->
     (forall e : expr Bool_T_def, P Bool_T_def e -> P Bool_T_def (`~ e)) ->
+    (forall b (e1 e2 : expr (Bool_T b)), P (Bool_T b) e1 -> P (Bool_T b) e2 ->
+                                               P (Bool_T b) (e1 `=> e2)) ->
     (forall (n m : nat) (t : n.-tuple R -> m.-tuple R), P (Fun_T n m) (ldl_fun t)) ->
     (forall (n m : nat) (e : expr (Fun_T n m)),
      P (Fun_T n m) e ->
@@ -145,7 +154,7 @@ Lemma expr_ind' (R : realType) :
      P Real_T e -> forall e0 : expr Real_T, P Real_T e0 -> P (Bool_T b) (ldl_cmp b c e e0)) ->
     forall (s : ldl_type) (e : expr s), P s e.
 Proof.
-move => P H H0 H1 H2 H3 H4 H7 H11 H12 H13 H14 s e.
+move => P H H0 H1 H2 H3 H4 H7 H11 H12 H13 H14 H15 s e.
 revert e.
 revert s.
 fix F1 2.
@@ -170,15 +179,16 @@ destruct e.
       - apply F1.
       - apply IHl.
   * apply H7; eauto.
-  * apply H14; eauto.
-  * apply H11.
-  * apply H12; eauto.
+  * apply H11; eauto.
+  * apply H15; eauto.
+  * apply H12.
   * apply H13; eauto.
+  * apply H14; eauto.
 Qed.
 
 Local Close Scope ldl_scope.
 
-Inductive DL := Lukasiewicz | Yager | Godel | product.
+Inductive DL := Lukasiewicz | Yager | Godel | product | GodelS | productS.
 
 Section type_translation.
 Context {R : realType}.
@@ -215,6 +225,7 @@ End type_translation.
 Section bool_translation.
 Local Open Scope ring_scope.
 Local Open Scope ldl_scope.
+Local Open Scope mset_scope. 
 Context {R : realType}.
 
 Fixpoint bool_translation {t} (e : @expr R t) : bool_type_translation t :=
@@ -227,6 +238,7 @@ Fixpoint bool_translation {t} (e : @expr R t) : bool_type_translation t :=
   | ldl_and b Es => \big[andb/true]_(i <- map bool_translation Es) i
   | ldl_or b Es => \big[orb/false]_(i <- map bool_translation Es) i
   | `~ E1 => ~~ << E1 >>
+  | E1 `=>E2 => << E1 >> ==> << E2>>
 
   | E1 `== E2 => << E1 >> == << E2 >>
   | E1 `<= E2 => << E1 >> <= << E2 >>
@@ -296,22 +308,45 @@ Fixpoint translation {t} (e : @expr R t) {struct e} : type_translation t :=
    | ldl_idx n i => i
    | ldl_vec n t => t
 
-   | ldl_and b Es =>
+   | ldl_and _ Es =>
        match l with
        | Lukasiewicz => maxr (sumR (map translation Es) - (size Es)%:R+1) 0
        | Yager => maxr (1 - (sumR (map (fun E => (1 - ({[ E ]} : type_translation (Bool_T _)))`^p) Es))`^p^-1) 0
        | Godel => minR (map translation Es)
        | product => prodR (map translation Es)
+       | GodelS => minR (map translation Es)
+       | productS => prodR (map translation Es)
        end
-   | ldl_or b Es =>
+   | ldl_or _ Es =>
        match l with
        | Lukasiewicz => minr (sumR (map translation Es)) 1
        | Yager => minr ((sumR (map (fun E => ({[ E ]} : type_translation (Bool_T _))`^p) Es))`^p^-1) 1
        | Godel => maxR (map translation Es)
        | product => product_dl_prod (map translation Es)
+       | GodelS => maxR (map translation Es)
+       | productS => product_dl_prod (map translation Es)
        end
 
-    | `~ E1 => 1 - {[ E1 ]}
+    (*| `~ E1 => 1 - {[ E1 ]}*)
+    | `~ E1 => 
+       match l with
+       | Lukasiewicz => 1 - {[ E1 ]}
+       | Yager => 1 - {[ E1 ]}
+       | Godel => if {[ E1 ]} > 0 then 0 else 1
+       | product => if {[ E1 ]} > 0 then 0 else 1
+       | GodelS => 1 - {[ E1 ]}
+       | productS => 1 - {[ E1 ]}
+       end
+
+    | E1 `=> E2 =>
+        match l with
+       | Lukasiewicz => minr (1 - (translation E1) + (translation E2)) 1
+       | Yager => minr (((1 - (translation E1))`^p + (translation E2)`^p )`^p^-1) 1 (*temporary*)
+       | Godel => if (translation E2) < (translation E1) then (translation E2) else 1 
+       | product => if (translation E2) < (translation E1) then (translation E2) * (translation E1)^-1 else 1
+       | GodelS => maxr (1 - (translation E1)) (translation E2)
+       | productS => 1 - ( 1 - (translation E2)) * (translation E1)
+       end
 
     | E1 `== E2 => if {[ E1 ]} == -{[ E2 ]} then ({[ E1 ]} == {[ E2 ]})%:R else maxr (1 - `|({[ E1 ]} - {[ E2 ]}) / ({[ E1 ]} + {[ E2 ]})|) 0
     | E1 `<= E2 => if {[ E1 ]} == -{[ E2 ]} then ({[ E1 ]} <= {[ E2 ]})%R%:R else maxr (1 - maxr (({[ E1 ]} - {[ E2 ]}) / `|{[ E1 ]} + {[ E2 ]}|) 0) 0
@@ -321,6 +356,8 @@ Fixpoint translation {t} (e : @expr R t) {struct e} : type_translation t :=
     | ldl_lookup n v i => tnth (translation v) (translation i)
     end
 where "{[ e ]}" := (translation e).
+
+
 
 End fuzzy_translation.
 
@@ -340,6 +377,7 @@ Fixpoint dl2_ereal_translation {t} (e : @expr R t) {struct e} : ereal_type_trans
   | ldl_and _ Es => sumE (map dl2_ereal_translation Es)
   | ldl_or _ Es => ((- 1) ^+ (size Es).+1)%:E * prodE (map dl2_ereal_translation Es)
   | `~ E1 => +oo (* default value, all lemmas are for negation-free formulas *)
+  | E1 `=> E2 => if {[ E1 ]} == 0 then {[ E2 ]} else 0
 
   | E1 `== E2 => (- `| {[ E1 ]} - {[ E2 ]}|)%:E
   | E1 `<= E2 => (- maxr ({[ E1 ]} - {[ E2 ]}) 0)%:E
@@ -369,6 +407,7 @@ Fixpoint dl2_translation {t} (e : @expr R t) {struct e} : type_translation t :=
   | ldl_and _ Es => sumR (map dl2_translation Es)
   | ldl_or _ s => (- 1) ^+ (size s).+1 * prodR (map dl2_translation s)
   | `~ E1 => 0 (* default value, all lemmas are for negation-free formulas *)
+  | E1 `=> E2 => if {[ E1 ]} == 0 then {[ E2 ]} + {[ E1 ]} else 0
 
   | E1 `== E2 => (- `| {[ E1 ]} - {[ E2 ]}|)
   | E1 `<= E2 => (- maxr ({[ E1 ]} - {[ E2 ]}) 0)
@@ -434,6 +473,23 @@ Fixpoint stl_ereal_translation {t} (e : expr t) : ereal_type_translation t :=
           (fine (sumE (map (fun a => expeR (nu%:E * (a'_i a))) A)))^-1%:E
         else 0
   | `~ E1 => - {[ E1 ]}
+  | E1 `=> E2 => 
+      let a_max : \bar R := maxe (- {[ E1 ]}) {[ E2 ]} in
+      let a'_i (a_i : \bar R) := maxe_dev a_max a_i in
+      if a_max == -oo then -oo
+      else if a_max == +oo then +oo
+        else if a_max > 0 then
+          (a_max * expeR (a'_i (- {[ E1 ]})) * expeR (nu%:E * a'_i (- {[ E1 ]})) +
+             a_max * expeR (a'_i {[ E2 ]}) * expeR (nu%:E * a'_i {[ E2 ]})
+          )  * (fine (expeR (nu%:E * (a'_i (- {[ E1 ]}))) +
+            expeR (nu%:E * (a'_i {[ E2 ]}))
+          ))^-1%:E
+        else if a_max < 0 then
+          ((- {[ E1 ]}) * expeR (-nu%:E * (a'_i (- {[ E1 ]}))) + {[ E2 ]} * expeR (-nu%:E * (a'_i {[ E2 ]}))
+          ) * 
+          (fine (expeR (nu%:E * (a'_i (- {[ E1 ]}))) + expeR (nu%:E * (a'_i {[ E2 ]})))
+          )^-1%:E
+        else 0
 
   (*comparisons*)
   | E1 `== E2 => (- `| {[ E1 ]} - {[ E2 ]}|)%:E
@@ -503,6 +559,7 @@ Definition stl_or (a_max : R) h (t : seq R) : R :=
     stl_or_lt0 (h :: t)
   else 0.
 
+
 Fixpoint stl_translation {t} (e : expr t) : type_translation t :=
   match e in expr t return type_translation t with
   | ldl_bool _ true => 1
@@ -524,6 +581,21 @@ Fixpoint stl_translation {t} (e : expr t) : type_translation t :=
       let a_max: R := \big[maxr/a0]_(i <- A) i in
       stl_or a_max a0 A
   | `~ E1 => - {[ E1 ]}
+  | E1 `=> E2 => 
+      let a_max : R:= maxr (- {[ E1 ]}) {[ E2 ]} in
+      let a'_i (a_i : R) := (a_max - a_i) * (a_max)^-1 in
+      if a_max > 0 then
+        (a_max * expR (a'_i (- {[ E1 ]})) * expR (nu * a'_i (- {[ E1 ]})) +
+             a_max * expR (a'_i {[ E2 ]}) * expR (nu * a'_i {[ E2 ]})
+          )  * ((expR (nu * (a'_i (- {[ E1 ]}))) +
+            expR (nu * (a'_i {[ E2 ]}))
+          ))^-1
+      else if a_max < 0 then
+         ((- {[ E1 ]}) * expR (-nu * (a'_i (- {[ E1 ]}))) + {[ E2 ]} * expR (-nu * (a'_i {[ E2 ]}))
+          ) * 
+          ( (expR (nu * (a'_i (- {[ E1 ]}))) + expR (nu * (a'_i {[ E2 ]})))
+          )^-1
+      else 0
 
   | E1 `== E2 => - `| {[ E1 ]} - {[ E2 ]}|
   | E1 `<= E2 => {[ E2 ]} - {[ E1 ]}

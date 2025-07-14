@@ -2,12 +2,12 @@
 This file was generated from `meta.yml`, please do not edit manually.
 Follow the instructions on https://github.com/coq-community/templates to regenerate.
 --->
-# Formalisation of Differentiable Logics in Coq
+# Formalisation of Differentiable Logics
 
 [![Docker CI][docker-action-shield]][docker-action-link]
 
-[docker-action-shield]: https://github.com/ndslusarz/formal-LDL/actions/workflows/docker-action.yml/badge.svg?branch=master
-[docker-action-link]: https://github.com/ndslusarz/formal-LDL/actions/workflows/docker-action.yml
+[docker-action-shield]: https://github.com/formal-LDL/formal-LDL/actions/workflows/docker-action.yml/badge.svg?branch=master
+[docker-action-link]: https://github.com/formal-LDL/formal-LDL/actions/workflows/docker-action.yml
 
 
 
@@ -19,28 +19,31 @@ The LDL language is defined in `ldl.v`, along with its fuzzy, DL2, STL
 and Boolean interpretations.  The files `fuzzy.v`, `dl2.v`,
 `dl2_ereal.v`, `stl.v` and `stl_ereal.v` contain the relevant theorems
 that hold for each interpretation: structural properties (idempotence,
-commutativity and associativity of operators), soundness, and shadow-lifting.
-The files `mathcomp_extra.v` and `analysis_extra.v` contain extra lemmas related to
-the respective libraries, including L'Hopital and Cauchy MVT in the latter.
+commutativity and associativity of operators), adequacy, and shadow-lifting.
+
+The formalisation of soundness of hypersequent calculi for fuzzy logics can
+be found in file `seq_calc.v` and for DL2 in `dl2_seq_calc.v`.
 
 ## Meta
 
 - Author(s):
-  - Natalia Slusarz (initial)
   - Reynald Affeldt (initial)
   - Alessandro Bruni (initial)
+  - Natalia Slusarz (initial)
+  - Katrhin Stark (initial)
+  - Ekaterina Komendantskaya (initial)
 - License: [MIT License](LICENSE)
-- Compatible Coq versions: 8.20
+- Compatible Rocq/Coq versions: 8.20 or later
 - Additional dependencies:
-  - [MathComp](https://math-comp.github.io) 2.3.0
-  - [MathComp Analysis](https://github.com/math-comp/analysis) 1.8.0
-  - [MathComp Algebra Tactics](https://github.com/math-comp/algebra-tactics) 1.2.3
+  - [MathComp](https://math-comp.github.io) 2.4.0
+  - [MathComp Analysis](https://github.com/math-comp/analysis) 1.12.0
+  - [MathComp Algebra Tactics](https://github.com/math-comp/algebra-tactics) 1.2.5
 - Related publication(s):
   - [Taming Differentiable Logics with Coq Formalisation](https://arxiv.org/abs/2403.13700) 
 
 ## Building and installation instructions
 
-The easiest way to install the latest released version of Formalisation of Differentiable Logics in Coq
+The easiest way to install the latest released version of Formalisation of Differentiable Logics
 is via [OPAM](https://opam.ocaml.org/doc/Install.html):
 
 ```shell
@@ -51,7 +54,7 @@ opam install coq-formal-LDL
 To instead build and install manually, do:
 
 ``` shell
-git clone https://github.com/ndslusarz/formal-LDL.git
+git clone https://github.com/formal-LDL/formal-LDL.git
 cd formal-LDL
 make   # or make -j <number-of-cores-on-your-machine> 
 make install

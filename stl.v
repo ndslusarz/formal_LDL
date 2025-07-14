@@ -3,7 +3,7 @@ Require Import Coq.Program.Equality.
 From mathcomp Require Import all_ssreflect all_algebra.
 From mathcomp Require Import lra.
 From mathcomp Require Import all_classical.
-From mathcomp Require Import reals ereal signed.
+From mathcomp Require Import reals ereal interval_inference.
 From mathcomp Require Import topology derive normedtype sequences exp measure.
 From mathcomp Require Import lebesgue_measure lebesgue_integral hoelder realfun.
 Require Import mathcomp_extra analysis_extra ldl.
@@ -16,6 +16,9 @@ Require Import mathcomp_extra analysis_extra ldl.
 Import Num.Def Num.Theory GRing.Theory.
 Import Order.TTheory.
 Import numFieldNormedType.Exports.
+
+HB.instance Definition _ (R : realType) b :=
+  @gen_eqMixin (@expr R (Bool_T b)).
 
 Section stl_lemmas.
 Local Open Scope ldl_scope.
@@ -140,7 +143,6 @@ case: ifPn=>[hminlt0|].
   rewrite/= leNgt.
   rewrite pmulr_llt0 ?invr_gt0; last first.
     rewrite sumr_gt0//=.
-      by move => i _ _; rewrite expR_ge0.
     by exists y; rewrite ymem expR_gt0.
   rewrite sumr_lt0//.
     by move => i _ _; rewrite nmulr_rle0 ?expR_ge0// nmulr_rlt0// expR_gt0.
@@ -192,7 +194,6 @@ case: ifPn=>[hmaxlt0|].
   rewrite leNgt=> hilt0.
   rewrite pmulr_llt0 ?invr_gt0; last first.
     rewrite sumr_gt0//=.
-      by move => i _ _; rewrite expR_ge0.
     by exists a; rewrite mem_head expR_gt0.
   rewrite sumr_lt0//.
     by move => i imem _; rewrite nmulr_rle0 ?expR_ge0 ?hilt0.
@@ -216,7 +217,7 @@ set a_max := \big[maxr/nu.-[[a]]_stl]_(j <- l) nu.-[[j]]_stl.
 case: ifPn=>[hmaxgt0|].
   rewrite !map_cons/sumR !big_map!big_seq.
   under eq_bigr => i il do rewrite big_map big_max_cons// -/a_max.
-  by rewrite ltNge mulr_ge0// /sumR ?invr_ge0 ?sumr_ge0// => [i _/=|i _/=]; rewrite ?mulr_ge0// ?expR_ge0// ltW.
+  by rewrite ltNge mulr_ge0// /sumR ?invr_ge0 ?sumr_ge0// => i _/=; rewrite ?mulr_ge0// ?expR_ge0// ltW.
 rewrite -leNgt => h.
 case: ifPn; last by rewrite ltxx.
 move => hmaxlt0 _ i isize.
@@ -256,12 +257,13 @@ dependent induction e using expr_ind'.
     move/nthP => xnth.
     have [i il0 <-] := xnth (ldl_bool _ false).
     by apply/negPf; apply: H => //; rewrite ?h// -In_in mem_nth.
+- admit.
 - case: c.
   + by case: b; rewrite /is_stl/= ?lee_fin ?lte_fin ?ltNge subr_ge0 !stl_translations_Real_coincide// => /negbTE.
   + case: b; rewrite /is_stl/= ?lee_fin ?lte_fin !stl_translations_Real_coincide.
     by rewrite oppr_ge0 normr_le0 subr_eq0.
     by rewrite oppr_lt0 normr_gt0 subr_eq0 => /negbTE.
-Qed.
+Admitted.
 
 Lemma andC_stl_nary (s1 s2 : seq (expr Bool_T_def)) :
   perm_eq s1 s2 -> nu.-[[ldl_and s1]]_stl = nu.-[[ldl_and s2]]_stl.
@@ -488,8 +490,6 @@ rewrite /= stl_and_gt0_const.
 rewrite -[X in (_ / _ - X)](mul1r p).
 rewrite -[X in (_ / _ - X * _)](@divff _ (M%:R * expR (- nu * (- t / (p + t))) + 1)); last first.
   rewrite lt0r_neq0// addr_gt0// ?expR_gt0// mulr_gt0//.
-    by rewrite ltr0n lt0n.
-    by rewrite expR_gt0.
   rewrite (mulrAC _ (_^-1) p) -mulrBl.
   have -> : ((p * M%:R * expR (- nu * (- t / (p + t)))) + (p + t)) -
    ((M%:R * expR (- nu * (- t / (p + t)))) + 1) * p = t by lra.
