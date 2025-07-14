@@ -4,7 +4,7 @@ Require Import Coq.Program.Equality.
 From mathcomp Require Import all_ssreflect all_algebra.
 From mathcomp Require Import lra.
 From mathcomp Require Import all_classical reals.
-From mathcomp Require Import reals ereal signed.
+From mathcomp Require Import reals ereal interval_inference.
 From mathcomp Require Import topology derive normedtype sequences
  exp measure lebesgue_measure lebesgue_integral hoelder finmap multiset.
 Require Import mathcomp_extra analysis_extra ldl fuzzy.
@@ -2142,11 +2142,7 @@ Proof.
 elim: A => [|x xs IH].
   - rewrite /= big_nil//=. 
     have H := big_minr_godel_le1 B.
-    rewrite {2}/minr. case: ifP; intros; try lra.
-    have triv: \big[minr/1]_(j <- B) [[j]]_Godel <= 1 ->
-               1 < \big[minr/1]_(j <- B) [[j]]_Godel ->
-               \big[minr/1]_(j <- B) [[j]]_Godel = 1. intros. lra. 
-    by apply (triv H i). 
+    rewrite {2}/minr. case: ifP; intros; try lra.    
   - simpl. rewrite  !big_cons -minrA. f_equal.
     by exact IH.
 Qed.
@@ -2164,11 +2160,7 @@ Proof.
 elim: A => [|x xs IH].
   - rewrite /= big_nil//=. 
     have H := big_maxr_godel_ge0 B.
-    rewrite {2}/maxr. case: ifP; intros; try lra.
-    have triv: 0 <= \big[maxr/0]_(j <- B) [[j]]_Godel  ->
-               (0 < \big[maxr/0]_(j <- B) [[j]]_Godel) = false ->
-               \big[maxr/0]_(j <- B) [[j]]_Godel = 0. intros. lra. 
-    by apply (triv H n). 
+    rewrite {2}/maxr. case: ifP; intros; try lra. 
   - simpl. rewrite  !big_cons -maxrA. f_equal.
     by exact IH.
 Qed.
@@ -2183,16 +2175,6 @@ have H := big_min_cat_godel A B.
 rewrite {2}/minr in H. rewrite//=.
 move: H. case: ifP;
 case: ifPn; intros; rewrite//=; try lra.
-- have hab : ~~ (\big[minr/1]_(j <- A) [[j]]_Godel <= \big[minr/1]_(j <- B) [[j]]_Godel) ->
-             \big[minr/1]_(j <- A) [[j]]_Godel < \big[minr/1]_(j <- B) [[j]]_Godel ->
-             False. intros. lra.
-  apply (hab n) in i. contradiction.
-- have hab : \big[minr/1]_(j <- A) [[j]]_Godel <= \big[minr/1]_(j <- B) [[j]]_Godel ->
-             (\big[minr/1]_(j <- A) [[j]]_Godel < \big[minr/1]_(j <- B) [[j]]_Godel) = false ->
-             (\big[minr/1]_(j <- A) [[j]]_Godel = \big[minr/1]_(j <- B) [[j]]_Godel).
-  intros. lra.
-  apply (hab i) in n.
-  rewrite n//=. 
 Qed.
 
 Lemma minr_lt_godel (A B C: seq (@expr R Bool_T_def)) :
@@ -2361,13 +2343,6 @@ intros; rewrite//=. dependent induction H.
     rewrite !big_min_cat_godel {1}/minr {2}/minr {3}/minr {8}/minr {13}/minr {14}/minr {19}/minr in IH2.
     move: IH2.
     repeat case: ifP; intros; rewrite//=; try lra.
-    have h : (\big[minr/1]_(j <- B) [[j]]_Godel < \big[minr/1]_(j <- A) [[j]]_Godel) = false ->
-             (\big[minr/1]_(j <- A) [[j]]_Godel < \big[minr/1]_(j <- B) [[j]]_Godel) = false ->
-             (\big[minr/1]_(j <- A) [[j]]_Godel = \big[minr/1]_(j <- B) [[j]]_Godel). intros. lra.
-    apply (h n) in n1.
-    rewrite n1. by exact IH2.
-(*to do: this is  be brute-forcing cases
-            -  come up with a smarter way if possible*)
   + exists q. 
     by rewrite !in_cons IH1 IH2 !orbT//=.
 - destruct IHseq_calc_godel as [q [IH1 IH2]].
@@ -2381,11 +2356,6 @@ intros; rewrite//=. dependent induction H.
     rewrite !big_max_cat_godel {1}/maxr {2}/maxr {3}/maxr {7}/maxr {12}/maxr {13}/maxr {18}/maxr in IH2.
     move: IH2.
     repeat case: ifP; intros; rewrite//=; try lra.
-    have h : (\big[maxr/0]_(j <- B) [[j]]_Godel < \big[maxr/0]_(j <- A) [[j]]_Godel) = false ->
-             (\big[maxr/0]_(j <- A) [[j]]_Godel < \big[maxr/0]_(j <- B) [[j]]_Godel) = false ->
-             (\big[maxr/0]_(j <- A) [[j]]_Godel = \big[maxr/0]_(j <- B) [[j]]_Godel). intros. lra.
-    apply (h n0) in n2.
-    rewrite -n2. by exact IH2.
   + exists q. 
     by rewrite !in_cons IH1 IH2 !orbT//=.
 - exists (ldl_bool def false :: A |- B). 
@@ -2418,23 +2388,10 @@ intros; rewrite//=. dependent induction H.
       have lerT1 : forall (a b c : R), a <= b -> b <= c -> a <= c. {intros. lra.}
       rewrite /minr; rewrite{1}/minr in h; move: h; case: ifP; intros;
         move: IH2; rewrite {1}/minr; case: ifP; intros; rewrite//=; try lra.
-      - by rewrite (lerT _ _ _ h IH2).
-      - have helper : ([[a]]_Godel < [[b]]_Godel) = false ->
-                      [[b]]_Godel <= [[a]]_Godel. { intros. lra.}
-        apply helper in n. 
-        by rewrite (lerT1 _ _ _ n IH2).
-      - by rewrite (lerT _ _ _ h IH2).
     * have lerT : forall (a b c : R), a < b -> b <= c -> a <= c. {intros. lra.}
       have lerT1 : forall (a b c : R), a <= b -> b <= c -> a <= c. {intros. lra.}
       rewrite{1}/minr in h; move: h; case: ifP; intros;
       move: IH2; rewrite {1}/minr; case: ifP; intros; rewrite//=; try lra.
-      - move: i0. by rewrite h//=.
-      - have helper : forall (a b : R), a < b = false ->
-                      b <= a. { intros. lra.}
-        apply helper in n. apply helper in h.
-        have ler_mix : forall (a b A B : R), b<= a ->
-                       B <= b -> a <= A -> B <= A. {intros. lra.}
-        by rewrite (ler_mix _ _ _ _ n h IH2).
   + move/orP: IH1. move => [/eqP IH1 | IH1]. exists (a `/\ b :: B |- A).
     subst. rewrite in_cons eq_refl orTb. split; first by [].
     rewrite //= /minR/maxR !big_cons big_nil !big_map.
@@ -2448,8 +2405,6 @@ intros; rewrite//=. dependent induction H.
       have lerT1 : forall (a b c : R), a <= b -> b <= c -> a <= c. {intros. lra.}
       rewrite /minr; rewrite{1}/minr in h; move: h; case: ifP; intros;
         move: IH2; rewrite {1}/minr; case: ifP; intros; rewrite//=; try lra.
-      - by rewrite (lerT _ _ _ i IH2).
-      - by rewrite (lerT _ _ _ h IH2).
     * have lerT : forall (a b c : R), a < b -> b <= c -> a <= c. {intros. lra.}
       have lerT1 : forall (a b c : R), a <= b -> b <= c -> a <= c. {intros. lra.}
       rewrite{1}/minr in h; move: h; case: ifP; intros;
@@ -2560,10 +2515,6 @@ intros; rewrite//=. dependent induction H.
       rewrite big_nil in i0.
       have hb := @translate_Bool_T_01 R p Godel b.
       lra.
-      rewrite big_nil in n. 
-      have contr : [[b]]_Godel < [[a]]_Godel ->
-                   [[a]]_Godel <= [[b]]_Godel -> False by intros; lra.
-      by exfalso; apply (contr i IH2).
     * rewrite big_nil//=. 
       have ha := big_minr_godel_le1 A.
       rewrite /maxr; case: ifP; intros; try lra; rewrite//=.
@@ -2586,48 +2537,17 @@ intros; rewrite//=. dependent induction H.
       have hAA := big_minr_if A1 A2.
       rewrite {1}/minr in IH22.
       move: hAA IH22; case: ifP; case: ifP; intros; try lra; rewrite//=.
-      - rewrite hAA in i0. 
-        have helper: [[b]]_Godel < \big[minr/1]_(j <- A1) [[j]]_Godel ->
-                     \big[minr/1]_(j <- A1) [[j]]_Godel <= \big[minr/1]_(j <- A2) [[j]]_Godel ->
-                     [[b]]_Godel <= \big[minr/1]_(j <- A2) [[j]]_Godel. {intros. lra.}
-        apply (helper i0) in i1. 
-        move: i0 helper hAA. move => _ _ _.
-        have helper : [[b]]_Godel <= \big[minr/1]_(j <- A2) [[j]]_Godel ->
-                      ([[b]]_Godel < \big[minr/1]_(j <- A2) [[j]]_Godel) = false ->
-                      [[b]]_Godel = \big[minr/1]_(j <- A2) [[j]]_Godel. {intros. lra.}
-        apply (helper i1) in n0.
-        rewrite -n0 in IH22.
-        by exact IH22.
-      - rewrite hAA in i0. move: n hAA. move => _ _. 
-        have contr : ([[b]]_Godel < \big[minr/1]_(j <- A2) [[j]]_Godel) = false ->
-                     [[b]]_Godel < \big[minr/1]_(j <- A2) [[j]]_Godel ->
-                     False. {intros. lra.}
-        apply (contr n0) in i0.
-        by contradiction.
     * rewrite big_nil /maxr in IH12. move: IH12.
       have ha := @translate_Bool_T_01 R p Godel a.
       case: ifP; intros; try lra.
       rewrite {1}/minr in IH22.
-      move: IH22. case: ifP; intros; try lra.
-      -  have helper : ([[b]]_Godel < \big[minr/1]_(j <- (A1 ++ A2)) [[j]]_Godel) = false ->
-                      [[b]]_Godel <= \big[maxr/0]_(j <- B) [[j]]_Godel ->
-                      \big[minr/1]_(j <- (A1 ++ A2)) [[j]]_Godel <= \big[maxr/0]_(j <- B) [[j]]_Godel. 
-        {intros. lra.}
-        apply (helper n IH22).   
-        have hAA := big_minr_if A1 A2.
-        move: hAA; case: ifP; intros; rewrite//=; rewrite hAA; rewrite hAA in n; try lra; rewrite//=.
-        have helper: \big[minr/1]_(j <- A2) [[j]]_Godel <= \big[maxr/0]_(j <- B) [[j]]_Godel ->
-                     \big[minr/1]_(j <- A1) [[j]]_Godel <= \big[minr/1]_(j <- A2) [[j]]_Godel ->
-                     \big[minr/1]_(j <- A1) [[j]]_Godel <= \big[maxr/0]_(j <- B) [[j]]_Godel. 
-        {intros. lra.}
-        by apply (helper IH22 i0).        
-      - rewrite big_nil /maxr in IH12. move: IH12.
-      have ha := @translate_Bool_T_01 R p Godel a.
-      case: ifP; intros; try lra.
+      move: IH22. case: ifP; intros; try lra. 
+      have hAA := big_minr_if A1 A2.
+      move: hAA; case: ifP; intros; rewrite//=; rewrite hAA; rewrite hAA in n; try lra; rewrite//=.       
     * have hAA := big_minr_godel_le1 (A1++A2).
       have contr : \big[minr/1]_(j <- (A1 ++ A2)) [[j]]_Godel <= 1 ->
                    1 < \big[minr/1]_(j <- (A1 ++ A2)) [[j]]_Godel ->
-                   False. {intros. lra.}
+                   False by intros; lra.
       apply (contr hAA) in i.
       by contradiction.
     * move: n0. move => _.
@@ -2636,25 +2556,7 @@ intros; rewrite//=. dependent induction H.
       case: ifP; intros; try lra.
       have hAA := big_minr_if A1 A2.
       rewrite {1}/minr in IH22.
-      move: hAA IH22; case: ifP; case: ifP; intros; rewrite  hAA; try lra; rewrite//=.
-      - have helper : ([[b]]_Godel < [[a]]_Godel) = false ->
-                       \big[minr/1]_(j <- A1) [[j]]_Godel <= [[a]]_Godel ->
-                       [[b]]_Godel <= \big[maxr/0]_(j <- B) [[j]]_Godel ->
-                        \big[minr/1]_(j <- A1) [[j]]_Godel <= \big[maxr/0]_(j <- B) [[j]]_Godel.
-        {intros. lra.}
-        by apply (helper n IH12 IH22).
-      - have helper : \big[minr/1]_(j <- A1) [[j]]_Godel <= \big[minr/1]_(j <- A2) [[j]]_Godel ->
-                      \big[minr/1]_(j <- A2) [[j]]_Godel <= \big[maxr/0]_(j <- B) [[j]]_Godel ->
-                      \big[minr/1]_(j <- A1) [[j]]_Godel <= \big[maxr/0]_(j <- B) [[j]]_Godel.
-        {intros. lra.}
-        by apply (helper i IH22).
-      - have helper: ([[b]]_Godel < [[a]]_Godel) = false ->
-             \big[minr/1]_(j <- A1) [[j]]_Godel <= [[a]]_Godel ->
-             (\big[minr/1]_(j <- A1) [[j]]_Godel <= \big[minr/1]_(j <- A2) [[j]]_Godel) = false ->
-             [[b]]_Godel <= \big[maxr/0]_(j <- B) [[j]]_Godel ->
-             \big[minr/1]_(j <- A2) [[j]]_Godel <= \big[maxr/0]_(j <- B) [[j]]_Godel.
-        {intros. lra.}
-        by apply (helper n IH12 n1 IH22).      
+      move: hAA IH22; case: ifP; case: ifP; intros; rewrite  hAA; try lra; rewrite//=.     
   + exists q1. 
     by rewrite !in_cons h1 IH12 !orbT//=. 
   + exists q2. 
@@ -2772,11 +2674,6 @@ intros; rewrite//=. dependent induction H.
     rewrite !big_min_cat_godel {1}/minr {2}/minr {3}/minr {8}/minr {13}/minr {14}/minr {19}/minr in IH2.
     move: IH2.
     repeat case: ifP; intros; rewrite//=; try lra.
-    have h : (\big[minr/1]_(j <- B) [[j]]_Godel < \big[minr/1]_(j <- A) [[j]]_Godel) = false ->
-             (\big[minr/1]_(j <- A) [[j]]_Godel < \big[minr/1]_(j <- B) [[j]]_Godel) = false ->
-             (\big[minr/1]_(j <- A) [[j]]_Godel = \big[minr/1]_(j <- B) [[j]]_Godel). intros. lra.
-    apply (h n) in n1.
-    rewrite n1. by exact IH2.
   + exists q. 
     by rewrite !in_cons IH1 IH2 !orbT//=.
 - destruct IHseq_calc_godel' as [q [IH1 IH2]].
@@ -2790,11 +2687,6 @@ intros; rewrite//=. dependent induction H.
     rewrite !big_max_cat_godel {1}/maxr {2}/maxr {3}/maxr {7}/maxr {12}/maxr {13}/maxr {18}/maxr in IH2.
     move: IH2.
     repeat case: ifP; intros; rewrite//=; try lra.
-    have h : (\big[maxr/0]_(j <- B) [[j]]_Godel < \big[maxr/0]_(j <- A) [[j]]_Godel) = false ->
-             (\big[maxr/0]_(j <- A) [[j]]_Godel < \big[maxr/0]_(j <- B) [[j]]_Godel) = false ->
-             (\big[maxr/0]_(j <- A) [[j]]_Godel = \big[maxr/0]_(j <- B) [[j]]_Godel). intros. lra.
-    apply (h n0) in n2.
-    rewrite -n2. by exact IH2.
   + exists q. 
     by rewrite !in_cons IH1 IH2 !orbT//=.
 - exists (ldl_bool def false :: A |- B). 
@@ -2823,27 +2715,14 @@ intros; rewrite//=. dependent induction H.
       rewrite /minr; case: ifP; rewrite//=; intros.
       lra.}
     rewrite {1}/minr; case: ifP; rewrite hb; move => h.
-    * have lerT : forall (a b c : R), a < b -> b <= c -> a <= c. {intros. lra.}
-      have lerT1 : forall (a b c : R), a <= b -> b <= c -> a <= c. {intros. lra.}
+    * have lerT : forall (a b c : R), a < b -> b <= c -> a <= c by intros; lra.
+      have lerT1 : forall (a b c : R), a <= b -> b <= c -> a <= c by intros; lra.
       rewrite /minr; rewrite{1}/minr in h; move: h; case: ifP; intros;
         move: IH2; rewrite {1}/minr; case: ifP; intros; rewrite//=; try lra.
-      - by rewrite (lerT _ _ _ h IH2).
-      - have helper : ([[a]]_Godel < [[b]]_Godel) = false ->
-                      [[b]]_Godel <= [[a]]_Godel. { intros. lra.}
-        apply helper in n. 
-        by rewrite (lerT1 _ _ _ n IH2).
-      - by rewrite (lerT _ _ _ h IH2).
-    * have lerT : forall (a b c : R), a < b -> b <= c -> a <= c. {intros. lra.}
-      have lerT1 : forall (a b c : R), a <= b -> b <= c -> a <= c. {intros. lra.}
+    * have lerT : forall (a b c : R), a < b -> b <= c -> a <= c by intros; lra.
+      have lerT1 : forall (a b c : R), a <= b -> b <= c -> a <= c by intros; lra.
       rewrite{1}/minr in h; move: h; case: ifP; intros;
       move: IH2; rewrite {1}/minr; case: ifP; intros; rewrite//=; try lra.
-      - move: i0. by rewrite h//=.
-      - have helper : forall (a b : R), a < b = false ->
-                      b <= a. { intros. lra.}
-        apply helper in n. apply helper in h.
-        have ler_mix : forall (a b A B : R), b<= a ->
-                       B <= b -> a <= A -> B <= A. {intros. lra.}
-        by rewrite (ler_mix _ _ _ _ n h IH2).
   + move/orP: IH1. move => [/eqP IH1 | IH1]. exists (a `/\ b :: B |- A).
     subst. rewrite in_cons eq_refl orTb. split; first by [].
     rewrite //= /minR/maxR !big_cons big_nil !big_map.
@@ -2853,14 +2732,12 @@ intros; rewrite//=. dependent induction H.
       rewrite /minr; case: ifP; rewrite//=; intros.
       lra.}
     rewrite {1}/minr; case: ifP; rewrite hb; move => h.
-    * have lerT : forall (a b c : R), a < b -> b <= c -> a <= c. {intros. lra.}
-      have lerT1 : forall (a b c : R), a <= b -> b <= c -> a <= c. {intros. lra.}
+    * have lerT : forall (a b c : R), a < b -> b <= c -> a <= c by intros; lra.
+      have lerT1 : forall (a b c : R), a <= b -> b <= c -> a <= c by intros; lra.
       rewrite /minr; rewrite{1}/minr in h; move: h; case: ifP; intros;
         move: IH2; rewrite {1}/minr; case: ifP; intros; rewrite//=; try lra.
-      - by rewrite (lerT _ _ _ i IH2).
-      - by rewrite (lerT _ _ _ h IH2).
-    * have lerT : forall (a b c : R), a < b -> b <= c -> a <= c. {intros. lra.}
-      have lerT1 : forall (a b c : R), a <= b -> b <= c -> a <= c. {intros. lra.}
+    * have lerT : forall (a b c : R), a < b -> b <= c -> a <= c by intros; lra.
+      have lerT1 : forall (a b c : R), a <= b -> b <= c -> a <= c by intros; lra.
       rewrite{1}/minr in h; move: h; case: ifP; intros;
       move: IH2; rewrite {1}/minr; case: ifP; intros; rewrite//=; try lra.
   +  exists q. 

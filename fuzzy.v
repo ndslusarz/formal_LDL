@@ -2,7 +2,7 @@ From HB Require Import structures.
 Require Import Coq.Program.Equality.
 From mathcomp Require Import all_ssreflect all_algebra.
 From mathcomp Require Import lra.
-From mathcomp Require Import all_classical reals ereal signed topology derive.
+From mathcomp Require Import all_classical reals ereal interval_inference topology derive.
 From mathcomp Require Import normedtype sequences exp measure lebesgue_measure.
 From mathcomp Require Import lebesgue_integral hoelder.
 Require Import mathcomp_extra analysis_extra ldl.
@@ -200,15 +200,6 @@ dependent induction e using expr_ind'.
     by rewrite andbT powR_ge0.
   + case: ifP; intros; rewrite ?H2//=; lra.
   + case: ifP; intros; rewrite ?divr_ge0 ?ler_pdivrMr //= ?mul1r; try lra. 
-    * have h : forall (a b : R), 0 <= a <= 1 ->
-                               a < b ->
-                               0 < b. intros; lra.
-      have h' := @h ([[e2]]_product) ([[e1]]_product) H1 i.
-    * rewrite h'//=. 
-    * have h' : forall (a : R), 0 <= a <= 1 -> 0 <= a. intros; lra.
-      rewrite h'//=.
-    * have h' : forall (a : R), 0 <= a <= 1 -> 0 <= a. intros; lra.
-      rewrite h'//=.
   + rewrite /maxr;  case: ifPn; move => _; rewrite//=. 
     have h : forall (a : R), 0 <= a <= 1 ->
                                0 <= 1 - a <= 1. intros; lra.

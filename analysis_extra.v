@@ -1,8 +1,8 @@
 From HB Require Import structures.
 From mathcomp Require Import all_ssreflect ssralg ssrnum matrix interval.
 From mathcomp Require Import mathcomp_extra boolp classical_sets functions.
-From mathcomp Require Import reals signed topology prodnormedzmodule.
-From mathcomp Require Import constructive_ereal ereal normedtype landau forms.
+From mathcomp Require Import reals topology prodnormedzmodule.
+From mathcomp Require Import constructive_ereal ereal normedtype ereal_normedtype landau forms.
 From mathcomp Require Import derive sequences exp realfun.
 From mathcomp Require Import lra.
 
@@ -450,13 +450,13 @@ move: x y => [x| |] [y| |] //=.
   + by rewrite ltr0_sg//= EFinN mulN1e/= mulrN1.
   + by rewrite gtr0_sg//= !mul1e mul1r.
   + by rewrite sgr0 mul0e mulr0/= sgr0.
-- by rewrite mulyy mulr1.
-- by rewrite mulyNy mulrN1.
+- by rewrite  mulr1.
+- by rewrite  mulrN1.
 - rewrite mulNyr/=; have [x0|x0|->] := ltgtP y 0.
   + by rewrite ltr0_sg//= EFinN mulN1e/= mulrN1 opprK.
   + by rewrite gtr0_sg//= !mul1e mulN1r.
   + by rewrite sgr0 mul0e mulr0/= sgr0.
-- by rewrite mulNyy mulN1r.
+- by rewrite  mulN1r.
 - by rewrite mulrN1 opprK.
 Qed.
 
@@ -470,12 +470,14 @@ Proof.
 move: x => [x| |]//=.
 - by rewrite lte_fin => /eqP; rewrite sgr_cp0.
 - by move=> /eqP; rewrite -subr_eq0 opprK -(natrD _ 1%N 1%N) pnatr_eq0.
+- by move => _; rewrite ltNge//=. 
 Qed.
 
 Lemma sge1_gt0 {R : realDomainType} (x : \bar R) : sge x = 1 -> (0 < x)%E.
 Proof.
 move: x => [x| |]//=.
 - by rewrite lte_fin => /eqP; rewrite sgr_cp0.
+- by move => _; rewrite ltNge//=.
 - by move=> /eqP; rewrite eq_sym -subr_eq0 opprK -(natrD _ 1%N 1%N) pnatr_eq0.
 Qed.
 
@@ -556,16 +558,17 @@ Lemma sume_lt0 (I : eqType) (r : seq I) (P : pred I) (F : I -> \bar R) :
   \sum_(i <- r | P i) F i < 0.
 Proof.
 elim: r; first by move=> _ [x []]; rewrite in_nil.
-move=> a l IH.
-have [->//|] := eqVneq (\sum_(i <- (a :: l) | P i) F i) -oo.
+move=> a l IH .
+have [->//|] := eqVneq (\sum_(i <- (a :: l) | P i) F i) -oo; 
+first by move => _; rewrite ltNge//=. 
 rewrite !big_cons.
 case: ifPn => Pa sumnoo Fi_le0 [x []].
   move: sumnoo; rewrite adde_eq_ninfty negb_or => /andP[Fanoo sumnoo].
   rewrite in_cons => /predU1P[-> _ Fa0|xl Px Fxlt0].
-    rewrite -{2}(adde0 0) lte_le_add ?Fa0 ?fin_numElt ?sume_le0//.
-    by rewrite ltNye sumnoo/= (le_lt_trans (sume_le0 _ _)).
+    rewrite -{2}(adde0 0) lte_leD ?Fa0 ?fin_numElt ?sume_le0//.
+    rewrite ltNye sumnoo/= (le_lt_trans (sume_le0 _ _)) ?ltNge//=.
   rewrite -{2}(adde0 0) lee_lt_add ?Fi_le0 ?IH//.
-    by rewrite fin_numElt ltNye Fanoo (le_lt_trans (Fi_le0 _ _)).
+    by rewrite fin_numElt ltNye Fanoo (le_lt_trans (Fi_le0 _ _)) ?ltNge//=.
   by exists x; rewrite xl Px Fxlt0.
 rewrite in_cons => /predU1P[-> Pa'//|xl Px Fxlt0]; first by rewrite Pa' in Pa.
 rewrite IH//.
