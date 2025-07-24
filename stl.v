@@ -566,70 +566,40 @@ by apply: derivable_comp; [exact: derivable_expR|exact: derivableVD].
 Qed.
 
 Lemma is_derive_num' (x : R) p : x \in (ball 0 p : set R) ->
-  is_derive x 1 (fun x0 => M%:R * (p + x0) * expR (- x0 / (p + x0)) - M%:R * p)
+  is_derive x 1 (fun z => M%:R * (p + z) * expR (- z / (p + z)) - M%:R * p)
     (num' p x).
 Proof.
 move=> x0p.
-have H1 : derivable (fun x0 => M%:R * (p + x0)) x 1.
+have Mp : derivable (fun z => M%:R * (p + z)) x 1.
   apply: derivableM; first exact: derivable_cst.
   by apply: derivableD; [exact: derivable_cst|exact: derivable_id].
-rewrite /num'.
-rewrite -[X in is_derive _ _ _ X]subr0.
-apply: is_deriveB.
+rewrite -[X in is_derive _ _ _ X]subr0; apply: is_deriveB.
 apply: DeriveDef.
-  by apply: derivableM; [exact: H1|exact: derivable_DVexpR].
-rewrite deriveM; last 2 first.
-  exact: H1.
-  exact: derivable_DVexpR.
-rewrite deriveM; last 2 first.
-  exact: derivable_cst.
-  exact: derivable_addr.
-rewrite derive_comp; last 2 first.
-  exact: derivableVD.
-  exact: derivable_expR.
-rewrite (_ : 'D_1 expR (- x / (p + x)) = expR (- x / (p + x))); last first.
-  by rewrite -[in RHS](@derive_expR R).
-rewrite deriveD; last 2 first.
-  exact: derivable_cst.
-  exact: derivable_id.
+  by apply: derivableM; [exact: Mp|exact: derivable_DVexpR].
+rewrite deriveM; [|exact: Mp|exact: derivable_DVexpR].
+rewrite deriveM; [|exact: derivable_cst|exact: derivable_addr].
+rewrite derive_comp; [|exact: derivableVD|exact: derivable_expR].
+rewrite (_ : 'D_1 expR _ = expR (- x / (p + x))); last first.
+  by rewrite -[in RHS]derive_expR.
+rewrite deriveD; [| exact: derivable_cst|exact: derivable_id].
 rewrite derive_cst add0r.
-rewrite derive_id.
-set MRA := GRing.scale (GRing.natmul (V:=R) (GRing.one R) M) (GRing.one R).
-rewrite (_ : MRA = M%:R)//; last by rewrite /MRA /GRing.scale/= mulr1.
-rewrite {MRA}.
+rewrite derive_id [M%:R%:A]scaler1.
 rewrite derive_cst scaler0 addr0.
 rewrite deriveM/=; [|exact: derivable_subr|exact: derivableDV].
-rewrite deriveV; last 2 first.
-  exact: px_neq0.
-  exact: derivable_addr.
-rewrite deriveD; last 2 first.
-  exact: derivable_cst.
-  exact: derivable_id.
+rewrite deriveV; [|exact: px_neq0|exact: derivable_addr].
+rewrite deriveD; [|exact: derivable_cst|exact: derivable_id].
 rewrite derive_cst add0r.
 rewrite derive_id.
 set pxA := (X in - x *: X).
 rewrite (_ : pxA = (- (p + x) ^- 2))//; last by rewrite /pxA /GRing.scale/= mulr1.
 rewrite deriveN; last exact: derivable_id.
-rewrite derive_id.
-rewrite scalerN1.
-rewrite [X in X + _ = _]scalerAl.
-rewrite scalerCA.
-rewrite -[LHS]mulrDr.
-rewrite [X in _ = X + _ + _]mulrC.
-rewrite -!mulrA.
-rewrite -2!mulrDr.
-congr (_ * _).
-rewrite [in LHS]addrC.
-rewrite -!addrA; congr (_ + _).
-rewrite mulrCA -mulrDr.
-rewrite -[LHS]mulrA.
-congr (M%:R * _).
-rewrite -mulrDl (addrC p).
-congr (_ * _).
-congr (_ - _).
-rewrite scaleNr.
-rewrite -mulrN.
-by rewrite opprK.
+rewrite derive_id scalerN1.
+rewrite [X in X + _ = _]scalerAl scalerCA -[LHS]mulrDr.
+rewrite [X in _ = X + _ + _]mulrC -!mulrA -2!mulrDr; congr *%R.
+rewrite [in LHS]addrC -!addrA; congr +%R.
+rewrite [in RHS]mulrCA -mulrDr -[LHS]mulrA; congr *%R.
+rewrite -mulrDl (addrC p); congr (_ * (_ - _)).
+by rewrite scaleNr -mulrN opprK.
 Qed.
 
 Let den' (p x : R) : R := expR (nu * (x / (x + p))) +
@@ -642,79 +612,58 @@ Lemma is_derive_den' (x : R) p :
     (den' p x).
 Proof.
 move=> x0p.
-have H1 : derivable (fun y => expR (nu * - y / (p + y))) x 1.
+have expnup : derivable (fun y => expR (nu * - y / (p + y))) x 1.
   apply: derivable_comp; first exact: derivable_expR.
   apply: derivableM; last exact: derivableDV.
   by apply: derivableM; [exact: derivable_cst|exact: derivable_subr].
 apply: DeriveDef.
   apply: derivableM; first exact: derivable_id.
   apply: derivableD; first exact: derivable_cst.
-  by apply: derivableV; [by rewrite expR_eq0|exact: H1].
+  by apply: derivableV; [by rewrite expR_eq0|exact: expnup].
 rewrite /den' deriveM; last 2 first.
   exact: derivable_id.
   apply: derivableD; first exact: derivable_cst.
-  by apply: derivableV; [by rewrite expR_eq0|exact: H1].
+  by apply: derivableV; [by rewrite expR_eq0|exact: expnup].
 rewrite deriveD; last 2 first.
   exact: derivable_cst.
-  by apply: derivableV; [by rewrite expR_eq0|exact: H1].
+  by apply: derivableV; [by rewrite expR_eq0|exact: expnup].
 rewrite derive_cst add0r/=.
-rewrite deriveV/=; last 2 first.
-  by rewrite expR_eq0.
-  exact: H1.
+rewrite deriveV/=; [|by rewrite expR_eq0|exact: expnup].
 rewrite derive_comp; last 2 first.
   under eq_fun.
     move=> z.
     rewrite -mulrA.
     over.
-  apply: (@derivableM _ _ (cst nu)).
-    exact: derivable_cst.
+  apply: (@derivableM _ _ (cst nu)); first exact: derivable_cst.
   exact: derivableVD.
   exact: derivable_expR.
-rewrite (_ : 'D_1 expR (nu * - x / (p + x)) = expR (nu * - x / (p + x))); last first.
+rewrite (_ : 'D_1 expR _ = expR (nu * - x / (p + x))); last first.
   by rewrite -[in RHS](@derive_expR R).
 rewrite deriveM; last 2 first.
-  apply: derivableM; first exact: derivable_cst.
-  exact: derivable_subr.
+  by apply: derivableM; [exact: derivable_cst|exact: derivable_subr].
   exact: derivableDV.
-rewrite deriveV; last 2 first.
-  exact: px_neq0.
-  exact: derivable_addr.
-rewrite deriveM; last 2 first.
-  exact: derivable_cst.
-  exact: derivable_subr.
+rewrite deriveV; [|exact: px_neq0|exact: derivable_addr].
+rewrite deriveM; [|exact: derivable_cst|exact: derivable_subr].
 rewrite derive_cst scaler0 addr0.
 rewrite deriveN; last exact: derivable_id.
-rewrite deriveD; last 2 first.
-  exact: derivable_cst.
-  exact: derivable_id.
+rewrite deriveD; [|exact: derivable_cst|exact: derivable_id].
 rewrite derive_id derive_cst add0r.
 rewrite scalerN1.
 rewrite [X in _ + X = _]/GRing.scale/= mulr1.
 rewrite addrCA.
-rewrite -[RHS]addrA [RHS]addrCA.
-congr (_ + _).
-rewrite [LHS]addrC.
-congr (_ + _).
-  rewrite -expRN mulrN mulNr opprK (addrC p).
-  by rewrite mulrA.
-rewrite -[RHS]mulrA.
-rewrite [RHS]mulrCA.
-congr (_ * _).
-rewrite [in LHS]scaleNr.
-rewrite [X in - X]mulrA.
-rewrite -[in LHS]mulrN.
-congr (_ * _).
+rewrite -[RHS]addrA [RHS]addrCA; congr +%R.
+rewrite [LHS]addrC; congr +%R.
+  by rewrite -expRN mulrN mulNr opprK (addrC p) mulrA.
+rewrite -[RHS]mulrA [RHS]mulrCA; congr *%R.
+rewrite [in LHS]scaleNr [X in - X]mulrA -[in LHS]mulrN; congr *%R.
   rewrite !(mulrN,mulNr) !expRN.
   rewrite -exprVn invrK expr2.
-  rewrite -[LHS]mulrA divff ?mulr1//.
-  rewrite (addrC p)//.
-  by rewrite mulrA.
-  by rewrite expR_eq0.
+  rewrite -[LHS]mulrA divff ?mulr1 ?expR_eq0//.
+  by rewrite (addrC p)// mulrA.
 rewrite !(mulrN,mulNr,scaleNr,scalerN,opprK) opprB.
 rewrite [RHS]addrC; congr (_ - _).
   by rewrite [LHS]mulrC (addrC p).
-rewrite (mulrC nu) scalerA (addrC p).
-by rewrite /GRing.scale/= mulr1.
+by rewrite (mulrC nu) scalerA (addrC p) scaler1.
 Qed.
 
 Lemma shadowlifting_stl_and_lt0_cvg_at_right (p : R) i : p > 0 ->
@@ -782,30 +731,31 @@ apply: cvgM.
     rewrite -natr1; apply: cvgD; first exact: cvg_cst.
     by under eq_fun do rewrite mulrCA mulrC; exact: expR_cvg0.
   by under eq_fun do rewrite mulrCA mulrC; exact: expR_cvg0.
-have H1 (x : R) : is_derive x 1 ( *%R^~ p^-1) p^-1.
+have MpV (x : R) : is_derive x 1 ( *%R^~ p^-1) p^-1.
   rewrite [X in is_derive _ _ X _](_ : _ = p^-1 *: id); last first.
     by apply/funext => y /=; rewrite mulrC.
   rewrite [X in is_derive _ _ _ X](_ : _ = p^-1 *: (1:R))//.
     exact: is_deriveZ.
-  by rewrite /GRing.scale/= mulr1.
-apply: (@lhopital_right R (fun x => expR (x / p) - 1)
-    (fun x => p^-1 * expR (x / p)) (fun x => x / p) (fun=> p^-1) 0 _
-    (nbhsx_ballx _ _ ltr01)).
-- move=> x xU.
-  rewrite -[X in is_derive _ _ _ X]subr0.
-  apply: is_deriveB => /=.
-  rewrite mulrC.
-  exact: is_derive1_comp.
-- by rewrite mul0r expR0 subrr.
-- by rewrite mul0r.
-- by near=> t; rewrite gt_eqF// invr_gt0.
-- under eq_fun.
+  by rewrite scaler1.
+apply: (@lhopital_at_right R (fun x => expR (x / p) - 1)
+    (fun x => p^-1 * expR (x / p)) (fun x => x / p) (fun=> p^-1) _ _ _ p0).
+- move=> x; rewrite in_itv/= => /andP[x0 xp].
+  rewrite -[X in is_derive _ _ _ X]subr0; apply: is_deriveB => /=.
+  by rewrite mulrC; exact: is_derive1_comp.
+- rewrite -[X in _ --> X](subrr 1).
+  apply: cvgB; last exact: cvg_cst.
+  by under eq_fun do rewrite mulrC; exact: expR_cvg0.
+- rewrite -[X in _ --> X](mul0r p^-1).
+  by apply: cvgMr_tmp; exact: cvg_at_right_filter.
+- move=> x; rewrite in_itv/= => /andP[x0 xp].
+  by rewrite gt_eqF// invr_gt0 (lt_trans x0).
+- rewrite -expR0.
+  under eq_fun.
     move=> x; rewrite mulrAC divff ?gt_eqF ?invr_gt0// mul1r.
     over.
-  rewrite -expR0; apply: continuous_cvg; first exact: continuous_expR.
+  apply: continuous_cvg; first exact: continuous_expR.
   rewrite -[X in _ --> X](mul0r p^-1).
-  apply: cvgM; last exact: cvg_cst.
-  exact/cvg_at_right_filter/cvg_id.
+  by apply: cvgM; [exact/cvg_at_right_filter|exact: cvg_cst].
 Unshelve. all: end_near. Qed.
 
 Lemma shadowlifting_stl_and_lt0_cvg_at_left (p : R) i : p > 0 ->
@@ -908,47 +858,91 @@ have H1 : - x * nu / (x + p) ^+ 2 @[x --> 0] --> - 0 * nu / (0 + p) ^+ 2.
   apply: cvgM.
     by apply: cvgD; [exact: cvg_id|exact: cvg_cst].
   by apply: cvgD; [exact: cvg_id|exact: cvg_cst].
-apply: (@lhopital_left R _ (num' p) _ (den' p) 0 _ (nbhsx_ballx _ _ p0)).
-- by move=> x; apply: is_derive_num'.
-- by move=> x; exact: is_derive_den'.
-- by rewrite oppr0 mul0r expR0 mulr1 addr0 subrr.
-- by rewrite mul0r.
-- have H2 : (expR (nu * (x / (x + p))) + M%:R +
-      expR (nu * (x / (x + p))) * x * (- x * nu / (x + p) ^+ 2 + nu / (x + p)))
-      @[x --> (0:R)^'] --> ((1:R) + M%:R).
-    rewrite -[X in _ --> X]addr0.
-    have H2 : nu * (x0 / (x0 + p)) @[x0 --> 0^'] --> 0.
-      rewrite -[X in _ --> X](mulr0 nu).
-      apply: cvgM; first exact: cvg_cst.
-      rewrite -[X in _ --> X](mul0r p^-1).
-      apply: cvgM.
-        by apply/continuous_withinNx; exact: cvg_id.
-      apply: cvgV; first by rewrite gt_eqF.
-      rewrite -[X in _ --> X](add0r p).
-      by apply: cvgD; [exact/continuous_withinNx/cvg_id|exact: cvg_cst].
-    apply: cvgD.
-      apply: cvgD; last exact: cvg_cst.
-      rewrite -[X in _ --> X]expR0.
-      by apply: continuous_cvg; [exact: continuous_expR|exact: H2].
-    rewrite [X in _ --> X](_ : _ = 1 * 0 * (nu / p)); last first.
-      by rewrite mulr0 mul0r.
-    apply: cvgM.
-      apply: cvgM; last exact/continuous_withinNx/cvg_id.
-      rewrite -expR0.
-      by apply: continuous_cvg; [exact: continuous_expR|exact: H2].
-    rewrite -[X in _ --> X]add0r.
-    apply: cvgD.
-      rewrite [X in _ --> X](_ : _ = (- 0) * nu / (0 + p) ^+ 2); last first.
-        by rewrite oppr0 mul0r mul0r.
-      by apply: cvg_within_filter; exact: H1.
+
+have H2 : (*(expR (nu * (x / (x + p))) + M%:R +
+    expR (nu * (x / (x + p))) * x * (- x * nu / (x + p) ^+ 2 + nu / (x + p)))*) den' p x
+    @[x --> (0:R)^'] --> ((1:R) + M%:R).
+  rewrite -[X in _ --> X]addr0.
+  have H2 : nu * (x0 / (x0 + p)) @[x0 --> 0^'] --> 0.
+    rewrite -[X in _ --> X](mulr0 nu).
     apply: cvgM; first exact: cvg_cst.
+    rewrite -[X in _ --> X](mul0r p^-1).
+    apply: cvgM.
+      by apply/continuous_withinNx; exact: cvg_id.
     apply: cvgV; first by rewrite gt_eqF.
     rewrite -[X in _ --> X](add0r p).
+    by apply: cvgD; [exact/continuous_withinNx/cvg_id|exact: cvg_cst].
+  apply: cvgD.
     apply: cvgD; last exact: cvg_cst.
-    exact/continuous_withinNx/cvg_id.
-  by apply: cvgr_neq0; [exact: H2|rewrite gt_eqF].
+    rewrite -[X in _ --> X]expR0.
+    by apply: continuous_cvg; [exact: continuous_expR|exact: H2].
+  rewrite [X in _ --> X](_ : _ = 1 * 0 * (nu / p)); last first.
+    by rewrite mulr0 mul0r.
+  apply: cvgM.
+    apply: cvgM; last exact/continuous_withinNx/cvg_id.
+    rewrite -expR0.
+    by apply: continuous_cvg; [exact: continuous_expR|exact: H2].
+  rewrite -[X in _ --> X]add0r.
+  apply: cvgD.
+    rewrite [X in _ --> X](_ : _ = (- 0) * nu / (0 + p) ^+ 2); last first.
+      by rewrite oppr0 mul0r mul0r.
+    by apply: cvg_within_filter; exact: H1.
+  apply: cvgM; first exact: cvg_cst.
+  apply: cvgV; first by rewrite gt_eqF.
+  rewrite -[X in _ --> X](add0r p).
+  apply: cvgD; last exact: cvg_cst.
+  exact/continuous_withinNx/cvg_id.
+have M10 : (1%R + M%:R)%E != 0 :> R by rewrite gt_eqF.
+have [e/= e0 ep] := @cvgr_neq0 _ _ _ _ (dnbhs_filter 0) _ _ H2 M10.
+near (0:R)^'+ => q.
+apply: (@lhopital_at_left R _ (num' p) _ (den' p) (- q)).
+- by rewrite ltrNl oppr0.
+- move=> x; rewrite in_itv/= => /andP[px x0].
+  apply: is_derive_num'.
+  rewrite inE /ball/= sub0r normrN ltr0_norm// ltrNl.
+  by rewrite (lt_trans _ px)// ltrN2//.
+- move=> x; rewrite in_itv/= => /andP[px x0].
+  apply: is_derive_den'.
+  rewrite inE /ball/= sub0r normrN ltr0_norm// ltrNl//.
+  by rewrite (lt_trans _ px)// ltrN2//.
+- rewrite -[X in _ --> X](subrr (M%:R * p)).
+  apply: cvgB; last exact: cvg_cst.
+  under eq_fun do rewrite -mulrA.
+  apply: cvgMl_tmp.
+  rewrite -[X in _ --> X]mulr1.
+  apply: cvgM.
+    rewrite -[X in _ --> X]addr0.
+    apply: cvgD; first exact: cvg_cst.
+    exact: cvg_at_left_filter.
+  rewrite -[X in _ --> X]expR0.
+  apply: continuous_cvg; first exact: continuous_expR.
+  rewrite -[X in _ --> X](mul0r p^-1); apply: cvgM.
+    apply: cvg_at_left_filter => /=.
+    by rewrite -[X in _ --> X]oppr0; exact: cvgN.
+  apply: cvgV; first by rewrite gt_eqF.
+  apply: cvg_at_left_filter.
+  rewrite -[X in _ --> X]addr0.
+  apply: cvgD.
+    exact: cvg_cst.
+  exact: cvg_id.
+- rewrite -[X in _ --> X](mul0r (M%:R + 1^-1)).
+  apply: cvgM.
+    apply: cvg_at_left_filter.
+    exact: cvg_id.
+  apply: cvgD.
+    apply: cvg_at_left_filter.
+    exact: cvg_cst.
+  by apply: cvgV => //.
+- move=> x; rewrite in_itv/= => /andP[xp x0].
+  rewrite /den'.
+  apply: ep; last first.
+   by rewrite lt_eqF.
+  rewrite /ball_/= sub0r normrN ltr0_norm//.
+  rewrite ltrNl.
+  rewrite (lt_trans _ xp)//.
+  by rewrite ltrN2//.
 - rewrite -{2}(mul0r (den' p 0)^-1).
-  have H2 : expR (nu * (x / (x + p))) @[x --> 0^'-] -->
+  have H3 : expR (nu * (x / (x + p))) @[x --> 0^'-] -->
             expR (nu * (0 / (0 + p))).
     apply: continuous_cvg; first exact: continuous_expR.
     apply: cvgM; first exact: cvg_cst.
@@ -959,9 +953,9 @@ apply: (@lhopital_left R _ (num' p) _ (den' p) 0 _ (nbhsx_ballx _ _ p0)).
     apply: cvgV.
       by rewrite /den' !mul0r !mulr0 !mul0r addr0 gt_eqF// addr_gt0// ?expR_gt0 ?ltr0n ?lt0n.
     apply: cvgD.
-      by apply: cvgD; [exact: H2|exact: cvg_cst].
+      by apply: cvgD; [exact: H3|exact: cvg_cst].
     apply: cvgM.
-      by apply: cvgM; [exact: H2|exact/cvg_at_left_filter/cvg_id].
+      by apply: cvgM; [exact: H3|exact/cvg_at_left_filter/cvg_id].
     apply: cvgD.
       by apply: cvg_at_left_filter; exact: H1.
     apply: cvgM; first exact: cvg_cst.
