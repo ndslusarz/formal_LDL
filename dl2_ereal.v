@@ -19,20 +19,20 @@ Require Import mathcomp_extra analysis_extra ldl dl2.
 (* - dl2_orC == commutativity of disjunction                                  *)
 (* - dl2_orA == associativity of disjunction                                  *)
 (*                                                                            *)
-(* ## Soundness                                                               *)
+(* ## Adequacy                                                                *)
 (* - dl2_ereal_translation_le0 == invariant for the translation: all values   *)
 (*                                are in the range $[-\infty, 0]$             *)
 (* - dl2_nary_inversion_andE1 == inversion lemma for conjunction/true         *)
 (* - dl2_nary_inversion_andE0 == inversion lemma for conjuntion/false         *)
 (* - dl2_nary_inversion_orE1 == inversion lemma for disjunction/true          *)
 (* - dl2_nary_inversion_orE0 == inversion lemma for disjunction/false         *)
-(* - dl2_translations_Vector_coincide == shows that the Boolean translation *)
+(* - dl2_translations_Vector_coincide == shows that the Boolean translation   *)
 (*   and the DL2 translation coincide on expressions of type Vector_T         *)
-(* - dl2_translations_Index_coincide == shows that the Boolean translation *)
+(* - dl2_translations_Index_coincide == shows that the Boolean translation    *)
 (*   and the DL2 translation coincide on expressions of type Index_T          *)
 (* - dl2_translations_Real_coincide == shows that the Boolean translation and *)
 (*   the DL2 translation coincide on expressions of type Real_T               *)
-(* - dl2_soundness == final soundness result for DL2                          *)
+(* - dl2_ereal_adequacy == final adequacy result for DL2                      *)
 (******************************************************************************)
 
 Import Num.Def Num.Theory GRing.Theory.
@@ -194,7 +194,7 @@ Lemma dl2_inversion_implE1 (E1 E2 : expr (Bool_T_undef)) :
   is_dl2 true ([[  E1 `=> E2 ]]_dl2e) ->
      is_dl2 false ([[ E1 ]]_dl2e) || is_dl2 true ([[ E2 ]]_dl2e).
 Proof.
-rewrite//=; case: ifP => /eqP H1 H2. 
+rewrite//=; case: ifP => /eqP H1 H2.
 - rewrite H2 orbT//=.
 - have H := dl2_ereal_translation_le0 E1.
   move: H.
@@ -207,9 +207,9 @@ Lemma dl2_inversion_implE0 (E1 E2 : expr (Bool_T_undef)) :
   is_dl2 false ([[  E1 `=> E2 ]]_dl2e) ->
      is_dl2 true ([[ E1 ]]_dl2e) && is_dl2 false([[ E2 ]]_dl2e).
 Proof.
-rewrite//=; case: ifP => /eqP H1 H2. 
-- by rewrite H2//=.
-- exfalso. rewrite lt_def eqxx andFb in H2. 
+rewrite//=; case: ifP => /eqP H1 H2.
+- by rewrite H2.
+- exfalso. rewrite lt_def eqxx andFb in H2.
   auto.
 Qed.
 
@@ -235,7 +235,7 @@ rewrite ?(IHe1 e1 erefl JMeq_refl) ?(IHe2 e2 erefl JMeq_refl) ?(IHe e erefl JMeq
 by rewrite dl2_ereal_translations_Vector_coincide dl2_ereal_translations_Index_coincide.
 Qed.
 
-Lemma dl2_adequacy (e : expr Bool_T_undef) b :
+Lemma dl2_ereal_adequacy (e : expr Bool_T_undef) b :
   is_dl2 b ([[ e ]]_dl2e) -> [[ e ]]_B = b.
 Proof.
 dependent induction e using expr_ind'.
@@ -278,10 +278,10 @@ dependent induction e using expr_ind'.
     * rewrite //= implybE. rewrite //= in IHe1. rewrite (IHe1 e1 erefl JMeq_refl (false) H1).
       have tf : ~~ false = true. by rewrite//=.
       rewrite tf orTb//=.
-    * rewrite //= implybE. rewrite //= in IHe2. 
+    * rewrite //= implybE. rewrite //= in IHe2.
       by rewrite (IHe2 e2 erefl JMeq_refl (true) H2) orbT.
   + move/(dl2_inversion_implE0); rewrite//=; move/andP => [ H1  H2].
-    rewrite implybE Bool.orb_false_intro//=. 
+    rewrite implybE Bool.orb_false_intro//=.
     * rewrite //= in IHe1. by rewrite (IHe1 e1 erefl JMeq_refl (true)  H1)//=.
     * rewrite //= in IHe2. by rewrite (IHe2 e2 erefl JMeq_refl (false) H2)//=.
 - case: c; rewrite //=; rewrite -!dl2_ereal_translations_Real_coincide;

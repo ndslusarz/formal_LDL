@@ -19,20 +19,20 @@ Require Import mathcomp_extra analysis_extra ldl.
 (* - dl2_orC == commutativity of disjunction                                  *)
 (* - dl2_orA == associativity of disjunction                                  *)
 (*                                                                            *)
-(* ## Soundness                                                               *)
-(* - dl2_translation_le0 == invariant for the translation: all values are in *)
+(* ## Adequacy                                                                *)
+(* - dl2_translation_le0 == invariant for the translation: all values are in  *)
 (*                          the range $(-\infty, 0]$                          *)
 (* - dl2_nary_inversion_andE1 == inversion lemma for conjunction/true         *)
 (* - dl2_nary_inversion_andE0 == inversion lemma for conjuntion/false         *)
 (* - dl2_nary_inversion_orE1 == inversion lemma for disjunction/true          *)
 (* - dl2_nary_inversion_orE0 == inversion lemma for disjunction/false         *)
-(* - dl2_translations_Vector_coincide == shows that the Boolean translation *)
+(* - dl2_translations_Vector_coincide == shows that the Boolean translation   *)
 (*   and the DL2 translation coincide on expressions of type Vector_T         *)
-(* - dl2_translations_Index_coincide == shows that the Boolean translation *)
+(* - dl2_translations_Index_coincide == shows that the Boolean translation    *)
 (*   and the DL2 translation coincide on expressions of type Index_T          *)
 (* - dl2_translations_Real_coincide == shows that the Boolean translation and *)
 (*   the DL2 translation coincide on expressions of type Real_T               *)
-(* - dl2_soundness == final soundness result for DL2                          *)
+(* - dl2_adeuqacy == final adequacy result for DL2                            *)
 (*                                                                            *)
 (* ## Shadow-lifting                                                          *)
 (* - dl2_and v == $\sum_{i < n} v_i$                                          *)
@@ -209,7 +209,7 @@ Lemma dl2_inversion_implE1 (E1 E2 : expr (Bool_T_undef)) :
   is_dl2 true ([[  E1 `=> E2 ]]_dl2) ->
      is_dl2 false ([[ E1 ]]_dl2) || is_dl2 true ([[ E2 ]]_dl2).
 Proof.
-rewrite//=; case: ifP => /eqP H1 H2. 
+rewrite//=; case: ifP => /eqP H1 H2.
 - rewrite H1 addr0 in H2; rewrite H2 orbT//=.
 - have H := dl2_translation_le0 E1.
   have h : [[E1]]_dl2 <> 0 -> [[E1]]_dl2 <= 0 ->
@@ -221,9 +221,9 @@ Lemma dl2_inversion_implE0 (E1 E2 : expr (Bool_T_undef)) :
   is_dl2 false ([[  E1 `=> E2 ]]_dl2) ->
      is_dl2 true ([[ E1 ]]_dl2) && is_dl2 false([[ E2 ]]_dl2).
 Proof.
-rewrite//=; case: ifP => /eqP H1 H2. 
+rewrite//=; case: ifP => /eqP H1 H2.
 - rewrite H1 addr0 in H2. by rewrite H2//=.
-- exfalso. lra. 
+- exfalso. lra.
 Qed.
 
 Lemma dl2_translations_Vector_coincide: forall n (e : @expr R (Vector_T n)),

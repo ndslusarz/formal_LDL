@@ -224,7 +224,7 @@ move => hmaxlt0 _ i isize.
 by apply: (maxrltx hmaxlt0); rewrite mem_nth.
 Qed.
 
-Lemma stl_soundness (e : expr Bool_T_undef) b :
+Lemma stl_adequacy (e : expr Bool_T_undef) b :
   is_stl b (nu.-[[ e ]]_stl) -> [[ e ]]_B = b.
 Proof.
 dependent induction e using expr_ind'.
