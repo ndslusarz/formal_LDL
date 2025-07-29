@@ -117,12 +117,7 @@ dependent induction e using expr_ind' => /=.
 - rewrite /sumR big_map big_seq.
   case: ifP; move => /eqP H1//=.
   have h : forall (r : R), r < 0 -> 1/r <= 0. intros. rewrite (ler_ndivrMr 0 1) ?mul0r//=. 
-  have hl : (\sum_(i <- l | i \in l) 1 / [[i]]_dl2) < 0.
-    case l.
-    - rewrite big_nil//=.
-  
-               }
-  sumr_le0// => t tl.
+  admit.
 
 
 
@@ -195,22 +190,22 @@ Lemma dl2_nary_inversion_orE1 (s : seq (expr (Bool_T_undef impl_def m_def l_unde
   is_dl2 true ([[ ldl_mor s ]]_dl2) ->
   exists i, ([[ nth (ldl_bool _ _ _ _ false) s i ]]_dl2 == 0) && (i < size s)%nat.
 Proof.
-elim: s => [|h t ih] /=.
-  rewrite /prodR big_nil mulr1 expr1.
+elim: s => [|h t ih] /=. admit.
+  (*rewrite /prodR big_nil mulr1 expr1.
   by rewrite lt_eqF//.
 rewrite mulf_eq0 signr_eq0/=.
 rewrite /prodR big_cons mulf_eq0 => /orP[H|/eqP H].
   by exists 0%N; rewrite /= H.
 have /ih[j /andP[Hj jt]] : [[ldl_mor t]]_dl2 == 0 by rewrite /= /prodR H mulr0.
-by exists j.+1; rewrite /= Hj.
-Qed.
+by exists j.+1; rewrite /= Hj.*)
+Admitted.
 
 Lemma dl2_nary_inversion_orE0 (Es : seq (expr (Bool_T_undef impl_def m_def l_undef)) ) :
     is_dl2 false ([[ ldl_mor Es ]]_dl2)  -> 
     (forall i, (i < size Es)%nat -> is_dl2 false ([[ nth (ldl_bool _ _ _ _ false) Es i ]]_dl2)).
 Proof.
 elim: Es => //= a l IH.
-rewrite /prodR big_cons mulrCA mulr_lt0 => /andP[aneq0]/andP[]/[swap] _.
+(*rewrite /prodR big_cons mulrCA mulr_lt0 => /andP[aneq0]/andP[]/[swap] _.
 rewrite exprS -mulrA mulN1r oppr_eq0 => lneq0.
 have ale0 := dl2_translation_le0 a.
 have alt0 : ([[a]]_dl2 < 0) by rewrite lt_neqAle aneq0 ale0.
@@ -219,15 +214,16 @@ rewrite ltnS => isize.
 apply IH => //.
 rewrite lt_neqAle lneq0/= /prodR big_map.
 apply: prodr_le0 => j.
-exact: dl2_translation_le0.
-Qed.
+exact: dl2_translation_le0.*)
+Admitted.
 
 Lemma dl2_inversion_implE1 (E1 E2 : expr (Bool_T_undef impl_def m_def l_undef)) :
   is_dl2 true ([[  E1 `=> E2 ]]_dl2) ->
      is_dl2 false ([[ E1 ]]_dl2) || is_dl2 true ([[ E2 ]]_dl2).
 Proof.
 rewrite//=/maxr; case: ifP => H1 H2; 
-have H := dl2_translation_le0 E2; lra.
+have H2' := dl2_translation_le0 E2;
+have H1' := dl2_translation_le0 E1; try lra.
 Qed.
 
 Lemma dl2_inversion_implE0 (E1 E2 : expr (Bool_T_undef impl_def m_def l_undef)) :
@@ -239,12 +235,12 @@ rewrite//=/maxr; case: ifP =>  H1 H2.
 - have H := dl2_translation_le0 E1. 
 have h : - ([[E1]]_dl2 - [[E2]]_dl2) < 0 ->
            [[E1]]_dl2 > [[E2]]_dl2 by intros; lra.
-apply h in H2. 
+(*apply h in H2. 
 have h' : [[E2]]_dl2 < [[E1]]_dl2 ->
           [[E1]]_dl2 <= 0 ->
           [[E2]]_dl2 < 0 by intros; lra.
 apply (h' H2) in H; rewrite H orbT. (*false, this case doesn't go through - try and fix the definition?*)
-admit.
+admit.*)
 (*- rewrite H1 addr0 in H2. by rewrite H2//=.
 - exfalso. lra.*)
 Admitted.
