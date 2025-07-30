@@ -38,8 +38,8 @@ Import Num.Def Num.Theory GRing.Theory.
 Import Order.TTheory.
 Import numFieldTopology.Exports.
 
-HB.instance Definition _ (R : realType) b :=
-  @gen_eqMixin (@expr R (Bool_T b)).
+HB.instance Definition _ (R : realType) x y z v :=
+  @gen_eqMixin (@expr R (Bool_T x y z v )).
 
 Section stl_lemmas.
 Local Open Scope ring_scope.
@@ -49,7 +49,7 @@ Hypothesis nu0 : 0 < nu.
 Local Open Scope ring_scope.
 Local Open Scope ldl_scope.
 
-Lemma andI_stl (e : expr Bool_T_def) :
+Lemma andI_stl f (e : expr (Bool_T_def f m_undef l_def)) :
   nu.-[[e `/\ e]]_stle = nu.-[[e]]_stle.
 Proof.
 rewrite /=/sumE !big_cons !big_nil/=.
@@ -74,7 +74,7 @@ case: ifPn => //; rewrite -leNgt => ele0.
 by apply le_anti_ereal; apply/andP; split.
 Qed.
 
-Lemma andC_stl (e1 e2 : expr Bool_T_def) :
+Lemma andC_stl f (e1 e2 : expr (Bool_T_def f m_undef l_def)) :
   nu.-[[e1 `/\ e2]]_stle = nu.-[[e2 `/\ e1]]_stle.
 Proof.
 rewrite /=/sumE !big_cons !big_nil /=.
@@ -92,7 +92,7 @@ case: ifPn => _; first by rewrite addeCA.
 by case: ifPn => _; first rewrite addeCA.
 Qed.
 
-Lemma orI_stl (e : expr Bool_T_def) :
+Lemma orI_stl f (e : expr (Bool_T_def f m_undef l_def)) :
   nu.-[[e `\/ e]]_stle = nu.-[[e]]_stle.
 Proof.
 rewrite /=/sumE !big_cons !big_nil/=.
@@ -117,7 +117,7 @@ case: ifPn => [//|]; rewrite -leNgt => ele0.
 by apply/eqP; rewrite eq_le ege0 ele0.
 Qed.
 
-Lemma orC_stl (e1 e2 : expr Bool_T_def) :
+Lemma orC_stl f (e1 e2 : expr (Bool_T_def f m_undef l_def)) :
   nu.-[[e1 `\/ e2]]_stle  = nu.-[[e2 `\/ e1]]_stle.
 Proof.
 rewrite /=/sumE !big_cons !big_nil /=.
@@ -161,14 +161,15 @@ Qed.
 
 Definition is_stl b (x : \bar R) := (if b then x >= 0 else x < 0)%E.
 
-Lemma stl_nary_inversion_andE1 (Es : seq (expr Bool_T_undef) ) :
-  is_stl true (nu.-[[ ldl_and Es ]]_stle) -> (forall i, (i < size Es)%N -> is_stl true (nu.-[[ nth (ldl_bool undef false) Es i ]]_stle)).
+Lemma stl_nary_inversion_andE1 f (Es : seq (expr (Bool_T_undef f m_undef l_def)) ) :
+  is_stl true (nu.-[[ ldl_and Es ]]_stle) -> (forall i, (i < size Es)%N -> 
+    is_stl true (nu.-[[ nth (ldl_bool neg_undef f m_undef l_def false) Es i ]]_stle)).
 Proof.
 rewrite/is_stl/= big_map.
 case: ifPn => [//|hnoo].
 case: ifPn => [/eqP min_apoo _|hpoo].
   move=> i isize.
-  move: ((mine_eqyP _ _ _).1 min_apoo (nth (ldl_bool undef false) Es i)).
+  move: ((mine_eqyP _ _ _).1 min_apoo (nth (ldl_bool neg_undef f m_undef l_def false) Es i)).
   by rewrite mem_nth// => ->.
 case: ifPn=>[hminlt0|].
   rewrite/sumE.
@@ -241,8 +242,9 @@ rewrite big_seq_cond.
 by move/mine_geP; apply; rewrite mem_nth.
 Qed.
 
-Lemma stl_nary_inversion_andE0 (Es : seq (expr Bool_T_undef) ) :
-  is_stl false (nu.-[[ ldl_and Es ]]_stle) -> (exists (i : nat), is_stl false (nu.-[[ nth (ldl_bool undef false) Es i ]]_stle)%E && (i < size Es)%nat).
+Lemma stl_nary_inversion_andE0 f (Es : seq (expr (Bool_T_undef f m_undef l_def)) ) :
+  is_stl false (nu.-[[ ldl_and Es ]]_stle) -> (exists (i : nat), 
+    is_stl false (nu.-[[ nth (ldl_bool neg_undef f m_undef l_def false) Es i ]]_stle)%E && (i < size Es)%nat).
 Proof.
 rewrite/is_stl/= !big_map.
 have h0 : (-oo != +oo)%E by [].
@@ -265,7 +267,7 @@ case: ifPn => [hgt0|].
   move/forallNP => h.
   have {}h : forall i : nat,
       (i < size Es)%N ->
-      (0 <= nu.-[[nth (ldl_bool undef false) Es i]]_stle)%E.
+      (0 <= nu.-[[nth (ldl_bool neg_undef f m_undef l_def false) Es i]]_stle)%E.
     move=> i iEs.
     move: (h i) => /negP.
     by rewrite negb_and -leNgt iEs/= orbF.
@@ -280,9 +282,9 @@ case: ifPn => [hgt0|].
 by rewrite ltxx.
 Qed.
 
-Lemma stl_nary_inversion_orE1 (Es : seq (expr Bool_T_undef) ) :
+Lemma stl_nary_inversion_orE1 f (Es : seq (expr (Bool_T_undef f m_undef l_def)) ) :
   is_stl true (nu.-[[ ldl_or Es ]]_stle) ->
-    exists i, is_stl true (nu.-[[ nth (ldl_bool _ false) Es i ]]_stle) && (i < size Es)%N.
+    exists i, is_stl true (nu.-[[ nth (ldl_bool _ _ _ _ false) Es i ]]_stle) && (i < size Es)%N.
 Proof.
 rewrite/is_stl/= !big_map.
 case: ifPn => [_|hnoo]; first by rewrite leNgt ltNyr.
@@ -297,7 +299,7 @@ case: ifPn => [hlt0 _|].
   by exists (index x Es); rewrite nth_index// ltW// index_mem.
 rewrite -leNgt => hle0.
 case: ifPn => [hlt0|].
-  have h1 (i : expr Bool_T_undef) (iEs : i \in Es) :
+  have h1 (i : expr (Bool_T_undef f m_undef l_def)) (iEs : i \in Es) :
       (maxe_dev (\big[maxe/-oo%E]_(i0 <- Es | i0 \in Es) nu.-[[i0]]_stle) (nu.-[[i]]_stle) != +oo)%E.
     rewrite /maxe_dev mule_eq_pinfty !negb_or !negb_and -!leNgt.
     rewrite lt_eqF ?ltry//=!orbT/=.
@@ -305,7 +307,7 @@ case: ifPn => [hlt0|].
     rewrite adde_eq_ninfty negb_or hnoo/= -oppeey oppeK.
     rewrite lt_eqF//=.
     by apply: lt_trans; first by move: hlt0 => /maxe_lt; apply.
-  have h2 (i : expr Bool_T_undef) (iEs : i \in Es) (gtNyi : (-oo < nu.-[[i]]_stle)%E) :
+  have h2 (i : expr (Bool_T_undef f m_undef l_def)) (iEs : i \in Es) (gtNyi : (-oo < nu.-[[i]]_stle)%E) :
       (maxe_dev (\big[maxe/-oo%E]_(i0 <- Es | i0 \in Es) nu.-[[i0]]_stle) (nu.-[[i]]_stle) != -oo)%E.
     rewrite /maxe_dev mule_eq_ninfty !negb_or !negb_and -!leNgt.
     rewrite gt_eqF ?ltNyr//=!orbT/=.
@@ -340,10 +342,10 @@ exists (index i Es).
 by rewrite nth_index// hige0 index_mem.
 Qed.
 
-Lemma stl_nary_inversion_orE0 (Es : seq (expr Bool_T_undef)) :
+Lemma stl_nary_inversion_orE0 f (Es : seq (expr (Bool_T_undef f m_undef l_def))) :
   is_stl false (nu.-[[ ldl_or Es ]]_stle) ->
     forall i, (i < size Es)%N ->
-      is_stl false (nu.-[[ nth (ldl_bool undef false) Es i ]]_stle).
+      is_stl false (nu.-[[ nth (ldl_bool _ _ _ _ false) Es i ]]_stle).
 Proof.
 rewrite/is_stl/= !big_map.
 case: ifPn => [/eqP hnoo _|hnoo].
@@ -364,7 +366,7 @@ case: ifPn => [hlt0 _|].
 by rewrite ltxx.
 Qed.
 
-Lemma stl_ereal_adequacy (e : expr Bool_T_undef) b :
+Lemma stl_ereal_adequacy (e : expr (Bool_T_undef impl_undef m_undef l_def)) b :
   is_stl b (nu.-[[ e ]]_stle) -> [[ e ]]_B = b.
 Proof.
 dependent induction e using expr_ind'.
@@ -375,12 +377,12 @@ dependent induction e using expr_ind'.
     rewrite [bool_translation (ldl_and l)]/= big_map big_seq big_all_cond => h.
     apply: allT => x/=.
     apply/implyP => /nthP xnth.
-    have [i il0 <-] := xnth (ldl_bool _ false).
+    have [i il0 <-] := xnth (ldl_bool _ _ _ _ false).
     by apply: H => //; rewrite ?h// -In_in mem_nth.
   + move/stl_nary_inversion_andE0.
     rewrite [bool_translation (ldl_and l)]/= big_map big_all.
     elim=>// i /andP[i0 isize].
-    apply/allPn; exists (nth (ldl_bool _ false) l i); first by rewrite mem_nth.
+    apply/allPn; exists (nth (ldl_bool _ _ _ _ false) l i); first by rewrite mem_nth.
     apply/negPf; apply: H => //.
     by rewrite -In_in mem_nth.
 - rewrite List.Forall_forall in H.
@@ -388,21 +390,20 @@ dependent induction e using expr_ind'.
   + move/stl_nary_inversion_orE1.
     rewrite [bool_translation (ldl_or l)]/= big_map big_has.
     elim=>// i /andP[i0 isize].
-    apply/hasP; exists (nth (ldl_bool _ false) l i); first by rewrite mem_nth.
+    apply/hasP; exists (nth (ldl_bool _ _ _ _ false) l i); first by rewrite mem_nth.
     apply: H => //.
     by rewrite -In_in mem_nth.
   + move/stl_nary_inversion_orE0.
     rewrite [bool_translation (ldl_or l)]/= big_map big_has => h.
     apply/hasPn => x.
     move/nthP => xnth.
-    have [i il0 <-] := xnth (ldl_bool _ false).
+    have [i il0 <-] := xnth (ldl_bool _ _ _ _ false).
     by apply/negPf; apply: H => //; rewrite ?h// -In_in mem_nth.
-- admit.
 - case: c.
   + by case: b; rewrite /is_stl/= ?lee_fin ?lte_fin ?ltNge subr_ge0 !stl_ereal_translations_Real_coincide// => /negbTE.
   + case: b; rewrite /is_stl/= ?lee_fin ?lte_fin !stl_ereal_translations_Real_coincide.
     by rewrite oppr_ge0 normr_le0 subr_eq0.
     by rewrite oppr_lt0 normr_gt0 subr_eq0 => /negbTE.
-Admitted.
+Qed.
 
 End stl_lemmas.
