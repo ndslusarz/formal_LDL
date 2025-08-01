@@ -54,24 +54,24 @@ Variable p : R.
 
 Local Notation "[[ e ]]_dl2" := (@dl2_translation R _ e).
 
-Lemma dl2_andC_nary f1 f2 (s1 s2 : seq (expr (Bool_T_def f1 m_def f2))) :
+Lemma dl2_mandC_nary f1 f2 (s1 s2 : seq (expr (Bool_T_def f1 m_def f2))) :
   perm_eq s1 s2 -> [[ldl_mand s1]]_dl2 = [[ldl_mand s2]]_dl2.
 Proof.
 by move=> pi; rewrite /=/sumR !big_map (perm_big _ pi)/=.
 Qed.
 
-Lemma dl2_andC f1 f2 (e1 e2 : expr (Bool_T_def f1 m_def f2)) : [[ e1 `** e2 ]]_dl2 = [[ e2 `** e1 ]]_dl2.
+Lemma dl2_mandC f1 f2 (e1 e2 : expr (Bool_T_def f1 m_def f2)) : [[ e1 `** e2 ]]_dl2 = [[ e2 `** e1 ]]_dl2.
 Proof.
 by rewrite /=/sumR ?big_cons ?big_nil /= addr0 addr0 addrC.
 Qed.
 
-Lemma dl2_andA f1 f2 (e1 e2 e3 : expr (Bool_T_def f1 m_def f2)) :
+Lemma dl2_mandA f1 f2 (e1 e2 e3 : expr (Bool_T_def f1 m_def f2)) :
   [[ e1 `** (e2 `** e3) ]]_dl2 = [[ (e1 `** e2) `** e3 ]]_dl2.
 Proof.
 by rewrite /=/sumR ?big_cons ?big_nil !addr0 addrA.
 Qed.
 
-Lemma dl2_orC_nary f1 f2 (s1 s2 : seq (expr (Bool_T_def f1 m_def f2))) :
+Lemma dl2_morC_nary f1 f2 (s1 s2 : seq (expr (Bool_T_def f1 m_def f2))) :
   perm_eq s1 s2 -> [[ldl_mor s1]]_dl2 = [[ldl_mor s2]]_dl2.
 Proof.
 move => pi; rewrite //=; repeat case: ifP; move => /eqP h1 /eqP h2; rewrite big_map in h1;
@@ -81,7 +81,7 @@ rewrite /sumR !big_map (perm_big _ pi)//=.
 (*by move=> pi; rewrite /=/prodR !big_map (perm_big _ pi)/= (perm_size pi).*)
 Qed.
 
-Lemma dl2_orC f1 f2 (e1 e2 : expr (Bool_T_def f1 m_def f2)) :
+Lemma dl2_morC f1 f2 (e1 e2 : expr (Bool_T_def f1 m_def f2)) :
   [[ e1 `++ e2 ]]_dl2 = [[ e2 `++ e1 ]]_dl2.
 Proof.
 have h : maxr ([[e2]]_dl2) (maxr ([[e1]]_dl2) 0) = maxr ([[e1]]_dl2) (maxr ([[e2]]_dl2) 0)
@@ -93,7 +93,7 @@ by rewrite /=/sumR  addrC//=.
 by rewrite mulrC.*)
 Qed.
 
-Lemma dl2_orA f1 f2 (e1 e2 e3 : expr (Bool_T_def f1 m_def f2)) :
+Lemma dl2_morA f1 f2 (e1 e2 e3 : expr (Bool_T_def f1 m_def f2)) :
   [[ e1 `++ (e2 `++ e3) ]]_dl2 = [[ (e1 `++ e2) `++ e3 ]]_dl2.
 Proof.
 rewrite /= /sumR !big_cons !big_nil !addr0; repeat case: ifP; rewrite//=; try nra. 
@@ -148,9 +148,25 @@ dependent induction e using expr_ind' => /=.
   by rewrite oppr_le0 le_max lexx orbT.
 Admitted.
 
+Theorem dl2_mand_unit f1 f2 (e :  (expr (Bool_T_def f1 m_def f2))) : (0 < p)%R ->
+  [[ e `** (ldl_bool _ _ _ _ true) ]]_dl2 = [[ e ]]_dl2.
+Proof.
+Admitted.
+
+Theorem dl2_mor_unit f1 f2 (e :  (expr (Bool_T_def f1 m_def f2))) : (0 < p)%R ->
+  [[ e `++ (ldl_bool _ _ _ _ false) ]]_dl2 = [[ e ]]_dl2.
+Proof.
+Admitted.
+
+Theorem dl2_residuation f (e1 e2 e3 :  (expr (Bool_T_def impl_def m_def f))) :
+  [[ e1 `** e2 ]]_dl2 <= [[ e3 ]]_dl2 <->
+    [[ e2 ]]_dl2 <= [[ e1 `=> e3 ]]_dl2.
+Proof.
+Admitted.
+
 Definition is_dl2 b (x : R) := if b then x == 0 else x < 0.
 
-Lemma dl2_nary_inversion_andE1 (s : seq (expr (Bool_T_undef impl_def m_def l_undef))) :
+Lemma dl2_nary_inversion_mandE1 (s : seq (expr (Bool_T_undef impl_def m_def l_undef))) :
   is_dl2 true ([[ ldl_mand s ]]_dl2) ->
   (forall i, (i < size s)%N -> is_dl2 true ([[ nth (ldl_bool _ _ _ _ false) s i ]]_dl2)).
 Proof.
@@ -171,7 +187,7 @@ rewrite naddr_eq0.
   by rewrite andbT => /mapP[/= e et] ->; exact: dl2_translation_le0.
 Qed.
 
-Lemma dl2_nary_inversion_andE0 (s : seq (expr (Bool_T_undef impl_def m_def l_undef))) :
+Lemma dl2_nary_inversion_mandE0 (s : seq (expr (Bool_T_undef impl_def m_def l_undef))) :
   is_dl2 false ([[ ldl_mand s ]]_dl2) ->
   (exists i, (is_dl2 false ([[ nth (ldl_bool _ _ _ _ false) s i ]]_dl2)) && (i < size s)%nat).
 Proof.
@@ -186,7 +202,7 @@ move=> /[swap] /[apply] /orP[H|/ih[j /andP[j0 jt]]].
 by exists j.+1; rewrite /= j0.
 Qed.
 
-Lemma dl2_nary_inversion_orE1 (s : seq (expr (Bool_T_undef impl_def m_def l_undef))) :
+Lemma dl2_nary_inversion_morE1 (s : seq (expr (Bool_T_undef impl_def m_def l_undef))) :
   is_dl2 true ([[ ldl_mor s ]]_dl2) ->
   exists i, ([[ nth (ldl_bool _ _ _ _ false) s i ]]_dl2 == 0) && (i < size s)%nat.
 Proof.
@@ -200,7 +216,7 @@ have /ih[j /andP[Hj jt]] : [[ldl_mor t]]_dl2 == 0 by rewrite /= /prodR H mulr0.
 by exists j.+1; rewrite /= Hj.*)
 Admitted.
 
-Lemma dl2_nary_inversion_orE0 (Es : seq (expr (Bool_T_undef impl_def m_def l_undef)) ) :
+Lemma dl2_nary_inversion_morE0 (Es : seq (expr (Bool_T_undef impl_def m_def l_undef)) ) :
     is_dl2 false ([[ ldl_mor Es ]]_dl2)  -> 
     (forall i, (i < size Es)%nat -> is_dl2 false ([[ nth (ldl_bool _ _ _ _ false) Es i ]]_dl2)).
 Proof.

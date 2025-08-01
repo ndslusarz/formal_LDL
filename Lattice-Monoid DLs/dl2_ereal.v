@@ -47,42 +47,58 @@ Variable p : R.
 
 Local Notation "[[ e ]]_dl2e" := (@dl2_ereal_translation R _ e).
 
-Lemma dl2_andC_nary (s1 s2 : seq (expr (Bool_T_def impl_def m_def l_undef))) :
+Lemma dl2_mandC_nary (s1 s2 : seq (expr (Bool_T_def impl_def m_def l_undef))) :
   perm_eq s1 s2 -> [[ldl_mand s1]]_dl2e = [[ldl_mand s2]]_dl2e.
 Proof.
 by move=> pi; rewrite /=/sumE !big_map (perm_big _ pi)/=.
 Qed.
 
-Lemma dl2_andC (e1 e2 : expr (Bool_T_def impl_def m_def l_undef)) : [[ e1 `** e2 ]]_dl2e = [[ e2 `** e1 ]]_dl2e.
+Lemma dl2_mandC (e1 e2 : expr (Bool_T_def impl_def m_def l_undef)) : [[ e1 `** e2 ]]_dl2e = [[ e2 `** e1 ]]_dl2e.
 Proof.
 by rewrite /=/sumE ?big_cons ?big_nil /= adde0 adde0 addeC.
 Qed.
 
-Lemma dl2_andA (e1 e2 e3 : expr (Bool_T_undef impl_def m_def l_undef)) :
+Lemma dl2_mandA (e1 e2 e3 : expr (Bool_T_undef impl_def m_def l_undef)) :
   [[ e1 `** (e2 `** e3) ]]_dl2e = [[ (e1 `** e2) `** e3 ]]_dl2e.
 Proof.
 by rewrite /=/sumE ?big_cons ?big_nil !adde0 addeA.
 Qed.
 
-Lemma dl2_orC_nary (s1 s2 : seq (expr (Bool_T_def impl_def m_def l_undef))) :
+Lemma dl2_morC_nary (s1 s2 : seq (expr (Bool_T_def impl_def m_def l_undef))) :
   perm_eq s1 s2 -> [[ldl_mor s1]]_dl2e = [[ldl_mor s2]]_dl2e.
 Proof.
 by move=> pi; rewrite /=/prodE !big_map (perm_big _ pi)/= (perm_size pi).
 Qed.
 
-Lemma dl2_orC (e1 e2 : expr (Bool_T_undef impl_def m_def l_undef)) :
+Lemma dl2_morC (e1 e2 : expr (Bool_T_undef impl_def m_def l_undef)) :
  [[ e1 `++ e2 ]]_dl2e = [[ e2 `++ e1 ]]_dl2e.
 Proof.
 rewrite /= /prodE !big_cons big_nil !mule1; congr *%E.
 by rewrite muleC.
 Qed.
 
-Lemma dl2_orA (e1 e2 e3 : expr (Bool_T_undef impl_def m_def l_undef)) :
+Lemma dl2_morA (e1 e2 e3 : expr (Bool_T_undef impl_def m_def l_undef)) :
   [[ e1 `++ (e2 `++ e3) ]]_dl2e = [[ (e1 `++ e2) `++ e3 ]]_dl2e.
 Proof.
 rewrite /= /prodE !big_cons big_nil !mule1; congr (_ * _)%E.
 by rewrite muleCA !muleA.
 Qed.
+
+Theorem dl2_mand_unit f1 f2 (e :  (expr (Bool_T_def f1 m_def f2))) :
+  [[ e `** (ldl_bool _ _ _ _ true) ]]_dl2e = [[ e ]]_dl2e.
+Proof.
+Admitted.
+
+Theorem dl2_mor_unit f1 f2 (e :  (expr (Bool_T_def f1 m_def f2))) :
+  [[ e `++ (ldl_bool _ _ _ _ false) ]]_dl2e = [[ e ]]_dl2e.
+Proof.
+Admitted.
+
+Theorem dl2_residuation f (e1 e2 e3 :  (expr (Bool_T_def impl_def m_def f))) :
+  ([[ e1 `** e2 ]]_dl2e <= [[ e3 ]]_dl2e)%E <->
+    ([[ e2 ]]_dl2e <= [[ e1 `=> e3 ]]_dl2e)%E.
+Proof.
+Admitted.
 
 Lemma dl2_ereal_translation_le0 e :
   ([[ e ]]_dl2e <= 0 :> ereal_type_translation (Bool_T_undef impl_def m_def l_undef))%E.
