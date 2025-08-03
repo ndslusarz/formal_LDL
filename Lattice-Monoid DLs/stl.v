@@ -102,6 +102,20 @@ case: ifPn; first by rewrite addrC.
 by case: ifPn; first by rewrite addrC.
 Qed.
 
+(*absorption lemmas - unsusre if these are true, or need to hold
+as we've established they need to hold for lattice and and lattice or
+- which STL only has at the limit when number of arguments goes to infinity*)
+
+Lemma stl_and_abs f1 f2 (e1 e2 : expr (Bool_T_def f1 f2 l_def)) :
+  nu.-[[ e1 `/\ (e1 `\/ e2)]]_stl = nu.-[[ e1 ]]_stl.
+Proof.
+Admitted.
+
+Lemma stl_or_abs f1 f2 (e1 e2 : expr (Bool_T_def f1 f2 l_def)) :
+  nu.-[[ e1 `\/ (e1 `/\ e2)]]_stl = nu.-[[ e1 ]]_stl.
+Proof.
+Admitted.
+
 Lemma stl_translations_Vector_coincide : forall n (e : @expr R (Vector_T n)),
   nu.-[[ e ]]_stl = [[ e ]]_B.
 Proof.
@@ -300,6 +314,16 @@ by rewrite /min_dev !map_cons !big_map (perm_big _ pi).
 Qed.
 
 End stl_lemmas.
+
+Section stl_and_conv_lattice.
+Local Open Scope ring_scope.
+Context {R : realType}.
+Variables (nu : R) (M : nat).
+
+(*Lemma stl_and_gt0_cvg_infty (p : R) (v : seq R) i : 0 < p ->
+  stl_and_gt0 (seq_of_rV (v)) @[(size v) --> +oo] --> +oo.*)
+
+End stl_and_conv_lattice.
 
 Section stl_and_lemmas.
 Local Open Scope ring_scope.

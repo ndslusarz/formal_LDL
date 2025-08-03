@@ -1190,10 +1190,6 @@ Theorem product_mand_unit f1 f2 (e :  (expr (Bool_T_def f1 m_def f2))) : (0 < p)
 Proof.
 Admitted.
 
-Theorem product_mor_unit f1 f2 (e :  (expr (Bool_T_def f1 m_def f2))) : (0 < p)%R ->
-  [[ e `++ (ldl_bool _ _ _ _ false) ]]_product = [[ e ]]_product.
-Proof.
-Admitted.
 
 End product_lemmas.
 

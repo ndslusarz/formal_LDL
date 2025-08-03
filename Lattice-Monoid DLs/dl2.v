@@ -179,14 +179,6 @@ Proof.
 rewrite //=/sumR !big_cons big_nil !addr0//=.
 Qed.
 
-(*this does not work. need to think about or again*)
-Theorem dl2_mor_unit f1 f2 (e :  (expr (Bool_T_def f1 m_def f2))) :
-  [[ e `++ (ldl_bool _ _ _ _ false) ]]_dl2 = [[ e ]]_dl2.
-Proof.
-rewrite//= !big_cons big_nil; case: ifP.
-- rewrite /maxr; repeat case: ifP; try lra.
-Admitted.
-
 Theorem dl2_residuation (e1 e2 e3 :  (expr (Bool_T_undef impl_def m_def l_undef))) :
   [[ e1 `** e2 ]]_dl2 <= [[ e3 ]]_dl2 <->
     [[ e2 ]]_dl2 <= [[ e1 `=> e3 ]]_dl2.
