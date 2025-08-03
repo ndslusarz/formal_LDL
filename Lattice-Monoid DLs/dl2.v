@@ -93,17 +93,6 @@ by rewrite /=/sumR  addrC//=.
 by rewrite mulrC.*)
 Qed.
 
-Lemma dl2_morA f1 f2 (e1 e2 e3 : expr (Bool_T_def f1 m_def f2)) :
-  [[ e1 `++ (e2 `++ e3) ]]_dl2 = [[ (e1 `++ e2) `++ e3 ]]_dl2.
-Proof.
-rewrite /= /sumR !big_cons !big_nil !addr0; repeat case: ifP; rewrite//=; try nra. 
- (*true on paper, slightly painful here*)
-(*rewrite /=/prodR !big_cons big_nil !mulr1.
-congr *%R.
-rewrite mulrCA.
-by rewrite !mulrA.*)
-Admitted.
-
 Lemma dl2_translation_le0 f e : [[ e ]]_dl2 <= 0 :> type_translation (Bool_T_undef f m_def l_undef).
 Proof.
 dependent induction e using expr_ind' => /=.
@@ -149,14 +138,53 @@ dependent induction e using expr_ind' => /=.
   by rewrite oppr_le0 le_max lexx orbT.
 Admitted.
 
-Theorem dl2_mand_unit f1 f2 (e :  (expr (Bool_T_def f1 m_def f2))) : (0 < p)%R ->
+(*move to mathcomp_extra later*)
+Lemma maxr_le0_x0 (x : R) :
+  x <= 0 -> maxr x 0 = 0.
+Proof. 
+intros; rewrite/maxr; case: ifP; lra.
+Qed.
+
+(*Lemma div_lt (x y : R) :
+  x > 0 -> y < 0 -> x / y < 0.
+Proof.
+intros. rewrite ltr_ndivrMr ?mul0r//=.
+Qed.*)
+
+Lemma dl2_morA f1 (e1 e2 e3 : expr (Bool_T_undef f1 m_def l_undef)) :
+  [[ e1 `++ (e2 `++ e3) ]]_dl2 = [[ (e1 `++ e2) `++ e3 ]]_dl2.
+Proof.
+have he1 := dl2_translation_le0 _ e1.
+have he2 := dl2_translation_le0 _ e2.
+have he3 := dl2_translation_le0 _ e3.
+rewrite /= /sumR !big_cons !big_nil !addr0; repeat case: ifP; rewrite//=;
+ try nra.
+- move => _;  rewrite  ?maxr_le0_x0 ?maxr_le0_x0//=; lra. 
+- rewrite maxr_le0_x0//= maxr_le0_x0//=; lra. 
+- move => _; rewrite maxr_le0_x0//= maxr_le0_x0//=; lra. 
+- rewrite maxr_le0_x0//= maxr_le0_x0//=; lra. 
+- move => _ _ _. rewrite maxr_le0_x0//= maxr_le0_x0//=; lra. 
+- rewrite maxr_le0_x0//= maxr_le0_x0//=; lra.
+- move => _; rewrite maxr_le0_x0//= maxr_le0_x0//=; lra.  
+- rewrite maxr_le0_x0//= maxr_le0_x0//=; lra. 
+- move => _ _; rewrite maxr_le0_x0//= maxr_le0_x0//=; lra. 
+- rewrite maxr_le0_x0//= maxr_le0_x0//=; lra. 
+- move => _; rewrite maxr_le0_x0//= maxr_le0_x0//=; lra. 
+- rewrite maxr_le0_x0//= maxr_le0_x0//=; lra. 
+Qed.
+
+Theorem dl2_mand_unit f1 f2 (e :  (expr (Bool_T_def f1 m_def f2))) :
   [[ e `** (ldl_bool _ _ _ _ true) ]]_dl2 = [[ e ]]_dl2.
 Proof.
-Admitted.
+rewrite //=/sumR !big_cons big_nil !addr0//=.
+Qed.
 
-Theorem dl2_mor_unit f1 f2 (e :  (expr (Bool_T_def f1 m_def f2))) : (0 < p)%R ->
+(*this does not work. need to think about or again*)
+Theorem dl2_mor_unit f1 f2 (e :  (expr (Bool_T_def f1 m_def f2))) :
   [[ e `++ (ldl_bool _ _ _ _ false) ]]_dl2 = [[ e ]]_dl2.
 Proof.
+rewrite//= !big_cons big_nil; case: ifP.
+- rewrite /maxr; repeat case: ifP; try lra.
 Admitted.
 
 Theorem dl2_residuation (e1 e2 e3 :  (expr (Bool_T_undef impl_def m_def l_undef))) :
