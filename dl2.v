@@ -74,23 +74,13 @@ Qed.
 Lemma dl2_morC_nary f1 f2 (s1 s2 : seq (expr (Bool_T_def f1 m_def f2))) :
   perm_eq s1 s2 -> [[ldl_mor s1]]_dl2 = [[ldl_mor s2]]_dl2.
 Proof.
-move => pi; rewrite //=; repeat case: ifP; move => /eqP h1 /eqP h2; rewrite big_map in h1;
-rewrite big_map in h2; rewrite//=; have H := (@perm_big R maxr 0 _ _ _ _ _ pi);
-try rewrite H in h2; try rewrite H in h2; rewrite//=.
-rewrite /sumR !big_map (perm_big _ pi)//=.
-(*by move=> pi; rewrite /=/prodR !big_map (perm_big _ pi)/= (perm_size pi).*)
+by move=> pi; rewrite /=/sumR !big_map (perm_big _ pi)/=.
 Qed.
 
 Lemma dl2_morC f1 f2 (e1 e2 : expr (Bool_T_def f1 m_def f2)) :
   [[ e1 `++ e2 ]]_dl2 = [[ e2 `++ e1 ]]_dl2.
 Proof.
-have h : maxr ([[e2]]_dl2) (maxr ([[e1]]_dl2) 0) = maxr ([[e1]]_dl2) (maxr ([[e2]]_dl2) 0)
-by rewrite /maxr; repeat case: ifP; rewrite//=; try nra.
-rewrite/=; repeat case: ifP; rewrite /sumR !big_cons !big_nil ?addr0//=; move =>  /eqP h1 /eqP h2;
-rewrite ?h in h1; rewrite//=.
-by rewrite /=/sumR  addrC//=.
-(*rewrite /=/prodR !big_cons big_nil !mulr1; congr *%R.
-by rewrite mulrC.*)
+by rewrite /=/sumR ?big_cons ?big_nil /= addr0 addr0 addrC.
 Qed.
 
 Lemma dl2_translation_le0 f e : [[ e ]]_dl2 <= 0 :> type_translation (Bool_T_undef f m_def l_undef).
@@ -98,79 +88,14 @@ Proof.
 dependent induction e using expr_ind' => /=.
 - by case: b.
 - rewrite /maxr; case: ifP; move => h; lra. 
-(*case: ifP; move => h; try lra.
-  have IH2 := IHe2 e2.
-  apply IH2; rewrite //=.*)
 - rewrite /sumR big_map big_seq sumr_le0// => t tl.
   move/List.Forall_forall : H => /(_ t); apply => //.
   exact/In_in.
-- rewrite /sumR big_map big_seq.
-  case: ifP; move => /eqP H1//=.
-  have h : forall (r : R), r < 0 -> 1/r <= 0. intros. rewrite (ler_ndivrMr 0 1) ?mul0r//=. 
-  admit.
-
-
-
-(*rewrite /prodR big_map big_seq; have [ol|ol] := boolP (odd (length l)).
-    rewrite exprS -signr_odd ol expr1 mulrN1 opprK mul1r.
-    have [l0|l0] := pselect (forall i, i \in l -> [[i]]_dl2 != 0); last first.
-      move/existsNP : l0 => [/= x /not_implyP[xl /negP/negPn/eqP x0]].
-      rewrite le_eqVlt; apply/orP; left.
-      rewrite prodr_seq_eq0; apply/hasP; exists x => //.
-      by rewrite xl x0 eqxx.
-    apply/ltW; rewrite -sgr_cp0 -big_seq prodrN1.
-      by rewrite -signr_odd ol expr1.
-    move=> /=e el; rewrite lt_neqAle l0//.
-    by move/List.Forall_forall : H => /(_ e); apply => //; exact/In_in.
-  rewrite exprS -signr_odd (negbTE ol) expr0 mulN1r.
-  rewrite mulN1r oppr_le0.
-  have [l0|l0] := pselect (forall i, i \in l -> [[i]]_dl2 != 0); last first.
-    move/existsNP : l0 => [/= x /not_implyP[xl /negP/negPn/eqP x0]].
-    rewrite le_eqVlt; apply/orP; left.
-    rewrite eq_sym prodr_seq_eq0; apply/hasP; exists x => //.
-    by rewrite xl x0 eqxx.
-  apply/ltW; rewrite -sgr_gt0 -big_seq prodrN1.
-    by rewrite -signr_odd (negbTE ol) expr0.
-  move=> e el; rewrite lt_neqAle l0//=.
-  by move/List.Forall_forall : H => /(_ e); apply => //; exact/In_in.*)
-
+- rewrite /sumR big_map big_seq sumr_le0// => t tl.
+  move/List.Forall_forall : H => /(_ t); apply => //.
+  exact/In_in.
 - case: c => //=.
   by rewrite oppr_le0 le_max lexx orbT.
-Admitted.
-
-(*move to mathcomp_extra later*)
-Lemma maxr_le0_x0 (x : R) :
-  x <= 0 -> maxr x 0 = 0.
-Proof. 
-intros; rewrite/maxr; case: ifP; lra.
-Qed.
-
-(*Lemma div_lt (x y : R) :
-  x > 0 -> y < 0 -> x / y < 0.
-Proof.
-intros. rewrite ltr_ndivrMr ?mul0r//=.
-Qed.*)
-
-Lemma dl2_morA f1 (e1 e2 e3 : expr (Bool_T_undef f1 m_def l_undef)) :
-  [[ e1 `++ (e2 `++ e3) ]]_dl2 = [[ (e1 `++ e2) `++ e3 ]]_dl2.
-Proof.
-have he1 := dl2_translation_le0 _ e1.
-have he2 := dl2_translation_le0 _ e2.
-have he3 := dl2_translation_le0 _ e3.
-rewrite /= /sumR !big_cons !big_nil !addr0; repeat case: ifP; rewrite//=;
- try nra.
-- move => _;  rewrite  ?maxr_le0_x0 ?maxr_le0_x0//=; lra. 
-- rewrite maxr_le0_x0//= maxr_le0_x0//=; lra. 
-- move => _; rewrite maxr_le0_x0//= maxr_le0_x0//=; lra. 
-- rewrite maxr_le0_x0//= maxr_le0_x0//=; lra. 
-- move => _ _ _. rewrite maxr_le0_x0//= maxr_le0_x0//=; lra. 
-- rewrite maxr_le0_x0//= maxr_le0_x0//=; lra.
-- move => _; rewrite maxr_le0_x0//= maxr_le0_x0//=; lra.  
-- rewrite maxr_le0_x0//= maxr_le0_x0//=; lra. 
-- move => _ _; rewrite maxr_le0_x0//= maxr_le0_x0//=; lra. 
-- rewrite maxr_le0_x0//= maxr_le0_x0//=; lra. 
-- move => _; rewrite maxr_le0_x0//= maxr_le0_x0//=; lra. 
-- rewrite maxr_le0_x0//= maxr_le0_x0//=; lra. 
 Qed.
 
 Theorem dl2_mand_unit f1 f2 (e :  (expr (Bool_T_def f1 m_def f2))) :
@@ -230,7 +155,7 @@ move=> /[swap] /[apply] /orP[H|/ih[j /andP[j0 jt]]].
 by exists j.+1; rewrite /= j0.
 Qed.
 
-Lemma dl2_nary_inversion_morE1 f (s : seq (expr (Bool_T_undef f m_def l_undef))) :
+(*Lemma dl2_nary_inversion_morE1 f (s : seq (expr (Bool_T_undef f m_def l_undef))) :
   is_dl2 true ([[ ldl_mor s ]]_dl2) ->
   exists i, ([[ nth (ldl_bool _ _ _ _ false) s i ]]_dl2 == 0) && (i < size s)%nat.
 Proof.
@@ -242,9 +167,9 @@ rewrite /prodR big_cons mulf_eq0 => /orP[H|/eqP H].
   by exists 0%N; rewrite /= H.
 have /ih[j /andP[Hj jt]] : [[ldl_mor t]]_dl2 == 0 by rewrite /= /prodR H mulr0.
 by exists j.+1; rewrite /= Hj.*)
-Admitted.
+Admitted.*)
 
-Lemma dl2_nary_inversion_morE0 f (Es : seq (expr (Bool_T_undef f m_def l_undef)) ) :
+(*Lemma dl2_nary_inversion_morE0 f (Es : seq (expr (Bool_T_undef f m_def l_undef)) ) :
     is_dl2 false ([[ ldl_mor Es ]]_dl2)  -> 
     (forall i, (i < size Es)%nat -> is_dl2 false ([[ nth (ldl_bool _ _ _ _ false) Es i ]]_dl2)).
 Proof.
@@ -259,7 +184,7 @@ apply IH => //.
 rewrite lt_neqAle lneq0/= /prodR big_map.
 apply: prodr_le0 => j.
 exact: dl2_translation_le0.*)
-Admitted.
+Admitted.*)
 
 Lemma dl2_inversion_implE1 (E1 E2 : expr (Bool_T_undef impl_def m_def l_undef)) :
   is_dl2 true ([[  E1 `=> E2 ]]_dl2) ->
@@ -312,8 +237,8 @@ rewrite ?(IHe1 e1 erefl JMeq_refl) ?(IHe2 e2 erefl JMeq_refl) ?(IHe e erefl JMeq
 by rewrite dl2_translations_Vector_coincide dl2_translations_Index_coincide.
 Qed.
 
-(*only adequate without implication for this semantics of implication *)
-Lemma dl2_adequacy (e : expr (Bool_T_undef impl_undef m_def l_undef)) b :
+(*to be deleted - non adequate with or and impl*)
+(*Lemma dl2_adequacy (e : expr (Bool_T_undef impl_undef m_def l_undef)) b :
   is_dl2 b ([[ e ]]_dl2) -> [[ e ]]_B = b.
 Proof.
 dependent induction e using expr_ind'.
@@ -371,7 +296,7 @@ dependent induction e using expr_ind'.
   + by rewrite /is_dl2 oppr_eq0 normr_eq0 subr_eq0.
   + rewrite/is_dl2; rewrite oppr_lt0 normr_gt0.
     by rewrite subr_eq0 => /eqP h; apply/eqP.
-Qed.
+Qed.*)
 
 End dl2_lemmas.
 
