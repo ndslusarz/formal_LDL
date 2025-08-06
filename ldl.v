@@ -67,9 +67,11 @@ Reserved Notation "nu .-[[ e ]]_stl" (at level 10, format "nu .-[[ e ]]_stl").
 Reserved Notation "[[ e ]]_dl2e" (at level 10, format "[[ e ]]_dl2e").
 Reserved Notation "[[ e ]]_dl2" (at level 10, format "[[ e ]]_dl2").
 
-(* Polarity of formulas: undef does not allow negation, while def allows negation *)
-(* this flag also encompasess implication - if negation is not defined, the same
-is true for implication*)
+(* flags which allow or disallow certain logical connectives: 
+- negation
+- implication
+- monoidal and, or
+- lattice and, or*)
 Inductive flag_neg := neg_def | neg_undef.
 Inductive flag_impl := impl_def | impl_undef.
 Inductive flag_monoid := m_def | m_undef.
@@ -85,6 +87,11 @@ Inductive ldl_type :=
 Definition Bool_T_undef := Bool_T neg_undef.
 Definition Bool_T_def := Bool_T neg_def.
 
+(*flags of the DLs*)
+Definition Bool_T_fuzzy := Bool_T neg_def impl_def m_def l_def.
+Definition Bool_T_dl2 := Bool_T neg_undef impl_def m_def l_undef.
+Definition Bool_T_stl := Bool_T neg_def impl_undef m_undef l_def.
+
 Inductive comparison : Type := cmp_le | cmp_eq.
 
 Section expr.
@@ -99,7 +106,7 @@ Inductive expr : ldl_type -> Type :=
   (* connectives *)
   | ldl_and : forall x y z, seq (expr (Bool_T x y z l_def)) -> expr (Bool_T x y z l_def)
   | ldl_or : forall x y z, seq (expr (Bool_T x y z l_def)) -> expr (Bool_T x y z l_def)
-  | ldl_not : forall x y z, expr (Bool_T_def x y z) -> expr (Bool_T_def  x y z)
+  | ldl_not : forall x y z, expr (Bool_T neg_def x y z) -> expr (Bool_T neg_def  x y z)
   | ldl_impl :forall x y z, expr (Bool_T x impl_def y z) -> expr (Bool_T x impl_def y z)
                             -> expr (Bool_T x impl_def y z)
   | ldl_mand : forall x y z, seq (expr (Bool_T x y m_def z)) -> expr (Bool_T x y m_def z)

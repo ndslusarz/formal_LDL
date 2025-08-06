@@ -1270,14 +1270,22 @@ rewrite /minr.
 by repeat case: ifPn => //; lra.
 Qed.
 
-Lemma fuzzy_and_abs f1 f2 (e1 e2 : expr (Bool_T_def f1 f2 l_def)) :
+Lemma fuzzy_and_abs (e1 e2 : expr Bool_T_fuzzy) :
   [[ e1 `/\ (e1 `\/ e2)]]_ dl = [[ e1 ]]_ dl.
 Proof.
-Admitted.
+rewrite//=/minR/maxR !big_cons !big_nil.
+have := translate_Bool_T_01 p p1 dl _ _ _ e1.
+have := translate_Bool_T_01 p p1 dl _ _ _ e2.
+rewrite/minr/maxr; repeat case: ifP; intros; try lra.
+Qed.
 
-Lemma fuzzy_or_abs f1 f2 (e1 e2 : expr (Bool_T_def f1 f2 l_def)) :
+Lemma fuzzy_or_abs (e1 e2 : expr Bool_T_fuzzy) :
   [[ e1 `\/ (e1 `/\ e2)]]_ dl = [[ e1 ]]_ dl.
 Proof.
-Admitted.
+rewrite//=/minR/maxR !big_cons !big_nil.
+have := translate_Bool_T_01 p p1 dl _ _ _ e1.
+have := translate_Bool_T_01 p p1 dl _ _ _ e2.
+rewrite/minr/maxr; repeat case: ifP; intros; try lra.
+Qed.
 
 End lattice_fuzzy_lemmas.
