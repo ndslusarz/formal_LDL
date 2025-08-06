@@ -259,6 +259,20 @@ Inductive seq_calc_luka :  seq ( seq (@expr R (Bool_T_def impl_def m_def l_def))
     seq_calc_luka ( ( A |- B):: Q) -> 
     seq_calc_luka (((ldl_bool neg_def _ _ _ false :: A) |-  a :: b :: B) :: Q) ->
     seq_calc_luka ((( A) |- (a `++ b) :: B) :: Q)
+(*| andR_l' : forall (Q : seq ( seq (@expr R (Bool_T_def impl_def m_def l_def)) 
+                              * seq (@expr R (Bool_T_def impl_def m_def l_def))))
+                 (A B : seq (@expr R (Bool_T_def impl_def m_def l_def)))
+                 (a b : @expr R (Bool_T_def impl_def m_def l_def)),
+    seq_calc_luka ((A |- a:: B) :: Q ) -> 
+    seq_calc_luka  ((A |- b :: B):: Q)  ->
+    seq_calc_luka ((A |- (a `** b) :: B) :: Q )*)
+| orR_l' : forall (Q : seq ( seq (@expr R (Bool_T_def impl_def m_def l_def))
+                             * seq (@expr R (Bool_T_def impl_def m_def l_def))))
+                 (A B : seq (@expr R (Bool_T_def impl_def m_def l_def)))
+                 (a b: @expr R (Bool_T_def impl_def m_def l_def)),
+    seq_calc_luka ( ( A |- B):: Q) -> 
+    seq_calc_luka (((A) |-  a :: b :: B) :: Q) ->
+    seq_calc_luka ((( A) |- (a `\/ b) :: B) :: Q)
 .
 (*TO DO: add derivable and rules*)
 
@@ -770,7 +784,8 @@ intros; rewrite//=. dependent induction H.
     by rewrite in_cons h1 IH12 orbT//=. 
   + exists q1. 
     by rewrite in_cons h1 IH12 orbT//=.
-Qed.
+- admit.
+Admitted.
 
 Lemma luka_neg_impl_admissable (e : (@expr R (Bool_T_def impl_def m_def l_def))):
  [[`~ e]]_Lukasiewicz = [[e `=> ldl_bool _ _ _ _ false]]_Lukasiewicz.
