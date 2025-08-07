@@ -533,22 +533,6 @@ Fixpoint stl_ereal_translation {t} (e : expr t) : ereal_type_translation t :=
   | ldl_mor _ _ _ Es => 0 (* default value, all lemmas are for monoid free formulas *)
   | ldl_not _ _ _ E1 => - {[ E1 ]}
   | ldl_impl _ _ _ E1 E2 => 0 (* default value, all lemmas are for implication-free formulas *)
-      (*let a_max : \bar R := maxe (- {[ E1 ]}) {[ E2 ]} in
-      let a'_i (a_i : \bar R) := maxe_dev a_max a_i in
-      if a_max == -oo then -oo
-      else if a_max == +oo then +oo
-        else if a_max > 0 then
-          (a_max * expeR (a'_i (- {[ E1 ]})) * expeR (nu%:E * a'_i (- {[ E1 ]})) +
-             a_max * expeR (a'_i {[ E2 ]}) * expeR (nu%:E * a'_i {[ E2 ]})
-          )  * (fine (expeR (nu%:E * (a'_i (- {[ E1 ]}))) +
-            expeR (nu%:E * (a'_i {[ E2 ]}))
-          ))^-1%:E
-        else if a_max < 0 then
-          ((- {[ E1 ]}) * expeR (-nu%:E * (a'_i (- {[ E1 ]}))) + {[ E2 ]} * expeR (-nu%:E * (a'_i {[ E2 ]}))
-          ) * 
-          (fine (expeR (nu%:E * (a'_i (- {[ E1 ]}))) + expeR (nu%:E * (a'_i {[ E2 ]})))
-          )^-1%:E
-        else 0*)
 
   (*comparisons*)
   | E1 `== E2 => (- `| {[ E1 ]} - {[ E2 ]}|)%:E
@@ -643,20 +627,6 @@ Fixpoint stl_translation {t} (e : expr t) : type_translation t :=
   | ldl_mor _ _ _ Es => 0 (* default value, all lemmas are for negation-free formulas *)
   | `~ E1 => - {[ E1 ]}
   | E1 `=> E2 => 0 (* default value, all lemmas are for negation-free formulas *)
-      (*let a_max : R:= maxr (- {[ E1 ]}) {[ E2 ]} in
-      let a'_i (a_i : R) := (a_max - a_i) * (a_max)^-1 in
-      if a_max > 0 then
-        (a_max * expR (a'_i (- {[ E1 ]})) * expR (nu * a'_i (- {[ E1 ]})) +
-             a_max * expR (a'_i {[ E2 ]}) * expR (nu * a'_i {[ E2 ]})
-          )  * ((expR (nu * (a'_i (- {[ E1 ]}))) +
-            expR (nu * (a'_i {[ E2 ]}))
-          ))^-1
-      else if a_max < 0 then
-         ((- {[ E1 ]}) * expR (-nu * (a'_i (- {[ E1 ]}))) + {[ E2 ]} * expR (-nu * (a'_i {[ E2 ]}))
-          ) * 
-          ( (expR (nu * (a'_i (- {[ E1 ]}))) + expR (nu * (a'_i {[ E2 ]})))
-          )^-1
-      else 0*)
 
   | E1 `== E2 => - `| {[ E1 ]} - {[ E2 ]}|
   | E1 `<= E2 => {[ E2 ]} - {[ E1 ]}

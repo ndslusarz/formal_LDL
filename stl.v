@@ -323,9 +323,14 @@ Variables (nu : R) (M : nat).
 
 Local Notation seq_of_rV := (@MatrixFormula.seq_of_rV _ M.+1).
 
+(*note: empty v never achieved in general and as handles by separate case,
+hence 1 as default value safe in that regard - consider what should it be in minr*)
 Lemma stl_and_gt0_cvg_infty (p : R) (v : seq R) : 
-  (stl_and_gt0 p v) @[p --> +oo] --> minR v.
+  (stl_and_gt0 p v) @[p --> +oo] --> \big[minr/(head 1 v)]_(i <- v) i.
 Proof.
+rewrite/stl_and_gt0/=/sumR.
+
+
 Admitted.
 
 
