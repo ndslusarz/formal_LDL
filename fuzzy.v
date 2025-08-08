@@ -811,15 +811,21 @@ rewrite /maxr.
 by repeat case: ifP; lra.
 Qed.
 
-Theorem Lukasiewicz_mand_unit f1 f2 (e :  (expr (Bool_T_def f1 m_def f2))) : (0 < p)%R ->
+Theorem Lukasiewicz_mand_unit f1 f2 (e :  (expr (Bool_T_def f1 m_def f2))) :
   [[ e `** (ldl_bool _ _ _ _ true) ]]_Lukasiewicz = [[ e ]]_Lukasiewicz.
 Proof.
-Admitted.
+have := translate_Bool_T_01 p p1 Lukasiewicz _ _ _ e.
+rewrite//=/sumR !big_cons big_nil addr0 addrAC.
+rewrite/maxr; case: ifP; move => he; lra.
+Qed.
 
-Theorem Lukasiewicz_mor_unit f1 f2 (e :  (expr (Bool_T_def f1 m_def f2))) : (0 < p)%R ->
+Theorem Lukasiewicz_mor_unit f1 f2 (e :  (expr (Bool_T_def f1 m_def f2))) :
   [[ e `++ (ldl_bool _ _ _ _ false) ]]_Lukasiewicz = [[ e ]]_Lukasiewicz.
 Proof.
-Admitted.
+have := translate_Bool_T_01 p p1 Lukasiewicz _ _ _ e.
+rewrite//=/sumR !big_cons big_nil !addr0.
+rewrite/minr; case: ifP; intros; lra.
+Qed.
 
 End Lukasiewicz_lemmas.
 
@@ -1032,15 +1038,27 @@ case: ifPn; rewrite addr0 subr_lt0.
     by rewrite -powRrM mulVf ?pneq0 ?powRr1 ?addrA ?addr_ge0.
 Qed.
 
-Theorem Yager_mand_unit f1 f2 (e :  (expr (Bool_T_def f1 m_def f2))) : (0 < p)%R ->
+Theorem Yager_mand_unit f1 f2 (e :  (expr (Bool_T_def f1 m_def f2))) :
   [[ e `** (ldl_bool _ _ _ _ true) ]]_Yager = [[ e ]]_Yager.
 Proof.
-Admitted.
+have h01 := translate_Bool_T_01 p p1 Yager _ _ _ e.
+rewrite//=/sumR !big_cons big_nil addr0. 
+have p_nq : forall (x : R), 1 <= x -> x != 0 by intros; lra.
+rewrite subrr powR0 ?p_nq//=.
+rewrite addr0 -powRrM divff//= ?powRr1 ?p_nq//=; try lra. 
+rewrite /maxr; case: ifP; move => hy; lra.
+Qed.
 
-Theorem Yager_mor_unit f1 f2 (e :  (expr (Bool_T_def f1 m_def f2))) : (0 < p)%R ->
+Theorem Yager_mor_unit f1 f2 (e :  (expr (Bool_T_def f1 m_def f2))) :
   [[ e `++ (ldl_bool _ _ _ _ false) ]]_Yager = [[ e ]]_Yager.
 Proof.
-Admitted.
+have h01 := translate_Bool_T_01 p p1 Yager _ _ _ e.
+rewrite//=/sumR !big_cons big_nil addr0. 
+have p_nq : forall (x : R), 1 <= x -> x != 0 by intros; lra.
+rewrite powR0 ?addr0 ?p_nq//=.
+rewrite -powRrM divff//= ?powRr1 ?p_nq//=; try lra.
+rewrite /minr; case: ifP; move => hy; lra.
+Qed.
 
 End Yager_lemmas.
 
@@ -1119,15 +1137,21 @@ rewrite /minr.
 by repeat case: ifPn => //; lra.
 Qed.
 
-Theorem Godel_mand_unit f1 f2 (e :  (expr (Bool_T_def f1 m_def f2))) : (0 < p)%R ->
+Theorem Godel_mand_unit f1 f2 (e :  (expr (Bool_T_def f1 m_def f2))) :
   [[ e `** (ldl_bool _ _ _ _ true) ]]_Godel = [[ e ]]_Godel.
 Proof.
-Admitted.
+have := translate_Bool_T_01 p p1 Godel _ _ _ e.
+rewrite//= /minR !big_cons big_nil.
+rewrite /minr; repeat case: ifP; intros; lra.
+Qed.
 
-Theorem Godel_mor_unit f1 f2 (e :  (expr (Bool_T_def f1 m_def f2))) : (0 < p)%R ->
+Theorem Godel_mor_unit f1 f2 (e :  (expr (Bool_T_def f1 m_def f2))) :
   [[ e `++ (ldl_bool _ _ _ _ false) ]]_Godel = [[ e ]]_Godel.
 Proof.
-Admitted.
+have := translate_Bool_T_01 p p1 Godel _ _ _ e.
+rewrite//= /maxR !big_cons big_nil.
+rewrite /maxr; repeat case: ifP; intros; lra.
+Qed.
 
 End Godel_lemmas.
 
@@ -1185,10 +1209,11 @@ rewrite /prodR/= !big_cons !big_nil.
 lra.
 Qed.
 
-Theorem product_mand_unit f1 f2 (e :  (expr (Bool_T_def f1 m_def f2))) : (0 < p)%R ->
+Theorem product_mand_unit f1 f2 (e :  (expr (Bool_T_def f1 m_def f2))) :
   [[ e `** (ldl_bool _ _ _ _ true) ]]_product = [[ e ]]_product.
 Proof.
-Admitted.
+rewrite//= /prodR !big_cons big_nil !mulr1//=. 
+Qed.
 
 
 End product_lemmas.
