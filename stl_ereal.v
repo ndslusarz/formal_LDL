@@ -52,7 +52,7 @@ Local Open Scope ldl_scope.
 Lemma andI_stl f (e : expr (Bool_T_def f m_undef l_def)) :
   nu.-[[e `/\ e]]_stle = nu.-[[e]]_stle.
 Proof.
-rewrite /=/sumE !big_cons !big_nil/=.
+rewrite /= !big_cons !big_nil/=.
 have [->//|epoo] := eqVneq (nu.-[[e]]_stle) (+oo)%E.
 have [->//=|enoo] := eqVneq (nu.-[[e]]_stle) (-oo)%E.
 rewrite /mine_dev.
@@ -77,7 +77,7 @@ Qed.
 Lemma andC_stl f (e1 e2 : expr (Bool_T_def f m_undef l_def)) :
   nu.-[[e1 `/\ e2]]_stle = nu.-[[e2 `/\ e1]]_stle.
 Proof.
-rewrite /=/sumE !big_cons !big_nil /=.
+rewrite /= !big_cons !big_nil /=.
 set a_min := mine (nu.-[[e1]]_stle) (mine (nu.-[[e2]]_stle) +oo)%E.
 have -> : (mine (nu.-[[e2]]_stle) (mine (nu.-[[e1]]_stle) +oo))%E = a_min.
   by rewrite mineA [X in mine X _]mineC -mineA.
@@ -95,7 +95,7 @@ Qed.
 Lemma orI_stl f (e : expr (Bool_T_def f m_undef l_def)) :
   nu.-[[e `\/ e]]_stle = nu.-[[e]]_stle.
 Proof.
-rewrite /=/sumE !big_cons !big_nil/=.
+rewrite /= !big_cons !big_nil/=.
 rewrite /maxe_dev.
 have [->//|enoo] := eqVneq (nu.-[[e]]_stle) (-oo)%E.
 have [->//=|epoo] := eqVneq (nu.-[[e]]_stle) (+oo)%E.
@@ -120,7 +120,7 @@ Qed.
 Lemma orC_stl f (e1 e2 : expr (Bool_T_def f m_undef l_def)) :
   nu.-[[e1 `\/ e2]]_stle  = nu.-[[e2 `\/ e1]]_stle.
 Proof.
-rewrite /=/sumE !big_cons !big_nil /=.
+rewrite /= !big_cons !big_nil /=.
 set a_max := maxe (nu.-[[e1]]_stle) (maxe (nu.-[[e2]]_stle) -oo)%E.
 have -> : (maxe (nu.-[[e2]]_stle) (maxe (nu.-[[e1]]_stle) -oo))%E = a_max.
   by rewrite maxA [X in maxe X _]maxC -maxA.
@@ -172,7 +172,6 @@ case: ifPn => [/eqP min_apoo _|hpoo].
   move: ((mine_eqyP _ _ _).1 min_apoo (nth (ldl_bool neg_undef f m_undef l_def false) Es i)).
   by rewrite mem_nth// => ->.
 case: ifPn=>[hminlt0|].
-  rewrite/sumE.
   rewrite leNgt !big_map.
   rewrite mule_lt0_gt0//; last first.
     rewrite lte_fin invr_gt0 fine_gt0//.
@@ -271,13 +270,13 @@ case: ifPn => [hgt0|].
     move=> i iEs.
     move: (h i) => /negP.
     by rewrite negb_and -leNgt iEs/= orbF.
-  apply/negP; rewrite -leNgt mule_ge0//.
-    rewrite /sumE !big_map big_seq_cond sume_ge0// => x /andP[xEs _].
+  apply/negP; rewrite -leNgt mule_ge0//=.
+    rewrite big_seq sume_ge0// => x xEs.
     rewrite mule_ge0//.
       move: (h (index x Es)).
       by rewrite index_mem xEs nth_index//; apply.
     exact: expeR_ge0.
-  rewrite lee_fin invr_ge0 fine_ge0// /sumE !big_map sume_ge0// => x _.
+  rewrite lee_fin invr_ge0 fine_ge0// sume_ge0// => x _.
   exact: expeR_ge0.
 by rewrite ltxx.
 Qed.
@@ -316,7 +315,7 @@ case: ifPn => [hlt0|].
     rewrite gt_eqF//=.
     rewrite -oppeey oppeK lt_eqF//.
     by apply: lt_trans; first by move: hlt0 => /maxe_lt; apply.
-  rewrite /sumE !big_map !big_seq.
+  rewrite !big_seq.
   rewrite leNgt nmule_rlt0.
     rewrite lte_fin invr_gt0 fine_gt0// sume_gt0/=.
     - rewrite lte_sum_pinfty// => i iEs.
@@ -354,7 +353,7 @@ case: ifPn => [/eqP hnoo _|hnoo].
   exact: mem_nth.
 case: ifPn => [/eqP hpoo//|hpoo].
 case: ifPn => [hgt0|].
-  rewrite /sumE !big_map !big_seq ltNge.
+  rewrite !big_seq ltNge.
   rewrite mule_ge0//; last rewrite lee_fin invr_ge0 fine_ge0//; rewrite sume_ge0//.
     by move=> i iEs; rewrite !mule_ge0// ?expeR_ge0// -big_seq ltW.
   by move=> i iEs; rewrite expeR_ge0.

@@ -17,3 +17,4 @@ dl2_ereal.v
 stl.v
 stl_ereal.v
 example.v
+seq_calc.v

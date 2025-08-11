@@ -85,8 +85,8 @@ apply: IH.
 by exists x; rewrite xl Px Fx0.
 Qed.
 
-Definition sumE {R : numDomainType} (Es : seq \bar R) : \bar R :=
-  \sum_(i <- Es) i.
+(*Definition sumE {R : numDomainType} (Es : seq \bar R) : \bar R :=
+  \sum_(i <- Es) i.*)
 Definition prodE {R : numDomainType} (Es : seq \bar R) : \bar R :=
   \big[*%E/1%E]_(i <- Es) i.
 

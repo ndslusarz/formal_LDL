@@ -49,46 +49,31 @@ Local Notation "[[ e ]]_dl2e" := (@dl2_ereal_translation R _ e).
 
 Lemma dl2_mandC_nary (s1 s2 : seq (expr (Bool_T_def impl_def m_def l_undef))) :
   perm_eq s1 s2 -> [[ldl_mand s1]]_dl2e = [[ldl_mand s2]]_dl2e.
-Proof.
-by move=> pi; rewrite /=/sumE !big_map (perm_big _ pi)/=.
-Qed.
+Proof. by move=> pi; rewrite /= !big_map (perm_big _ pi). Qed.
 
 Lemma dl2_mandC (e1 e2 : expr (Bool_T_def impl_def m_def l_undef)) :
  [[ e1 `** e2 ]]_dl2e = [[ e2 `** e1 ]]_dl2e.
-Proof.
-by rewrite /=/sumE ?big_cons ?big_nil /= adde0 adde0 addeC.
-Qed.
+Proof. by rewrite /= ?big_cons ?big_nil /= adde0 adde0 addeC. Qed.
 
 Lemma dl2_mandA (e1 e2 e3 : expr (Bool_T_undef impl_def m_def l_undef)) :
   [[ e1 `** (e2 `** e3) ]]_dl2e = [[ (e1 `** e2) `** e3 ]]_dl2e.
-Proof.
-by rewrite /=/sumE ?big_cons ?big_nil !adde0 addeA.
-Qed.
+Proof. by rewrite /= ?big_cons ?big_nil !adde0 addeA. Qed.
 
 Lemma dl2_morC_nary (s1 s2 : seq (expr (Bool_T_def impl_def m_def l_undef))) :
   perm_eq s1 s2 -> [[ldl_mor s1]]_dl2e = [[ldl_mor s2]]_dl2e.
-Proof.
-by move=> pi; rewrite /=/sumE !big_map (perm_big _ pi)/=.
-Qed.
+Proof. by move=> pi; rewrite /= !big_map (perm_big _ pi). Qed.
 
 Lemma dl2_morC (e1 e2 : expr (Bool_T_undef impl_def m_def l_undef)) :
  [[ e1 `++ e2 ]]_dl2e = [[ e2 `++ e1 ]]_dl2e.
-Proof.
-by rewrite /=/sumE ?big_cons ?big_nil /= adde0 adde0 addeC.
-Qed.
+Proof. by rewrite /= !big_cons !big_nil /= adde0 adde0 addeC. Qed.
 
 Lemma dl2_morA (e1 e2 e3 : expr (Bool_T_undef impl_def m_def l_undef)) :
   [[ e1 `++ (e2 `++ e3) ]]_dl2e = [[ (e1 `++ e2) `++ e3 ]]_dl2e.
-Proof.
-by rewrite /=/sumE ?big_cons ?big_nil !adde0 addeA.
-Qed.
+Proof. by rewrite /= !big_cons !big_nil !adde0 addeA. Qed.
 
 Theorem dl2_mand_unit f1 f2 (e :  (expr (Bool_T_def f1 m_def f2))) :
   [[ e `** (ldl_bool _ _ _ _ true) ]]_dl2e = [[ e ]]_dl2e.
-Proof.
-rewrite//=/sumE !big_cons big_nil !adde0//=.
-Qed.
-
+Proof. by rewrite /= !big_cons big_nil !adde0. Qed.
 
 Lemma dl2_ereal_translation_le0 e :
   ([[ e ]]_dl2e <= 0 :> ereal_type_translation (Bool_T_undef impl_def m_def l_undef))%E.
@@ -97,10 +82,10 @@ dependent induction e using expr_ind' => /=.
 - by case: b.
 - rewrite /maxe; case: ifP; move => h; rewrite//=.
   admit. (*simple, use h*)
-- rewrite /sumE big_map big_seq sume_le0// => t tl.
+- rewrite big_map big_seq sume_le0// => t tl.
   move/List.Forall_forall : H => /(_ t); apply => //.
   exact/In_in.
-- rewrite /sumE big_map big_seq sume_le0// => t tl.
+- rewrite big_map big_seq sume_le0// => t tl.
   move/List.Forall_forall : H => /(_ t); apply => //.
   exact/In_in.
 - case: c => //=.
@@ -112,14 +97,13 @@ Theorem dl2_residuation (e1 e2 e3 :  (expr (Bool_T_undef impl_def m_def l_undef)
     ([[ e2 ]]_dl2e <= [[ e1 `=> e3 ]]_dl2e)%E.
 Proof.
 split; move => /= H.
-- rewrite /sumE !big_cons big_nil addr0 in H. 
-  rewrite/maxe; case: ifP; move => /eqP h.
+- rewrite !big_cons big_nil addr0 in H. 
+  rewrite /maxe; case: ifP; move => /eqP h.
   + rewrite oppe0; exact (dl2_ereal_translation_le0 e2).
   + admit. (*from H*)
-- rewrite /sumE !big_cons big_nil addr0.
+- rewrite !big_cons big_nil addr0.
   move: H; rewrite/maxe;  case: ifP; move => h1 h2.
   + (*both simple, from h1 h2*)
-  +
 Admitted.
 
 Definition is_dl2 b (x : \bar R) := (if b then x == 0 else x < 0)%E.
@@ -130,15 +114,13 @@ Lemma dl2_nary_inversion_andE1 (s : seq (expr (Bool_T_undef impl_def m_def l_und
 Proof.
 rewrite/is_dl2.
 elim: s => //= h t ih H [_|]/=.
-  move: H; rewrite /sumE big_cons.
-  rewrite nadde_eq0//.
+  move: H; rewrite big_cons nadde_eq0//.
   - by move=> /andP[->].
   - exact: dl2_ereal_translation_le0.
   - rewrite big_seq_cond; apply: sume_le0 => /= x.
     by rewrite andbT => /mapP[/= e et] ->; exact: dl2_ereal_translation_le0.
 move=> n; rewrite ltnS => nt /=; apply: ih => //.
-move: H; rewrite /sumE big_cons.
-rewrite nadde_eq0.
+move: H; rewrite big_cons nadde_eq0.
 - by move=> /andP[_ ->].
 - exact: dl2_ereal_translation_le0.
 - rewrite big_seq_cond; apply: sume_le0 => /= x.
@@ -150,8 +132,8 @@ Lemma dl2_nary_inversion_andE0 (s : seq (expr (Bool_T_undef impl_def m_def l_und
   (exists i, (is_dl2 false ([[ nth (ldl_bool _ _ _ _ false) s i ]]_dl2e)) && (i < size s)%nat).
 Proof.
 rewrite/is_dl2.
-elim: s => [|h t ih] //=; first by rewrite /sumE big_nil ltxx.
-rewrite /sumE big_cons => /nadde_lt0 => /(_ (dl2_ereal_translation_le0 _)).
+elim: s => [|h t ih] //=; first by rewrite big_nil ltxx.
+rewrite big_cons => /nadde_lt0 => /(_ (dl2_ereal_translation_le0 _)).
 have : (\sum_(j <- [seq [[i]]_dl2e | i <- t]) j <= 0)%E.
   rewrite big_seq_cond; apply: sume_le0 => /= z.
   by rewrite andbT => /mapP[/= e et ->]; exact: dl2_ereal_translation_le0.

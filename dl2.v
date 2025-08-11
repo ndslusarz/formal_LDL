@@ -56,42 +56,34 @@ Local Notation "[[ e ]]_dl2" := (@dl2_translation R _ e).
 
 Lemma dl2_mandC_nary f1 f2 (s1 s2 : seq (expr (Bool_T_def f1 m_def f2))) :
   perm_eq s1 s2 -> [[ldl_mand s1]]_dl2 = [[ldl_mand s2]]_dl2.
-Proof.
-by move=> pi; rewrite /=/sumR !big_map (perm_big _ pi)/=.
-Qed.
+Proof. by move=> pi; rewrite /= !big_map (perm_big _ pi). Qed.
 
-Lemma dl2_mandC f1 f2 (e1 e2 : expr (Bool_T_def f1 m_def f2)) : [[ e1 `** e2 ]]_dl2 = [[ e2 `** e1 ]]_dl2.
-Proof.
-by rewrite /=/sumR ?big_cons ?big_nil /= addr0 addr0 addrC.
-Qed.
+Lemma dl2_mandC f1 f2 (e1 e2 : expr (Bool_T_def f1 m_def f2)) :
+  [[ e1 `** e2 ]]_dl2 = [[ e2 `** e1 ]]_dl2.
+Proof. by rewrite /= !big_cons !big_nil /= addr0 addr0 addrC. Qed.
 
 Lemma dl2_mandA f1 f2 (e1 e2 e3 : expr (Bool_T_def f1 m_def f2)) :
   [[ e1 `** (e2 `** e3) ]]_dl2 = [[ (e1 `** e2) `** e3 ]]_dl2.
-Proof.
-by rewrite /=/sumR ?big_cons ?big_nil !addr0 addrA.
-Qed.
+Proof. by rewrite /= !big_cons !big_nil !addr0 addrA. Qed.
 
 Lemma dl2_morC_nary f1 f2 (s1 s2 : seq (expr (Bool_T_def f1 m_def f2))) :
   perm_eq s1 s2 -> [[ldl_mor s1]]_dl2 = [[ldl_mor s2]]_dl2.
-Proof.
-by move=> pi; rewrite /=/sumR !big_map (perm_big _ pi)/=.
-Qed.
+Proof. by move=> pi; rewrite /= !big_map (perm_big _ pi). Qed.
 
 Lemma dl2_morC f1 f2 (e1 e2 : expr (Bool_T_def f1 m_def f2)) :
   [[ e1 `++ e2 ]]_dl2 = [[ e2 `++ e1 ]]_dl2.
-Proof.
-by rewrite /=/sumR ?big_cons ?big_nil /= addr0 addr0 addrC.
-Qed.
+Proof. by rewrite /= !big_cons !big_nil /= addr0 addr0 addrC. Qed.
 
-Lemma dl2_translation_le0 f e : [[ e ]]_dl2 <= 0 :> type_translation (Bool_T_undef f m_def l_undef).
+Lemma dl2_translation_le0 f e :
+  [[ e ]]_dl2 <= 0 :> type_translation (Bool_T_undef f m_def l_undef).
 Proof.
 dependent induction e using expr_ind' => /=.
 - by case: b.
-- rewrite /maxr; case: ifP; move => h; lra. 
-- rewrite /sumR big_map big_seq sumr_le0// => t tl.
+- rewrite /maxr; case: ifP; move => h; lra.
+- rewrite big_map big_seq sumr_le0// => t tl.
   move/List.Forall_forall : H => /(_ t); apply => //.
   exact/In_in.
-- rewrite /sumR big_map big_seq sumr_le0// => t tl.
+- rewrite big_map big_seq sumr_le0// => t tl.
   move/List.Forall_forall : H => /(_ t); apply => //.
   exact/In_in.
 - case: c => //=.
@@ -100,21 +92,19 @@ Qed.
 
 Theorem dl2_mand_unit f1 f2 (e :  (expr (Bool_T_def f1 m_def f2))) :
   [[ e `** (ldl_bool _ _ _ _ true) ]]_dl2 = [[ e ]]_dl2.
-Proof.
-rewrite //=/sumR !big_cons big_nil !addr0//=.
-Qed.
+Proof. by rewrite /= !big_cons big_nil !addr0. Qed.
 
 Theorem dl2_residuation (e1 e2 e3 :  (expr (Bool_T_undef impl_def m_def l_undef))) :
   [[ e1 `** e2 ]]_dl2 <= [[ e3 ]]_dl2 <->
     [[ e2 ]]_dl2 <= [[ e1 `=> e3 ]]_dl2.
 Proof.
 split; move => /= H.
-- rewrite /sumR !big_cons big_nil addr0 in H. 
+- rewrite !big_cons big_nil addr0 in H.
   rewrite/maxr; case: ifP; move => /eqP h; try lra.
   rewrite oppr0.
   exact (dl2_translation_le0 _ e2).
-- rewrite /sumR !big_cons big_nil addr0.
-  move: H; rewrite/maxr;  case: ifP; move => h1 h2; lra.
+- rewrite !big_cons big_nil addr0.
+  by move: H; rewrite/maxr;  case: ifP => ? ?; lra.
 Qed.
 
 Definition is_dl2 b (x : R) := if b then x == 0 else x < 0.
@@ -125,15 +115,14 @@ Lemma dl2_nary_inversion_mandE1 f (s : seq (expr (Bool_T_undef f m_def l_undef))
 Proof.
 rewrite/is_dl2.
 elim: s => //= h t ih H [_|]/=.
-  move: H; rewrite /sumR big_cons.
+  move: H; rewrite big_cons.
   rewrite naddr_eq0//.
   - by move=> /andP[->].
   - exact: dl2_translation_le0.
   - rewrite big_seq_cond; apply: sumr_le0 => /= x.
     by rewrite andbT => /mapP[/= e et] ->; exact: dl2_translation_le0.
 move=> n; rewrite ltnS => nt /=; apply: ih => //.
-move: H; rewrite /sumR big_cons.
-rewrite naddr_eq0.
+move: H; rewrite big_cons naddr_eq0.
 - by move=> /andP[_ ->].
 - exact: dl2_translation_le0.
 - rewrite big_seq_cond; apply: sumr_le0 => /= x.
@@ -145,9 +134,9 @@ Lemma dl2_nary_inversion_mandE0 f (s : seq (expr (Bool_T_undef f m_def l_undef))
   (exists i, (is_dl2 false ([[ nth (ldl_bool _ _ _ _ false) s i ]]_dl2)) && (i < size s)%nat).
 Proof.
 rewrite/is_dl2.
-elim: s => [|h t ih] //=; first by rewrite /sumR big_nil ltxx.
-rewrite /sumR big_cons => /naddr_lt0 => /(_ (dl2_translation_le0 _ _)).
-have : (\sum_(j <- [seq [[i]]_dl2 | i <- t]) j <= 0).
+elim: s => [|h t ih] //=; first by rewrite big_nil ltxx.
+rewrite big_cons => /naddr_lt0 => /(_ (dl2_translation_le0 _ _)).
+have : \sum_(j <- [seq [[i]]_dl2 | i <- t]) j <= 0.
   rewrite big_seq_cond; apply: sumr_le0 => /= z.
   by rewrite andbT => /mapP[/= e et ->]; exact: dl2_translation_le0.
 move=> /[swap] /[apply] /orP[H|/ih[j /andP[j0 jt]]].
@@ -313,9 +302,9 @@ Definition dl2_and {R' : fieldType} {n} (v : 'rV[R']_n) :=
 Import MatrixFormula.
 
 Lemma dl2_andE {n} (v : 'rV[R]_n) :
-  dl2_and v = sumR (map (dl2_translation \o ldl_real) (seq_of_rV v)).
+  dl2_and v = \sum_(i <- seq_of_rV v) (dl2_translation \o ldl_real) i.
 Proof.
-rewrite /sumR !big_map /dl2_and -enumT big_enum.
+rewrite !big_map /dl2_and -enumT big_enum.
 by under [in RHS]eq_bigr do rewrite ffunE.
 Qed.
 

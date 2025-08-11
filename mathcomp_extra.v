@@ -2,7 +2,6 @@ Require Import Coq.Program.Equality.
 From mathcomp Require Import all_ssreflect all_algebra.
 From mathcomp Require Import lra.
 
-
 (**md**************************************************************************)
 (* # Additions to MathComp                                                    *)
 (*                                                                            *)
@@ -84,8 +83,8 @@ Section alias_for_bigops.
 Context {R : numDomainType}.
 Implicit Types s : seq R.
 
-Definition sumR s := \sum_(i <- s) i.
-Definition prodR s := \prod_(i <- s) i.
+(*Definition sumR s := \sum_(i <- s) i.*)
+(*Definition prodR s := \prod_(i <- s) i.*)
 Definition minR s : R := \big[minr/1]_(i <- s) i.
 Definition maxR s : R := \big[maxr/0]_(i <- s) i.
 

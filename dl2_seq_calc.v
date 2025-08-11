@@ -9,7 +9,6 @@ From mathcomp Require Import topology derive normedtype sequences
  exp measure lebesgue_measure lebesgue_integral hoelder finmap multiset.
 Require Import mathcomp_extra analysis_extra ldl dl2.
 
-
 Set Implicit Arguments.
 Unset Strict Implicit.
 Unset Printing Implicit Defensive.
@@ -20,27 +19,26 @@ Import numFieldTopology.Exports.
 
 Reserved Notation "{[ e ]}" (format "{[  e  ]}").
 
-HB.instance Definition _ (R : realType) x y z v := 
-  @gen_choiceMixin (@expr R (Bool_T x y z v)). 
+HB.instance Definition _ (R : realType) x y z v :=
+  @gen_choiceMixin (@expr R (Bool_T x y z v)).
 
 Reserved Notation "Q |= P" (no associativity, at level 61).
 Reserved Notation "Q |- P" (no associativity, at level 61).
 
-
 Section dl2_hyperseq_calc.
 Local Open Scope ring_scope.
 Local Open Scope ldl_scope.
-Local Open Scope mset_scope. 
+Local Open Scope mset_scope.
 Context {R : realType}.
 Context {K : choiceType}.
 Implicit Types  (A : {mset K}) (s : seq K).
-Variable p : R. 
+Variable p : R.
 Local Notation "[[ e ]]_dl2" := (@dl2_translation R  _ e).
 
 Reserved Notation "Q |- P" (no associativity, at level 61).
 Notation "Q |- P" := (Q, P).
 
-Inductive seq_calc_dl2 :  seq ( seq (@expr R (Bool_T_undef impl_def m_def l_undef)) 
+Inductive seq_calc_dl2 :  seq ( seq (@expr R (Bool_T_undef impl_def m_def l_undef))
                                 * seq (@expr R (Bool_T_undef impl_def m_def l_undef)))
 (*-> {mset (seq {mset (@expr R Bool_T_def)})}*)
       -> Prop :=
@@ -143,24 +141,18 @@ Definition eval_dl2  (Q : seq (@expr R (Bool_T_undef impl_def m_def l_undef)))
 
 
 Lemma eval_dl2_cat  (Q P : seq (@expr R (Bool_T_undef impl_def m_def l_undef))) :
- eval_dl2 (Q ++ P) = (eval_dl2 Q + eval_dl2 P)%R.
-Proof.
-rewrite /eval_dl2//=/sumR !big_map !big_cat//=.
-Qed.
+ eval_dl2 (Q ++ P) = eval_dl2 Q + eval_dl2 P.
+Proof. by rewrite /eval_dl2/= !big_map !big_cat. Qed.
 
 Lemma eval_dl2_cons  (P : seq (@expr R (Bool_T_undef impl_def m_def l_undef))) (q: (@expr R (Bool_T_undef impl_def m_def l_undef))):
  eval_dl2 (q :: P) = [[q]]_dl2 + eval_dl2 P.
-Proof.
-rewrite /eval_dl2//=/sumR !big_cons//=.
-Qed.
+Proof. by rewrite /eval_dl2/= !big_cons. Qed.
 
 Lemma eval_dl2_and_le0 (Q : seq (@expr R (Bool_T_undef impl_def m_def l_undef))):
   eval_dl2 Q <= 0.
 Proof.
-have H := dl2_translation_le0 p _  (ldl_mand Q).
-rewrite/= in H; rewrite /eval_dl2//=.
+by have := dl2_translation_le0 p _  (ldl_mand Q).
 Qed.
-
 
 Lemma sound_dl2 (Q : seq ( seq (@expr R (Bool_T_undef impl_def m_def l_undef)) 
 * seq (@expr R (Bool_T_undef impl_def m_def l_undef)))):
@@ -172,7 +164,7 @@ eval_dl2 (fst q)  <=  eval_dl2 (snd q).
 Proof.
 intros; rewrite//=. dependent induction H.
 - exists ([:: a] |- [:: a]). rewrite //= mem_head; split. by [].  
-  rewrite /eval_dl2/eval_dl2//= /sumR. 
+- by [].
 - destruct IHseq_calc_dl2 as [M [IH1 IH2]]. 
   exists M. 
   rewrite !mem_cat //= in IH1.
@@ -249,7 +241,7 @@ intros; rewrite//=. dependent induction H.
     by rewrite in_cons h IH2 orbT//=.
 - exists (A |- [:: ldl_bool _ _ _ _ true ]).
   rewrite mem_head; split; first by [].
-  by rewrite//= /eval_dl2//=/sumR !big_cons big_nil !addr0 eval_dl2_and_le0/=.
+  by rewrite//= /eval_dl2/= !big_cons big_nil !addr0 eval_dl2_and_le0/=.
 - destruct IHseq_calc_dl2_1 as [q1 [IH11 IH12]].
   destruct IHseq_calc_dl2_2 as [q2 [IH21 IH22]].
   rewrite in_cons in IH11. rewrite in_cons in IH21. 
@@ -259,7 +251,7 @@ intros; rewrite//=. dependent induction H.
     rewrite//= eval_dl2_cons in IH12.
     rewrite//= eval_dl2_cons in IH22.
     rewrite mem_head; split; first by [].
-    rewrite//= eval_dl2_cons//=/sumR !big_cons big_nil addr0. 
+    rewrite//= eval_dl2_cons/= !big_cons big_nil addr0.
     have ha := dl2_translation_le0 p _  a.
     have hb := dl2_translation_le0 p _  b. 
     have h : ([[a]]_dl2 + eval_dl2 A)%E <= eval_dl2 B ->
@@ -277,9 +269,9 @@ intros; rewrite//=. dependent induction H.
   move => [/eqP h2 | h2].
   + subst. exists (A |- a `** b :: B). 
     rewrite mem_head; split; first by [].
-    have ev_0 : eval_dl2 [::] = 0. rewrite /eval_dl2//= /sumR big_nil//=.
+    have ev_0 : eval_dl2 [::] = 0. rewrite /eval_dl2/= big_nil//=.
     rewrite//= !eval_dl2_cons addrA//= in IH22.
-    rewrite//= eval_dl2_cons//=/sumR !big_cons big_nil addr0//=.
+    by rewrite//= eval_dl2_cons/= !big_cons big_nil addr0.
   + exists q2. 
     by rewrite !in_cons h2 IH22 !orbT//=. 
 - destruct IHseq_calc_dl2_1 as [q1 [IH11 IH12]].
@@ -291,7 +283,7 @@ intros; rewrite//=. dependent induction H.
     rewrite//= eval_dl2_cons in IH12.
     rewrite//= eval_dl2_cons in IH22.
     rewrite mem_head; split; first by [].
-    rewrite//= eval_dl2_cons//=/sumR !big_cons big_nil addr0. 
+    rewrite//= eval_dl2_cons/= !big_cons big_nil addr0.
     have ha := dl2_translation_le0 p _  a.
     have hb := dl2_translation_le0 p _  b. 
     have h : ([[a]]_dl2 + eval_dl2 A)%E <= eval_dl2 B ->
@@ -309,9 +301,9 @@ intros; rewrite//=. dependent induction H.
   move => [/eqP h2 | h2].
   + subst. exists (A |- a `++ b :: B). 
     rewrite mem_head; split; first by [].
-    have ev_0 : eval_dl2 [::] = 0. rewrite /eval_dl2//= /sumR big_nil//=.
+    have ev_0 : eval_dl2 [::] = 0. rewrite /eval_dl2/= big_nil//=.
     rewrite//= !eval_dl2_cons addrA//= in IH22.
-    rewrite//= eval_dl2_cons//=/sumR !big_cons big_nil addr0//=.
+    rewrite//= eval_dl2_cons/= !big_cons big_nil addr0//=.
   + exists q2. 
     by rewrite !in_cons h2 IH22 !orbT//=. 
 - destruct IHseq_calc_dl2_1 as [q1 [IH11 IH12]].

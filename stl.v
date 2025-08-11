@@ -27,9 +27,10 @@ Context {R : realType}.
 Variable nu : R.
 Hypothesis nu0 : 0 < nu.
 
-Lemma andI_stl (e : expr (Bool_T_def impl_undef m_undef l_def)) : nu.-[[e `/\ e]]_stl = nu.-[[e]]_stl.
+Lemma andI_stl (e : expr (Bool_T_def impl_undef m_undef l_def)) :
+  nu.-[[e `/\ e]]_stl = nu.-[[e]]_stl.
 Proof.
-rewrite /= /stl_and /stl_and_gt0 /stl_and_lt0 /min_dev /sumR.
+rewrite /= /stl_and /stl_and_gt0 /stl_and_lt0 /min_dev.
 rewrite !big_cons !big_nil/=.
 rewrite !minrxyx.
 set a_min := minr (nu.-[[e]]_stl) (nu.-[[e]]_stl).
@@ -50,7 +51,7 @@ Qed.
 Lemma andC_stl (e1 e2 : expr (Bool_T_def impl_undef m_undef l_def)) :
   nu.-[[e1 `/\ e2]]_stl = nu.-[[e2 `/\ e1]]_stl.
 Proof.
-rewrite /= /stl_and /stl_and_gt0 /stl_and_lt0 /min_dev /sumR.
+rewrite /= /stl_and /stl_and_gt0 /stl_and_lt0 /min_dev.
 rewrite !big_cons !big_nil/= !addr0/=.
 rewrite !minrxyx !minxx.
 set a_min := minr (nu.-[[e1]]_stl) (nu.-[[e2]]_stl).
@@ -65,10 +66,10 @@ case: ifPn; first by rewrite addrC (addrC (expR (- nu * a1)) (expR (- nu * a2)))
 lra.
 Qed.
 
-Lemma orI_stl (e : expr (Bool_T_def impl_undef m_undef l_def)) : nu.-[[e `\/ e]]_stl = nu.-[[e]]_stl.
+Lemma orI_stl (e : expr (Bool_T_def impl_undef m_undef l_def)) :
+  nu.-[[e `\/ e]]_stl = nu.-[[e]]_stl.
 Proof.
-rewrite /= /stl_or /stl_or_gt0 /stl_or_lt0 /max_dev
-/sumR !big_cons !big_nil/= !addr0.
+rewrite /= /stl_or /stl_or_gt0 /stl_or_lt0 /max_dev !big_cons !big_nil/= !addr0.
 rewrite !maxrxyx.
 set a_max := maxr (nu.-[[e]]_stl) (nu.-[[e]]_stl).
 set a :=  ((a_max - nu.-[[e]]_stl) / a_max).
@@ -88,8 +89,7 @@ Qed.
 Lemma orC_stl (e1 e2 : expr (Bool_T_def impl_undef m_undef l_def)) :
   nu.-[[e1 `\/ e2]]_stl  = nu.-[[e2 `\/ e1]]_stl.
 Proof.
-rewrite /= /stl_or /stl_or_gt0 /stl_or_lt0 /max_dev
-/sumR !big_cons !big_nil/= !addr0.
+rewrite /= /stl_or /stl_or_gt0 /stl_or_lt0 /max_dev !big_cons !big_nil/= !addr0.
 rewrite !maxrxyx !maxxx.
 set a_max := maxr (nu.-[[e2]]_stl) (nu.-[[e1]]_stl).
 have -> : maxr (nu.-[[e1]]_stl) (nu.-[[e2]]_stl) = a_max.
@@ -147,7 +147,7 @@ Lemma stl_nary_inversion_andE1 (Es : seq (expr (Bool_T_undef impl_undef m_undef 
 Proof.
 case: Es => // a l.
 rewrite /is_stl /= /stl_and /stl_and_gt0 /stl_and_lt0 /min_dev.
-rewrite /sumR !map_cons !big_map.
+rewrite !map_cons !big_map.
 set a_min := \big[minr/nu.-[[a]]_stl]_(j <- l) nu.-[[j]]_stl.
 case: ifPn=>[hminlt0|].
   have /=[y ymem ylt0] := minrltx hminlt0.
@@ -180,7 +180,7 @@ case: ifPn=>[hminlt0 _|].
   by rewrite  index_mem xmem.
 rewrite -leNgt => hminge0.
 case: ifPn => _; last by rewrite lt_irreflexive.
-rewrite ltNge mulr_ge0// ?invr_ge0 /sumR big_cons !big_map big_seq_cond addr_ge0 ?mulr_ge0 ?expR_ge0 ?sumr_ge0//=.
+rewrite ltNge divr_ge0// big_cons !big_map big_seq_cond addr_ge0//= ?mulr_ge0 ?expR_ge0 ?sumr_ge0//=.
   by apply: (minrgex hminge0); rewrite mem_head.
 all: move=> i /andP[il _]; rewrite ?mulr_ge0 ?expR_ge0//.
 by apply: (minrgex hminge0); rewrite in_cons il orbT.
@@ -192,7 +192,7 @@ Lemma stl_nary_inversion_orE1 (Es : seq (expr (Bool_T_undef impl_undef m_undef l
              (i < size Es)%N.
 Proof.
 case: Es => [|a l]; first by rewrite /= ler0N1.
-rewrite/is_stl/= /stl_or/stl_or_gt0/stl_or_lt0/max_dev /sumR !map_cons !big_map.
+rewrite/is_stl/= /stl_or/stl_or_gt0/stl_or_lt0 /max_dev !map_cons !big_map.
 set a_max := \big[maxr/nu.-[[a]]_stl]_(j <- l) nu.-[[j]]_stl.
 case: ifPn=> [hmaxgt0 _|].
   have [x xmem hgt0] := maxrgtx hmaxgt0.
@@ -229,9 +229,9 @@ case: Es => // a l.
 rewrite/is_stl/= /stl_or/stl_or_gt0/stl_or_lt0 big_map.
 set a_max := \big[maxr/nu.-[[a]]_stl]_(j <- l) nu.-[[j]]_stl.
 case: ifPn=>[hmaxgt0|].
-  rewrite !map_cons/sumR !big_map!big_seq.
+  rewrite !map_cons !big_map!big_seq.
   under eq_bigr => i il do rewrite big_map big_max_cons// -/a_max.
-  by rewrite ltNge mulr_ge0// /sumR ?invr_ge0 ?sumr_ge0// => i _/=; rewrite ?mulr_ge0// ?expR_ge0// ltW.
+  by rewrite ltNge divr_ge0// ?sumr_ge0// => i _/=; rewrite ?mulr_ge0// ?expR_ge0// ltW.
 rewrite -leNgt => h.
 case: ifPn; last by rewrite ltxx.
 move => hmaxlt0 _ i isize.
@@ -289,7 +289,7 @@ have pi2 := @perm_map _ _ (stl_translation nu) _ _ pi.
 rewrite (perm_big_minr3 pi2)/=.
 rewrite /stl_and/= !big_map !map_cons.
 case: ifPn => // ?.
-  rewrite /stl_and_lt0 /sumR !big_map.
+  rewrite /stl_and_lt0 !big_map.
   congr (_ / _).
     rewrite (perm_big _ pi)/=.
     apply: eq_bigr => i _.
@@ -303,7 +303,7 @@ case: ifPn => // ?.
   apply: eq_bigr => i _.
   by rewrite !map_cons /min_dev !big_map (perm_big _ pi).
 case: ifPn => // ?.
-rewrite /stl_and_gt0 /sumR !big_map.
+rewrite /stl_and_gt0 !big_map.
 congr (_ / _).
   rewrite (perm_big _ pi)/=.
   apply: eq_bigr => i _.
@@ -343,7 +343,7 @@ Lemma stl_and_gt0_cvg_infty b (p : R) (v : seq R)  :
   (stl_and_gt0 p v) @[p --> +oo] --> \big[minr/b]_(i <- v) i.
 Proof.
 move => b0 vb.
-rewrite /stl_and_gt0 /sumR.
+rewrite /stl_and_gt0.
 have : forall a, a \in v ->
        (a * expR (- p0 * min_dev a v))/
   (\sum_(j <- [seq expR (- p0 * min_dev a v) | a <- v]) j) @[p0 --> +oo] --> 
@@ -362,6 +362,8 @@ case: ifP.
   rewrite (bigID (xpred1 a))/=.
   rewrite min_dev0//=.
   rewrite mulr0 expR0.
+(* commented out by Reynald on 2025-08-11 so that the whole dev compiles
+
   rewrite min_dev0.
   rewrite /min_dev.
 
@@ -371,7 +373,7 @@ under eq_fun do rewrite !big_map.
 near=> t. 
 rewrite /stl_and_gt0 /sumR !big_map.
 
-
+*)
 Admitted.
 
 
@@ -393,22 +395,22 @@ Local Notation seq_of_rV := (@MatrixFormula.seq_of_rV _ M.+1).
 
 Lemma stl_and_gt0_const p : stl_and_gt0 nu (seq_of_rV (const_mx p)) = p.
 Proof.
-rewrite /stl_and_gt0/= {1}/sumR big_map seq_of_rV_const big_nseq.
+rewrite /stl_and_gt0/= seq_of_rV_const big_nseq.
 rewrite min_dev_nseq.
 rewrite mulr0 expR0 mulr1.
 rewrite iter_addr addr0.
-rewrite /sumR big_map big_nseq.
+rewrite big_nseq.
 rewrite min_dev_nseq mulr0 expR0 iter_addr addr0.
 by rewrite -(mulr_natr p) -mulrA divff ?mulr1.
 Qed.
 
 Lemma stl_and_lt0_const p : stl_and_lt0 nu (seq_of_rV (const_mx p)) = p.
 Proof.
-rewrite /stl_and_lt0/= {1}/sumR big_map seq_of_rV_const big_nseq.
+rewrite /stl_and_lt0/= seq_of_rV_const big_nseq.
 rewrite min_dev_nseq.
 rewrite mulr0 expR0 !mulr1.
 rewrite iter_addr addr0.
-rewrite /sumR big_map !big_nseq.
+rewrite !big_nseq.
 rewrite min_dev_nseq mulr0 expR0 iter_addr addr0.
 rewrite iter_minr//.
 by rewrite -(mulr_natr p) -mulrA divff ?mulr1.
@@ -485,7 +487,7 @@ have H h : h > 0 ->
   stl_and_gt0 (seq_of_rV (const_mx p + h *: err_vec i)) =
   (p * M%:R + (p + h) * expR (- nu * (h / p))) / (M%:R + expR (-nu * (h / p))).
   move=> h0.
-  rewrite /stl_and_gt0/= {1}/sumR big_map.
+  rewrite /stl_and_gt0/=.
   congr (_ / _).
     rewrite big_map/= big_enum/= (bigD1 i)//=.
     rewrite ffunE !mxE eqxx mulr1.
@@ -500,7 +502,7 @@ have H h : h > 0 ->
       by rewrite mulr0 expR0 mulr1.
     rewrite big_const/= iter_addr addr0 card_ordS.
     by rewrite addrC mulr_natr.
-  rewrite /sumR !big_map/= -enumT /= big_enum/= (bigD1 i)//=.
+  rewrite !big_map/= -enumT /= big_enum/= (bigD1 i)//=.
   rewrite ffunE !mxE eqxx mulr1.
   rewrite (_ : min_dev _ _ = h / p); last first.
     rewrite /min_dev mip_at_right//.
@@ -543,7 +545,7 @@ have H h : h < 0 -> (stl_and_gt0 (seq_of_rV  (const_mx p + h *: err_vec i))) =
                      /
                      (M%:R * expR (- nu * (- h / (p + h))) + 1).
   move=> h0.
-  rewrite /stl_and_gt0/= /sumR/= !big_map -enumT !big_enum/= (bigD1 i)//=.
+  rewrite /stl_and_gt0/= !big_map -enumT !big_enum/= (bigD1 i)//=.
   congr (_ / _).
     rewrite ffunE !mxE eqxx mulr1 (_ : min_dev _ _ = 0); last first.
       by rewrite /min_dev mip_at_left; lra.
@@ -760,7 +762,7 @@ have H h : h > 0 ->
   (M%:R  * p + p * expR (h / p) * expR (nu * (h / p))) /
   (M%:R + expR (nu * (h / p))).
   move=> h0.
-  rewrite /stl_and_lt0/= {1}/sumR big_map.
+  rewrite /stl_and_lt0/=.
   congr (_ / _).
     rewrite big_map/= big_enum/= (bigD1 i)//=.
     rewrite ffunE !mxE eqxx mulr1.
@@ -776,7 +778,7 @@ have H h : h > 0 ->
       by rewrite mip'_at_right// mulr0 expR0 !mulr1.
     rewrite big_const/= iter_addr addr0 card_ordS addrC.
     by rewrite (mulrC M%:R p) mulr_natr.
-  rewrite /sumR !big_map/= -enumT big_enum/= (bigD1 i)//=.
+  rewrite !big_map/= -enumT big_enum/= (bigD1 i)//=.
   rewrite ffunE !mxE eqxx mulr1.
   rewrite (_ : min_dev _ _ = h / p); last first.
     by rewrite /min_dev mip_at_right// -addrA addrCA subrr addr0.
@@ -852,7 +854,7 @@ have H h : h < 0 ->
   (((p + h) * M%:R * expR (- h / (p + h)) * expR (nu * (- h / (p + h))) + p + h) /
   (M%:R * expR (nu * (- h / (p + h))) + 1)).
   move=> h0.
-  rewrite /stl_and_lt0/= /sumR/= !big_map -enumT !big_enum/= (bigD1 i)//=.
+  rewrite /stl_and_lt0/= !big_map -enumT !big_enum/= (bigD1 i)//=.
   congr (_ / _).
     rewrite ffunE !mxE eqxx mulr1.
     rewrite (_ : min_dev _ _ = 0); last by rewrite /min_dev mip_at_left//; lra.

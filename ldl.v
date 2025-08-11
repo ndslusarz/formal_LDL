@@ -21,13 +21,13 @@ From HB Require Import structures.
 (* ## Definitions                                                             *)
 (* - `type_translation`: the real-valued translation of ldl_type into the     *)
 (*   corresponding type of the interpretation; maps `Bool_T` to $\mathbb R$   *)
-(* - `ereal_type_translation`: same as before, but maps 
-     `Bool_T` to $\bar{\mathbb R}}$                                           *)
+(* - `ereal_type_translation`: same as before, but maps                       *)
+(*   `Bool_T` to $\bar{\mathbb R}}$                                           *)
 (* - `bool_type_translation`: type translation for the boolean interpretation;*)
 (*   maps `Bool_T` to `bool`                                                  *)
 (* - `bool_translation`: maps an LDL-formula to a Boolean formula, with the   *)
 (*   obvious interpretation                                                   *)
-(* - `translation`: maps an LDL-formula to its fuzzy interpretation;    *)
+(* - `translation`: maps an LDL-formula to its fuzzy interpretation;          *)
 (*   takes as additional argument a parameter of type `DL` to specify the     *)
 (*   logic, among `Lukasiewicz`, `Yager`, `Godel`, and `product`              *)
 (* - `dl2_translation`: maps an LDL-formula to its interpretation in DL2,     *)
@@ -67,7 +67,7 @@ Reserved Notation "nu .-[[ e ]]_stl" (at level 10, format "nu .-[[ e ]]_stl").
 Reserved Notation "[[ e ]]_dl2e" (at level 10, format "[[ e ]]_dl2e").
 Reserved Notation "[[ e ]]_dl2" (at level 10, format "[[ e ]]_dl2").
 
-(* flags which allow or disallow certain logical connectives: 
+(* flags which allow or disallow certain logical connectives:
 - negation
 - implication
 - monoidal and, or
@@ -354,19 +354,19 @@ Fixpoint translation {t} (e : @expr R t) {struct e} : type_translation t :=
    | ldl_or _ _ _ Es => maxR (map translation Es)
    | ldl_mand _ _ _ Es =>
        match l with
-       | Lukasiewicz => maxr (sumR (map translation Es) - (size Es)%:R+1) 0
-       | Yager => maxr (1 - (sumR (map (fun E => (1 - ({[ E ]} : 
-                  type_translation (Bool_T _ _ m_def _ )))`^p) Es))`^p^-1) 0
+       | Lukasiewicz => maxr (\sum_(i <- map translation Es) i - (size Es)%:R+1) 0
+       | Yager => maxr (1 - (\sum_(i <- map (fun E => (1 - ({[ E ]} :
+                  type_translation (Bool_T _ _ m_def _ )))`^p) Es) i)`^p^-1) 0
        | Godel => minR (map translation Es)
-       | product => prodR (map translation Es)
+       | product => \prod_(i <- map translation Es) i
        | GodelS => minR (map translation Es)
-       | productS => prodR (map translation Es)
+       | productS => \prod_(i <- map translation Es) i
        end
    | ldl_mor _ _ _ Es =>
        match l with
-       | Lukasiewicz => minr (sumR (map translation Es)) 1
-       | Yager => minr ((sumR (map (fun E => ({[ E ]} :
-                  type_translation (Bool_T _ _ m_def _))`^p) Es))`^p^-1) 1
+       | Lukasiewicz => minr (\sum_(i <- map translation Es) i) 1
+       | Yager => minr ((\sum_(i <- map (fun E => ({[ E ]} :
+                  type_translation (Bool_T _ _ m_def _))`^p) Es) i)`^p^-1) 1
        | Godel => maxR (map translation Es)
        | product => product_dl_prod (map translation Es)
        | GodelS => maxR (map translation Es)
@@ -374,7 +374,7 @@ Fixpoint translation {t} (e : @expr R t) {struct e} : type_translation t :=
        end
 
     (*| `~ E1 => 1 - {[ E1 ]}*)
-    | ldl_not _ _ _ E1 => 
+    | ldl_not _ _ _ E1 =>
        match l with
        | Lukasiewicz => 1 - {[ E1 ]}
        | Yager => 1 - {[ E1 ]}
@@ -386,10 +386,13 @@ Fixpoint translation {t} (e : @expr R t) {struct e} : type_translation t :=
 
     | ldl_impl _ _ _ E1 E2 =>
         match l with
-       | Lukasiewicz => minr (1 - (translation E1) + (translation E2)) 1
-       | Yager => minr (((1 - (translation E1))`^p + (translation E2)`^p )`^p^-1) 1 
-       | Godel => if (translation E2) < (translation E1) then (translation E2) else 1 
-       | product => if (translation E2) < (translation E1) then (translation E2) * (translation E1)^-1 else 1
+       | Lukasiewicz => minr (1 - translation E1 + translation E2) 1
+       | Yager => minr (((1 - translation E1)`^p + (translation E2)`^p )`^p^-1) 1
+       | Godel => if translation E2 < translation E1 then translation E2 else 1
+       | product => if translation E2 < translation E1 then
+                      translation E2 / translation E1
+                    else
+                      1
        | GodelS => maxr (1 - (translation E1)) (translation E2)
        | productS => 1 - ( 1 - (translation E2)) * (translation E1)
        end
@@ -422,8 +425,8 @@ Fixpoint dl2_ereal_translation {t} (e : @expr R t) {struct e} : ereal_type_trans
 
   | ldl_and _ _ _ Es => +oo (* default value, all lemmas are for negation-free formulas *)
   | ldl_or _ _ _ Es => +oo (* default value, all lemmas are for negation-free formulas *)
-  | ldl_mand _ _ _ Es => sumE (map dl2_ereal_translation Es)
-  | ldl_mor _ _ _ Es => sumE (map dl2_ereal_translation Es) (*((- 1) ^+ (size Es).+1)%:E * prodE (map dl2_ereal_translation Es)*)
+  | ldl_mand _ _ _ Es => \sum_(i <- map dl2_ereal_translation Es) i
+  | ldl_mor _ _ _ Es => \sum_(i <- map dl2_ereal_translation Es) i (*((- 1) ^+ (size Es).+1)%:E * prodE (map dl2_ereal_translation Es)*)
   | ldl_not _ _ _ E1 => +oo (* default value, all lemmas are for negation-free formulas *)
   | ldl_impl _ _ _ E1 E2 =>  (- maxe ({[ E1 ]} - {[ E2 ]}) 0)
                                 (*TODO: add once tested the right version for standard dl2*)
@@ -455,8 +458,8 @@ Fixpoint dl2_translation {t} (e : @expr R t) {struct e} : type_translation t :=
 
   | ldl_and _ _ _ Es => 0 (* default value, all lemmas are for negation-free formulas *)
   | ldl_or _ _ _ Es => 0 (* default value, all lemmas are for negation-free formulas *)
-  | ldl_mand _ _ _ Es => sumR (map dl2_translation Es)
-  | ldl_mor _ _ _ Es => sumR (map dl2_translation Es)
+  | ldl_mand _ _ _ Es => \sum_(i <- map dl2_translation Es) i
+  | ldl_mor _ _ _ Es => \sum_(i <- map dl2_translation Es) i
 (*if (\big[maxr/0]_(i <- (map dl2_translation Es)) i == 0) then 0
                         else (1/(sumR (map (fun E => 1/({[ E ]} :
                   type_translation (Bool_T _ _ m_def _))) Es)))*)
@@ -510,11 +513,11 @@ Fixpoint stl_ereal_translation {t} (e : expr t) : ereal_type_translation t :=
       if a_min == -oo then -oo
       else if a_min == +oo then +oo
         else if a_min < 0 then
-          sumE (map (fun a => a_min * expeR (a'_i a) * expeR (nu%:E * a'_i a)) A) *
-          (fine (sumE (map (fun a => expeR (nu%:E * a'_i a)) A)))^-1%:E
+          (\sum_(a <- A) a_min * expeR (a'_i a) * expeR (nu%:E * a'_i a)) *
+          (fine (\sum_(a <- A) expeR (nu%:E * a'_i a)))^-1%:E
         else if a_min > 0 then
-          sumE (map (fun a => a * expeR (-nu%:E * a'_i a)) A) *
-          (fine (sumE (map (fun a => expeR (nu%:E * (a'_i a))) A)))^-1%:E
+          (\sum_(a <- A) (a * expeR (-nu%:E * a'_i a))) *
+          (fine (\sum_(a <- A) expeR (nu%:E * (a'_i a))))^-1%:E
         else 0
   | ldl_or _ _ _ Es =>
       let A := map stl_ereal_translation Es in
@@ -523,11 +526,11 @@ Fixpoint stl_ereal_translation {t} (e : expr t) : ereal_type_translation t :=
       if a_max == -oo then -oo
       else if a_max == +oo then +oo
         else if a_max > 0 then
-          sumE (map (fun a => a_max * expeR (a'_i a) * expeR (nu%:E * a'_i a)) A) *
-          (fine (sumE (map (fun a => expeR (nu%:E * (a'_i a))) A)))^-1%:E
+          (\sum_(a <- A) a_max * expeR (a'_i a) * expeR (nu%:E * a'_i a)) *
+          (fine (\sum_(a <- A) expeR (nu%:E * (a'_i a))))^-1%:E
         else if a_max < 0 then
-          sumE (map (fun a => a * expeR (-nu%:E * (a'_i a))) A) *
-          (fine (sumE (map (fun a => expeR (nu%:E * (a'_i a))) A)))^-1%:E
+          (\sum_(a <- A) a * expeR (-nu%:E * (a'_i a))) *
+          (fine (\sum_(a <- A) expeR (nu%:E * (a'_i a))))^-1%:E
         else 0
   | ldl_mand _ _ _ Es => 0 (* default value, all lemmas are for monoid free formulas *)
   | ldl_mor _ _ _ Es => 0 (* default value, all lemmas are for monoid free formulas *)
@@ -552,13 +555,13 @@ Section min_max_dev.
 Context {R : realType}.
 
 Definition min_dev (x : R) (s : seq R) : R :=
-  let r := \big[minr/x]_(i <- s) i in (x - r) * r^-1.
+  let r := \big[minr/x]_(i <- s) i in (x - r) / r.
 
 Lemma min_dev_nseq (p : R) n : min_dev p (nseq n.+1 p) = 0%R.
 Proof. by rewrite /min_dev big_nseq iter_minr// subrr mul0r. Qed.
 
 Definition max_dev {R : realType} (x : R) (s : seq R) : R :=
-  let r := \big[maxr/x]_(i <- s) i in (r - x) * r^-1.
+  let r := \big[maxr/x]_(i <- s) i in (r - x) / r.
 
 End min_max_dev.
 
@@ -571,22 +574,22 @@ Hypothesis p1 : 1 <= p.
 Hypothesis nu0 : 0 < nu.
 
 Definition stl_and_gt0 (v : seq R) :=
-  sumR (map (fun a => a * expR (-nu * min_dev a v)) v) *
-    (sumR (map (fun a => expR (-nu * min_dev a v)) v))^-1.
+  (\sum_(a <- v) a * expR (- nu * min_dev a v)) /
+    \sum_(a <- v) expR (-nu * min_dev a v).
 
 Definition stl_and_lt0 (v : seq R) :=
-  sumR (map (fun a => (\big[minr/a]_(i <- v) i) *
-                      expR (min_dev a v) * expR (nu * min_dev a v)) v) *
-    (sumR (map (fun a => expR (nu * min_dev a v)) v))^-1.
+  (\sum_(a <- v)
+    (\big[minr/a]_(i <- v) i) * expR (min_dev a v) * expR (nu * min_dev a v)) /
+      \sum_(a <- v) expR (nu * min_dev a v).
 
 Definition stl_or_gt0 (v : seq R) :=
-  sumR (map (fun a => (\big[maxr/a]_(i <- v) i) *
-                      expR (max_dev a v) * expR (nu * max_dev a v)) v) *
-    (sumR (map (fun a => expR (nu * max_dev a v)) v))^-1.
+  (\sum_(a <- v)
+    (\big[maxr/a]_(i <- v) i) * expR (max_dev a v) * expR (nu * max_dev a v)) /
+    (\sum_(a <- v) expR (nu * max_dev a v)).
 
 Definition stl_or_lt0 (v : seq R) :=
-  sumR (map (fun a => a * expR (-nu * (max_dev a v))) v) *
-    (sumR (map (fun a => expR (nu * max_dev a (v))) v))^-1 .
+  (\sum_(a <- v) a * expR (-nu * max_dev a v)) /
+    (\sum_(a <- v) expR (nu * max_dev a v)).
 
 Definition stl_and (a_min : R) h (t : seq R) : R :=
   if a_min < 0 then
@@ -601,7 +604,6 @@ Definition stl_or (a_max : R) h (t : seq R) : R :=
   else if a_max < 0 then
     stl_or_lt0 (h :: t)
   else 0.
-
 
 Fixpoint stl_translation {t} (e : expr t) : type_translation t :=
   match e in expr t return type_translation t with
