@@ -489,11 +489,9 @@ Variables (p : R) (nu : R).
 Hypothesis p1 : (1 <= p)%R.
 Hypothesis nu0 : (0 < nu)%R.
 
-Definition mine_dev (x y : \bar R) : \bar R :=
-  (x - y) * (fine y)^-1%:E.
+Definition mine_dev (x y : \bar R) : \bar R := (x - y) / y.
 
-Definition maxe_dev (x y : \bar R) : \bar R :=
-  (x - y) / x.
+Definition maxe_dev (x y : \bar R) : \bar R := (x - y) / x.
 
 Let bigmine (s : seq (\bar R)) := \big[mine/+oo]_(i <- s) i.
 Let bigmaxe (s : seq (\bar R)) := \big[maxe/-oo]_(i <- s) i.
