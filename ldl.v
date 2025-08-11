@@ -493,7 +493,7 @@ Definition mine_dev (x y : \bar R) : \bar R :=
   (x - y) * (fine y)^-1%:E.
 
 Definition maxe_dev (x y : \bar R) : \bar R :=
-  (x - y) * (fine x)^-1%:E.
+  (x - y) / x.
 
 Let bigmine (s : seq (\bar R)) := \big[mine/+oo]_(i <- s) i.
 Let bigmaxe (s : seq (\bar R)) := \big[maxe/-oo]_(i <- s) i.
