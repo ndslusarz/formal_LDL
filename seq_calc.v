@@ -168,7 +168,7 @@ Inductive seq_calc_luka_impl :  seq ( seq (@expr R (Bool_T_def impl_def m_def l_
                   (a b : @expr R (Bool_T_def impl_def m_def l_def)),
     seq_calc_luka_impl ( (A |- a :: B) :: Q ) ->
     seq_calc_luka_impl ( (A |- b :: B) :: Q) ->
-    seq_calc_luka_impl ((A |- [:: (a `/\ b)]) :: Q )
+    seq_calc_luka_impl ((A |-  (a `/\ b) :: B) :: Q )
 | orL_l : forall  Q
                   (A B : seq (@expr R (Bool_T_def impl_def m_def l_def)))
                   (a b : @expr R (Bool_T_def impl_def m_def l_def)),
@@ -179,7 +179,7 @@ Inductive seq_calc_luka_impl :  seq ( seq (@expr R (Bool_T_def impl_def m_def l_
                   (A B : seq (@expr R (Bool_T_def impl_def m_def l_def)))
                   (a b : @expr R (Bool_T_def impl_def m_def l_def)),
     seq_calc_luka_impl (( A |- a :: B ) :: ( A |- b :: B) :: Q ) ->
-    seq_calc_luka_impl (( A |- [::(a `\/ b)] ) :: Q) .
+    seq_calc_luka_impl (( A |- (a `\/ b) :: B) :: Q) .
 
 Inductive seq_calc_luka :  seq ( seq (@expr R (Bool_T_def impl_def m_def l_def))
                                   * seq (@expr R (Bool_T_def impl_def m_def l_def)))
@@ -281,8 +281,30 @@ Inductive seq_calc_luka :  seq ( seq (@expr R (Bool_T_def impl_def m_def l_def))
                  (a b: @expr R (Bool_T_def impl_def m_def l_def)),
     seq_calc_luka ((A |- B):: Q) -> 
     seq_calc_luka (((ldl_bool neg_def _ _ _ false :: A) |-  a :: b :: B) :: Q) ->
-    seq_calc_luka ((( A) |- (a `++ b) :: B) :: Q).
-(*TO DO: add derivable and rules*)
+    seq_calc_luka ((( A) |- (a `++ b) :: B) :: Q)
+| andL_l' : forall Q 
+                   (A B : seq (@expr R (Bool_T_def impl_def m_def l_def)))
+                   (a b : @expr R (Bool_T_def impl_def m_def l_def)),
+    seq_calc_luka (((a :: B) |- A) :: ((b :: B) |- A):: Q ) ->
+    seq_calc_luka ((((a `/\ b) :: B) |- A) :: Q) 
+| andR_l' : forall (Q : seq ( seq (@expr R (Bool_T_def impl_def m_def l_def))
+                               * seq (@expr R (Bool_T_def impl_def m_def l_def))))
+                  (A B : seq (@expr R (Bool_T_def impl_def m_def l_def)))
+                  (a b : @expr R (Bool_T_def impl_def m_def l_def)),
+    seq_calc_luka ( (A |- a :: B) :: Q ) ->
+    seq_calc_luka ( (A |- b :: B) :: Q) ->
+    seq_calc_luka ((A |- (a `/\ b) :: B) :: Q )
+| orL_l' : forall  Q
+                  (A B : seq (@expr R (Bool_T_def impl_def m_def l_def)))
+                  (a b : @expr R (Bool_T_def impl_def m_def l_def)),
+    seq_calc_luka ( ((b :: A) |- B) :: Q) ->
+    seq_calc_luka ( ((a :: A) |- B) :: Q) ->
+    seq_calc_luka (((a `\/ b) :: A |- B) :: Q)
+| orR_l' : forall Q
+                  (A B : seq (@expr R (Bool_T_def impl_def m_def l_def)))
+                  (a b : @expr R (Bool_T_def impl_def m_def l_def)),
+    seq_calc_luka (( A |- a :: B ) :: ( A |- b :: B) :: Q ) ->
+    seq_calc_luka (( A |- (a `\/ b) :: B ) :: Q).
 
 Definition eval_luka (Q : seq (@expr R (Bool_T_def impl_def m_def l_def)))
   := 1%R + (\sum_(i <- Q) ([[i]]_Lukasiewicz - 1%R)).
@@ -475,16 +497,16 @@ intros; rewrite//=. dependent induction H.
   rewrite in_cons in IH11. rewrite in_cons in IH21.
   move/orP : IH11. move/orP: IH21.
   move => [/eqP h2 | h2]; move => [/eqP h1 | h1].
-  + exists (A |- [:: a `/\ b]).
+  + exists (A |- a `/\ b :: B).
     rewrite mem_head. split. by [].
     subst.
     rewrite //= eval_luka_add_el//=/minR !big_cons !big_nil /minr.
-    have ev0 : eval_luka [::] = 1 by rewrite /eval_luka big_nil addr0//=. 
-    rewrite ev0. 
     rewrite //= eval_luka_add_el in IH12.
     rewrite //= !eval_luka_add_el in IH22.
     have hB := eval_luka1 B.
     have hA := eval_luka1 A.
+    have ha := @translate_Bool_T_01 R p p1 Lukasiewicz _ _ _ (a).
+    have hb := @translate_Bool_T_01 R p p1 Lukasiewicz _ _ _ (b).
     repeat case: ifP; move => h1 h2; try lra.
   + by exists q1; rewrite in_cons h1 IH12 orbT.
   + by exists q2; rewrite in_cons h2 IH22 orbT.
@@ -506,26 +528,22 @@ intros; rewrite//=. dependent induction H.
   + by exists q2; rewrite in_cons h2 IH22 orbT.
   + by exists q1; rewrite in_cons h1 IH12 orbT.
 - move: IHseq_calc_luka_impl => [q1 [+ IH2]].
+  have hB := eval_luka1 B.
+  have hA := eval_luka1 A.
+  have ha := @translate_Bool_T_01 R p p1 Lukasiewicz _ _ _ (a).
+  have hb := @translate_Bool_T_01 R p p1 Lukasiewicz _ _ _ (b).
   rewrite !in_cons => /predU1P[h1 | /predU1P [h2 | h3]].
-  + exists (A |- [:: a `\/ b]).
+  + exists (A |- a `\/ b :: B).
     rewrite mem_head. split. by [].
     subst.
     rewrite //= !eval_luka_add_el in IH2.
     rewrite //= !eval_luka_add_el//=/maxR !big_cons big_nil /maxr.
-    have ev0 : eval_luka [::] = 1 by rewrite /eval_luka big_nil addr0//=. 
-    rewrite ev0. 
-    have hB := eval_luka1 B.
-    have hA := eval_luka1 A.
     repeat case: ifP; move=> h1 h2; try lra.
-  + exists (A |- [:: a `\/ b]).
+  + exists (A |- a `\/ b :: B).
     rewrite mem_head. split. by [].
     subst.
     rewrite //= !eval_luka_add_el in IH2.
     rewrite //= !eval_luka_add_el//=/maxR !big_cons big_nil /maxr.
-    have ev0 : eval_luka [::] = 1 by rewrite /eval_luka big_nil addr0//=. 
-    rewrite ev0. 
-    have hB := eval_luka1 B.
-    have hA := eval_luka1 A.
     repeat case: ifP; move=> h1 h2; try lra.
   + exists q1. rewrite !in_cons h3 !orbT.
     split; rewrite//=.
@@ -778,6 +796,78 @@ intros; rewrite//=. dependent induction H.
   + by exists q2; rewrite in_cons h2 IH22 orbT.
   + by exists q1; rewrite in_cons h1 IH12 orbT.
   + by exists q1; rewrite in_cons h1 IH12 orbT.
+- move: IHseq_calc_luka => [q1 [+ IH2]].
+  rewrite !in_cons => /predU1P[h1 | /predU1P [h2 | h3]].
+  + exists (a `/\ b :: B |- A).
+    rewrite mem_head. split. by [].
+    subst.
+    rewrite //= !eval_luka_add_el in IH2.
+    rewrite //= !eval_luka_add_el//=/minR !big_cons big_nil /minr.
+    repeat case: ifP; move=> h; try lra.
+  + exists (a `/\ b :: B |- A).
+    rewrite mem_head. split. by [].
+    subst.
+    rewrite //= !eval_luka_add_el in IH2.
+    rewrite //= !eval_luka_add_el//=/minR.
+    rewrite !big_cons big_nil /minr.
+    repeat case: ifP; move=> h; try lra.
+  + exists q1. rewrite !in_cons h3 !orbT.
+    split; rewrite//=.
+- destruct IHseq_calc_luka1 as [q1 [IH11 IH12]].
+  destruct IHseq_calc_luka2 as [q2 [IH21 IH22]].
+  rewrite in_cons in IH11. rewrite in_cons in IH21.
+  move/orP : IH11. move/orP: IH21.
+  have hB := eval_luka1 B.
+  have hA := eval_luka1 A.
+  have ha := @translate_Bool_T_01 R p p1 Lukasiewicz _ _ _ (a).
+  have hb := @translate_Bool_T_01 R p p1 Lukasiewicz _ _ _ (b).
+  move => [/eqP h2 | h2]; move => [/eqP h1 | h1].
+  + exists (A |- a `/\ b :: B).
+    rewrite mem_head. split. by [].
+    subst.
+    rewrite //= eval_luka_add_el//=/minR !big_cons !big_nil /minr.
+    rewrite //= eval_luka_add_el in IH12.
+    rewrite //= !eval_luka_add_el in IH22.
+    repeat case: ifP; move => h1 h2; try lra.
+  + by exists q1; rewrite in_cons h1 IH12 orbT.
+  + by exists q2; rewrite in_cons h2 IH22 orbT.
+  + by exists q1; rewrite in_cons h1 IH12 orbT.
+- destruct IHseq_calc_luka1 as [q1 [IH11 IH12]].
+  destruct IHseq_calc_luka2 as [q2 [IH21 IH22]].
+  rewrite in_cons in IH11. rewrite in_cons in IH21.
+  move/orP : IH11. move/orP: IH21.
+  move => [/eqP h2 | h2]; move => [/eqP h1 | h1].
+  + exists (a `\/ b :: A |- B).
+    rewrite mem_head. split. by [].
+    subst.
+    rewrite //= eval_luka_add_el//=/maxR !big_cons big_nil /maxr.
+    rewrite //= eval_luka_add_el in IH12.
+    rewrite //= !eval_luka_add_el in IH22.
+    have hb := @translate_Bool_T_01 R p p1 Lukasiewicz _ _ _ (b).
+    repeat case: ifP; move => h1 h2; try lra.
+  + by exists q1; rewrite in_cons h1 IH12 orbT.
+  + by exists q2; rewrite in_cons h2 IH22 orbT.
+  + by exists q1; rewrite in_cons h1 IH12 orbT.
+- move: IHseq_calc_luka => [q1 [+ IH2]].
+  have hB := eval_luka1 B.
+  have hA := eval_luka1 A.
+  have ha := @translate_Bool_T_01 R p p1 Lukasiewicz _ _ _ (a).
+  have hb := @translate_Bool_T_01 R p p1 Lukasiewicz _ _ _ (b).
+  rewrite !in_cons => /predU1P[h1 | /predU1P [h2 | h3]].
+  + exists (A |- a `\/ b :: B).
+    rewrite mem_head. split. by [].
+    subst.
+    rewrite //= !eval_luka_add_el in IH2.
+    rewrite //= !eval_luka_add_el//=/maxR !big_cons big_nil /maxr.
+    repeat case: ifP; move=> h1 h2; try lra.
+  + exists (A |- a `\/ b :: B).
+    rewrite mem_head. split. by [].
+    subst.
+    rewrite //= !eval_luka_add_el in IH2.
+    rewrite //= !eval_luka_add_el//=/maxR !big_cons big_nil /maxr.
+    repeat case: ifP; move=> h1 h2; try lra.
+  + exists q1. rewrite !in_cons h3 !orbT.
+    split; rewrite//=.
 Qed.
 
 Lemma luka_neg_impl_admissable (e : (@expr R (Bool_T_def impl_def m_def l_def))):
@@ -1033,7 +1123,15 @@ dependent induction H.
   + exact: IHseq_calc_luka1.
   + rewrite neg_impl.  apply implL_l.
     exact: IHseq_calc_luka2.
-Admitted.
+- apply andL_l. by exact IHseq_calc_luka.
+- apply andR_l.
+  + by exact IHseq_calc_luka1.
+  + by exact IHseq_calc_luka2.
+- apply orL_l.
+  + by exact IHseq_calc_luka1.
+  + by exact IHseq_calc_luka2.
+- apply orR_l. by exact IHseq_calc_luka.
+Qed.
 
 (*double check if `\/ or `++*)
 Lemma prelinearity_luka (Q : seq (seq (@expr R (Bool_T_def impl_def m_def l_def)) *
@@ -1116,12 +1214,12 @@ Inductive seq_calc_product : seq (seq (@expr R (Bool_T_def impl_def m_def l_def)
                   (A B: seq (@expr R (Bool_T_def impl_def m_def l_def)))
                  (b : @expr R (Bool_T_def impl_def m_def l_def)),
     seq_calc_product (((ldl_bool _ _ _ _ false :: A) |- B) :: Q)
-| andL_p : forall Q
+| mandL_p : forall Q
                    (A B : seq (@expr R (Bool_T_def impl_def m_def l_def)))
                    (a b : @expr R (Bool_T_def impl_def m_def l_def)),
     seq_calc_product ((a :: b :: B |- A) :: Q ) ->
     seq_calc_product ((((a `** b) :: B) |- A) :: Q )
-| andR_p : forall Q
+| mandR_p : forall Q
                   (A B : seq (@expr R (Bool_T_def impl_def m_def l_def)))
                   (a b : @expr R (Bool_T_def impl_def m_def l_def)),
     seq_calc_product ( (A |- a :: b ::B) :: Q ) ->
@@ -1143,6 +1241,29 @@ Inductive seq_calc_product : seq (seq (@expr R (Bool_T_def impl_def m_def l_def)
       seq_calc_product (((`~ a) :: A |- B) :: Q) ->
       seq_calc_product ((b :: A |- a :: B) :: Q ) ->
       seq_calc_product (((a `=> b) :: A |-  B) :: Q )
+| andL_p : forall Q 
+                   (A B : seq (@expr R (Bool_T_def impl_def m_def l_def)))
+                   (a b : @expr R (Bool_T_def impl_def m_def l_def)),
+    seq_calc_product (((a :: B) |- A) :: ((b :: B) |- A):: Q ) ->
+    seq_calc_product ((((a `/\ b) :: B) |- A) :: Q) 
+| andR_p : forall (Q : seq ( seq (@expr R (Bool_T_def impl_def m_def l_def))
+                               * seq (@expr R (Bool_T_def impl_def m_def l_def))))
+                  (A B : seq (@expr R (Bool_T_def impl_def m_def l_def)))
+                  (a b : @expr R (Bool_T_def impl_def m_def l_def)),
+    seq_calc_product ( (A |- a :: B) :: Q ) ->
+    seq_calc_product ( (A |- b :: B) :: Q) ->
+    seq_calc_product ((A |- (a `/\ b):: B) :: Q )
+| orL_p : forall  Q
+                  (A B : seq (@expr R (Bool_T_def impl_def m_def l_def)))
+                  (a b : @expr R (Bool_T_def impl_def m_def l_def)),
+    seq_calc_product ( ((b :: B) |- A) :: Q) ->
+    seq_calc_product ( ((a :: B) |- A) :: Q) ->
+    seq_calc_product (((a `\/ b) :: B |- A) :: Q)
+| orR_p : forall Q
+                  (A B : seq (@expr R (Bool_T_def impl_def m_def l_def)))
+                  (a b : @expr R (Bool_T_def impl_def m_def l_def)),
+    seq_calc_product (( A |- a :: B ) :: ( A |- b :: B) :: Q ) ->
+    seq_calc_product (( A |- (a `\/ b):: B ) :: Q) 
 .
 
 (*LDL language*)
@@ -1225,7 +1346,30 @@ Inductive seq_calc_product' : seq (seq (@expr R (Bool_T_def impl_def m_def l_def
                   (A B  : seq (@expr R (Bool_T_def impl_def m_def l_def)))
                   (a  : @expr R (Bool_T_def impl_def m_def l_def)),
     seq_calc_product' ((B |- [::a]) :: Q) ->
-    seq_calc_product' (  (((`~a) :: B) |- A) :: Q).
+    seq_calc_product' (  (((`~a) :: B) |- A) :: Q)
+| andL_p' : forall Q 
+                   (A B : seq (@expr R (Bool_T_def impl_def m_def l_def)))
+                   (a b : @expr R (Bool_T_def impl_def m_def l_def)),
+    seq_calc_product' (((a :: B) |- A) :: ((b :: B) |- A):: Q ) ->
+    seq_calc_product' ((((a `/\ b) :: B) |- A) :: Q) 
+| andR_p' : forall (Q : seq ( seq (@expr R (Bool_T_def impl_def m_def l_def))
+                               * seq (@expr R (Bool_T_def impl_def m_def l_def))))
+                  (A B : seq (@expr R (Bool_T_def impl_def m_def l_def)))
+                  (a b : @expr R (Bool_T_def impl_def m_def l_def)),
+    seq_calc_product' ( (A |- a :: B) :: Q ) ->
+    seq_calc_product' ( (A |- b :: B) :: Q) ->
+    seq_calc_product' ((A |- (a `/\ b):: B) :: Q )
+| orL_p' : forall  Q
+                  (A B : seq (@expr R (Bool_T_def impl_def m_def l_def)))
+                  (a b : @expr R (Bool_T_def impl_def m_def l_def)),
+    seq_calc_product' ( ((b :: B) |- A) :: Q) ->
+    seq_calc_product' ( ((a :: B) |- A) :: Q) ->
+    seq_calc_product' (((a `\/ b) :: B |- A) :: Q)
+| orR_p' : forall Q
+                  (A B : seq (@expr R (Bool_T_def impl_def m_def l_def)))
+                  (a b : @expr R (Bool_T_def impl_def m_def l_def)),
+    seq_calc_product' (( A |- a :: B ) :: ( A |- b :: B) :: Q ) ->
+    seq_calc_product' (( A |- (a `\/ b):: B ) :: Q).
 
 Definition eval_product (Q : seq (@expr R (Bool_T_def impl_def m_def l_def))) :=
   \prod_(i <- Q) [[i]]_product.
@@ -1515,6 +1659,125 @@ intros; rewrite//=. dependent induction H.
     by rewrite !in_cons h2 IH22 !orbT//=. 
   + exists q1. 
     by rewrite !in_cons h1 IH12 !orbT//=.     
+- move: IHseq_calc_product => [q1 [+ IH2]].
+  rewrite !in_cons => /predU1P[h1 | /predU1P [h2 | h3]].
+  + subst.
+    exists (a `/\ b :: B |- A).
+    rewrite in_cons eq_refl orTb; split; first by [].
+    rewrite //= /eval_product !big_cons//= /minR !big_cons big_nil /minr. 
+    rewrite//= /eval_product !big_cons  in IH2. 
+    repeat case: ifP; move=> h1 h2; try nra.
+    * have ha := @translate_Bool_T_01 R p p1 product _ _ _ (a).
+      have hb := @translate_Bool_T_01 R p p1 product _ _ _ (b).
+      have hB := eval_product_01 B. rewrite /eval_product in hB.
+      have lelt : ([[a]]_product < [[b]]_product) = false <->
+                    [[b]]_product <= [[a]]_product by split; intros; lra.
+      apply lelt in h2.
+      have hA' : [[b]]_product * \prod_(j <- B) [[j]]_product <= \prod_(i <- A) [[i]]_product
+      by intros; nra.
+      exact hA'.
+    * rewrite mul1r.
+      have ha := @translate_Bool_T_01 R p p1 product _ _ _ (a). 
+      have ha1 : forall (x : R),  (x < 1) = false -> 
+                 0 <= x <= 1 ->
+                 x = 1. intros; lra.
+      apply (ha1 _ h2) in ha; rewrite//=.
+      rewrite ha mul1r in IH2.
+      exact IH2.
+  + subst.
+    exists (a `/\ b :: B |- A).
+    rewrite in_cons eq_refl orTb; split; first by [].
+    rewrite //= /eval_product !big_cons//= /minR !big_cons big_nil /minr. 
+    rewrite//= /eval_product !big_cons  in IH2. 
+    repeat case: ifP; move=> h1 h2; try nra.
+    * have hB := eval_product_01 B. rewrite /eval_product in hB.
+      have h' : [[a]]_product * \prod_(j <- B) [[j]]_product <= \prod_(i <- A) [[i]]_product
+      by intros; nra.
+      exact h'.
+    * have hb := @translate_Bool_T_01 R p p1 product _ _ _ (b). 
+      have hB := eval_product_01 B. rewrite /eval_product in hB.
+      have hb1 : forall (x : R),  (x < 1) = false -> 
+                 0 <= x <= 1 ->
+                 x = 1. intros; lra.
+      apply (hb1 _ h1) in hb; rewrite//=.
+      rewrite hb mul1r in IH2.
+      nra.
+    * rewrite mul1r.
+      have hb := @translate_Bool_T_01 R p p1 product _ _ _ (b).
+      have hB := eval_product_01 B. rewrite /eval_product in hB.
+      nra.
+  + exists q1. rewrite !in_cons h3 !orbT.
+    split; rewrite//=.
+- destruct IHseq_calc_product1 as [q1 [IH11 IH12]].
+  destruct IHseq_calc_product2 as [q2 [IH21 IH22]].
+  rewrite in_cons in IH11. rewrite in_cons in IH21. 
+  move/orP : IH11. move/orP: IH21.
+  move => [/eqP h2 | h2]; move => [/eqP h1 | h1].
+  + subst. 
+    exists (A |- a `/\ b :: B).
+    rewrite in_cons eq_refl orTb; split; first by [].
+    rewrite //= !eval_product_add_el //= in IH12.
+    rewrite //= !eval_product_add_el in IH22. 
+    rewrite//= !eval_product_add_el//= /minR !big_cons big_nil /minr.
+    have ha := @translate_Bool_T_01 R p p1 product _ _ _ (a).
+    have hb := @translate_Bool_T_01 R p p1 product _ _ _ (b).
+    have hB := eval_product_01 B.
+    have hA := eval_product_01 A.
+    repeat case: ifP; move=> h1 h2; try nra.
+  + exists q1. 
+    by rewrite !in_cons h1 IH12 !orbT//=. 
+  + exists q2. 
+    by rewrite !in_cons h2 IH22 !orbT//=. 
+  + exists q1. 
+    by rewrite !in_cons h1 IH12 !orbT//=. 
+- destruct IHseq_calc_product1 as [q1 [IH11 IH12]].
+  destruct IHseq_calc_product2 as [q2 [IH21 IH22]].
+  rewrite in_cons in IH11. rewrite in_cons in IH21. 
+  move/orP : IH11. move/orP: IH21.
+  move => [/eqP h2 | h2]; move => [/eqP h1 | h1].
+  + subst. 
+    exists (a `\/ b :: B |- A).
+    rewrite in_cons eq_refl orTb; split; first by [].
+    rewrite //= !eval_product_add_el //= in IH12.
+    rewrite //= !eval_product_add_el in IH22. 
+    rewrite//= !eval_product_add_el//= /maxR !big_cons big_nil /maxr.
+    have ha := @translate_Bool_T_01 R p p1 product _ _ _ (a).
+    have hb := @translate_Bool_T_01 R p p1 product _ _ _ (b).
+    have hB := eval_product_01 B.
+    have hA := eval_product_01 A.
+    repeat case: ifP; move=> h1 h2; try nra.
+  + exists q1. 
+    by rewrite !in_cons h1 IH12 !orbT//=. 
+  + exists q2. 
+    by rewrite !in_cons h2 IH22 !orbT//=. 
+  + exists q1. 
+    by rewrite !in_cons h1 IH12 !orbT//=.  
+- move: IHseq_calc_product => [q1 [+ IH2]].
+  rewrite !in_cons => /predU1P[h1 | /predU1P [h2 | h3]].
+  + subst.
+    exists (A |- a `\/ b :: B).
+    rewrite in_cons eq_refl orTb; split; first by [].
+    rewrite //= /eval_product !big_cons//= /maxR !big_cons big_nil /maxr. 
+    rewrite//= /eval_product !big_cons  in IH2. 
+    have ha := @translate_Bool_T_01 R p p1 product _ _ _ (a).
+    have hb := @translate_Bool_T_01 R p p1 product _ _ _ (b).
+    have hB := eval_product_01 B. 
+    have hA := eval_product_01 A.
+    rewrite /eval_product in hB hA.
+    repeat case: ifP; move=> h1 h2; try nra.
+  + subst.
+    exists (A |- a `\/ b :: B).
+    rewrite in_cons eq_refl orTb; split; first by [].
+    rewrite //= /eval_product !big_cons//= /maxR !big_cons big_nil /maxr. 
+    rewrite//= /eval_product !big_cons  in IH2. 
+    have ha := @translate_Bool_T_01 R p p1 product _ _ _ (a).
+    have hb := @translate_Bool_T_01 R p p1 product _ _ _ (b).
+    have hB := eval_product_01 B. 
+    have hA := eval_product_01 A.
+    rewrite /eval_product in hB hA.
+    repeat case: ifP; move=> h1 h2; try nra.
+  + exists q1. rewrite !in_cons h3 !orbT.
+    split; rewrite//=.     
 Qed.
 
 
@@ -1699,6 +1962,125 @@ intros; rewrite//=. dependent induction H.
       by apply (helper IH2) in hA; exact hA.
   + exists q1.
     by rewrite !in_cons IH1 IH2 !orbT.
+- move: IHseq_calc_product' => [q1 [+ IH2]].
+  rewrite !in_cons => /predU1P[h1 | /predU1P [h2 | h3]].
+  + subst.
+    exists (a `/\ b :: B |- A).
+    rewrite in_cons eq_refl orTb; split; first by [].
+    rewrite //= /eval_product !big_cons//= /minR !big_cons big_nil /minr. 
+    rewrite//= /eval_product !big_cons  in IH2. 
+    repeat case: ifP; move=> h1 h2; try nra.
+    * have ha := @translate_Bool_T_01 R p p1 product _ _ _ (a).
+      have hb := @translate_Bool_T_01 R p p1 product _ _ _ (b).
+      have hB := eval_product_01 B. rewrite /eval_product in hB.
+      have lelt : ([[a]]_product < [[b]]_product) = false <->
+                    [[b]]_product <= [[a]]_product by split; intros; lra.
+      apply lelt in h2.
+      have hA' : [[b]]_product * \prod_(j <- B) [[j]]_product <= \prod_(i <- A) [[i]]_product
+      by intros; nra.
+      exact hA'.
+    * rewrite mul1r.
+      have ha := @translate_Bool_T_01 R p p1 product _ _ _ (a). 
+      have ha1 : forall (x : R),  (x < 1) = false -> 
+                 0 <= x <= 1 ->
+                 x = 1. intros; lra.
+      apply (ha1 _ h2) in ha; rewrite//=.
+      rewrite ha mul1r in IH2.
+      exact IH2.
+  + subst.
+    exists (a `/\ b :: B |- A).
+    rewrite in_cons eq_refl orTb; split; first by [].
+    rewrite //= /eval_product !big_cons//= /minR !big_cons big_nil /minr. 
+    rewrite//= /eval_product !big_cons  in IH2. 
+    repeat case: ifP; move=> h1 h2; try nra.
+    * have hB := eval_product_01 B. rewrite /eval_product in hB.
+      have h' : [[a]]_product * \prod_(j <- B) [[j]]_product <= \prod_(i <- A) [[i]]_product
+      by intros; nra.
+      exact h'.
+    * have hb := @translate_Bool_T_01 R p p1 product _ _ _ (b). 
+      have hB := eval_product_01 B. rewrite /eval_product in hB.
+      have hb1 : forall (x : R),  (x < 1) = false -> 
+                 0 <= x <= 1 ->
+                 x = 1. intros; lra.
+      apply (hb1 _ h1) in hb; rewrite//=.
+      rewrite hb mul1r in IH2.
+      nra.
+    * rewrite mul1r.
+      have hb := @translate_Bool_T_01 R p p1 product _ _ _ (b).
+      have hB := eval_product_01 B. rewrite /eval_product in hB.
+      nra.
+  + exists q1. rewrite !in_cons h3 !orbT.
+    split; rewrite//=.
+- destruct IHseq_calc_product'1 as [q1 [IH11 IH12]].
+  destruct IHseq_calc_product'2 as [q2 [IH21 IH22]].
+  rewrite in_cons in IH11. rewrite in_cons in IH21. 
+  move/orP : IH11. move/orP: IH21.
+  move => [/eqP h2 | h2]; move => [/eqP h1 | h1].
+  + subst. 
+    exists (A |- a `/\ b :: B).
+    rewrite in_cons eq_refl orTb; split; first by [].
+    rewrite //= !eval_product_add_el //= in IH12.
+    rewrite //= !eval_product_add_el in IH22. 
+    rewrite//= !eval_product_add_el//= /minR !big_cons big_nil /minr.
+    have ha := @translate_Bool_T_01 R p p1 product _ _ _ (a).
+    have hb := @translate_Bool_T_01 R p p1 product _ _ _ (b).
+    have hB := eval_product_01 B.
+    have hA := eval_product_01 A.
+    repeat case: ifP; move=> h1 h2; try nra.
+  + exists q1. 
+    by rewrite !in_cons h1 IH12 !orbT//=. 
+  + exists q2. 
+    by rewrite !in_cons h2 IH22 !orbT//=. 
+  + exists q1. 
+    by rewrite !in_cons h1 IH12 !orbT//=. 
+- destruct IHseq_calc_product'1 as [q1 [IH11 IH12]].
+  destruct IHseq_calc_product'2 as [q2 [IH21 IH22]].
+  rewrite in_cons in IH11. rewrite in_cons in IH21. 
+  move/orP : IH11. move/orP: IH21.
+  move => [/eqP h2 | h2]; move => [/eqP h1 | h1].
+  + subst. 
+    exists (a `\/ b :: B |- A).
+    rewrite in_cons eq_refl orTb; split; first by [].
+    rewrite //= !eval_product_add_el //= in IH12.
+    rewrite //= !eval_product_add_el in IH22. 
+    rewrite//= !eval_product_add_el//= /maxR !big_cons big_nil /maxr.
+    have ha := @translate_Bool_T_01 R p p1 product _ _ _ (a).
+    have hb := @translate_Bool_T_01 R p p1 product _ _ _ (b).
+    have hB := eval_product_01 B.
+    have hA := eval_product_01 A.
+    repeat case: ifP; move=> h1 h2; try nra.
+  + exists q1. 
+    by rewrite !in_cons h1 IH12 !orbT//=. 
+  + exists q2. 
+    by rewrite !in_cons h2 IH22 !orbT//=. 
+  + exists q1. 
+    by rewrite !in_cons h1 IH12 !orbT//=.  
+- move: IHseq_calc_product' => [q1 [+ IH2]].
+  rewrite !in_cons => /predU1P[h1 | /predU1P [h2 | h3]].
+  + subst.
+    exists (A |- a `\/ b :: B).
+    rewrite in_cons eq_refl orTb; split; first by [].
+    rewrite //= /eval_product !big_cons//= /maxR !big_cons big_nil /maxr. 
+    rewrite//= /eval_product !big_cons  in IH2. 
+    have ha := @translate_Bool_T_01 R p p1 product _ _ _ (a).
+    have hb := @translate_Bool_T_01 R p p1 product _ _ _ (b).
+    have hB := eval_product_01 B. 
+    have hA := eval_product_01 A.
+    rewrite /eval_product in hB hA.
+    repeat case: ifP; move=> h1 h2; try nra.
+  + subst.
+    exists (A |- a `\/ b :: B).
+    rewrite in_cons eq_refl orTb; split; first by [].
+    rewrite //= /eval_product !big_cons//= /maxR !big_cons big_nil /maxr. 
+    rewrite//= /eval_product !big_cons  in IH2. 
+    have ha := @translate_Bool_T_01 R p p1 product _ _ _ (a).
+    have hb := @translate_Bool_T_01 R p p1 product _ _ _ (b).
+    have hB := eval_product_01 B. 
+    have hA := eval_product_01 A.
+    rewrite /eval_product in hB hA.
+    repeat case: ifP; move=> h1 h2; try nra.
+  + exists q1. rewrite !in_cons h3 !orbT.
+    split; rewrite//=.     
 Qed.
 
 Lemma product_true_false_admissable :
@@ -1738,10 +2120,18 @@ dependent induction H.
   + have h : ldl_bool _ _ _ _ false :: A = [::ldl_bool _ _ _ _ false] ++ A.
       by [].
     rewrite h . apply w_p. apply id_p.
-- apply andL_p. by exact IHseq_calc_product'.
-- apply andR_p. by exact IHseq_calc_product'.
+- apply mandL_p. by exact IHseq_calc_product'.
+- apply mandR_p. by exact IHseq_calc_product'.
 - rewrite neg_impl. apply implR_p; rewrite//=. 
 - apply negL_p. by exact IHseq_calc_product'.
+- apply andL_p. by exact IHseq_calc_product'.
+- apply andR_p. 
+  + by exact IHseq_calc_product'1. 
+  + by exact IHseq_calc_product'2.
+- apply orL_p. 
+  + by exact IHseq_calc_product'1. 
+  + by exact IHseq_calc_product'2.
+- apply orR_p. by exact IHseq_calc_product'.
 Qed.
 
 Lemma prelinearity_product :
