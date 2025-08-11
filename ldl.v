@@ -509,11 +509,11 @@ Fixpoint stl_ereal_translation {t} (e : expr t) : ereal_type_translation t :=
       if a_min == -oo then -oo
       else if a_min == +oo then +oo
         else if a_min < 0 then
-          (\sum_(a <- A) a_min * expeR (a'_i a) * expeR (nu%:E * a'_i a)) *
-          (fine (\sum_(a <- A) expeR (nu%:E * a'_i a)))^-1%:E
+          (\sum_(a <- A) a_min * expeR (a'_i a) * expeR (nu%:E * a'_i a)) /
+          (\sum_(a <- A) expeR (nu%:E * a'_i a))
         else if a_min > 0 then
-          (\sum_(a <- A) (a * expeR (-nu%:E * a'_i a))) *
-          (fine (\sum_(a <- A) expeR (nu%:E * (a'_i a))))^-1%:E
+          (\sum_(a <- A) (a * expeR (-nu%:E * a'_i a))) /
+          (\sum_(a <- A) expeR (nu%:E * a'_i a))
         else 0
   | ldl_or _ _ _ Es =>
       let A := map stl_ereal_translation Es in
@@ -522,11 +522,11 @@ Fixpoint stl_ereal_translation {t} (e : expr t) : ereal_type_translation t :=
       if a_max == -oo then -oo
       else if a_max == +oo then +oo
         else if a_max > 0 then
-          (\sum_(a <- A) a_max * expeR (a'_i a) * expeR (nu%:E * a'_i a)) *
-          (fine (\sum_(a <- A) expeR (nu%:E * (a'_i a))))^-1%:E
+          (\sum_(a <- A) a_max * expeR (a'_i a) * expeR (nu%:E * a'_i a)) /
+          (\sum_(a <- A) expeR (nu%:E * a'_i a))
         else if a_max < 0 then
-          (\sum_(a <- A) a * expeR (-nu%:E * (a'_i a))) *
-          (fine (\sum_(a <- A) expeR (nu%:E * (a'_i a))))^-1%:E
+          (\sum_(a <- A) a * expeR (-nu%:E * a'_i a)) /
+          (\sum_(a <- A) expeR (nu%:E * a'_i a))
         else 0
   | ldl_mand _ _ _ Es => 0 (* default value, all lemmas are for monoid free formulas *)
   | ldl_mor _ _ _ Es => 0 (* default value, all lemmas are for monoid free formulas *)
