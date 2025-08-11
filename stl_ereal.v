@@ -49,19 +49,33 @@ Hypothesis nu0 : 0 < nu.
 Local Open Scope ring_scope.
 Local Open Scope ldl_scope.
 
+(* TODO: move *)
+Lemma mine_devxx (x : \bar R) : x \is a fin_num -> mine_dev x x = 0.
+Proof. by move=> finx; rewrite /mine_dev subee// mul0e. Qed.
+
+(* TODO: move *)
+Lemma maxe_devxx (x : \bar R) : x \is a fin_num -> maxe_dev x x = 0.
+Proof. by move=> finx; rewrite /maxe_dev subee// mul0e. Qed.
+
+(* TODO: PR *)
+Lemma big_mineNy T (v : seq T) (f : T -> \bar R) :
+  -oo%E \in map f v -> \big[mine/+oo%E]_(j <- v) f j = -oo%E.
+Proof.
+elim: v => // h t ih.
+by rewrite inE big_cons => /predU1P[<-|/ih ->]; rewrite ?(minNye,mineNy).
+Qed.
+
 Lemma andI_stl f (e : expr (Bool_T_def f m_undef l_def)) :
   nu.-[[e `/\ e]]_stle = nu.-[[e]]_stle.
 Proof.
 rewrite /= !big_cons !big_nil/=.
 have [->//|epoo] := eqVneq (nu.-[[e]]_stle) (+oo)%E.
 have [->//=|enoo] := eqVneq (nu.-[[e]]_stle) (-oo)%E.
-rewrite /mine_dev.
 set a_min := mine (nu.-[[e]]_stle) (mine (nu.-[[e]]_stle) +oo)%E.
-set a := ((nu.-[[e]]_stle - a_min) * ((fine a_min)^-1)%:E)%E.
+set a := mine_dev (nu.-[[e]]_stle) a_min.
 have a_min_e : a_min = nu.-[[e]]_stle.
   by rewrite /a_min /mine; repeat case: ifPn => //; rewrite -leNgt leye_eq => /eqP ->.
-have -> : a = 0%E.
-  by rewrite /a a_min_e subee ?mul0e// fin_numE epoo enoo.
+have -> : a = 0%E by rewrite /a a_min_e mine_devxx// fin_numE epoo enoo.
 rewrite !adde0 !mule0 expeR0 !mule1/= a_min_e.
 have : ((nu.-[[e]]_stle + nu.-[[e]]_stle) * ((1 + 1)^-1)%:E)%E = nu.-[[e]]_stle.
   have -> : 1 + 1 = (2 : R) by lra.
@@ -81,8 +95,8 @@ rewrite /= !big_cons !big_nil /=.
 set a_min := mine (nu.-[[e1]]_stle) (mine (nu.-[[e2]]_stle) +oo)%E.
 have -> : (mine (nu.-[[e2]]_stle) (mine (nu.-[[e1]]_stle) +oo))%E = a_min.
   by rewrite mineA [X in mine X _]mineC -mineA.
-set a1 := ((nu.-[[e1]]_stle - a_min) * ((fine a_min)^-1)%:E)%E.
-set a2 := ((nu.-[[e2]]_stle - a_min) * ((fine a_min)^-1)%:E)%E.
+set a1 := mine_dev (nu.-[[e1]]_stle) a_min.
+set a2 := mine_dev (nu.-[[e2]]_stle) a_min.
 set d1 := ((fine (expeR (nu%:E * a1) + (expeR (nu%:E * a2) + 0)))^-1)%:E.
 have -> : ((fine (expeR (nu%:E * a2) + (expeR (nu%:E * a1) + 0)))^-1)%:E = d1.
   by rewrite addeCA.
@@ -96,14 +110,13 @@ Lemma orI_stl f (e : expr (Bool_T_def f m_undef l_def)) :
   nu.-[[e `\/ e]]_stle = nu.-[[e]]_stle.
 Proof.
 rewrite /= !big_cons !big_nil/=.
-have [->//|enoo] := eqVneq (nu.-[[e]]_stle) (-oo)%E.
-have [->//=|epoo] := eqVneq (nu.-[[e]]_stle) (+oo)%E.
+have [->//|enoo] := eqVneq (nu.-[[e]]_stle) -oo%E.
+have [->//=|epoo] := eqVneq (nu.-[[e]]_stle) +oo%E.
 set a_max := maxe (nu.-[[e]]_stle) (maxe (nu.-[[e]]_stle) -oo)%E.
 set a := maxe_dev a_max (nu.-[[e]]_stle).
 have a_max_e : a_max = nu.-[[e]]_stle.
   by rewrite /a_max /maxe; repeat case: ifPn; rewrite ltNge leNye.
-have -> : a = 0%E.
-  by rewrite /a /maxe_dev a_max_e subee ?mul0e// fin_numE epoo enoo.
+have -> : a = 0%E by rewrite /a a_max_e maxe_devxx// fin_numE epoo enoo.
 rewrite !adde0 !mule0 expeR0 !mule1/= a_max_e.
 have -> : ((nu.-[[e]]_stle + nu.-[[e]]_stle) * ((1 + 1)^-1)%:E)%E = nu.-[[e]]_stle.
   have -> : 1 + 1 = (2 : R) by lra.
@@ -160,8 +173,8 @@ Qed.
 
 Definition is_stl b (x : \bar R) := (if b then x >= 0 else x < 0)%E.
 
-Lemma stl_nary_inversion_andE1 f (Es : seq (expr (Bool_T_undef f m_undef l_def)) ) :
-  is_stl true (nu.-[[ ldl_and Es ]]_stle) -> (forall i, (i < size Es)%N -> 
+Lemma stl_nary_inversion_andE1 f (Es : seq (expr (Bool_T_undef f m_undef l_def))) :
+  is_stl true (nu.-[[ ldl_and Es ]]_stle) -> (forall i, (i < size Es)%N ->
     is_stl true (nu.-[[ nth (ldl_bool neg_undef f m_undef l_def false) Es i ]]_stle)).
 Proof.
 rewrite/is_stl/= big_map.
@@ -174,32 +187,44 @@ case: ifPn=>[hminlt0|].
   rewrite leNgt !big_map.
   rewrite mule_lt0_gt0//; last first.
     rewrite lte_fin invr_gt0 fine_gt0//.
-    apply/andP;split.
+    apply/andP; split.
       rewrite big_seq_cond sume_gt0//.
       move=> i /andP[iEs _]; apply: expeR_ge0.
-      have := hminlt0; rewrite big_seq_cond.
+      have := hminlt0.
       move/mine_lt => [i [iEs _ hilt0]].
       exists i; split; [exact: iEs|by rewrite andbT|].
       rewrite expeR_gt0 ?iEs//.
       rewrite ltNye !mule_eq_ninfty.
       rewrite !lte_fin !nu0/=.
-      rewrite !negb_or !negb_and -!leNgt/= andbT !orbT/= (ltW nu0)/= -!big_seq_cond.
-      rewrite andbT invr_le0 invr_ge0 fine_le0 ?orbT ?(ltW hminlt0)//=.
-      rewrite -ltey lte_add_pinfty//.
-        by apply: lt_trans; first exact: hilt0.
-      by rewrite lteNl/= ltNye.
-    rewrite big_seq_cond.
-    apply: lte_sum_pinfty => i /andP[iEs _].
+      rewrite !negb_or !negb_and -!leNgt/= andbT.
+      rewrite (ltW nu0)/= andbT.
+      rewrite inve_le0//; last by rewrite lt_eqF.
+      rewrite (ltW hminlt0) !orbT/=.
+      rewrite inve_eqNy hnoo orbT/=.
+      rewrite inve_eqy lt_eqF//= orbT/=.
+      rewrite inve_ge0 leNgt hminlt0/= orbF.
+      have [->|nuiNy] := eqVneq (nu.-[[i]]_stle)%E -oo%E.
+        move: hnoo hpoo.
+        by case: (\big[mine/-oo%E]_(j0 <- Es) nu.-[[j0]]_stle).
+      rewrite adde_Neq_pinfty//; last by rewrite eqe_oppLR.
+      by rewrite eqe_oppLR/= hnoo andbT lt_eqF// (lt_le_trans hilt0).
+    rewrite big_seq.
+    apply: lte_sum_pinfty => /= i iEs.
     apply: expeR_lty.
-    rewrite ltey !mule_eq_pinfty/= !negb_or !negb_and !negb_or !negb_and.
-    rewrite -!leNgt !lee_fin !(ltW nu0)/= !orbT !andbT/=.
-    rewrite invr_le0 fine_le0 ?(ltW hminlt0)// orbT/=.
-    rewrite adde_eq_ninfty negb_or; apply/orP; right.
-    apply/orP; left; apply/andP; split.
-    rewrite gt_eqF//.
-    have := hnoo; rewrite -ltNye.
-    move/mine_gt; apply => //.
-    by rewrite eqe_oppLR.
+    rewrite /mine_dev.
+    rewrite ltey !mule_eq_pinfty/= !negb_or !negb_and !negb_or !negb_and/=.
+    rewrite andbT !lte_fin nu0/=.
+    rewrite inve_eqy lt_eqF//= orbT/=.
+    rewrite inve_eqNy hnoo orbT/=.
+    rewrite inve_lt0 hminlt0/= orbF.
+    rewrite inve_gt0//; last by rewrite lt_eqF.
+    rewrite -leNgt (ltW hminlt0)/= orbT/=.
+    rewrite -leNgt (ltW nu0)/= andbT.
+    rewrite adde_eq_ninfty negb_or.
+    rewrite eqe_oppLR/= hpoo andbT.
+    apply: contra hnoo => /eqP iNy; apply/eqP.
+    rewrite big_mineNy//.
+    by apply/mapP; exists i.
   apply sume_lt0.
     move=> i _.
     rewrite !mule_le0_ge0//; last 2 first.
@@ -211,25 +236,37 @@ case: ifPn=>[hminlt0|].
   move/mine_lt => [i [iEs _ hilt0]].
   exists i; split => //.
   rewrite mule_lt0_gt0//; last first.
-    rewrite expeR_gt0// ltNye !mule_eq_ninfty/= !negb_or !negb_and !negb_or !negb_and.
-    rewrite -!leNgt !lee_fin/= (ltW nu0)/= !andbT !orbT/=.
-    rewrite invr_le0 fine_le0 ?(ltW hminlt0)// orbT/=.
-    rewrite adde_Neq_pinfty; last by rewrite eqe_oppLR/=.
-      rewrite eqe_oppLR/= hnoo andbT.
-      by rewrite -ltey (lt_trans hilt0)//= orbT.
-    rewrite -ltNye.
-    move: hnoo; rewrite -ltNye.
-    by move/mine_gt; apply.
+    rewrite expeR_gt0// ltNye !mule_eq_ninfty/=.
+    rewrite orbF/=.
+    rewrite lte_fin nu0/=.
+    rewrite inve_lt0 hminlt0 andbT.
+    rewrite inve_eqNy (negbTE hnoo) andbF/=.
+    rewrite inve_eqy lt_eqF// andbF/=.
+    rewrite inve_gt0//; last by rewrite lt_eqF.
+    rewrite ltNge (ltW hminlt0)/= andbF/=.
+    rewrite ltNge lee_fin (ltW nu0)/= orbF.
+    have [->|nuiNy] := eqVneq (nu.-[[i]]_stle)%E -oo%E.
+      move: hnoo hpoo.
+      by case: (\big[mine/-oo%E]_(j0 <- Es) nu.-[[j0]]_stle).
+    move: hnoo hpoo hminlt0.
+    case: (\big[mine/+oo%E]_(j <- Es) nu.-[[j]]_stle) => // r _ _.
+    rewrite lte_fin => r0.
+    rewrite adde_Neq_pinfty// eqe_oppLR/= andbT.
+    by rewrite lt_eqF// (lt_le_trans hilt0).
   rewrite mule_lt0 hminlt0/= {1}lt_eqF//= {1}gt_eqF//=.
     by rewrite -leNgt expeR_ge0.
   rewrite expeR_gt0// ltNye mule_eq_ninfty !negb_or !negb_and -!leNgt.
-  rewrite -!ltNye -!ltey !ltNyr !orbT/=.
-  rewrite lee_fin invr_le0 fine_le0 ?(ltW hminlt0)// orbT/=.
-  rewrite ltey adde_Neq_pinfty ?eqe_oppLR/= ?hpoo ?hnoo//.
-    by rewrite -ltey (lt_trans hilt0).
-  rewrite -ltNye.
-  move: hnoo; rewrite -ltNye.
-  by move/mine_gt; apply.
+  rewrite inve_eqNy hnoo orbT/=.
+  rewrite inve_eqy lt_eqF//= orbT/=.
+  rewrite inve_le0//; last by rewrite lt_eqF.
+  rewrite (ltW hminlt0) orbT/=.
+  rewrite inve_ge0 leNgt hminlt0/= orbF.
+  have [->|nuiNy] := eqVneq (nu.-[[i]]_stle)%E -oo%E.
+    move: hnoo hpoo.
+    by case: (\big[mine/+oo%E]_(j0 <- Es) nu.-[[j0]]_stle).
+  rewrite adde_Neq_pinfty//; last by rewrite eqe_oppLR.
+  rewrite lt_eqF//=; last by rewrite (lt_le_trans hilt0).
+  by rewrite eqe_oppLR.
 rewrite -leNgt => hminge0.
 case: ifPn => [hmingt0 _ i isize|].
   have := hminge0.
@@ -241,7 +278,7 @@ by move/mine_geP; apply; rewrite mem_nth.
 Qed.
 
 Lemma stl_nary_inversion_andE0 f (Es : seq (expr (Bool_T_undef f m_undef l_def)) ) :
-  is_stl false (nu.-[[ ldl_and Es ]]_stle) -> (exists (i : nat), 
+  is_stl false (nu.-[[ ldl_and Es ]]_stle) -> (exists (i : nat),
     is_stl false (nu.-[[ nth (ldl_bool neg_undef f m_undef l_def false) Es i ]]_stle)%E && (i < size Es)%nat).
 Proof.
 rewrite/is_stl/= !big_map.
@@ -278,18 +315,6 @@ case: ifPn => [hgt0|].
   rewrite lee_fin invr_ge0 fine_ge0// sume_ge0// => x _.
   exact: expeR_ge0.
 by rewrite ltxx.
-Qed.
-
-Lemma inve_eqy {K : realDomainType} (x : \bar K) : ((x^-1)%E == +oo%E) = (x == 0%E).
-Proof.
-case: x => [r| |] //=; apply/idP/idP => [|].
-  by rewrite inver; case: ifPn.
-by rewrite eqe => /eqP ->/=; rewrite inver//= eqxx.
-Qed.
-
-Lemma inve_eqNy {K : realDomainType} (x : \bar K) : ((x^-1)%E == -oo%E) = (x == -oo%E).
-Proof.
-by case: x => [r| |] //=; rewrite inver; case: ifPn.
 Qed.
 
 Lemma stl_nary_inversion_orE1 f (Es : seq (expr (Bool_T_undef f m_undef l_def)) ) :

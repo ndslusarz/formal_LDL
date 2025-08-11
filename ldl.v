@@ -406,8 +406,6 @@ Fixpoint translation {t} (e : @expr R t) {struct e} : type_translation t :=
     end
 where "{[ e ]}" := (translation e).
 
-
-
 End fuzzy_translation.
 
 Section dl2_ereal_translation.

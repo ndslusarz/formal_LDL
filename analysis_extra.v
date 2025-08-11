@@ -87,13 +87,14 @@ Qed.
 
 (*Definition sumE {R : numDomainType} (Es : seq \bar R) : \bar R :=
   \sum_(i <- Es) i.*)
-Definition prodE {R : numDomainType} (Es : seq \bar R) : \bar R :=
-  \big[*%E/1%E]_(i <- Es) i.
+(*Definition prodE {R : numDomainType} (Es : seq \bar R) : \bar R :=
+  \big[*%E/1%E]_(i <- Es) i.*)
 
 Section mine_extra.
 Local Open Scope ereal_scope.
 Context {R : realDomainType}.
 
+(* TODO: PR *)
 Lemma mineC : commutative (fun x y : \bar R => mine x y).
 Proof.
 move=> x y; rewrite /mine; case: ifPn; rewrite ltNge le_eqVlt.
@@ -101,6 +102,7 @@ move=> x y; rewrite /mine; case: ifPn; rewrite ltNge le_eqVlt.
 - by rewrite negbK => /predU1P[|]->//; case: ifPn.
 Qed.
 
+(* TODO: PR *)
 Lemma mineA : associative (fun x y : \bar R => mine x y).
 Proof.
 move=> x y z; rewrite /mine.
@@ -112,6 +114,20 @@ repeat case: ifPn => //; rewrite -!leNgt => a b c d; apply/eqP; rewrite eq_le.
 - by rewrite b ltW.
 - by rewrite d ltW.
 - by rewrite c ltW.
+Qed.
+
+(* TODO: PR *)
+Lemma inve_eqy {K : realDomainType} (x : \bar K) : ((x^-1)%E == +oo%E) = (x == 0%E).
+Proof.
+case: x => [r| |] //=; apply/idP/idP => [|].
+  by rewrite inver; case: ifPn.
+by rewrite eqe => /eqP ->/=; rewrite inver//= eqxx.
+Qed.
+
+(* TODO: PR *)
+Lemma inve_eqNy {K : realDomainType} (x : \bar K) : ((x^-1)%E == -oo%E) = (x == -oo%E).
+Proof.
+by case: x => [r| |] //=; rewrite inver; case: ifPn.
 Qed.
 
 Lemma mine_eqyP (T : eqType) (s : seq T) (P : pred T) (f : T -> \bar R) :
