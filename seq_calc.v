@@ -49,20 +49,6 @@ Local Open Scope ring_scope.
 Local Open Scope ldl_scope.
 Context {R : realType}.
 
-(*Axiom neg_impl  :forall f1 f2 (e : @expr R (Bool_T_def impl_def f1 f2)), (`~ e) 
-                 = (e `=> ldl_bool neg_def impl_def f1 f2 false).
-
-Axiom true_false :  forall f1 f2 f3, (@ldl_bool R neg_def f1 f2 f3  true) = (`~ ldl_bool neg_def f1 f2 f3 false).
-
-Axiom or_impl : 
-forall  (a b : @expr R (Bool_T_def impl_def m_def  l_def)), (a `\/ b) = (a `=> b) `=> b.
-
-Axiom mand_impl : 
-forall f (a b: @expr R (Bool_T_def impl_def m_def f)), (a `** b) = (`~ (a `=> `~b)).
-
-Axiom mor_impl : 
-forall f (a b : @expr R (Bool_T_def impl_def m_def f)), (a `++ b) = ((`~ a) `=> b).*)
-
 End connectives_axioms.
 
 Section hypersequent_lukasiewicz.
@@ -193,7 +179,6 @@ Inductive seq_calc_luka_impl :  seq ( seq (@expr R (Bool_T_def impl_def m_def l_
 
 Inductive seq_calc_luka :  seq ( seq (@expr R (Bool_T_def impl_def m_def l_def))
                                   * seq (@expr R (Bool_T_def impl_def m_def l_def)))
-(*-> {mset (seq {mset (@expr R (Bool_T_def impl_def m_def l_def))})}*)
       -> Prop :=
 | id_l' : forall (Q :  seq ( seq (@expr R (Bool_T_def impl_def m_def l_def))
                              * seq (@expr R (Bool_T_def impl_def m_def l_def))))
@@ -890,10 +875,6 @@ rewrite//= addr0 /minr. case: ifPn; intros.
   apply/eqP; rewrite eq_le n andbT.
   lra.
 Qed.
-
-(*Axiom neg_impl : 
-forall  (a b: @expr R (Bool_T_def impl_def m_def l_def)), 
-[[`~ e]]_Lukasiewicz = [[e `=> ldl_bool _ _ _ _ false]]_Lukasiewicz -> (`~a) = ((a `=> b)).*)
 
 Lemma luka_true_false_admissable :
   [[@ldl_bool R neg_def impl_def m_def l_def true]]_Lukasiewicz =
