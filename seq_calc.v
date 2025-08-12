@@ -49,13 +49,10 @@ Local Open Scope ring_scope.
 Local Open Scope ldl_scope.
 Context {R : realType}.
 
-Axiom neg_impl  :forall f1 f2 (e : @expr R (Bool_T_def impl_def f1 f2)), (`~ e) 
+(*Axiom neg_impl  :forall f1 f2 (e : @expr R (Bool_T_def impl_def f1 f2)), (`~ e) 
                  = (e `=> ldl_bool neg_def impl_def f1 f2 false).
 
 Axiom true_false :  forall f1 f2 f3, (@ldl_bool R neg_def f1 f2 f3  true) = (`~ ldl_bool neg_def f1 f2 f3 false).
-
-Axiom and_impl : 
-forall  (a b: @expr R (Bool_T_def impl_def m_def l_def)), (a `/\ b) = (a `** (a `=> b)).
 
 Axiom or_impl : 
 forall  (a b : @expr R (Bool_T_def impl_def m_def  l_def)), (a `\/ b) = (a `=> b) `=> b.
@@ -64,7 +61,7 @@ Axiom mand_impl :
 forall f (a b: @expr R (Bool_T_def impl_def m_def f)), (a `** b) = (`~ (a `=> `~b)).
 
 Axiom mor_impl : 
-forall f (a b : @expr R (Bool_T_def impl_def m_def f)), (a `++ b) = ((`~ a) `=> b).
+forall f (a b : @expr R (Bool_T_def impl_def m_def f)), (a `++ b) = ((`~ a) `=> b).*)
 
 End connectives_axioms.
 
@@ -79,6 +76,19 @@ Implicit Types  (A : {mset K}) (s : seq K).
 Variable p : R. 
 Hypothesis p1 : 1 <= p.
 Local Notation "[[ e ]]_ l" := (@translation R l p _ e).
+
+Hypothesis neg_impl_luka  :forall f1 f2 (e : @expr R (Bool_T_def impl_def f1 f2)), (`~ e) 
+                 = (e `=> ldl_bool neg_def impl_def f1 f2 false).
+
+Hypothesis true_false_luka :  forall f1 f2 f3,
+    (@ldl_bool R neg_def f1 f2 f3  true) = (`~ ldl_bool neg_def f1 f2 f3 false).
+
+
+Hypothesis mand_impl_luka : 
+forall f (a b: @expr R (Bool_T_def impl_def m_def f)), (a `** b) = (`~ (a `=> `~b)).
+
+Hypothesis mor_impl_luka : 
+forall f (a b : @expr R (Bool_T_def impl_def m_def f)), (a `++ b) = ((`~ a) `=> b).
 
 Reserved Notation "Q |- P" (no associativity, at level 61).
 Notation "Q |- P" := (Q, P).
@@ -881,6 +891,10 @@ rewrite//= addr0 /minr. case: ifPn; intros.
   lra.
 Qed.
 
+(*Axiom neg_impl : 
+forall  (a b: @expr R (Bool_T_def impl_def m_def l_def)), 
+[[`~ e]]_Lukasiewicz = [[e `=> ldl_bool _ _ _ _ false]]_Lukasiewicz -> (`~a) = ((a `=> b)).*)
+
 Lemma luka_true_false_admissable :
   [[@ldl_bool R neg_def impl_def m_def l_def true]]_Lukasiewicz =
     [[`~ ldl_bool neg_def impl_def m_def l_def false]]_Lukasiewicz.
@@ -1036,15 +1050,15 @@ dependent induction H.
 - by apply: exL_l; exact: IHseq_calc_luka.
 - by apply: exR_l; exact: IHseq_calc_luka.
 - exact: bot_l.
-- rewrite true_false. rewrite neg_impl.
+- rewrite true_false_luka. rewrite neg_impl_luka.
   apply implR_l.
   + rewrite -(cat0s A).
     exact/w_l/empty.
   + exact: bot_l.
-- rewrite mand_impl. rewrite neg_impl.
+- rewrite mand_impl_luka. rewrite neg_impl_luka.
   apply implL_l. apply implR_l.
   + by exact IHseq_calc_luka2.
-  + rewrite neg_impl. apply implR_l.
+  + rewrite neg_impl_luka. apply implR_l.
     * have -> : [:: a, ldl_bool _ _ _ _ false & B] =
                 [:: a] ++ (ldl_bool _ _ _ _ false :: B) by [].
       apply/luka_exL_nil/w_l.
@@ -1063,10 +1077,10 @@ dependent induction H.
         have helper1 : [:: a, b & B] = ([:: a] ++ [:: b]) ++ B by [].
         rewrite helper1 in IHseq_calc_luka1.
         exact: IHseq_calc_luka1.
-- rewrite mand_impl neg_impl.
+- rewrite mand_impl_luka neg_impl_luka.
   apply: implR_l.
   + exact: IHseq_calc_luka1.
-  + apply luka_implL_extended. rewrite neg_impl.
+  + apply luka_implL_extended. rewrite neg_impl_luka.
     have -> : [:: A |- ldl_bool _ _ _ _ false :: B,
                      b `=> ldl_bool _ _ _ _ false ::A |- [:: a, ldl_bool _ _ _ _ false & B] & Q] =
                     [:: A |- ldl_bool _ _ _ _ false :: B] ++ ((
@@ -1097,12 +1111,12 @@ dependent induction H.
       have -> : (A |- [:: a, b & B]) :: Q ++ [:: A |- ldl_bool  _ _ _ _ false :: B] =
                 ([::A |- [:: a, b & B]] ++ Q ++ [:: A |- ldl_bool  _ _ _ _ false :: B] ++ [::]) by [].
       by apply: eex_l; rewrite cats0.
-- by rewrite neg_impl; exact/implL_l/IHseq_calc_luka.
-- rewrite neg_impl. apply implR_l.
+- by rewrite neg_impl_luka; exact/implL_l/IHseq_calc_luka.
+- rewrite neg_impl_luka. apply implR_l.
   + exact: IHseq_calc_luka1.
   + exact: IHseq_calc_luka2.
-- rewrite mor_impl. apply luka_implL_extended.
-  rewrite neg_impl.
+- rewrite mor_impl_luka. apply luka_implL_extended.
+  rewrite neg_impl_luka.
   have -> : [:: A |- B, b :: A |- a `=> ldl_bool  _ _ _ _ false :: B & Q] =
             [:: A |- B] ++ ((b :: A |- a `=> ldl_bool  _ _ _ _ false :: B) :: Q) by [].
   apply: luka_eex_nil => /=.
@@ -1119,9 +1133,9 @@ dependent induction H.
       by [].
     apply ew_l.
     exact: IHseq_calc_luka2.
-- rewrite mor_impl. apply implR_l.
+- rewrite mor_impl_luka. apply implR_l.
   + exact: IHseq_calc_luka1.
-  + rewrite neg_impl.  apply implL_l.
+  + rewrite neg_impl_luka.  apply implL_l.
     exact: IHseq_calc_luka2.
 - apply andL_l. by exact IHseq_calc_luka.
 - apply andR_l.
@@ -1153,6 +1167,14 @@ Implicit Types (s : seq K).
 Variable p : R.
 Hypothesis p1 : 1 <= p.
 Local Notation "[[ e ]]_ l" := (@translation R l p _ e).
+
+Hypothesis neg_impl_product  :forall f1 f2 (e : @expr R (Bool_T_def impl_def f1 f2)), (`~ e) 
+                 = (e `=> ldl_bool neg_def impl_def f1 f2 false).
+
+Hypothesis true_false_product :  forall f1 f2 f3,
+    (@ldl_bool R neg_def f1 f2 f3  true) = (`~ ldl_bool neg_def f1 f2 f3 false).
+
+
 
 Reserved Notation "Q |- P" (no associativity, at level 61).
 Notation "Q |- P" := (Q, P).
@@ -2113,7 +2135,7 @@ dependent induction H.
 - apply exR_p. by exact IHseq_calc_product'.
 - apply w_p. by exact IHseq_calc_product'.
 - by apply bot_p.
-- rewrite true_false neg_impl. apply implR_p. 
+- rewrite true_false_product neg_impl_product. apply implR_p. 
   + have h : [::] ++ A = A by [].
     rewrite -h. 
     apply w_p. apply empty_p.
@@ -2122,7 +2144,7 @@ dependent induction H.
     rewrite h . apply w_p. apply id_p.
 - apply mandL_p. by exact IHseq_calc_product'.
 - apply mandR_p. by exact IHseq_calc_product'.
-- rewrite neg_impl. apply implR_p; rewrite//=. 
+- rewrite neg_impl_product. apply implR_p; rewrite//=. 
 - apply negL_p. by exact IHseq_calc_product'.
 - apply andL_p. by exact IHseq_calc_product'.
 - apply andR_p. 
@@ -2158,6 +2180,9 @@ Local Notation "[[ e ]]_ l" := (@translation R l p _ e).
 Reserved Notation "Q |- P" (no associativity, at level 61).
 Notation "Q |- P" := (Q, P).
 (*entailment as pair (A, B) where A |- B*)
+
+Hypothesis neg_impl_godel :forall f1 f2 (e : @expr R (Bool_T_def impl_def f1 f2)), (`~ e) 
+                 = (e `=> ldl_bool neg_def impl_def f1 f2 false).
 
 (*hypersequent calculus as per literature*)
 Inductive seq_calc_godel :  seq (seq (@expr R (Bool_T_def impl_def m_def l_def)) *
@@ -3108,8 +3133,8 @@ dependent induction H.
   + exact: IHseq_calc_godel'1.
   + exact: IHseq_calc_godel'2.
 - apply/orR_g. by exact IHseq_calc_godel'.
-- by rewrite neg_impl; exact: implR_g.
-- by rewrite neg_impl; exact: implL_g.
+- by rewrite neg_impl_godel; exact: implR_g.
+- by rewrite neg_impl_godel; exact: implL_g.
 Qed.
 
 End hypersequent_godel.
