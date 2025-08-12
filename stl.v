@@ -102,20 +102,6 @@ case: ifPn; first by rewrite addrC.
 by case: ifPn; first by rewrite addrC.
 Qed.
 
-(*absorption lemmas - unsusre if these are true, or need to hold
-as we've established they need to hold for lattice and and lattice or
-- which STL only has at the limit when number of arguments goes to infinity*)
-
-Lemma stl_and_abs f1 f2 (e1 e2 : expr (Bool_T_def f1 f2 l_def)) :
-  nu.-[[ e1 `/\ (e1 `\/ e2)]]_stl = nu.-[[ e1 ]]_stl.
-Proof.
-Abort.
-
-Lemma stl_or_abs f1 f2 (e1 e2 : expr (Bool_T_def f1 f2 l_def)) :
-  nu.-[[ e1 `\/ (e1 `/\ e2)]]_stl = nu.-[[ e1 ]]_stl.
-Proof.
-Abort.
-
 Lemma stl_translations_Vector_coincide : forall n (e : @expr R (Vector_T n)),
   nu.-[[ e ]]_stl = [[ e ]]_B.
 Proof.
@@ -335,19 +321,27 @@ move=> r_neq0 H.
 Admitted.
 
 
-(*note: empty v never achieved in general and as handles by separate case,
-hence 1 as default value safe in that regard - consider what should it be in minr*)
 Lemma stl_and_gt0_cvg_infty b (p : R) (v : seq R)  : 
-  b > 0 ->
+  b > 0 -> v != [::] ->
   (forall x, x \in v -> x >= b) ->
   (stl_and_gt0 p v) @[p --> +oo] --> \big[minr/b]_(i <- v) i.
 Proof.
-move => b0 vb.
+move => b0 v0 vb.
 rewrite /stl_and_gt0.
+(*have H1 : forall a, a \in v -> (\sum_(a <- v) a * expR (- p0 * min_dev a v))  @[p0 --> +oo] --> 
+   (\big[minr/b]_(i <- v) i) * (count_mem (\big[minr/b]_(i <- v) i) v )%:R .
+move => a av.
+apply/cvgrPdist_le => /= e e0.
+near=> t.
+rewrite !gtr0_norm.
+*)
+
+
+
 have : forall a, a \in v ->
        (a * expR (- p0 * min_dev a v))/
   (\sum_(j <- [seq expR (- p0 * min_dev a v) | a <- v]) j) @[p0 --> +oo] --> 
-  if a > \big[minr/b]_(i <- v) i then 0 else a.
+  if a > \big[minr/b]_(i <- v) i then 0 else a/(count_mem (\big[minr/b]_(i <- v) i) v )%:R.
 move => a av.
 apply/cvgrPdist_le => /= e e0.
 near=> t.
@@ -362,18 +356,8 @@ case: ifP.
   rewrite (bigID (xpred1 a))/=.
   rewrite min_dev0//=.
   rewrite mulr0 expR0.
-(* commented out by Reynald on 2025-08-11 so that the whole dev compiles
 
-  rewrite min_dev0.
-  rewrite /min_dev.
 
-under eq_fun do rewrite !big_map.
-
- apply/cvgrPdist_le => /= e e0.
-near=> t. 
-rewrite /stl_and_gt0 /sumR !big_map.
-
-*)
 Admitted.
 
 
