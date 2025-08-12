@@ -328,15 +328,18 @@ Lemma stl_and_gt0_cvg_infty b (p : R) (v : seq R)  :
 Proof.
 move => b0 v0 vb.
 rewrite /stl_and_gt0.
-(*have H1 : forall a, a \in v -> (\sum_(a <- v) a * expR (- p0 * min_dev a v))  @[p0 --> +oo] --> 
-   (\big[minr/b]_(i <- v) i) * (count_mem (\big[minr/b]_(i <- v) i) v )%:R .
-move => a av.
+set min_val := \big[minr/b]_(i <- v) i.
+have sum_spl : forall (x : R),   \sum_(a <- v) a * expR (- x * min_dev a v)
+  = \sum_(a <- v | a == min_val) a * expR (- x * min_dev a v)
+    + \sum_(a <- v | a != min_val) a * expR (- x* min_dev a v). move => x0.
+  by rewrite (bigID (fun a => a == min_val)).
+have sum1 : (\sum_(a <- v) a * expR (- p0 * min_dev a v)) @[p0 --> +oo] --> 
+              (\big[minr/b]_(i <- v) i) * (count_mem (\big[minr/b]_(i <- v) i) v )%:R.
 apply/cvgrPdist_le => /= e e0.
 near=> t.
-rewrite !gtr0_norm.
-*)
+rewrite sum_spl.
 
-
+(*bigID*) (*cvgD cvgM cvgV cvg_trans*)
 
 have : forall a, a \in v ->
        (a * expR (- p0 * min_dev a v))/
