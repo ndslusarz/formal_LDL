@@ -44,12 +44,19 @@ HB.instance Definition _ (R : realType) x y z v :=
 Reserved Notation "Q |= P" (no associativity, at level 61).
 Reserved Notation "Q |- P" (no associativity, at level 61).
 
-Section connectives_axioms.
-Local Open Scope ring_scope.
-Local Open Scope ldl_scope.
-Context {R : realType}.
+Definition neg_impl_dl (R : realType) :=
+  forall f1 f2 (e : @expr R  (Bool_T_def impl_def f1 f2)), (`~ e) 
+     = (e `=> ldl_bool neg_def impl_def f1 f2 false).
 
-End connectives_axioms.
+Definition true_false_dl (R : realType) :=
+  forall f1 f2 f3,
+    (@ldl_bool R neg_def f1 f2 f3  true) = (`~ ldl_bool neg_def f1 f2 f3 false).
+
+Definition mand_impl_dl (R : realType) := 
+  forall f (a b: @expr R (Bool_T_def impl_def m_def f)), (a `** b) = (`~ (a `=> `~b)).
+
+Definition mor_impl_dl (R : realType) :=
+  forall f (a b : @expr R (Bool_T_def impl_def m_def f)), (a `++ b) = ((`~ a) `=> b).
 
 Section hypersequent_lukasiewicz.
 Local Open Scope ring_scope.
@@ -63,18 +70,13 @@ Variable p : R.
 Hypothesis p1 : 1 <= p.
 Local Notation "[[ e ]]_ l" := (@translation R l p _ e).
 
-Hypothesis neg_impl_luka  :forall f1 f2 (e : @expr R (Bool_T_def impl_def f1 f2)), (`~ e) 
-                 = (e `=> ldl_bool neg_def impl_def f1 f2 false).
+Hypothesis neg_impl_luka  : neg_impl_dl R.
 
-Hypothesis true_false_luka :  forall f1 f2 f3,
-    (@ldl_bool R neg_def f1 f2 f3  true) = (`~ ldl_bool neg_def f1 f2 f3 false).
+Hypothesis true_false_luka :  true_false_dl R.
 
+Hypothesis mand_impl_luka : mand_impl_dl R.
 
-Hypothesis mand_impl_luka : 
-forall f (a b: @expr R (Bool_T_def impl_def m_def f)), (a `** b) = (`~ (a `=> `~b)).
-
-Hypothesis mor_impl_luka : 
-forall f (a b : @expr R (Bool_T_def impl_def m_def f)), (a `++ b) = ((`~ a) `=> b).
+Hypothesis mor_impl_luka : mor_impl_dl R.
 
 Reserved Notation "Q |- P" (no associativity, at level 61).
 Notation "Q |- P" := (Q, P).
@@ -1149,13 +1151,9 @@ Variable p : R.
 Hypothesis p1 : 1 <= p.
 Local Notation "[[ e ]]_ l" := (@translation R l p _ e).
 
-Hypothesis neg_impl_product  :forall f1 f2 (e : @expr R (Bool_T_def impl_def f1 f2)), (`~ e) 
-                 = (e `=> ldl_bool neg_def impl_def f1 f2 false).
+Hypothesis neg_impl_product : neg_impl_dl R.
 
-Hypothesis true_false_product :  forall f1 f2 f3,
-    (@ldl_bool R neg_def f1 f2 f3  true) = (`~ ldl_bool neg_def f1 f2 f3 false).
-
-
+Hypothesis true_false_product :  true_false_dl R.
 
 Reserved Notation "Q |- P" (no associativity, at level 61).
 Notation "Q |- P" := (Q, P).
@@ -1600,7 +1598,8 @@ intros; rewrite//=. dependent induction H.
       destruct ha' as [ha' | ha']; rewrite//=.
       - have helper:  [[a]]_product * eval_product A <=
                         [[b]]_product * ([[a]]_product / [[a]]_product) * eval_product B ->
-                      eval_product A <= [[b]]_product / [[a]]_product * eval_product B by intros; rewrite p1 in ha hb; nra.
+                      eval_product A <= [[b]]_product / [[a]]_product * eval_product B 
+           by intros; rewrite p1 in ha hb; nra.
         have h := divff ha' . rewrite h mulr1 in helper.
         rewrite helper//=. 
       - rewrite -ha' in i. have contr : [[b]]_product < 0 ->
@@ -1784,9 +1783,11 @@ intros; rewrite//=. dependent induction H.
 Qed.
 
 
-Lemma sound_product' (Q : seq ( seq (@expr R (Bool_T_def impl_def m_def l_def)) * seq (@expr R (Bool_T_def impl_def m_def l_def)))):
+Lemma sound_product' (Q : seq ( seq (@expr R (Bool_T_def impl_def m_def l_def)) 
+                                * seq (@expr R (Bool_T_def impl_def m_def l_def)))):
 seq_calc_product' Q -> 
-exists (q : ( seq (@expr R (Bool_T_def impl_def m_def l_def)) * seq (@expr R (Bool_T_def impl_def m_def l_def)))),
+exists (q : ( seq (@expr R (Bool_T_def impl_def m_def l_def)) 
+              * seq (@expr R (Bool_T_def impl_def m_def l_def)))),
   q \in Q /\ (eval_product (fst q) <= eval_product (snd q)).
 Proof.
 intros; rewrite//=. dependent induction H.
@@ -2162,8 +2163,7 @@ Reserved Notation "Q |- P" (no associativity, at level 61).
 Notation "Q |- P" := (Q, P).
 (*entailment as pair (A, B) where A |- B*)
 
-Hypothesis neg_impl_godel :forall f1 f2 (e : @expr R (Bool_T_def impl_def f1 f2)), (`~ e) 
-                 = (e `=> ldl_bool neg_def impl_def f1 f2 false).
+Hypothesis neg_impl_godel : neg_impl_dl R.
 
 (*hypersequent calculus as per literature*)
 Inductive seq_calc_godel :  seq (seq (@expr R (Bool_T_def impl_def m_def l_def)) *
