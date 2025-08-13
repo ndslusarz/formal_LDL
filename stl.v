@@ -330,15 +330,24 @@ move => b0 v0 vb.
 rewrite /stl_and_gt0.
 set min_val := \big[minr/b]_(i <- v) i.
 have sum_spl1 : forall (x : R),   \sum_(a <- v) a * expR (- x * min_dev a v)
-  = \sum_(a <- v | a == min_val) a * expR (- x * min_dev a v)
-    + \sum_(a <- v | a != min_val) a * expR (- x* min_dev a v). move => x0.
+  =  \sum_(a <- v | a == min_val) a  * expR (- x * min_dev a v)
+    + \sum_(a <- v | a != min_val) a * expR (- x * min_dev a v). move => x0.
   by rewrite (bigID (fun a => a == min_val)).
 (*top sum*)
 have sum_top : (\sum_(a <- v) a * expR (- p0 * min_dev a v)) @[p0 --> +oo] --> 
-              (min_val) * (count_mem (min_val) v )%:R.
-apply/cvgrPdist_le => /= e e0.
-near=> t.
-rewrite sum_spl1. admit.
+              (min_val) * (count_mem (min_val) v )%:R. 
+  apply/cvgrPdist_le => /= e e0.
+  near=> t.
+  rewrite sum_spl1.
+  near: t; move: e e0; apply/cvgrPdist_le.
+  (*top sum non-minimum elements*)
+  have sum_top_rest : 
+    (\sum_(a <- v | a != min_val) a * expR (- t * min_dev a v))%R @[t --> nbhs +oo] --> 0.
+    (*how to get the condition from the sum?*)
+    admit.
+
+(*apply: (cvgD  _ sum_top_rest).*)
+  admit.
 
 
 (*bottom sum*)
@@ -350,31 +359,32 @@ have sum_bot : (\sum_(a <- v) expR (- p0 * min_dev a v)) @[p0 --> +oo] -->
                  min_val * 0+ (count_mem min_val v)%:R.
 (*so I know the left side of this addition is 0 and it's not a smart solution but I could not
  find a way to cast the count_mem to the right type so I left it as a question*)
-rewrite mulr0 add0r. (*delete when fixing the sum_bot*)
-apply/cvgrPdist_le => /= e e0.
-near=> t.
-rewrite sum_spl2.
-admit.
+  rewrite mulr0 add0r. (*delete when fixing the sum_bot*)
+  apply/cvgrPdist_le => /= e e0.
+  near=> t.
+  rewrite sum_spl2.
+  admit.
 rewrite mulr0 add0r in sum_bot. (*delete when fixing the sum_bot*)
 have non0 : (count_mem min_val v)%:R != 0.
-move => t0. destruct v; rewrite/min_val //=. rewrite !big_cons.
+  move => t0. destruct v; rewrite/min_val //=. rewrite !big_cons.
 
 admit.
 have sum_inv : (\sum_(a <- v) expR (- p0 * min_dev a v))^-1 @[p0 --> +oo] --> 
                   min_val * 0 + ((count_mem min_val v)%:R)^-1.
 (*again, the same rather stupid patch job, to fix, same typing problem*)
-rewrite mulr0 add0r. (*delete when fixing the sum_bot*)
-apply: cvgV.
-- rewrite non0//=. 
-- exact sum_bot.
+  rewrite mulr0 add0r. (*delete when fixing the sum_bot*)
+  apply: cvgV.
+  - rewrite non0//=. 
+  - exact sum_bot.
 rewrite mulr0 add0r in sum_inv.
 have l :=  (@cvgM _ _ _ _ _ _ _ _ sum_top sum_inv).
 rewrite -fctM in l.
 have helper : min_val * (count_mem min_val v)%:R / (count_mem min_val v)%:R = min_val.
-move: non0. admit. (*simple*)
+  rewrite mulrK//=.
+  rewrite unitfE non0//=.
 rewrite helper in l.
-apply: l; rewrite.
-c(*bigID*) (*cvgD cvgM cvgV cvg_trans*)
+apply: l.
+(*bigID*) (*cvgD cvgM cvgV cvg_trans*)
 
 (*have : forall a, a \in v ->
        (a * expR (- p0 * min_dev a v))/
