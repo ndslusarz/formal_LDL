@@ -1,5 +1,4 @@
 From HB Require Import structures.
-From HB Require Import structures.
 Require Import Coq.Program.Equality.
 From mathcomp Require Import all_ssreflect all_algebra.
 From mathcomp Require Import lra.
@@ -8,17 +7,17 @@ From mathcomp Require Import reals ereal interval_inference.
 From mathcomp Require Import topology derive normedtype sequences
  exp measure lebesgue_measure lebesgue_integral hoelder finmap multiset.
 Require Import mathcomp_extra analysis_extra ldl fuzzy.
+
 Set Implicit Arguments.
 Unset Strict Implicit.
 Unset Printing Implicit Defensive.
 
-Import Num.Def Num.Theory GRing.Theory.
-Import Order.TTheory.
+Import Num.Def Num.Theory GRing.Theory Order.TTheory.
 Import numFieldTopology.Exports.
 
 (**md**************************************************************************)
 (* # Hypersequent calculi for fuzzy DLs: Lukasiewicz, product, Godel          *)
-(*  grouped by DL            *)
+(*  grouped by DL                                                             *)
 (*                                                                            *)
 (*                                                                            *)
 (*   connectives_axioms - mutual relations between logical connectives,       *)
@@ -34,26 +33,26 @@ Import numFieldTopology.Exports.
 (*                                                                            *)
 (* ## Godel                                                                   *)
 (*TO DO: FILL OUT                                                             *)
-(******************************************************************************) 
+(******************************************************************************)
 
 Reserved Notation "{[ e ]}" (format "{[  e  ]}").
 
-HB.instance Definition _ (R : realType) x y z v := 
-  @gen_choiceMixin (@expr R (Bool_T x y z v)). 
+HB.instance Definition _ (R : realType) x y z v :=
+  @gen_choiceMixin (@expr R (Bool_T x y z v)).
 
 Reserved Notation "Q |= P" (no associativity, at level 61).
 Reserved Notation "Q |- P" (no associativity, at level 61).
 
 Definition neg_impl_dl (R : realType) :=
-  forall f1 f2 (e : @expr R  (Bool_T_def impl_def f1 f2)), (`~ e) 
-     = (e `=> ldl_bool neg_def impl_def f1 f2 false).
+  forall f1 f2 (e : @expr R (Bool_T_def impl_def f1 f2)),
+    (`~ e) = (e `=> ldl_bool neg_def impl_def f1 f2 false).
 
 Definition true_false_dl (R : realType) :=
   forall f1 f2 f3,
     (@ldl_bool R neg_def f1 f2 f3  true) = (`~ ldl_bool neg_def f1 f2 f3 false).
 
-Definition mand_impl_dl (R : realType) := 
-  forall f (a b: @expr R (Bool_T_def impl_def m_def f)), (a `** b) = (`~ (a `=> `~b)).
+Definition mand_impl_dl (R : realType) :=
+  forall f (a b : @expr R (Bool_T_def impl_def m_def f)), (a `** b) = (`~ (a `=> `~b)).
 
 Definition mor_impl_dl (R : realType) :=
   forall f (a b : @expr R (Bool_T_def impl_def m_def f)), (a `++ b) = ((`~ a) `=> b).
@@ -61,12 +60,9 @@ Definition mor_impl_dl (R : realType) :=
 Section hypersequent_lukasiewicz.
 Local Open Scope ring_scope.
 Local Open Scope ldl_scope.
-Local Open Scope mset_scope. 
-
-Context {R : realType}.
-Context {K : choiceType}.
-Implicit Types  (A : {mset K}) (s : seq K).
-Variable p : R. 
+Context {R : realType} {K : choiceType}.
+Implicit Types (s : seq K).
+Variable p : R.
 Hypothesis p1 : 1 <= p.
 Local Notation "[[ e ]]_ l" := (@translation R l p _ e).
 
@@ -82,296 +78,204 @@ Reserved Notation "Q |- P" (no associativity, at level 61).
 Notation "Q |- P" := (Q, P).
 (*entailment as pair (A, B) where A |- B*)
 
-
 (*soundness for minimal implicational fragment*)
-Inductive seq_calc_luka_impl :  seq ( seq (@expr R (Bool_T_def impl_def m_def l_def))
-                                      * seq (@expr R (Bool_T_def impl_def m_def l_def)))
-      -> Prop :=
-| id_l : forall (Q :  seq ( seq (@expr R (Bool_T_def impl_def m_def l_def)) 
-                            * seq (@expr R (Bool_T_def impl_def m_def l_def))))
-                (A : seq (@expr R (Bool_T_def impl_def m_def l_def))),
+
+Let formula := @expr R (Bool_T_def impl_def m_def l_def).
+Let hypersequent := seq (seq formula * seq formula).
+
+Implicit Type Q P S : hypersequent.
+Implicit Type A B C D X Y : seq formula.
+
+Inductive seq_calc_luka_impl : hypersequent -> Prop :=
+| id_l : forall Q A,
     seq_calc_luka_impl ( (A |- A) :: Q)
-| empty : forall (Q :  seq ( seq (@expr R (Bool_T_def impl_def m_def l_def))
-                             * seq (@expr R (Bool_T_def impl_def m_def l_def)))),
+| empty : forall Q,
     seq_calc_luka_impl (([::] |- [::]) :: Q)
 (*structural*)
-| eex_l : forall (Q P S1 S2: seq ( seq (@expr R (Bool_T_def impl_def m_def l_def)) 
-                                   * seq (@expr R (Bool_T_def impl_def m_def l_def)))),
+| eex_l : forall Q P S1 S2,
     seq_calc_luka_impl (S1 ++ P ++ Q ++ S2) ->
     seq_calc_luka_impl (S1 ++ Q ++ P ++ S2)
-| ew_l : forall (Q P : seq ( seq (@expr R (Bool_T_def impl_def m_def l_def))
-                             * seq (@expr R (Bool_T_def impl_def m_def l_def)))),
+| ew_l : forall Q P,
     seq_calc_luka_impl Q ->
-    seq_calc_luka_impl (Q ++ P) 
-| ec_l : forall (Q P : seq ( seq (@expr R (Bool_T_def impl_def m_def l_def))
-                             * seq (@expr R (Bool_T_def impl_def m_def l_def)))),
+    seq_calc_luka_impl (Q ++ P)
+| ec_l : forall Q P,
     seq_calc_luka_impl (Q ++ P ++ P) ->
     seq_calc_luka_impl (Q ++ P)
-| w_l : forall (Q : seq ( seq (@expr R (Bool_T_def impl_def m_def l_def))
-                          * seq (@expr R (Bool_T_def impl_def m_def l_def))))
-                  (A B C : seq (@expr R (Bool_T_def impl_def m_def l_def))),
+| w_l : forall Q A B C,
     seq_calc_luka_impl ((A |- B) :: Q) ->
     seq_calc_luka_impl ((A ++ C |- B) :: Q)
-| split_l : forall (Q : seq ( seq (@expr R (Bool_T_def impl_def m_def l_def))
-                              * seq (@expr R (Bool_T_def impl_def m_def l_def))))
-                  (A B C D: seq (@expr R (Bool_T_def impl_def m_def l_def))),
+| split_l : forall Q A B C D,
     seq_calc_luka_impl (((A ++ B) |- (C ++ D)) :: Q) ->
     seq_calc_luka_impl ((A |- C) ::  (B |- D) :: Q)
-| mix_l : forall   (Q : seq ( seq (@expr R (Bool_T_def impl_def m_def l_def))
-                              * seq (@expr R (Bool_T_def impl_def m_def l_def))))
-                  (A B C D: seq (@expr R (Bool_T_def impl_def m_def l_def))),
+| mix_l : forall Q A B C D,
     seq_calc_luka_impl ((A |- C) :: Q) ->
     seq_calc_luka_impl ((B |- D) :: Q) ->
-    seq_calc_luka_impl (((A ++ B) |- (C ++ D)) :: Q)
-
+    seq_calc_luka_impl ((A ++ B |- C ++ D) :: Q)
 (*exchange*)
-| exL_l : forall (Q : seq ( seq (@expr R (Bool_T_def impl_def m_def l_def)) 
-                            * seq (@expr R (Bool_T_def impl_def m_def l_def))))
-                  (A B C X Y : seq (@expr R (Bool_T_def impl_def m_def l_def))),
-    seq_calc_luka_impl (((X ++ A ++ B ++ Y) |- C) :: Q) ->
-    seq_calc_luka_impl (((X ++ B ++ A ++ Y) |- C) :: Q) 
-| exR_l : forall (Q : seq ( seq (@expr R (Bool_T_def impl_def m_def l_def)) 
-                            * seq (@expr R (Bool_T_def impl_def m_def l_def))))
-                  (A B C X Y : seq (@expr R (Bool_T_def impl_def m_def l_def))),
-    seq_calc_luka_impl ((C |- (X ++ A ++ B ++ Y)) :: Q) ->
-    seq_calc_luka_impl ((C |- (X ++ B ++ A ++ Y)) :: Q)
+| exL_l : forall Q A B C X Y,
+    seq_calc_luka_impl ((X ++ A ++ B ++ Y |- C) :: Q) ->
+    seq_calc_luka_impl ((X ++ B ++ A ++ Y |- C) :: Q)
+| exR_l : forall Q A B C X Y,
+    seq_calc_luka_impl ((C |- X ++ A ++ B ++ Y) :: Q) ->
+    seq_calc_luka_impl ((C |- X ++ B ++ A ++ Y) :: Q)
 (*logical*)
 (*restricted to a single-conclusion case for Lukasiewicz*)
-| bot_l : forall Q
-                 (A : seq (@expr R (Bool_T_def impl_def m_def l_def)))
-                 (b : @expr R (Bool_T_def impl_def m_def l_def)),
+| bot_l : forall Q A (b : formula),
     seq_calc_luka_impl (((ldl_bool neg_def _ _ _ false :: A) |- [:: b]) :: Q)
-|implL_l : forall (Q : seq ( seq (@expr R (Bool_T_def impl_def m_def l_def))
-                             * seq (@expr R (Bool_T_def impl_def m_def l_def))))
-                   (A B : seq (@expr R (Bool_T_def impl_def m_def l_def)))
-                   (a b : @expr R (Bool_T_def impl_def m_def l_def)),
-    seq_calc_luka_impl ((( b :: B) |- a:: A) :: Q ) ->
+|implL_l : forall Q A B (a b : formula),
+    seq_calc_luka_impl (((b :: B) |- a:: A) :: Q ) ->
     seq_calc_luka_impl ((((a `=> b) :: B) |- A) :: Q)
-| implR_l : forall (Q : seq ( seq (@expr R (Bool_T_def impl_def m_def l_def))
-                              * seq (@expr R (Bool_T_def impl_def m_def l_def))))
-                 (A B : seq (@expr R (Bool_T_def impl_def m_def l_def)))
-                 (a b : @expr R (Bool_T_def impl_def m_def l_def)),
-    seq_calc_luka_impl ((A|- B) :: Q ) ->
-    seq_calc_luka_impl  ((a::A |- b :: B) :: Q)  ->
+| implR_l : forall Q A B (a b : formula),
+    seq_calc_luka_impl ((A |- B) :: Q ) ->
+    seq_calc_luka_impl  ((a :: A |- b :: B) :: Q)  ->
     seq_calc_luka_impl ((A |- (a `=> b) :: B) :: Q )
 (*standard lattice rules*)
-| andL_l : forall Q 
-                   (A B : seq (@expr R (Bool_T_def impl_def m_def l_def)))
-                   (a b : @expr R (Bool_T_def impl_def m_def l_def)),
+| andL_l : forall Q A B (a b : formula),
     seq_calc_luka_impl (((a :: B) |- A) :: ((b :: B) |- A):: Q ) ->
-    seq_calc_luka_impl ((((a `/\ b) :: B) |- A) :: Q) 
-| andR_l : forall (Q : seq ( seq (@expr R (Bool_T_def impl_def m_def l_def))
-                               * seq (@expr R (Bool_T_def impl_def m_def l_def))))
-                  (A B : seq (@expr R (Bool_T_def impl_def m_def l_def)))
-                  (a b : @expr R (Bool_T_def impl_def m_def l_def)),
-    seq_calc_luka_impl ( (A |- a :: B) :: Q ) ->
-    seq_calc_luka_impl ( (A |- b :: B) :: Q) ->
+    seq_calc_luka_impl ((((a `/\ b) :: B) |- A) :: Q)
+| andR_l : forall Q A B (a b : formula),
+    seq_calc_luka_impl ((A |- a :: B) :: Q) ->
+    seq_calc_luka_impl ((A |- b :: B) :: Q) ->
     seq_calc_luka_impl ((A |-  (a `/\ b) :: B) :: Q )
-| orL_l : forall  Q
-                  (A B : seq (@expr R (Bool_T_def impl_def m_def l_def)))
-                  (a b : @expr R (Bool_T_def impl_def m_def l_def)),
-    seq_calc_luka_impl ( ((b :: A) |- B) :: Q) ->
-    seq_calc_luka_impl ( ((a :: A) |- B) :: Q) ->
+| orL_l : forall  Q A B (a b : formula),
+    seq_calc_luka_impl (((b :: A) |- B) :: Q) ->
+    seq_calc_luka_impl (((a :: A) |- B) :: Q) ->
     seq_calc_luka_impl (((a `\/ b) :: A |- B) :: Q)
-| orR_l : forall Q
-                  (A B : seq (@expr R (Bool_T_def impl_def m_def l_def)))
-                  (a b : @expr R (Bool_T_def impl_def m_def l_def)),
+| orR_l : forall Q A B (a b : formula),
     seq_calc_luka_impl (( A |- a :: B ) :: ( A |- b :: B) :: Q ) ->
     seq_calc_luka_impl (( A |- (a `\/ b) :: B) :: Q) .
 
-Inductive seq_calc_luka :  seq ( seq (@expr R (Bool_T_def impl_def m_def l_def))
-                                  * seq (@expr R (Bool_T_def impl_def m_def l_def)))
-      -> Prop :=
-| id_l' : forall (Q :  seq ( seq (@expr R (Bool_T_def impl_def m_def l_def))
-                             * seq (@expr R (Bool_T_def impl_def m_def l_def))))
-                (A : seq (@expr R (Bool_T_def impl_def m_def l_def))),
-    seq_calc_luka ( (A |- A) :: Q)
-| empty' : forall (Q :  seq ( seq (@expr R (Bool_T_def impl_def m_def l_def)) 
-                              * seq (@expr R (Bool_T_def impl_def m_def l_def)))),
+Inductive seq_calc_luka : hypersequent -> Prop :=
+| id_l' : forall Q A,
+    seq_calc_luka ((A |- A) :: Q)
+| empty' : forall Q,
     seq_calc_luka (([::] |- [::]) :: Q)
 (*structural*)
-| eex_l' : forall (Q P S1 S2: seq ( seq (@expr R (Bool_T_def impl_def m_def l_def)) 
-                                    * seq (@expr R (Bool_T_def impl_def m_def l_def)))),
+| eex_l' : forall Q P S1 S2,
     seq_calc_luka (S1 ++ P ++ Q ++ S2) ->
     seq_calc_luka (S1 ++ Q ++ P ++ S2)
-| ew_l' : forall (Q P : seq ( seq (@expr R (Bool_T_def impl_def m_def l_def))
-                              * seq (@expr R (Bool_T_def impl_def m_def l_def)))),
+| ew_l' : forall Q P,
     seq_calc_luka Q ->
-    seq_calc_luka (Q ++ P) 
-| ec_l' : forall (Q P : seq ( seq (@expr R (Bool_T_def impl_def m_def l_def))
-                              * seq (@expr R (Bool_T_def impl_def m_def l_def)))),
+    seq_calc_luka (Q ++ P)
+| ec_l' : forall Q P,
     seq_calc_luka (Q ++ P ++ P) ->
     seq_calc_luka (Q ++ P)
-| w_l' : forall (Q : seq ( seq (@expr R (Bool_T_def impl_def m_def l_def))
-                           * seq (@expr R (Bool_T_def impl_def m_def l_def))))
-                  (A B C : seq (@expr R (Bool_T_def impl_def m_def l_def))),
+| w_l' : forall Q A B C,
     seq_calc_luka ((A |- B) :: Q) ->
     seq_calc_luka ((A ++ C |- B) :: Q)
-| split_l' : forall (Q : seq ( seq (@expr R (Bool_T_def impl_def m_def l_def)) 
-                               * seq (@expr R (Bool_T_def impl_def m_def l_def))))
-                  (A B C D: seq (@expr R (Bool_T_def impl_def m_def l_def))),
-    seq_calc_luka (((A ++ B) |- (C ++ D)) :: Q) ->
+| split_l' : forall Q A B C D,
+    seq_calc_luka ((A ++ B |- (C ++ D)) :: Q) ->
     seq_calc_luka ((A |- C) ::  (B |- D) :: Q)
-| mix_l' : forall   (Q : seq ( seq (@expr R (Bool_T_def impl_def m_def l_def)) 
-                               * seq (@expr R (Bool_T_def impl_def m_def l_def))))
-                  (A B C D: seq (@expr R (Bool_T_def impl_def m_def l_def))),
+| mix_l' : forall Q A B C D,
     seq_calc_luka ((A |- C) :: Q) ->
     seq_calc_luka ((B |- D) :: Q) ->
-    seq_calc_luka (((A ++ B) |- (C ++ D)) :: Q)
-| exL_l' : forall (Q : seq ( seq (@expr R (Bool_T_def impl_def m_def l_def)) 
-                             * seq (@expr R (Bool_T_def impl_def m_def l_def))))
-                  (A B C X Y : seq (@expr R (Bool_T_def impl_def m_def l_def))),
-    seq_calc_luka (((X ++ A ++ B ++ Y) |- C) :: Q) ->
-    seq_calc_luka (((X ++ B ++ A ++ Y) |- C) :: Q) 
-| exR_l' : forall (Q : seq ( seq (@expr R (Bool_T_def impl_def m_def l_def)) 
-                             * seq (@expr R (Bool_T_def impl_def m_def l_def))))
-                  (A B C X Y : seq (@expr R (Bool_T_def impl_def m_def l_def))),
-    seq_calc_luka ((C |- (X ++ A ++ B ++ Y)) :: Q) ->
-    seq_calc_luka ((C |- (X ++ B ++ A ++ Y)) :: Q)
+    seq_calc_luka ((A ++ B |- (C ++ D)) :: Q)
+| exL_l' : forall Q A B C X Y,
+    seq_calc_luka ((X ++ A ++ B ++ Y |- C) :: Q) ->
+    seq_calc_luka ((X ++ B ++ A ++ Y |- C) :: Q)
+| exR_l' : forall Q A B C X Y,
+    seq_calc_luka ((C |- X ++ A ++ B ++ Y) :: Q) ->
+    seq_calc_luka ((C |- X ++ B ++ A ++ Y) :: Q)
 (*logical*)
 (*both are restricted to a single-conclusion case for Lukasiewicz*)
-| bot_l' : forall Q 
-                 (A : {mset (@expr R (Bool_T_def impl_def m_def l_def))})
-                 (b : @expr R (Bool_T_def impl_def m_def l_def)),
+| bot_l' : forall Q A (b : formula),
     seq_calc_luka (((ldl_bool neg_def _ _ _ false :: A) |- [:: b]) :: Q)
-| top_l' : forall Q 
-                 (A : seq (@expr R (Bool_T_def impl_def m_def l_def))),
+| top_l' : forall Q A,
     seq_calc_luka ((A |- [:: (ldl_bool neg_def _ _ _  true)]) :: Q)
-| mandL_l' : forall (Q : seq ( seq (@expr R (Bool_T_def impl_def m_def l_def))
-                             * seq (@expr R (Bool_T_def impl_def m_def l_def))))
-                   (A B : seq (@expr R (Bool_T_def impl_def m_def l_def)))
-                   (a b : @expr R (Bool_T_def impl_def m_def l_def)),
-    seq_calc_luka (((a ::  b :: B) |- A) :: Q ) ->
-    seq_calc_luka (((ldl_bool neg_def _ _ _ false :: B) |- A) :: Q ) ->
+| mandL_l' : forall Q A B (a b : formula),
+    seq_calc_luka (((a :: b :: B) |- A) :: Q ) ->
+    seq_calc_luka ((ldl_bool neg_def _ _ _ false :: B |- A) :: Q ) ->
     seq_calc_luka ((((a `** b) :: B) |- A) :: Q)
-| mandR_l' : forall (Q : seq ( seq (@expr R (Bool_T_def impl_def m_def l_def)) 
-                              * seq (@expr R (Bool_T_def impl_def m_def l_def))))
-                 (A B : seq (@expr R (Bool_T_def impl_def m_def l_def)))
-                 (a b : @expr R (Bool_T_def impl_def m_def l_def)),
-    seq_calc_luka ((A |- B) :: Q ) -> (*not needed for soundness, but this is needed
-                                         for this rule to be derivable*)
+| mandR_l' : forall Q A B (a b : formula),
+    seq_calc_luka ((A |- B) :: Q ) -> (*not needed for soundness,
+                                        but this is needed for this rule
+                                        to be derivable*)
     seq_calc_luka  ((A |- (a ::  b :: B)) :: (A |- (ldl_bool neg_def _ _ _ false :: B)) :: Q)  ->
     seq_calc_luka ((A |- (a `** b) :: B) :: Q )
-| negL_l' : forall (Q : seq ( seq (@expr R (Bool_T_def impl_def m_def l_def))
-                              * seq (@expr R (Bool_T_def impl_def m_def l_def))))
-                 (A B : seq (@expr R (Bool_T_def impl_def m_def l_def)))
-                 (a : @expr R (Bool_T_def impl_def m_def l_def)),
+| negL_l' : forall Q A B (a : formula),
     seq_calc_luka (((ldl_bool neg_def _ _ _ false :: A) |-  a :: B) :: Q) ->
     seq_calc_luka ((((`~ a) :: A) |- B) :: Q)
-| negR_l' : forall (Q : seq ( seq (@expr R (Bool_T_def impl_def m_def l_def))
-                              * seq (@expr R (Bool_T_def impl_def m_def l_def))))
-                 (A B : seq (@expr R (Bool_T_def impl_def m_def l_def)))
-                 (a : @expr R (Bool_T_def impl_def m_def l_def)),
+| negR_l' : forall Q A B (a : formula),
     seq_calc_luka ( ( A |- B):: Q) ->
     seq_calc_luka (((a :: A) |-  ldl_bool neg_def _ _ _ false :: B)::Q) ->
-    seq_calc_luka ((A |-  (`~a) :: B)::Q)
-| morL_l' : forall (Q : seq ( seq (@expr R (Bool_T_def impl_def m_def l_def)) 
-                             * seq (@expr R (Bool_T_def impl_def m_def l_def))))
-                 (A B : seq (@expr R (Bool_T_def impl_def m_def l_def)))
-                 (a b: @expr R (Bool_T_def impl_def m_def l_def)),
-    seq_calc_luka ( ( A |- B):: Q) -> 
-    seq_calc_luka (((a :: b :: A) |-  ldl_bool neg_def _ _ _ false :: B) :: Q) ->
+    seq_calc_luka ((A |-  (`~a) :: B) :: Q)
+| morL_l' : forall Q A B (a b : formula),
+    seq_calc_luka (( A |- B) :: Q) ->
+    seq_calc_luka (((a :: b :: A) |- ldl_bool neg_def _ _ _ false :: B) :: Q) ->
     seq_calc_luka ((((a `++ b) :: A) |- B) :: Q)
-| morR_l' : forall (Q : seq ( seq (@expr R (Bool_T_def impl_def m_def l_def))
-                             * seq (@expr R (Bool_T_def impl_def m_def l_def))))
-                 (A B : seq (@expr R (Bool_T_def impl_def m_def l_def)))
-                 (a b: @expr R (Bool_T_def impl_def m_def l_def)),
-    seq_calc_luka ((A |- B):: Q) -> 
+| morR_l' : forall Q A B (a b : formula),
+    seq_calc_luka ((A |- B):: Q) ->
     seq_calc_luka (((ldl_bool neg_def _ _ _ false :: A) |-  a :: b :: B) :: Q) ->
-    seq_calc_luka ((( A) |- (a `++ b) :: B) :: Q)
-| andL_l' : forall Q 
-                   (A B : seq (@expr R (Bool_T_def impl_def m_def l_def)))
-                   (a b : @expr R (Bool_T_def impl_def m_def l_def)),
-    seq_calc_luka (((a :: B) |- A) :: ((b :: B) |- A):: Q ) ->
-    seq_calc_luka ((((a `/\ b) :: B) |- A) :: Q) 
-| andR_l' : forall (Q : seq ( seq (@expr R (Bool_T_def impl_def m_def l_def))
-                               * seq (@expr R (Bool_T_def impl_def m_def l_def))))
-                  (A B : seq (@expr R (Bool_T_def impl_def m_def l_def)))
-                  (a b : @expr R (Bool_T_def impl_def m_def l_def)),
-    seq_calc_luka ( (A |- a :: B) :: Q ) ->
-    seq_calc_luka ( (A |- b :: B) :: Q) ->
-    seq_calc_luka ((A |- (a `/\ b) :: B) :: Q )
-| orL_l' : forall  Q
-                  (A B : seq (@expr R (Bool_T_def impl_def m_def l_def)))
-                  (a b : @expr R (Bool_T_def impl_def m_def l_def)),
-    seq_calc_luka ( ((b :: A) |- B) :: Q) ->
-    seq_calc_luka ( ((a :: A) |- B) :: Q) ->
+    seq_calc_luka ((A |- (a `++ b) :: B) :: Q)
+| andL_l' : forall Q A B (a b : formula),
+    seq_calc_luka (((a :: B) |- A) :: ((b :: B) |- A) :: Q) ->
+    seq_calc_luka ((((a `/\ b) :: B) |- A) :: Q)
+| andR_l' : forall Q A B (a b : formula),
+    seq_calc_luka ((A |- a :: B) :: Q ) ->
+    seq_calc_luka ((A |- b :: B) :: Q) ->
+    seq_calc_luka ((A |- (a `/\ b) :: B) :: Q)
+| orL_l' : forall Q A B (a b : formula),
+    seq_calc_luka (((b :: A) |- B) :: Q) ->
+    seq_calc_luka (((a :: A) |- B) :: Q) ->
     seq_calc_luka (((a `\/ b) :: A |- B) :: Q)
-| orR_l' : forall Q
-                  (A B : seq (@expr R (Bool_T_def impl_def m_def l_def)))
-                  (a b : @expr R (Bool_T_def impl_def m_def l_def)),
+| orR_l' : forall Q A B (a b : formula),
     seq_calc_luka (( A |- a :: B ) :: ( A |- b :: B) :: Q ) ->
     seq_calc_luka (( A |- (a `\/ b) :: B ) :: Q).
 
-Definition eval_luka (Q : seq (@expr R (Bool_T_def impl_def m_def l_def)))
-  := 1%R + (\sum_(i <- Q) ([[i]]_Lukasiewicz - 1%R)).
+Definition eval_luka A := 1%R + \sum_(i <- A) ([[i]]_Lukasiewicz - 1%R).
 
-Lemma eval_luka_add_el (Q : seq (@expr R (Bool_T_def impl_def m_def l_def)))
-                       (q : (@expr R (Bool_T_def impl_def m_def l_def))) :
-  eval_luka (q :: Q) = eval_luka Q + [[q]]_Lukasiewicz  - 1.
+Lemma eval_luka_add_el A (a : formula) :
+  eval_luka (a :: A) = eval_luka A + [[a]]_Lukasiewicz  - 1.
 Proof. by rewrite /eval_luka//= big_cons//=; lra. Qed.
 
-Lemma eval_luka_add (Q P : seq (@expr R (Bool_T_def impl_def m_def l_def))) :
-  eval_luka (P ++ Q) = eval_luka P + eval_luka Q  - 1.
+Lemma eval_luka_add A B : eval_luka (A ++ B) = eval_luka A + eval_luka B  - 1.
 Proof.
 rewrite /eval_luka/= big_cat/= -!addrA; congr (_ + (_ + _)).
 by rewrite addrCA subrr addr0.
 Qed.
 
-Lemma eval_luka1 (Q : seq (@expr R (Bool_T_def impl_def m_def l_def))):
-  eval_luka Q <= 1.
+Lemma eval_luka1 A : eval_luka A <= 1.
 Proof.
 rewrite /eval_luka gerDl sumr_le0//= => i _.
 rewrite subr_le0.
 by have /andP[] := @translate_Bool_T_01 R _ p1 Lukasiewicz _ _ _ i.
 Qed.
 
-Lemma sound_luka_impl (Q : seq (seq (@expr R (Bool_T_def impl_def m_def l_def))
-                              * seq (@expr R (Bool_T_def impl_def m_def l_def)))):
-  seq_calc_luka_impl Q -> 
-  exists (q : seq (@expr R (Bool_T_def impl_def m_def l_def)) *
-              seq (@expr R (Bool_T_def impl_def m_def l_def))),
-  q \in Q /\ eval_luka (fst q) <= eval_luka (snd q).
+Lemma sound_luka_impl Q : seq_calc_luka_impl Q ->
+  exists2 q : seq formula * seq formula,
+  q \in Q & eval_luka q.1 <= eval_luka q.2.
 Proof.
 intros; rewrite//=. dependent induction H.
-- exists (A |- A). rewrite //= mem_head. split. by [].
-  simpl. by lra.
-- exists ([::] |- [::]). 
-  rewrite mem_head.  split. by []. 
-  rewrite /eval_luka//=.
-- destruct IHseq_calc_luka_impl as [M [IH1 IH2]]. 
-  exists M. 
-  rewrite !mem_cat //= in IH1.
-  rewrite !mem_cat. split; first last.
-  by rewrite IH2//=. move/orP: IH1.
-  move => [IH1 | /orP IH1].
-  rewrite IH1//=.
-  destruct IH1 as [IH1 | IH1].
-  rewrite IH1 !orbT//=.
-  move/orP: IH1.
-  move => [IH1 | IH1]; rewrite IH1 ?orTb ?orbT//=.
-- destruct IHseq_calc_luka_impl as [q [IH1 IH2]].
-  exists q. rewrite mem_cat IH1 orTb.
-  split. by []. 
-  by apply IH2.
-- destruct IHseq_calc_luka_impl as [M [IH1 IH2]].   
-  exists M. rewrite !mem_cat in IH1. 
-  rewrite mem_cat. move/orP : IH1. 
-  move => [h |/orP h].  rewrite h ?orbT; split; rewrite//=. 
-  move: h. move => [h | h]; rewrite h ?orbT; split; rewrite//=.
-- move: IHseq_calc_luka_impl => [q [+ IH2]].
+- by exists (A |- A) => //; rewrite mem_head.
+- by exists ([::] |- [::]).
+- case: IHseq_calc_luka_impl => [M].
+  rewrite !mem_cat => -[IH1 IH2].
+  exists M => //.
+  rewrite !mem_cat.
+  move/orP: IH1 => [->// |/orP].
+  case => [-> |]; first by rewrite !orbT.
+  by move/orP => [|] ->; rewrite ?(orTb,orbT).
+- destruct IHseq_calc_luka_impl as [q IH1 IH2].
+  by exists q => //; rewrite mem_cat IH1 orTb.
+- destruct IHseq_calc_luka_impl as [M IH1 IH2].
+  exists M => //; rewrite !mem_cat in IH1.
+  rewrite mem_cat. move/orP : IH1.
+  move => [h |/orP h].
+    rewrite h ?orbT; split; rewrite//=.
+  by move: h => [h | h]; rewrite h ?orbT; split; rewrite//=.
+- move: IHseq_calc_luka_impl => [q + IH2].
   rewrite in_cons => /predU1P[h|h].
-  + exists (A ++ C |- B).
-    subst. rewrite //= in IH2.
-    rewrite in_cons eq_refl orTb. split. by [].
+  + exists (A ++ C |- B) => //; subst.
+      rewrite //= in IH2.
+      by rewrite in_cons eq_refl orTb//.
     rewrite //= eval_luka_add.
     have hc := eval_luka1 C.
     lra.
-  + exists q.
-    by rewrite in_cons h IH2 orbT.
-- move: IHseq_calc_luka_impl => [q1 [+ IH2]].
+  + exists q => //.
+    by rewrite in_cons h orbT.
+- move: IHseq_calc_luka_impl => [q1 + IH2].
   rewrite in_cons => /orP[h1|h2]; first last.
-  + by exists q1; rewrite !in_cons h2 !orbT.
+  + by exists q1 => //; rewrite !in_cons h2 !orbT.
   + move/eqP in h1.
     subst. rewrite !eval_luka_add in IH2.
     have helper :
@@ -381,10 +285,10 @@ intros; rewrite//=. dependent induction H.
     apply helper in IH2.
     clear helper.
     have /orP[h1|h1] := le_total (1 + eval_luka B) (1 + eval_luka D).
-    * exists (B |- D). split.
+    * exists (B |- D).
       - by rewrite !in_cons eq_refl !orbT.
       - by rewrite  //=; lra.
-    * exists (A |- C). split => /=.
+    * exists (A |- C) => /=.
       - by rewrite !in_cons eq_refl !orTb.
       - rewrite lerD2l -subr_ge0 in h1.
         have helper2 (A' B' C' D' : R) : 0 <= B' - D' ->
@@ -393,26 +297,26 @@ intros; rewrite//=. dependent induction H.
           by intros; lra.
         have hh := helper2 (eval_luka A) (eval_luka B) (eval_luka C) (eval_luka D).
         by rewrite (hh h1 IH2).
-- destruct IHseq_calc_luka_impl1 as [q1 [IH11 IH12]].
-  destruct IHseq_calc_luka_impl2 as [q2 [IH21 IH22]].
+- destruct IHseq_calc_luka_impl1 as [q1 IH11 IH12].
+  destruct IHseq_calc_luka_impl2 as [q2 IH21 IH22].
   rewrite in_cons in IH11. rewrite in_cons in IH21.
   move/orP : IH11. move/orP: IH21.
   move => [/eqP h2 | h2]; move => [/eqP h1 | h1].
-  + exists (A ++ B |- C ++ D).
-    rewrite mem_head. split. by [].
+  + exists (A ++ B |- C ++ D) => //.
+    by rewrite mem_head.
     subst.
     rewrite /= in IH12.
     rewrite /= in IH22.
     rewrite /=.
     have IH := lerD IH12 IH22.
     rewrite !eval_luka_add. lra.
-  + by exists q1; rewrite in_cons h1 IH12 orbT.
-  + by exists q2; rewrite in_cons h2 IH22 orbT.
-  + by exists q1; rewrite in_cons h1 IH12 orbT.
+  + by exists q1 => //; rewrite in_cons h1 orbT.
+  + by exists q2 => //; rewrite in_cons h2 orbT.
+  + by exists q1 => //; rewrite in_cons h1 orbT.
 - case: IHseq_calc_luka_impl => [q [+ IH2]].
   rewrite in_cons => /predU1P[h | h].
-  + subst. exists ((X ++ B ++ A ++ Y |- C)).
-    rewrite mem_head. split. by [].
+  + subst. exists ((X ++ B ++ A ++ Y |- C)) => //.
+    by rewrite mem_head.
     rewrite//= !eval_luka_add in IH2.
     rewrite//= !eval_luka_add. lra.
   + by exists q; rewrite in_cons h IH2 orbT.
@@ -1679,7 +1583,7 @@ intros; rewrite//=. dependent induction H.
       by intros; nra.
       exact hA'.
     * rewrite mul1r.
-      have ha := @translate_Bool_T_01 R p p1 product _ _ _ (a). 
+      have ha := @translate_Bool_T_01 R p p1 product _ _ _ a. 
       have ha1 : forall (x : R),  (x < 1) = false -> 
                  0 <= x <= 1 ->
                  x = 1. intros; lra.
