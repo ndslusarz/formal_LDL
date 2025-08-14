@@ -305,9 +305,9 @@ Local Open Scope ring_scope.
 Local Open Scope classical_set_scope.
 
 Lemma cvg_sum {K : numFieldType} {V : pseudoMetricNormedZmodType K}
-  {T : Type} (F : set_system T) (A : Type) (v : seq A) (P : pred A) : Filter F ->
+  {T : Type} (F : set_system T) (A : eqType) (v : seq A) (P : pred A) : Filter F ->
   forall (f : A -> T -> V) (a : V),
-  (forall i, P i -> f i x @[x --> F] --> a) ->
+  (forall (i : A), P i ->  f i x @[x --> F] --> a) ->
   \sum_(i <- v | P i) f i x @[x --> F] --> \sum_(i <- v | P i) a.
 Proof.
 elim: v => [FF f a fa|h t IH FF f a fa].
@@ -331,19 +331,103 @@ Variables (nu : R) (M : nat).
 
 Local Notation seq_of_rV := (@MatrixFormula.seq_of_rV _ M.+1).
 
-Lemma min_dev0 a (v : seq R) :
-  (forall x, x \in v -> x >= a) ->
-  min_dev a v = 0.
+Lemma in_minr (v : seq R) :
+  v != [::] -> (\big[minr/head 0 v]_(i <- v) i) \in v.
 Proof.
-move => x.
-rewrite /min_dev.
-have div0 : forall (p r : R), r != 0 -> p/r = 0 -> p = 0.  
-move=> r_neq0 H.
+Admitted.
+
+Lemma a_ge_min : forall (x : seq R) (i : R), i \in x ->
+                      x != [::] ->
+                      i - \big[minr/i]_(j <- x) j >= 0.
+      move => x i. elim x => i' x0; rewrite //= in_cons big_cons.
+      move => IH /orP [/eqP ii | ix] _; rewrite//=.  
+      - rewrite ii.
+        rewrite {1}/minr; case: ifP => h; lra.
+      - rewrite {1}/minr; case: ifP => h; try lra.
 
 Admitted.
 
 
+Lemma stl_and_gt0_cvg_infty (p : R) (v : seq R)  : 
+  v != [::] ->
+  (forall x, x \in v -> x >= 0) ->
+  (stl_and_gt0 p v) @[p --> +oo] --> \big[minr/head 0 v]_(i <- v) i.
+Proof.
+move => vnil v0.
+rewrite /stl_and_gt0.
+set min_val := \big[minr/head``_v]_(i <- v) i.
+have sum_spl1 : forall (x : R),   \sum_(a <- v) a * expR (- x * min_dev a v)
+  =  \sum_(a <- v | a == min_val) a  * expR (- x * min_dev a v)
+    + \sum_(a <- v | a != min_val) a * expR (- x * min_dev a v). move => x0.
+  by rewrite (bigID (fun a => a == min_val)).
+(*top sum*)
+have sum_top : (\sum_(a <- v) a * expR (- p0 * min_dev a v)) @[p0 --> +oo] --> 
+              (min_val) * (\sum_(a <- v | a == min_val) 1)%:R. 
+  apply/cvgrPdist_le => /= e e0.
+  near=> t.
+  rewrite sum_spl1.
+  near: t; move: e e0; apply/cvgrPdist_le.
+  (*top sum non-minimum elements*)
+  have big_seq_cond_neq : forall t, (\sum_(a <- v | a != min_val) a * expR (- t * min_dev a v))%R = 
+                        (\sum_(a <- v | (a \in v) && (a != min_val)) a * expR (- t * min_dev a v))%R.
+    by move => t; rewrite big_seq_cond//=.
+  have sum_top_rest : 
+      (\sum_(a <- v | a != min_val) a * expR (- t * min_dev a v))%R @[t --> +oo] --> 0.
+    rewrite [X in _ --> X](_ : _ = \sum_(a <- v | a != min_val) 0); last first.
+      by rewrite big1.
+    apply/cvgrPdist_le => /= e e0.
+    near=> t.
+    rewrite big_seq_cond_neq big_seq_cond.
+    near: t; move: e e0; apply/cvgrPdist_le.
+    apply: cvg_sum => a /andP [av amin].
+    rewrite -(mulr0 a).
+    apply: cvgM => //.
+      exact: cvg_cst.
+    apply: (@cvg_comp _ _ _ _ _ _ -oo).
+    - admit. (*mathematically yes. formalisation wise I need patience*)
+    - rewrite cvgNy_compNP. 
+      by apply: cvgr_expR.
+  rewrite -(addr0 (min_val * (\sum_(a <- v | a == min_val) 1)%:R)).
+  apply: cvgD; last by exact sum_top_rest.
+  have big_seq_cond_eq : forall t, (\sum_(a <- v | a == min_val) a * expR (- t * min_dev a v))%R = 
+                        (\sum_(a <- v | (a \in v) && (a == min_val)) a * expR (- t * min_dev a v))%R.
+  by move => t; rewrite big_seq_cond//=.
+  apply/cvgrPdist_le => /= e e0.
+    near=> t.
+  rewrite big_seq_cond_eq big_seq_cond. 
+  near: t; move: e e0; apply/cvgrPdist_le.
+  rewrite [X in _ --> X](_ : _ = (\sum_(i <- v | (i \in v) && (i == min_val)) min_val)); last first.
+      admit.
+    apply: cvg_sum => a /andP [av /eqP amin].
+    rewrite /min_dev amin.
+  admit.
+(*bottom sum*)
+have sum_spl2 : forall (x : R),   (\sum_(a <- v) expR (- x * min_dev a v))
+  = \sum_(a <- v | a == min_val) expR (- x * min_dev a v)
+    + \sum_(a <- v | a != min_val) expR (- x* min_dev a v). move => x0.
+  by rewrite (bigID (fun a => a == min_val)).
+have sum_bot : (\sum_(a <- v) expR (- p0 * min_dev a v)) @[p0 --> +oo] --> 
+                 ((\sum_(a <- v | a == min_val) 1)%:R : R).
+  apply/cvgrPdist_le => /= e e0.
+  near=> t.
+  rewrite sum_spl2.
+  admit.
+have non0 : ((\sum_(a <- v | a == min_val) 1)%:R : R) != 0.
 
+admit.
+have sum_inv : (\sum_(a <- v) expR (- p0 * min_dev a v))^-1 @[p0 --> +oo] --> 
+                  ((\sum_(a <- v | a == min_val) 1)%:R : R)^-1.
+  apply: cvgV.
+  - rewrite non0//=. 
+  - exact sum_bot.
+have l :=  (@cvgM _ _ _ _ _ _ _ _ sum_top sum_inv).
+rewrite -fctM in l.
+have helper : min_val * (\sum_(a <- v | a == min_val) 1)%:R / (\sum_(a <- v | a == min_val) 1)%:R = min_val.
+  rewrite mulrK//=.
+  rewrite unitfE non0//=.
+rewrite helper in l.
+apply: l.
+Admitted.
 
 Lemma stl_and_gt0_cvg_infty b (p : R) (v : seq R)  : 
   b > 0 -> v != [::] ->
@@ -373,6 +457,16 @@ have sum_top : (\sum_(a <- v) a * expR (- p0 * min_dev a v)) @[p0 --> +oo] -->
     rewrite -(mulr0 a).
     apply: cvgM => //.
       exact: cvg_cst.
+    have min' : forall (x y : R) (w : seq R), 0 < y ->
+                              w != [::] -> (forall j, j \in w -> j >= x) ->
+                              x != \big[minr/x]_(i <- w) i -> x > \big[minr/x]_(i <- w) i. {
+      move => x y w y0.
+      case: w => //= a' l' _ h. 
+      rewrite !big_cons. {1}/minr {3}/minr. repeat case: ifP => h1 h2.
+      lra.
+}
+    have min_ge : min_dev a v > 0.
+      rewrite /min_dev. move: v0 vb. case: v.
     (* use cvg_comp and cvgr_expR *)
     admit.
     (*how to get the condition from the sum?*)
@@ -384,27 +478,20 @@ have sum_spl2 : forall (x : R),   (\sum_(a <- v) expR (- x * min_dev a v))
     + \sum_(a <- v | a != min_val) expR (- x* min_dev a v). move => x0.
   by rewrite (bigID (fun a => a == min_val)).
 have sum_bot : (\sum_(a <- v) expR (- p0 * min_dev a v)) @[p0 --> +oo] --> 
-                 min_val * 0+ (count_mem min_val v)%:R.
-(*so I know the left side of this addition is 0 and it's not a smart solution but I could not
- find a way to cast the count_mem to the right type so I left it as a question*)
-  rewrite mulr0 add0r. (*delete when fixing the sum_bot*)
+                 ((count_mem min_val v)%:R : R).
   apply/cvgrPdist_le => /= e e0.
   near=> t.
   rewrite sum_spl2.
   admit.
-rewrite mulr0 add0r in sum_bot. (*delete when fixing the sum_bot*)
 have non0 : (count_mem min_val v)%:R != 0.
   move => t0. destruct v; rewrite/min_val //=. rewrite !big_cons.
 
 admit.
 have sum_inv : (\sum_(a <- v) expR (- p0 * min_dev a v))^-1 @[p0 --> +oo] --> 
-                  min_val * 0 + ((count_mem min_val v)%:R)^-1.
-(*again, the same rather stupid patch job, to fix, same typing problem*)
-  rewrite mulr0 add0r. (*delete when fixing the sum_bot*)
+                  ((count_mem min_val v)%:R : R)^-1.
   apply: cvgV.
   - rewrite non0//=. 
   - exact sum_bot.
-rewrite mulr0 add0r in sum_inv.
 have l :=  (@cvgM _ _ _ _ _ _ _ _ sum_top sum_inv).
 rewrite -fctM in l.
 have helper : min_val * (count_mem min_val v)%:R / (count_mem min_val v)%:R = min_val.
