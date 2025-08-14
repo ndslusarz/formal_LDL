@@ -301,6 +301,28 @@ Qed.
 
 End stl_lemmas.
 
+Local Open Scope ring_scope.
+Local Open Scope classical_set_scope.
+
+Lemma cvg_sum {K : numFieldType} {V : pseudoMetricNormedZmodType K}
+  {T : Type} (F : set_system T) (A : Type) (v : seq A) (P : pred A) : Filter F ->
+  forall (f : A -> T -> V) (a : V),
+  (forall i, P i -> f i x @[x --> F] --> a) ->
+  \sum_(i <- v | P i) f i x @[x --> F] --> \sum_(i <- v | P i) a.
+Proof.
+elim: v => [FF f a fa|h t IH FF f a fa].
+  rewrite big_nil.
+  under eq_fun do rewrite big_nil.
+  exact: cvg_cst.
+rewrite big_cons.
+under eq_fun do rewrite big_cons.
+case: ifPn => Ph.
+  apply: cvgD.
+    exact: fa.
+  exact: IH.
+exact: IH.
+Qed.
+
 Section stl_and_conv_lattice.
 Local Open Scope ring_scope.
 Local Open Scope classical_set_scope.
@@ -319,6 +341,8 @@ have div0 : forall (p r : R), r != 0 -> p/r = 0 -> p = 0.
 move=> r_neq0 H.
 
 Admitted.
+
+
 
 
 Lemma stl_and_gt0_cvg_infty b (p : R) (v : seq R)  : 
@@ -341,15 +365,19 @@ have sum_top : (\sum_(a <- v) a * expR (- p0 * min_dev a v)) @[p0 --> +oo] -->
   rewrite sum_spl1.
   near: t; move: e e0; apply/cvgrPdist_le.
   (*top sum non-minimum elements*)
-  have sum_top_rest : 
-    (\sum_(a <- v | a != min_val) a * expR (- t * min_dev a v))%R @[t --> nbhs +oo] --> 0.
-    (*how to get the condition from the sum?*)
+  have sum_top_rest :
+      (\sum_(a <- v | a != min_val) a * expR (- t * min_dev a v))%R @[t --> +oo] --> 0.
+    rewrite [X in _ --> X](_ : _ = \sum_(a <- v | a != min_val) 0); last first.
+      by rewrite big1.
+    apply: cvg_sum => a amin_dev.
+    rewrite -(mulr0 a).
+    apply: cvgM => //.
+      exact: cvg_cst.
+    (* use cvg_comp and cvgr_expR *)
     admit.
-
+    (*how to get the condition from the sum?*)
 (*apply: (cvgD  _ sum_top_rest).*)
   admit.
-
-
 (*bottom sum*)
 have sum_spl2 : forall (x : R),   (\sum_(a <- v) expR (- x * min_dev a v))
   = \sum_(a <- v | a == min_val) expR (- x * min_dev a v)
