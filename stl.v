@@ -345,7 +345,7 @@ Lemma a_ge_min : forall (x : seq R) (i : R), i \in x ->
         rewrite {1}/minr; case: ifP => h; lra.
       - rewrite {1}/minr; case: ifP => h; try lra.
 
-Admitted.
+Abort.
 
 
 Lemma min_nested_zero (x : seq R) :
@@ -355,9 +355,6 @@ Lemma min_nested_zero (x : seq R) :
 Proof.
 move=> x_ne.
 set m := \big[minr/head``_x]_(i <- x) i.
-(* m is a lower bound of every element in x *)
-have m_le i : i \in x -> m <= i.
-  move=> i_in.
 
 
 
@@ -373,7 +370,7 @@ Admitted.
 
 Lemma stl_and_gt0_cvg_infty (p : R) (v : seq R)  : 
   v != [::] ->
-  (forall x, x \in v -> x >= 0) ->
+  (forall x, x \in v -> x > 0) ->
   (stl_and_gt0 p v) @[p --> +oo] --> \big[minr/head 0 v]_(i <- v) i.
 Proof.
 move => vnil v0.
@@ -492,6 +489,142 @@ rewrite helper in l.
 apply: l.
 Admitted.
 
+Lemma stl_and_lt0_cvg_infty (p : R) (v : seq R)  : 
+  v != [::] ->
+  (forall x, x \in v -> x < 0) ->
+  (stl_and_lt0 p v) @[p --> +oo] --> \big[minr/head 0 v]_(i <- v) i.
+Proof.
+move => vnil v0.
+rewrite /stl_and_lt0.
+set (min_val := \big[minr/head``_v]_(i <- v) i) in *.
+have sum_spl1 : forall (x : R),   \sum_(a <- v) \big[minr/a]_(i <- v) i * expR (min_dev a v) 
+                                  * expR (x * min_dev a v)
+  =  \sum_(a <- v | a == min_val) \big[minr/a]_(i <- v) i  * expR (min_dev a v) * expR (x * min_dev a v)
+    + \sum_(a <- v | a != min_val) \big[minr/a]_(i <- v) i * expR (min_dev a v) * expR (x * min_dev a v).
+  move => x0.
+  by rewrite (bigID (fun a => a == min_val)).
+(*top sum*)
+have sum_top : (\sum_(a <- v) \big[minr/a]_(i <- v) i
+                * expR (min_dev a v) * expR (p0 * min_dev a v)) @[p0 --> +oo] --> 
+                (min_val) * (\sum_(a <- v | a == min_val) 1)%:R. 
+  apply/cvgrPdist_le => /= e e0.
+  near=> t.
+  rewrite sum_spl1.
+  near: t; move: e e0; apply/cvgrPdist_le.
+  (*top sum non-minimum elements*)
+  have big_seq_cond_neq : forall t, (\sum_(a <- v | a != min_val) \big[minr/a]_(i <- v) i 
+                                     * expR (min_dev a v) * expR (t * min_dev a v))%R = 
+                        (\sum_(a <- v | (a \in v) && (a != min_val)) \big[minr/a]_(i <- v) i 
+                                     * expR (min_dev a v) * expR (t * min_dev a v))%R.
+    by move => t; rewrite big_seq_cond//=.
+  have sum_top_rest : 
+      (\sum_(a <- v | a != min_val) \big[minr/a]_(i <- v) i * expR (min_dev a v) 
+       * expR (t * min_dev a v))%R @[t --> +oo] --> 0.
+    rewrite [X in _ --> X](_ : _ = \sum_(a <- v | a != min_val) 0); last first.
+      by rewrite big1.
+    apply/cvgrPdist_le => /= e e0.
+    near=> t.
+    rewrite big_seq_cond_neq big_seq_cond.
+    near: t; move: e e0; apply/cvgrPdist_le.
+    apply: cvg_sum => a /andP [av amin].
+    rewrite -(mulr0 (\big[minr/a]_(i <- v) i)). 
+    apply/cvgrPdist_le => /= e e0.
+    near=> t.
+    rewrite -mulrA.
+    near: t; move: e e0; apply/cvgrPdist_le.
+    apply: cvgM => //.
+    -  exact: cvg_cst.
+    - (*apply: (@cvg_comp _ _ _ _ _ _ -oo).*) admit.
+      + (*rewrite cvgNy_compNP. 
+        by apply: cvgr_expR.*)
+  rewrite -(addr0 (min_val * (\sum_(a <- v | a == min_val) 1)%:R)).
+  apply: cvgD; last by exact sum_top_rest.
+  have big_seq_cond_eq : forall t, (\sum_(a <- v | a == min_val) (\big[minr/a]_(i <- v) i) *
+                                      expR (min_dev a v) * expR (t * min_dev a v)) = 
+                        (\sum_(a <- v | (a \in v) && (a == min_val)) (\big[minr/a]_(i <- v) i) *  
+                           expR (min_dev a v) * expR (t * min_dev a v)).
+  by move => t; rewrite big_seq_cond//=.
+  apply/cvgrPdist_le => /= e e0.
+    near=> t.
+  rewrite big_seq_cond_eq big_seq_cond. 
+  near: t; move: e e0; apply/cvgrPdist_le.
+  (*double check the below*)
+  rewrite [X in _ --> X](_ : _ = (\sum_(i <- v | (i \in v) && (i == min_val)) (\big[minr/i]_(i <- v) i)));
+    last first.
+  - rewrite /min_val. admit. 
+    (*need *1 on the rgith and to prove that the minr with i is the same as min_val*)
+(*rewrite -(mulr1 (\big[minr/i]_(i0 <- v) i0)). rewrite -mulr_sumr.
+    by rewrite natr_sum //; congr (_ * _); apply: eq_bigr => i _; rewrite natr1.*)
+  - admit. (*apply: cvg_sum => a /andP [av /eqP amin].
+    rewrite /min_dev amin /min_val.
+    rewrite -(min_nested_zero v vnil). rewrite subrr !mul0r.
+    apply/cvgrPdist_le => /= e e0.
+    near=> t.
+    rewrite mulNr mulr0 oppr0 expR0 mulr1 subrr//=.
+    by rewrite normr0; lra.*)
+(*bottom sum*)
+have sum_spl2 : forall (x : R),   (\sum_(a <- v)  expR (x * min_dev a v))
+  = \sum_(a <- v | a == min_val)  expR (x * min_dev a v)
+    + \sum_(a <- v | a != min_val)  expR (x * min_dev a v). move => x0.
+  by rewrite (bigID (fun a => a == min_val)).
+have sum_bot : (\sum_(a <- v) expR (p0 * min_dev a v)) @[p0 --> +oo] --> 
+                 ((\sum_(a <- v | a == min_val) 1)%:R : R).
+  apply/cvgrPdist_le => /= e e0.
+  near=> t.
+  rewrite sum_spl2.
+  near: t; move: e e0; apply/cvgrPdist_le.
+  (*bot sum non-minimum elements*)
+  have big_seq_cond_neq : forall t, (\sum_(a <- v | a != min_val)  expR (t * min_dev a v))%R = 
+                        (\sum_(a <- v | (a \in v) && (a != min_val))  expR (t * min_dev a v))%R.
+    by move => t; rewrite big_seq_cond//=.
+  have sum_bot_rest : 
+      (\sum_(a <- v | a != min_val)  expR (t * min_dev a v))%R @[t --> +oo] --> 0.
+    rewrite [X in _ --> X](_ : _ = \sum_(a <- v | a != min_val) 0); last first.
+      by rewrite big1.
+    apply/cvgrPdist_le => /= e e0.
+    near=> t.
+    rewrite big_seq_cond_neq big_seq_cond.
+    near: t; move: e e0; apply/cvgrPdist_le.
+    apply: cvg_sum => a /andP [av amin].
+    apply: (@cvg_comp _ _ _ _ _ _ -oo).
+    - admit. (*mathematically yes. formalisation wise I need patience*) 
+    (*need proof that min_dev in this case < 0*)
+    - rewrite cvgNy_compNP. 
+      by apply: cvgr_expR.
+  rewrite -(addr0 ((\sum_(a <- v | a == min_val) 1)%:R)).
+  apply: cvgD; last by exact sum_bot_rest.
+  have big_seq_cond_eq : forall t, (\sum_(a <- v | a == min_val)  expR (t * min_dev a v)) = 
+                        (\sum_(a <- v | (a \in v) && (a == min_val))  expR (t * min_dev a v)).
+  by move => t; rewrite big_seq_cond//=.
+  apply/cvgrPdist_le => /= e e0.
+    near=> t.
+  rewrite big_seq_cond_eq big_seq_cond. 
+  near: t; move: e e0; apply/cvgrPdist_le.
+  rewrite [X in _ --> X](_ : _ = (\sum_(i <- v | (i \in v) && (i == min_val)) 1)); last first.
+  - by rewrite natr_sum //; congr (_ * _); apply: eq_bigr => i _; rewrite natr1.
+  - apply: cvg_sum => a /andP [av /eqP amin].
+    rewrite /min_dev amin /min_val.
+    rewrite -(min_nested_zero v vnil). rewrite subrr !mul0r.
+    apply/cvgrPdist_le => /= e e0.
+    near=> t.
+    rewrite  mulr0 expR0 subrr//=.
+    by rewrite normr0; lra.
+have non0 : ((\sum_(a <- v | a == min_val) 1)%:R : R) != 0.
+
+admit.
+have sum_inv : (\sum_(a <- v) expR (p0 * min_dev a v))^-1 @[p0 --> +oo] --> 
+                  ((\sum_(a <- v | a == min_val) 1)%:R : R)^-1.
+  apply: cvgV.
+  - rewrite non0//=. 
+  - exact sum_bot.
+have l :=  (@cvgM _ _ _ _ _ _ _ _ sum_top sum_inv).
+rewrite -fctM in l.
+have helper : min_val * (\sum_(a <- v | a == min_val) 1)%:R / (\sum_(a <- v | a == min_val) 1)%:R = min_val.
+  rewrite mulrK//=.
+  rewrite unitfE non0//=.
+rewrite helper in l.
+apply: l.
+Admitted.
 
 End stl_and_conv_lattice.
 
