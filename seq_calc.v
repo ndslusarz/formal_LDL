@@ -271,8 +271,7 @@ intros; rewrite//=. dependent induction H.
     rewrite //= eval_luka_add.
     have hc := eval_luka1 C.
     by lra.
-  + exists q => //.
-    by rewrite in_cons h orbT.
+  + by exists q => //; rewrite in_cons h orbT.
 - move: IHseq_calc_luka_impl => [q1 + IH2].
   rewrite in_cons => /orP[h1|h2]; first last.
   + by exists q1 => //; rewrite !in_cons h2 !orbT.
@@ -420,149 +419,120 @@ Qed.
 
 Lemma sound_luka Q:
   seq_calc_luka Q ->
-  exists (q : seq (@expr R (Bool_T_def impl_def m_def l_def)) *
-              seq (@expr R (Bool_T_def impl_def m_def l_def))),
-  q \in Q /\ eval_luka q.1 <= eval_luka q.2.
+  exists2 q : seq formula * seq formula,
+  q \in Q & eval_luka q.1 <= eval_luka q.2.
 Proof.
 intros; rewrite//=. dependent induction H.
 - by exists (A |- A) => //; rewrite mem_head.
 - by exists ([::] |- [::]).
-- destruct IHseq_calc_luka as [M [IH1 IH2]]. 
-  exists M.
-  rewrite !mem_cat //= in IH1.
-  rewrite !mem_cat. split; first last.
-  by rewrite IH2//=. move/orP: IH1.
-  move => [IH1 | /orP IH1].
-  rewrite IH1//=.
-  destruct IH1 as [IH1 | IH1].
-  rewrite IH1 !orbT//=.
-  move/orP: IH1.
-  move => [IH1 | IH1]; rewrite IH1 ?orTb ?orbT//=.
-- destruct IHseq_calc_luka as [q [IH1 IH2]].
-  by exists q; rewrite mem_cat IH1 orTb.
-- destruct IHseq_calc_luka as [M [IH1 IH2]].
-  exists M. rewrite !mem_cat in IH1.
+- case: IHseq_calc_luka => [M].
+  rewrite !mem_cat => -[IH1 IH2].
+  exists M => //.
+  rewrite !mem_cat.
+  move/orP: IH1 => [->// |/orP].
+  case => [-> |]; first by rewrite !orbT.
+  by move/orP => [|] ->; rewrite ?(orTb,orbT).
+- case: IHseq_calc_luka => [q IH1 IH2].
+  by exists q => //; rewrite mem_cat IH1 orTb.
+- case IHseq_calc_luka => [M IH1 IH2].
+  exists M => //; rewrite !mem_cat in IH1.
   rewrite mem_cat. move/orP : IH1.
-  move => [h |/orP h].  rewrite h ?orbT; split; rewrite//=.
+  move => [h |/orP h].
+    rewrite h ?orbT; split; rewrite//=.
   by move: h => [h | h]; rewrite h ?orbT; split; rewrite//=.
-- case: IHseq_calc_luka => [q [+ IH2]].
+- case: IHseq_calc_luka => [q + IH2].
   rewrite in_cons => /predU1P[h | h].
-  + exists (A ++ C |- B).
+  + exists (A ++ C |- B); first by rewrite in_cons eq_refl orTb.
     subst. rewrite //= in IH2.
-    rewrite in_cons eq_refl orTb. split. by [].
     rewrite //= eval_luka_add.
     have hc := eval_luka1 C.
-    lra.
-  + by exists q; rewrite in_cons h IH2 orbT.
-- case: IHseq_calc_luka => [q1 [+ IH2]].
-  rewrite in_cons => /orP[h1 | h2]; first last.
-  + by exists q1; rewrite !in_cons h2 !orbT.
-  + move/eqP : h1 => h1.
-    subst. rewrite !eval_luka_add in IH2.
+    by lra.
+  + by exists q => //; rewrite in_cons h orbT.
+- case: IHseq_calc_luka => [q + IH2].
+  rewrite in_cons => /orP[/eqP h1 | h2].
+  + subst. rewrite !eval_luka_add in IH2.
     have helper :
       (eval_luka A + eval_luka B)%E - 1 <= (eval_luka C + eval_luka D)%E - 1 ->
-      (eval_luka A + eval_luka B)%E - eval_luka D - 1 <= ( eval_luka C)%E  - 1 .
+      (eval_luka A + eval_luka B)%E - eval_luka D - 1 <= ( eval_luka C)%E  - 1
       by intros; lra.
     apply helper in IH2.
     clear helper.
     have /orP[h1|h1] := le_total (1 + eval_luka B) (1 + eval_luka D).
-    * exists (B |- D). split.
+    * exists (B |- D).
       - by rewrite !in_cons eq_refl !orbT.
       - by rewrite //=; lra.
-    * exists (A |- C); split => /=.
+    * exists (A |- C) => /=.
       - by rewrite !in_cons eq_refl !orTb.
-      - have helper (D' B' : R) : 1 + D' <= 1 + B' -> (B' - D' >= 0).
+      - have helper (D' B' : R) : 1 + D' <= 1 + B' -> (B' - D' >= 0)
           by intros; lra.
         apply helper in h1.
         have helper2 (A' B' C' D' : R) : 0 <= B' - D' ->
           A' + B' - D' - 1 <= C'-1 ->
-          A' <=  C'.
+          A' <=  C'
           by intros; lra.
         have hh := helper2 (eval_luka A) (eval_luka B) (eval_luka C) (eval_luka D).
         by rewrite (hh h1 IH2).
-- destruct IHseq_calc_luka1 as [q1 [IH11 IH12]].
-  destruct IHseq_calc_luka2 as [q2 [IH21 IH22]].
-  rewrite in_cons in IH11. rewrite in_cons in IH21.
-  move/orP : IH11. move/orP: IH21.
-  move => [/eqP h2 | h2]; move => [/eqP h1 | h1].
-  + exists (A ++ B |- C ++ D).
-    rewrite mem_head. split. by [].
+  + by exists q => //; rewrite !in_cons h2 !orbT.
+- case IHseq_calc_luka1 => [q1].
+  case IHseq_calc_luka2 => [q2].
+  rewrite !in_cons //= => /orP [/eqP h2 | h2] IH22 /orP[/eqP h1 | h1] IH12.
+  + exists (A ++ B |- C ++ D); first by rewrite mem_head.
     subst.
-    rewrite /= in IH12.
-    rewrite /= in IH22 .
-    rewrite /=.
+    rewrite /= in IH12 IH22.
     have IH := lerD IH12 IH22.
-    rewrite !eval_luka_add. lra.
-  + by exists q1; rewrite in_cons h1 IH12 orbT.
-  + by exists q2; rewrite in_cons h2 IH22 orbT.
-  + by exists q1; rewrite in_cons h1 IH12 orbT.
-- case: IHseq_calc_luka => [q [+ IH2]].
+    by rewrite /= !eval_luka_add; lra.
+  + by exists q1 => //; rewrite in_cons h1 orbT.
+  + by exists q2 => //; rewrite in_cons h2 orbT.
+  + by exists q1 => //; rewrite in_cons h1 orbT.
+- case: IHseq_calc_luka => [q + IH2].
   rewrite in_cons => /predU1P[h | h].
-  + subst. exists ((X ++ B ++ A ++ Y |- C)).
-    rewrite mem_head. split. by [].
+  + subst. exists ((X ++ B ++ A ++ Y |- C)); first by rewrite mem_head.
     rewrite//= !eval_luka_add in IH2.
-    rewrite//= !eval_luka_add. lra.
-  + exists q.
-    by rewrite in_cons h IH2 orbT.
-- case: IHseq_calc_luka => [q [+ IH2]].
+    by rewrite//= !eval_luka_add; lra.
+  + by exists q => //; rewrite in_cons h !orbT.
+- case: IHseq_calc_luka => [q + IH2].
   rewrite in_cons => /predU1P[h | h].
-  + subst. exists (C |- X ++ B ++ A ++ Y).
-    rewrite mem_head. split. by [].
+  + subst. exists (C |- X ++ B ++ A ++ Y); first by rewrite mem_head.
     rewrite//= !eval_luka_add in IH2.
-    rewrite//= !eval_luka_add. lra.
-  + by exists q; rewrite in_cons h IH2 orbT.
-- exists (ldl_bool neg_def _ _ _ false :: A |- [:: b]).
-  rewrite mem_head; split; first by [].
+    by rewrite//= !eval_luka_add; lra.
+  + by exists q => //; rewrite in_cons h !orbT.
+- exists (ldl_bool neg_def _ _ _ false :: A |- [:: b]); first by rewrite mem_head.
   rewrite /= !eval_luka_add_el addr0.
   have h := eval_luka1 A.
   have /andP[b0 b1] := @translate_Bool_T_01 R _ p1 Lukasiewicz _ _ _ b.
   have : 0 <= (eval_luka [::] + [[b]]_Lukasiewicz)%E - 1 ->
-         eval_luka A - 1 <= (eval_luka [::] + [[b]]_Lukasiewicz)%E - 1.
+         eval_luka A - 1 <= (eval_luka [::] + [[b]]_Lukasiewicz)%E - 1
     by intros; lra.
-  apply. rewrite /eval_luka//= big_nil addr0.
-  lra.
-- exists (A |- [:: ldl_bool neg_def _ _ _ true]).
-  rewrite mem_head. split. by [].
+  by apply; rewrite /eval_luka//= big_nil addr0; lra.
+- exists (A |- [:: ldl_bool neg_def _ _ _ true]); first by rewrite mem_head.
   rewrite //= !eval_luka_add_el//= .
   have h := eval_luka1 A.
   by rewrite addrK /eval_luka big_nil addr0 h.
 (*andL_l*)
-- destruct IHseq_calc_luka1 as [q1 [IH11 IH12]].
-  destruct IHseq_calc_luka2 as [q2 [IH21 IH22]].
-   rewrite in_cons in IH21.  rewrite in_cons in IH11.
-   move/orP: IH21.
-   move/orP: IH11.
-   move => [/eqP h2 | h2]; move => [/eqP h1 | h1].
+- case IHseq_calc_luka1 => [q1].
+  case IHseq_calc_luka2 => [q2].
+  rewrite !in_cons //= => /orP [/eqP h2 | h2] IH22 /orP[/eqP h1 | h1] IH12.
   + subst.
-    exists (a `** b :: B |- A). rewrite //= in IH22. 
-    rewrite eval_luka_add_el//= in IH22.
-    rewrite mem_head. split. by []. 
-    rewrite addr0 in IH22.
-    rewrite //= in IH12.
-    rewrite !eval_luka_add_el in IH12.
+    exists (a `** b :: B |- A); first by rewrite mem_head.
+    rewrite eval_luka_add_el//= addr0 in IH22.
+    rewrite //=  !eval_luka_add_el in IH12.
     rewrite eval_luka_add_el.
     have /andP[ab0 ab1] := @translate_Bool_T_01 R _ p1 Lukasiewicz _ _ _ (a `/\ b).
     rewrite /= big_cons big_seq1 /maxr.
     case: ifP; move => h_max.
-    * rewrite addr0. by apply IH22.
+    * by rewrite addr0; apply IH22.
     * rewrite addrA.
       have -> : (eval_luka B + (([[a]]_Lukasiewicz + [[b]]_Lukasiewicz)%E - 2)%R + 1%R)%E - 1 =
-                (((eval_luka B + [[b]]_Lukasiewicz)%E - 1)%R + [[a]]_Lukasiewicz)%E - 1.
-        lra.
+                (((eval_luka B + [[b]]_Lukasiewicz)%E - 1)%R + [[a]]_Lukasiewicz)%E - 1 by lra.
       by rewrite IH12.
-  + exists q2.
-    by rewrite in_cons h1 IH22 orbT.
-  + exists q1.
-    by rewrite in_cons h2 IH12 orbT.
-  + exists q1.
-    by rewrite in_cons h2 IH12 orbT.
-- destruct IHseq_calc_luka2 as [q [IH1 IH2]].
-  rewrite in_cons in_cons in IH1. move/orP: IH1.
-  move => [/eqP h |/orP [/eqP h | h]].
-  +  exists (A |- a `** b :: B);
-                     rewrite mem_head; split; rewrite//=.
-    * subst. rewrite //= in IH2.
-      rewrite !eval_luka_add_el in IH2.
+  + by exists q1 => //; rewrite in_cons h1 orbT.
+  + by exists q2 => //; rewrite in_cons h2 orbT.
+  + by exists q1 => //; rewrite in_cons h1 orbT.
+- case: IHseq_calc_luka2 => [q + IH2].
+  rewrite in_cons in_cons =>/orP [/eqP h |/orP [/eqP h | h]].
+  +  exists (A |- a `** b :: B); first by rewrite mem_head.
+    * subst. 
+      rewrite //= !eval_luka_add_el in IH2.
       rewrite eval_luka_add_el.
       have /andP[ab0 ab1] := @translate_Bool_T_01 R _ p1 Lukasiewicz _ _ _ (a `** b).
       rewrite /= big_cons big_seq1 /maxr.
@@ -571,50 +541,45 @@ intros; rewrite//=. dependent induction H.
         have hh : ((([[a]]_Lukasiewicz + [[b]]_Lukasiewicz)%E - 2)%R + 1%R)%E =
                  (([[a]]_Lukasiewicz + [[b]]_Lukasiewicz)%E - 1)%R.
           by set (e := ([[a]]_Lukasiewicz + [[b]]_Lukasiewicz)%E) in *; lra.
-        rewrite hh in h_max. move: hh. move => _.
+        rewrite hh in h_max. clear hh.
         have hh : eval_luka A <= (((eval_luka B + [[b]]_Lukasiewicz)%E - 1)%R + [[a]]_Lukasiewicz)%E - 1 ->
                   ([[a]]_Lukasiewicz + [[b]]_Lukasiewicz)%E - 1 < 0 ->
                   eval_luka A <= eval_luka B -1 by lra.
-        by  rewrite (hh IH2 h_max).
-      + rewrite //= in h_max.
-        * have -> :
+        by rewrite (hh IH2 h_max).
+      + have -> :
              (eval_luka B + ((([[a]]_Lukasiewicz + [[b]]_Lukasiewicz)%E - 2)%R + 1%R))%E - 1 = 
               (((eval_luka B + [[b]]_Lukasiewicz)%E - 1)%R + [[a]]_Lukasiewicz)%E - 1 by lra.
-          by rewrite IH2.
-    * exists (A |- a `** b :: B);
-                     rewrite mem_head; split; rewrite//=.
+         by rewrite IH2.
+    * exists (A |- a `** b :: B) ; first by rewrite mem_head.
       subst.
-      rewrite /= in IH2.
       rewrite eval_luka_add_el.
-      rewrite eval_luka_add_el/= addr0 in IH2.
+      rewrite /=eval_luka_add_el/= addr0 in IH2.
       have /andP[] := @translate_Bool_T_01 R _ p1 Lukasiewicz _ _ _ (a `** b).
-      lra.
-  + by exists q; rewrite in_cons h orbT IH2.
-- move: IHseq_calc_luka => [q [+ IH2]].
+      by lra.
+  + by exists q=> //; rewrite in_cons h orbT.
+- move: IHseq_calc_luka => [q + IH2].
   rewrite in_cons => /predU1P[h | h].
   + subst.
     exists ((`~ a) :: A |- B).
     rewrite mem_head; split; rewrite//=.
     rewrite //= !eval_luka_add_el //= addr0 in IH2.
     rewrite eval_luka_add_el//=.
-    lra.
-  + exists q.
-    by rewrite in_cons h orbT IH2.
-- case: IHseq_calc_luka2 => [q [+ IH2]].
+    by lra.
+  + by exists q=> //; rewrite in_cons h orbT.
+- case: IHseq_calc_luka2 => [q + IH2].
   rewrite in_cons => /predU1P[h | h].
   + subst.
     exists (A |- (`~ a) :: B).
     rewrite mem_head; split; rewrite//=.
     rewrite //= !eval_luka_add_el //= addr0 in IH2.
     rewrite eval_luka_add_el//=.
-    lra.
-  + by exists q; rewrite in_cons h orbT IH2.
-- move: IHseq_calc_luka2 => [q [+ IH2]].
+    by lra.
+  + by exists q=> //; rewrite in_cons h orbT.
+- move: IHseq_calc_luka2 => [q + IH2].
   rewrite in_cons => /predU1P[h|h].
   + subst.
     rewrite//= !eval_luka_add_el//= addr0 in IH2.
-    exists (a `++ b :: A |- B).
-    rewrite mem_head; split; rewrite//=.
+    exists (a `++ b :: A |- B); first by rewrite mem_head.
     rewrite eval_luka_add_el//= big_cons big_seq1 /minr.
     case: ifPn => h_min.
     *  have ->// : (eval_luka A + ([[a]]_Lukasiewicz + [[b]]_Lukasiewicz))%E - 1 -1 <=
@@ -622,30 +587,22 @@ intros; rewrite//=. dependent induction H.
                  (eval_luka A + ([[a]]_Lukasiewicz + [[b]]_Lukasiewicz))%E - 1 <=
                  eval_luka B .
          by intros; lra.
-       lra.
+       by lra.
     * rewrite -leNgt in h_min.
       have helper : (((eval_luka A + [[b]]_Lukasiewicz)%E - 1)%R + [[a]]_Lukasiewicz)%E - 1 <= 
                         eval_luka B - 1 ->
                       (((eval_luka A %R )%E)%R)%E <= eval_luka B .
         by intros; lra.
-      apply helper in IH2.
-      lra. 
-  + exists q.
-    by rewrite in_cons h orbT IH2.
-- destruct IHseq_calc_luka1 as [q1 [IH11 IH12]].
-  destruct IHseq_calc_luka2 as [q2 [IH21 IH22]].
-   rewrite in_cons in IH21.  rewrite in_cons in IH11.
-   move/orP: IH21.
-   move/orP: IH11.
-   move => [/eqP h1 | h1]; move => [/eqP h2 | h2].
+      by apply helper in IH2; lra. 
+  + by exists q=> //; rewrite in_cons h orbT.
+- case IHseq_calc_luka1 => [q1].
+  case IHseq_calc_luka2 => [q2].
+  rewrite !in_cons //= => /orP [/eqP h2 | h2] IH22 /orP[/eqP h1 | h1] IH12.
    + subst. 
-     exists (A |- a `++ b :: B). 
-     rewrite mem_head. split. by []. 
-     rewrite //= in IH22. rewrite //= in IH12. 
-     rewrite !eval_luka_add_el//= in IH22.
-     rewrite addr0 in IH22.
-     rewrite //= eval_luka_add_el//=.
-     rewrite big_cons big_seq1 /minr.
+     exists (A |- a `++ b :: B); first by rewrite mem_head. 
+     rewrite //= !eval_luka_add_el//= in IH22.
+     rewrite //= addr0 in IH22.
+     rewrite //= eval_luka_add_el//= big_cons big_seq1 /minr.
      case: ifPn => h_min.
      * have helper : eval_luka A - 1 <= 
                         (((eval_luka B + [[b]]_Lukasiewicz)%E - 1)%R + [[a]]_Lukasiewicz)%E - 1 ->
@@ -659,92 +616,76 @@ intros; rewrite//=. dependent induction H.
        by rewrite IH22.
      * clear IH22.
        lra.
-  + by exists q2; rewrite in_cons h2 IH22 orbT.
-  + by exists q1; rewrite in_cons h1 IH12 orbT.
-  + by exists q1; rewrite in_cons h1 IH12 orbT.
-- move: IHseq_calc_luka => [q1 [+ IH2]].
+  + by exists q1 => //; rewrite in_cons h1 orbT.
+  + by exists q2 => //; rewrite in_cons h2 orbT.
+  + by exists q1 => //; rewrite in_cons h1 orbT.
+- move: IHseq_calc_luka => [q1 + IH2].
   rewrite !in_cons => /predU1P[h1 | /predU1P [h2 | h3]].
-  + exists (a `/\ b :: B |- A).
-    rewrite mem_head. split. by [].
+  + exists (a `/\ b :: B |- A); first by rewrite mem_head.
     subst.
     rewrite //= !eval_luka_add_el in IH2.
     rewrite //= !eval_luka_add_el//=/minR !big_cons big_nil /minr.
-    repeat case: ifP; move=> h; try lra.
-  + exists (a `/\ b :: B |- A).
-    rewrite mem_head. split. by [].
+    by repeat case: ifP; move=> h; lra.
+  + exists (a `/\ b :: B |- A); first by rewrite mem_head.
     subst.
     rewrite //= !eval_luka_add_el in IH2.
-    rewrite //= !eval_luka_add_el//=/minR.
-    rewrite !big_cons big_nil /minr.
-    repeat case: ifP; move=> h; try lra.
-  + exists q1. rewrite !in_cons h3 !orbT.
-    split; rewrite//=.
-- destruct IHseq_calc_luka1 as [q1 [IH11 IH12]].
-  destruct IHseq_calc_luka2 as [q2 [IH21 IH22]].
-  rewrite in_cons in IH11. rewrite in_cons in IH21.
-  move/orP : IH11. move/orP: IH21.
+    rewrite //= !eval_luka_add_el//=/minR !big_cons big_nil /minr.
+    by repeat case: ifP; move=> h; lra.
+  + by exists q1 => //; rewrite in_cons h3 orbT.
+- case IHseq_calc_luka1 => [q1].
+  case IHseq_calc_luka2 => [q2].
   have hB := eval_luka1 B.
   have hA := eval_luka1 A.
   have ha := @translate_Bool_T_01 R p p1 Lukasiewicz _ _ _ (a).
   have hb := @translate_Bool_T_01 R p p1 Lukasiewicz _ _ _ (b).
-  move => [/eqP h2 | h2]; move => [/eqP h1 | h1].
-  + exists (A |- a `/\ b :: B).
-    rewrite mem_head. split. by [].
+  rewrite !in_cons //= => /orP [/eqP h2 | h2] IH22 /orP[/eqP h1 | h1] IH12.
+  + exists (A |- a `/\ b :: B); first by rewrite mem_head.
     subst.
     rewrite //= eval_luka_add_el//=/minR !big_cons !big_nil /minr.
-    rewrite //= eval_luka_add_el in IH12.
-    rewrite //= !eval_luka_add_el in IH22.
-    repeat case: ifP; move => h1 h2; try lra.
-  + by exists q1; rewrite in_cons h1 IH12 orbT.
-  + by exists q2; rewrite in_cons h2 IH22 orbT.
-  + by exists q1; rewrite in_cons h1 IH12 orbT.
-- destruct IHseq_calc_luka1 as [q1 [IH11 IH12]].
-  destruct IHseq_calc_luka2 as [q2 [IH21 IH22]].
-  rewrite in_cons in IH11. rewrite in_cons in IH21.
-  move/orP : IH11. move/orP: IH21.
-  move => [/eqP h2 | h2]; move => [/eqP h1 | h1].
-  + exists (a `\/ b :: A |- B).
-    rewrite mem_head. split. by [].
+    rewrite //= !eval_luka_add_el in IH12 IH22.
+    by repeat case: ifP; move => h1 h2; lra.
+  + by exists q1 => //; rewrite in_cons h1 orbT.
+  + by exists q2 => //; rewrite in_cons h2 orbT.
+  + by exists q1 => //; rewrite in_cons h1 orbT.
+- case IHseq_calc_luka1 => [q1].
+  case IHseq_calc_luka2 => [q2].
+  rewrite !in_cons //= => /orP [/eqP h2 | h2] IH22 /orP[/eqP h1 | h1] IH12.
+  + exists (a `\/ b :: A |- B); first by rewrite mem_head.
     subst.
     rewrite //= eval_luka_add_el//=/maxR !big_cons big_nil /maxr.
-    rewrite //= eval_luka_add_el in IH12.
-    rewrite //= !eval_luka_add_el in IH22.
+    rewrite //= !eval_luka_add_el in IH12 IH22.
     have hb := @translate_Bool_T_01 R p p1 Lukasiewicz _ _ _ (b).
-    repeat case: ifP; move => h1 h2; try lra.
-  + by exists q1; rewrite in_cons h1 IH12 orbT.
-  + by exists q2; rewrite in_cons h2 IH22 orbT.
-  + by exists q1; rewrite in_cons h1 IH12 orbT.
-- move: IHseq_calc_luka => [q1 [+ IH2]].
+    by repeat case: ifP; move => h1 h2; lra.
+  + by exists q1 => //; rewrite in_cons h1 orbT.
+  + by exists q2 => //; rewrite in_cons h2 orbT.
+  + by exists q1 => //; rewrite in_cons h1 orbT.
+- move: IHseq_calc_luka => [q1 + IH2].
   have hB := eval_luka1 B.
   have hA := eval_luka1 A.
   have ha := @translate_Bool_T_01 R p p1 Lukasiewicz _ _ _ (a).
   have hb := @translate_Bool_T_01 R p p1 Lukasiewicz _ _ _ (b).
   rewrite !in_cons => /predU1P[h1 | /predU1P [h2 | h3]].
-  + exists (A |- a `\/ b :: B).
-    rewrite mem_head. split. by [].
+  + exists (A |- a `\/ b :: B); first by rewrite mem_head.
     subst.
     rewrite //= !eval_luka_add_el in IH2.
     rewrite //= !eval_luka_add_el//=/maxR !big_cons big_nil /maxr.
-    repeat case: ifP; move=> h1 h2; try lra.
-  + exists (A |- a `\/ b :: B).
-    rewrite mem_head. split. by [].
+    by repeat case: ifP; move=> h1 h2; lra.
+  + exists (A |- a `\/ b :: B); first by rewrite mem_head.
     subst.
     rewrite //= !eval_luka_add_el in IH2.
     rewrite //= !eval_luka_add_el//=/maxR !big_cons big_nil /maxr.
-    repeat case: ifP; move=> h1 h2; try lra.
-  + exists q1. rewrite !in_cons h3 !orbT.
-    split; rewrite//=.
+    by repeat case: ifP; move=> h1 h2; try lra.
+  + by exists q1 => //; rewrite !in_cons h3 !orbT.
 Qed.
 
-Lemma luka_neg_impl_admissable (e : (@expr R (Bool_T_def impl_def m_def l_def))):
+Lemma luka_neg_impl_admissable (e : formula):
  [[`~ e]]_Lukasiewicz = [[e `=> ldl_bool _ _ _ _ false]]_Lukasiewicz.
 Proof.
-rewrite//= addr0 /minr. case: ifPn; intros.
-- by [].
-- have h := @translate_Bool_T_01 R _ p1 Lukasiewicz _ _ _ (e).
-  rewrite -leNgt in n.
-  apply/eqP; rewrite eq_le n andbT.
-  lra.
+rewrite//= addr0 /minr; case: ifPn; intros; first by [].
+have h := @translate_Bool_T_01 R _ p1 Lukasiewicz _ _ _ (e).
+rewrite -leNgt in n.
+apply/eqP; rewrite eq_le n andbT.
+by lra.
 Qed.
 
 Lemma luka_true_false_admissable :
@@ -752,7 +693,7 @@ Lemma luka_true_false_admissable :
     [[`~ ldl_bool neg_def impl_def m_def l_def false]]_Lukasiewicz.
 Proof. by rewrite//= subr0. Qed.
 
-Lemma luka_and_impl_admissable (a b: @expr R (Bool_T_def impl_def m_def l_def)):
+Lemma luka_and_impl_admissable (a b: formula):
   [[a `** b]]_Lukasiewicz = [[`~ (a `=> `~b)]]_Lukasiewicz.
 Proof.
 rewrite//=/maxr/minr.
@@ -768,24 +709,20 @@ case: ifP; case: ifP; rewrite//= => h1 h2; try lra.
             [[a]]_Lukasiewicz + [[b]]_Lukasiewicz < 1.
     by intros; lra.
   apply helper2 in h2.
-  lra.
+  by lra.
 - rewrite !big_cons big_nil addr0 in h2.
   rewrite !big_cons big_nil addr0.
   have -> : 1 - ((1 - [[a]]_Lukasiewicz)%R + (1 - [[b]]_Lukasiewicz)%R)%E =
-                  1 - ((2 - [[a]]_Lukasiewicz - [[b]]_Lukasiewicz)%R)%E.
-    lra.
+                  1 - ((2 - [[a]]_Lukasiewicz - [[b]]_Lukasiewicz)%R)%E by lra.
   have -> : 1 - (2 - [[a]]_Lukasiewicz - [[b]]_Lukasiewicz) =
-                   -1 + [[a]]_Lukasiewicz + [[b]]_Lukasiewicz.
-    lra.
+                   -1 + [[a]]_Lukasiewicz + [[b]]_Lukasiewicz by lra.
   have -> : ((([[a]]_Lukasiewicz + [[b]]_Lukasiewicz)%E - 2)%R + 1%R)%E =
-                   ([[a]]_Lukasiewicz + [[b]]_Lukasiewicz)%E - 1.
-    lra.
-  lra.
+                   ([[a]]_Lukasiewicz + [[b]]_Lukasiewicz)%E - 1 by lra.
+  by lra.
 - rewrite !big_cons big_nil addr0 in h2.
   rewrite !big_cons big_nil addr0//=.
   have helper3 : ((([[a]]_Lukasiewicz + [[b]]_Lukasiewicz)%E - 2)%R + 1%R)%E =
-                   ([[a]]_Lukasiewicz + [[b]]_Lukasiewicz)%E - 1.
-    lra.
+                   ([[a]]_Lukasiewicz + [[b]]_Lukasiewicz)%E - 1 by lra.
   rewrite helper3//=. rewrite helper3 in h2.
   have helper : (([[a]]_Lukasiewicz + [[b]]_Lukasiewicz)%E - 1 < 0) = false ->
                 ([[a]]_Lukasiewicz + [[b]]_Lukasiewicz)%E  >= 1 by intros; lra.
@@ -793,62 +730,53 @@ case: ifP; case: ifP; rewrite//= => h1 h2; try lra.
   have helper2 : (((1 - [[a]]_Lukasiewicz)%R + (1 - [[b]]_Lukasiewicz)%R)%E < 1) = false ->
                  [[a]]_Lukasiewicz + [[b]]_Lukasiewicz <= 1 by intros; lra.
   apply helper2 in h1.
-  lra.
+  by lra.
 Qed.
 
-Lemma luka_or_impl_admissable (a b : @expr R (Bool_T_def impl_def m_def l_def)):
+Lemma luka_or_impl_admissable (a b : formula):
   [[a `++ b]]_Lukasiewicz = [[(`~ a) `=> b]]_Lukasiewicz.
 Proof.
 rewrite//=/maxr/minr.
 have helper : ((1 - (1 - [[a]]_Lukasiewicz))%R + [[b]]_Lukasiewicz)%E =
                    [[a]]_Lukasiewicz + [[b]]_Lukasiewicz by lra.
-case: ifPn; case: ifPn; rewrite//= => h1 h2.
-- by rewrite !big_cons big_nil addr0 helper.
-- rewrite !big_cons big_nil addr0.
-  rewrite helper in h1.
-  rewrite !big_cons big_nil addr0 in h2.
-  by rewrite h2 in h1.
-- rewrite !big_cons big_nil addr0 in h2.
-  rewrite helper.
+case: ifPn; case: ifPn; rewrite//= !big_cons big_nil ?addr0 => h1 h2.
+- by rewrite  helper.
+- by rewrite helper h2 in h1.
+- rewrite helper.
   apply/eqP; rewrite eq_le !leNgt h2/=.
-  lra.
+  by lra.
 Qed.
 
 (*specific exchange rules for simpler cases*)
 
-Lemma luka_eex_nil (Q P: seq (seq (@expr R (Bool_T_def impl_def m_def l_def)) *
-                              seq (@expr R (Bool_T_def impl_def m_def l_def)))) :
+Lemma luka_eex_nil Q P :
     seq_calc_luka_impl (P ++ Q) ->
     seq_calc_luka_impl (Q ++ P).
 Proof.
 intros.
-have hxy X Y : X ++ Y = [::] ++ X ++ Y ++ [::] by rewrite /= cats0.
+have hxy M L : M ++ L = [::] ++ M ++ L ++ [::] by rewrite /= cats0.
 rewrite (hxy _  P Q) in H.
 rewrite (hxy _  Q P).
 exact/eex_l/H.
 Qed.
 
-Lemma luka_exL_nil (Q : seq (seq (@expr R (Bool_T_def impl_def m_def l_def)) *
-                             seq (@expr R (Bool_T_def impl_def m_def l_def))))
-                  (A B C : seq (@expr R (Bool_T_def impl_def m_def l_def))) :
+Lemma luka_exL_nil Q A B C :
     seq_calc_luka_impl (((A ++ B) |- C) :: Q) ->
     seq_calc_luka_impl (((B ++ A) |- C) :: Q).
 Proof.
 intros.
-have hxy X Y : X ++ Y = [::] ++ X ++ Y ++ [::] by rewrite/= cats0.
+have hxy M L : M ++ L = [::] ++ M ++ L ++ [::] by rewrite /= cats0.
 rewrite (hxy _  A B) in H.
 rewrite (hxy _  B A).
 exact/exL_l/H.
 Qed.
 
-Lemma luka_exR_nil (Q : seq (seq (@expr R (Bool_T_def impl_def m_def l_def)) *
-                             seq (@expr R (Bool_T_def impl_def m_def l_def))))
-                  (A B C : seq (@expr R (Bool_T_def impl_def m_def l_def))) :
+Lemma luka_exR_nil Q A B C :
     seq_calc_luka_impl ((C |- (A ++ B)) :: Q) ->
     seq_calc_luka_impl ((C |- (B ++ A)) :: Q).
 Proof.
 intros.
-have hxy X Y : X ++ Y = [::] ++ X ++ Y ++ [::] by rewrite /= cats0.
+have hxy M L : M ++ L = [::] ++ M ++ L ++ [::] by rewrite /= cats0.
 rewrite (hxy _  A B) in H.
 rewrite (hxy _  B A).
 exact/exR_l/H.
@@ -856,10 +784,7 @@ Qed.
 
 (*an alternate derivable implication rule, derivable*)
 Lemma luka_implL_extended:
-  forall (Q : seq ( seq (@expr R (Bool_T_def impl_def m_def l_def))
-                    * seq (@expr R (Bool_T_def impl_def m_def l_def))))
-                   (A B : seq (@expr R (Bool_T_def impl_def m_def l_def)))
-                   (a b : @expr R (Bool_T_def impl_def m_def l_def)),
+  forall Q A B (a b : formula),
     seq_calc_luka_impl ((B |- A) ::(( b :: B) |- a:: A) :: Q ) ->
     seq_calc_luka_impl ((((a `=> b) :: B) |- A) :: Q).
 Proof.
@@ -870,8 +795,9 @@ rewrite -(cat1s (a `=> b) B).
 apply luka_eex_nil.
 apply luka_exL_nil.
 apply w_l.
-rewrite -(cat1s _ Q). rewrite -cat1s.
-apply luka_eex_nil. rewrite -catA.
+rewrite -(cat1s _ Q) -cat1s.
+apply luka_eex_nil. 
+rewrite -catA.
 apply (@luka_eex_nil _ (Q ++ [:: B |- A])).
 apply luka_eex_nil.
 apply implL_l.
@@ -883,8 +809,7 @@ by rewrite -catA.
 Qed.
 
 
-Lemma equivalence_luka (Q : seq ( seq (@expr R (Bool_T_def impl_def m_def l_def))
-                                  * seq (@expr R (Bool_T_def impl_def m_def l_def)))):
+Lemma equivalence_luka Q:
   seq_calc_luka Q -> seq_calc_luka_impl Q.
 Proof.
 intros.
@@ -902,19 +827,19 @@ dependent induction H.
 - by apply: exL_l; exact: IHseq_calc_luka.
 - by apply: exR_l; exact: IHseq_calc_luka.
 - exact: bot_l.
-- rewrite true_false_luka. rewrite neg_impl_luka.
+- rewrite true_false_luka neg_impl_luka.
   apply implR_l.
   + rewrite -(cat0s A).
     exact/w_l/empty.
   + exact: bot_l.
-- rewrite mand_impl_luka. rewrite neg_impl_luka.
+- rewrite mand_impl_luka neg_impl_luka.
   apply implL_l. apply implR_l.
   + by exact IHseq_calc_luka2.
   + rewrite neg_impl_luka. apply implR_l.
     * have -> : [:: a, ldl_bool _ _ _ _ false & B] =
                 [:: a] ++ (ldl_bool _ _ _ _ false :: B) by [].
       apply/luka_exL_nil/w_l.
-      exact: IHseq_calc_luka2.
+      by exact: IHseq_calc_luka2.
     * have -> : [:: b, a, ldl_bool _ _ _ _ false & B] =
                 [:: b; a] ++ (ldl_bool _ _ _ _ false :: B) by [].
       apply luka_exL_nil.
@@ -922,16 +847,16 @@ dependent induction H.
                 [::ldl_bool _ _ _ _ false] ++ B ++ [:: b; a] by [].
       rewrite -(cat1s _ A).
       apply: mix_l.
-      - exact: id_l.
+      - by exact: id_l.
       - have <- : [:: b] ++ [:: a] ++ [::] = [:: b; a] by [].
         apply exL_l. rewrite cats0.
         apply (@luka_exL_nil _ ([:: a] ++ [:: b]) B).
         have helper1 : [:: a, b & B] = ([:: a] ++ [:: b]) ++ B by [].
         rewrite helper1 in IHseq_calc_luka1.
-        exact: IHseq_calc_luka1.
+        by exact: IHseq_calc_luka1.
 - rewrite mand_impl_luka neg_impl_luka.
   apply: implR_l.
-  + exact: IHseq_calc_luka1.
+  + by exact: IHseq_calc_luka1.
   + apply luka_implL_extended. rewrite neg_impl_luka.
     have -> : [:: A |- ldl_bool _ _ _ _ false :: B,
                      b `=> ldl_bool _ _ _ _ false ::A |- [:: a, ldl_bool _ _ _ _ false & B] & Q] =
@@ -956,7 +881,7 @@ dependent induction H.
     have -> : ([:: ldl_bool  _ _ _ _ false] ++ [:: a] ++ B) ++ [:: b] =
               ([:: ldl_bool  _ _ _ _ false]) ++ ([:: a] ++ B ++ [:: b]) by [].
     apply: mix_l.
-    * exact: id_l.
+    * by exact: id_l.
     * rewrite catA. apply luka_exR_nil.
       have -> : [:: b] ++ [:: a] ++ B = [::] ++ [:: b] ++ [:: a] ++ B by [].
       apply exR_l. rewrite//=.
@@ -965,8 +890,8 @@ dependent induction H.
       by apply: eex_l; rewrite cats0.
 - by rewrite neg_impl_luka; exact/implL_l/IHseq_calc_luka.
 - rewrite neg_impl_luka. apply implR_l.
-  + exact: IHseq_calc_luka1.
-  + exact: IHseq_calc_luka2.
+  + by exact: IHseq_calc_luka1.
+  + by exact: IHseq_calc_luka2.
 - rewrite mor_impl_luka. apply luka_implL_extended.
   rewrite neg_impl_luka.
   have -> : [:: A |- B, b :: A |- a `=> ldl_bool  _ _ _ _ false :: B & Q] =
@@ -975,20 +900,18 @@ dependent induction H.
   apply: implR_l.
   + rewrite -(cat1s b A).
     apply/luka_exL_nil/w_l.
-    rewrite -(cat1s (A |- B)).
-    rewrite catA.
+    rewrite -(cat1s (A |- B)) catA.
     apply ew_l.
     rewrite -(cat1s (A |- B)).
-    exact: IHseq_calc_luka1.
+    by exact: IHseq_calc_luka1.
   + have -> : ([:: a, b & A] |- ldl_bool  _ _ _ _ false :: B) :: Q ++ [:: A |- B] =
-              (([:: a, b & A] |- ldl_bool  _ _ _ _ false :: B) :: Q) ++ [:: A |- B].
-      by [].
+              (([:: a, b & A] |- ldl_bool  _ _ _ _ false :: B) :: Q) ++ [:: A |- B] by [].
     apply ew_l.
-    exact: IHseq_calc_luka2.
+    by exact: IHseq_calc_luka2.
 - rewrite mor_impl_luka. apply implR_l.
-  + exact: IHseq_calc_luka1.
-  + rewrite neg_impl_luka.  apply implL_l.
-    exact: IHseq_calc_luka2.
+  + by exact: IHseq_calc_luka1.
+  + rewrite neg_impl_luka. apply implL_l.
+    by exact: IHseq_calc_luka2.
 - apply andL_l. by exact IHseq_calc_luka.
 - apply andR_l.
   + by exact IHseq_calc_luka1.
@@ -999,14 +922,6 @@ dependent induction H.
 - apply orR_l. by exact IHseq_calc_luka.
 Qed.
 
-(*double check if `\/ or `++*)
-Lemma prelinearity_luka (Q : seq (seq (@expr R (Bool_T_def impl_def m_def l_def)) *
-                                  seq (@expr R (Bool_T_def impl_def m_def l_def))))
-     (A B : seq (@expr R (Bool_T_def impl_def m_def l_def)))
-     (a b : expr (Bool_T_def impl_def m_def l_def)) :
-    seq_calc_luka_impl ([::( [::] |- [:: (a `=> b) `\/ (b `=> a )])] ).
-Proof.
-Admitted.
 
 End hypersequent_lukasiewicz.
 
