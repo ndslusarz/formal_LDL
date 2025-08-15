@@ -403,8 +403,12 @@ have sum_top : (\sum_(a <- v) a * expR (- p0 * min_dev a v)) @[p0 --> +oo] -->
     rewrite -(mulr0 a).
     apply: cvgM => //.
       exact: cvg_cst.
+    under eq_fun do rewrite mulrC.
     apply: (@cvg_comp _ _ _ _ _ _ -oo).
-    - admit. (*mathematically yes. formalisation wise I need patience*)
+    - have min_ge0 : min_dev a v > 0. admit.
+      have h1 := (gt0_cvgMrNy  min_ge0 ). apply: (h1 ).
+      rewrite cvgNrNy.
+      by apply: cvg_id.
     - rewrite cvgNy_compNP. 
       by apply: cvgr_expR.
   rewrite -(addr0 (min_val * (\sum_(a <- v | a == min_val) 1)%:R)).
@@ -450,8 +454,12 @@ have sum_bot : (\sum_(a <- v) expR (- p0 * min_dev a v)) @[p0 --> +oo] -->
     rewrite big_seq_cond_neq big_seq_cond.
     near: t; move: e e0; apply/cvgrPdist_le.
     apply: cvg_sum => a /andP [av amin].
+    under eq_fun do rewrite mulrC.
     apply: (@cvg_comp _ _ _ _ _ _ -oo).
-    - admit. (*mathematically yes. formalisation wise I need patience*)
+    - have min_ge0 : min_dev a v > 0. admit.
+      have h1 := (gt0_cvgMrNy  min_ge0 ). apply: (h1 ).
+      rewrite cvgNrNy.
+      by apply: cvg_id.
     - rewrite cvgNy_compNP. 
       by apply: cvgr_expR.
   rewrite -(addr0 ((\sum_(a <- v | a == min_val) 1)%:R)).
