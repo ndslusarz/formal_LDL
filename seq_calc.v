@@ -1131,7 +1131,7 @@ intros; rewrite//=. dependent induction H.
 - by exists (A |- A) => //; rewrite mem_head.
 - by exists ([::] |- [::]).
 - case: IHseq_calc_product => [M].
-  rewrite !mem_cat => -[IH1 IH2].
+  rewrite !mem_cat => IH1 IH2.
   exists M => //.
   rewrite !mem_cat.
   move/orP: IH1 => [->// |/orP].
@@ -1142,7 +1142,7 @@ intros; rewrite//=. dependent induction H.
 - case IHseq_calc_product => [M + IH2].
   rewrite !mem_cat; move/orP => [h |/orP [h | h]];
   by exists M; rewrite ?mem_cat ?h ?orTb ?orbT//=.
-- case: IHseq_calc_product => [q1 [+ IH2]].
+- case: IHseq_calc_product => [q1 + IH2].
   rewrite in_cons => /predU1P[h1|h2].
   + subst.
     rewrite //= !eval_product_add in IH2.
@@ -1187,21 +1187,21 @@ intros; rewrite//=. dependent induction H.
   + by exists q1 => //; rewrite in_cons h1 orbT.
   + by exists q2 => //; rewrite in_cons h2 orbT.
   + by exists q1 => //; rewrite in_cons h1 orbT. 
-- case: IHseq_calc_product => [q1 [+ IH2]].
+- case: IHseq_calc_product => [q1 + IH2].
   rewrite in_cons => /predU1P[h1|h2].
   + subst. exists ((X ++ B ++ A ++ Y |- C)); first by rewrite mem_head.
     rewrite//= !eval_product_add in IH2.
     rewrite//= !eval_product_add. 
     by lra.
   + by exists q1 => //; rewrite !in_cons h2 !orbT.
-- case: IHseq_calc_product => [q1 [+ IH2]].
+- case: IHseq_calc_product => [q1 + IH2].
   rewrite in_cons => /predU1P[h1|h2].
   + subst. exists (C |- X ++ B ++ A ++ Y); first by rewrite mem_head.
     rewrite//= !eval_product_add in IH2.
     rewrite//= !eval_product_add. 
     by lra.
   + by exists q1 => //; rewrite !in_cons h2 !orbT.
-- case: IHseq_calc_product => [q1 [+ IH2]].
+- case: IHseq_calc_product => [q1 + IH2].
   rewrite in_cons => /predU1P[h1|h2].
   + exists (A ++ C |- B); subst; rewrite //= in IH2.
     * by rewrite in_cons eq_refl orTb.
@@ -1216,7 +1216,7 @@ intros; rewrite//=. dependent induction H.
     have helper : forall (x : R), 0 <= x <= 1 -> 0 <= x /\ x <= 1 by intros; lra.
     apply helper in h. case h => [h1 _].
     by rewrite h1.
-- case: IHseq_calc_product => [q1 [+ IH2]].
+- case: IHseq_calc_product => [q1 + IH2].
   rewrite in_cons => /predU1P[h1|h2].
   + subst.
     exists (a `** b :: B |- A); first by rewrite in_cons eq_refl orTb.
@@ -1224,7 +1224,7 @@ intros; rewrite//=. dependent induction H.
     rewrite /= /eval_product !big_cons//= !big_cons big_nil mulr1.
     by exact IH2.
   + by exists q1 => //; rewrite !in_cons h2 !orbT.
-- case: IHseq_calc_product => [q1 [+ IH2]].
+- case: IHseq_calc_product => [q1 + IH2].
   rewrite in_cons => /predU1P[h1|h2].
   + subst.
     exists (A |- a `** b :: B); first by rewrite in_cons eq_refl orTb.
@@ -1232,7 +1232,7 @@ intros; rewrite//=. dependent induction H.
     rewrite//= /eval_product !big_cons//= !big_cons big_nil mulr1.
     by exact IH2.
   + by exists q1 => //; rewrite !in_cons h2 !orbT.
-- case: IHseq_calc_product => [q1 [+ IH2]].
+- case: IHseq_calc_product => [q1 + IH2].
   rewrite in_cons => /predU1P[h1|h2].
   + subst.
     exists ((`~ a) :: B |- A); first by rewrite in_cons eq_refl orTb. 
@@ -1286,52 +1286,48 @@ intros; rewrite//=. dependent induction H.
   + by exists q1 => //; rewrite in_cons h1 orbT.
   + by exists q2 => //; rewrite in_cons h2 orbT.
   + by exists q1 => //; rewrite in_cons h1 orbT.
-- case IHseq_calc_product1 => [q1 IH11 IH12].
-  case IHseq_calc_product2 => [q2 IH21 IH22].
-  rewrite !in_cons in IH11 IH21. 
-  move/orP : IH11. move/orP: IH21.
-  move => [/eqP h2 | h2]; move => [/eqP h1 | h1].
+- case IHseq_calc_product1 => [q1].
+  case IHseq_calc_product2 => [q2].
+  rewrite !in_cons //= => /orP [/eqP h2 | h2] IH22 /orP[/eqP h1 | h1] IH12.
   + subst. 
     exists (a `=> b :: A |- B).
     by rewrite in_cons eq_refl orTb.
-    rewrite //= !eval_product_add_el  //= in IH12.
-    rewrite //= !eval_product_add_el in IH22. 
+    rewrite //= !eval_product_add_el //= in IH12 IH22. 
     rewrite//= !eval_product_add_el//=.
     have ha := @translate_Bool_T_01 R p p1 product _ _ _ (a).
     have hb := @translate_Bool_T_01 R p p1 product _ _ _ (b).
     have hB := eval_product_01 B.
     have hA := eval_product_01 A.
     move: IH12; case: ifP; case: ifP; intros; try rewrite mul0r in IH12.
-    * have ha' :  [[a]]_product != 0 \/ 0 = [[a]]_product. lra.
+    * have ha' :  [[a]]_product != 0 \/ 0 = [[a]]_product by lra.
       destruct ha' as [ha' | ha']; rewrite//=.
       - have helper:  [[b]]_product * ([[a]]_product / [[a]]_product) * eval_product A <=
                          [[a]]_product * eval_product B ->
                       [[b]]_product / [[a]]_product * eval_product A <= eval_product B by intros; nra.
         have h := divff ha' . rewrite h mulr1 in helper.
-        rewrite helper//=. 
-      - lra.
+        by rewrite helper. 
+      - by lra.
     * rewrite mul1r//=.
       have lelt : ([[b]]_product < [[a]]_product) = false <->
-                    [[b]]_product >= [[a]]_product.
-      split; intros; lra.
+                    [[b]]_product >= [[a]]_product by split; intros; lra.
       apply lelt in n.
       have helper : [[b]]_product * eval_product A <= [[a]]_product * eval_product B ->
-                    [[a]]_product * eval_product A <= [[a]]_product * eval_product B.
-      intros; nra.
-      apply helper in IH22. nra.
+                    [[a]]_product * eval_product A <= [[a]]_product * eval_product B by intros; nra.
+      by apply helper in IH22; nra.
     * rewrite mul1r//= in IH12.
       have a0 : (0 < [[a]]_product) = false ->
                 0 <= [[a]]_product <= 1 -> [[a]]_product = 0 by intros; lra.
       apply a0 in n; rewrite//=.
-      rewrite n in i. have contr : [[b]]_product < 0 ->
-                                        0 <= [[b]]_product <= 1 ->
-                                        False by intros; lra.
+      rewrite n in i.
+      have contr : [[b]]_product < 0 ->
+                   0 <= [[b]]_product <= 1 ->  False by intros; lra.
         exfalso;  by apply (contr i hb).
-    * rewrite mul1r//= in IH12. rewrite mul1r//=.
+    * rewrite mul1r//= in IH12. 
+      by rewrite mul1r//=.
   + by exists q1 => //; rewrite in_cons h1 orbT.
   + by exists q2 => //; rewrite in_cons h2 orbT.
   + by exists q1 => //; rewrite in_cons h1 orbT. 
-- move: IHseq_calc_product => [q1 [+ IH2]].
+- move: IHseq_calc_product => [q1 + IH2].
   rewrite !in_cons => /predU1P[h1 | /predU1P [h2 | h3]].
   + subst.
     exists (a `/\ b :: B |- A); first by rewrite in_cons eq_refl orTb.
@@ -1374,115 +1370,83 @@ intros; rewrite//=. dependent induction H.
       have hB := eval_product_01 B. rewrite /eval_product in hB.
       by rewrite mul1r; nra.
   + by exists q1 => //; rewrite !in_cons h3 !orbT.
-- destruct IHseq_calc_product1 as [q1 [IH11 IH12]].
-  destruct IHseq_calc_product2 as [q2 [IH21 IH22]].
-  rewrite in_cons in IH11. rewrite in_cons in IH21. 
-  move/orP : IH11. move/orP: IH21.
-  move => [/eqP h2 | h2]; move => [/eqP h1 | h1].
+- case IHseq_calc_product1 => [q1].
+  case IHseq_calc_product2 => [q2].
+  rewrite !in_cons //= => /orP [/eqP h2 | h2] IH22 /orP[/eqP h1 | h1] IH12.
   + subst. 
-    exists (A |- a `/\ b :: B).
-    rewrite in_cons eq_refl orTb; split; first by [].
-    rewrite //= !eval_product_add_el //= in IH12.
-    rewrite //= !eval_product_add_el in IH22. 
+    exists (A |- a `/\ b :: B); first by rewrite in_cons eq_refl orTb.
+    rewrite //= !eval_product_add_el //= in IH12 IH22. 
     rewrite//= !eval_product_add_el//= /minR !big_cons big_nil /minr.
     have ha := @translate_Bool_T_01 R p p1 product _ _ _ (a).
     have hb := @translate_Bool_T_01 R p p1 product _ _ _ (b).
     have hB := eval_product_01 B.
     have hA := eval_product_01 A.
-    repeat case: ifP; move=> h1 h2; try nra.
-  + exists q1. 
-    by rewrite !in_cons h1 IH12 !orbT//=. 
-  + exists q2. 
-    by rewrite !in_cons h2 IH22 !orbT//=. 
-  + exists q1. 
-    by rewrite !in_cons h1 IH12 !orbT//=. 
-- destruct IHseq_calc_product1 as [q1 [IH11 IH12]].
-  destruct IHseq_calc_product2 as [q2 [IH21 IH22]].
-  rewrite in_cons in IH11. rewrite in_cons in IH21. 
-  move/orP : IH11. move/orP: IH21.
-  move => [/eqP h2 | h2]; move => [/eqP h1 | h1].
+    by repeat case: ifP; move=> h1 h2; nra.
+  + by exists q1 => //; rewrite in_cons h1 orbT.
+  + by exists q2 => //; rewrite in_cons h2 orbT.
+  + by exists q1 => //; rewrite in_cons h1 orbT.
+- case IHseq_calc_product1 => [q1].
+  case IHseq_calc_product2 => [q2].
+  rewrite !in_cons //= => /orP [/eqP h2 | h2] IH22 /orP[/eqP h1 | h1] IH12.
   + subst. 
-    exists (a `\/ b :: B |- A).
-    rewrite in_cons eq_refl orTb; split; first by [].
-    rewrite //= !eval_product_add_el //= in IH12.
-    rewrite //= !eval_product_add_el in IH22. 
+    exists (a `\/ b :: B |- A); first by rewrite in_cons eq_refl orTb.
+    rewrite //= !eval_product_add_el //= in IH12 IH22. 
     rewrite//= !eval_product_add_el//= /maxR !big_cons big_nil /maxr.
     have ha := @translate_Bool_T_01 R p p1 product _ _ _ (a).
     have hb := @translate_Bool_T_01 R p p1 product _ _ _ (b).
     have hB := eval_product_01 B.
     have hA := eval_product_01 A.
-    repeat case: ifP; move=> h1 h2; try nra.
-  + exists q1. 
-    by rewrite !in_cons h1 IH12 !orbT//=. 
-  + exists q2. 
-    by rewrite !in_cons h2 IH22 !orbT//=. 
-  + exists q1. 
-    by rewrite !in_cons h1 IH12 !orbT//=.  
-- move: IHseq_calc_product => [q1 [+ IH2]].
+    by repeat case: ifP; move=> h1 h2; nra.
+  + by exists q1 => //; rewrite in_cons h1 orbT.
+  + by exists q2 => //; rewrite in_cons h2 orbT.
+  + by exists q1 => //; rewrite in_cons h1 orbT. 
+- move: IHseq_calc_product => [q1 + IH2].
   rewrite !in_cons => /predU1P[h1 | /predU1P [h2 | h3]].
   + subst.
-    exists (A |- a `\/ b :: B).
-    rewrite in_cons eq_refl orTb; split; first by [].
+    exists (A |- a `\/ b :: B); first by rewrite in_cons eq_refl orTb.
     rewrite //= /eval_product !big_cons//= /maxR !big_cons big_nil /maxr. 
-    rewrite//= /eval_product !big_cons  in IH2. 
+    rewrite//= /eval_product !big_cons in IH2. 
     have ha := @translate_Bool_T_01 R p p1 product _ _ _ (a).
     have hb := @translate_Bool_T_01 R p p1 product _ _ _ (b).
     have hB := eval_product_01 B. 
     have hA := eval_product_01 A.
     rewrite /eval_product in hB hA.
-    repeat case: ifP; move=> h1 h2; try nra.
+    by repeat case: ifP; move=> h1 h2; nra.
   + subst.
-    exists (A |- a `\/ b :: B).
-    rewrite in_cons eq_refl orTb; split; first by [].
+    exists (A |- a `\/ b :: B); first by rewrite in_cons eq_refl orTb.
     rewrite //= /eval_product !big_cons//= /maxR !big_cons big_nil /maxr. 
-    rewrite//= /eval_product !big_cons  in IH2. 
+    rewrite//= /eval_product !big_cons in IH2. 
     have ha := @translate_Bool_T_01 R p p1 product _ _ _ (a).
     have hb := @translate_Bool_T_01 R p p1 product _ _ _ (b).
     have hB := eval_product_01 B. 
     have hA := eval_product_01 A.
     rewrite /eval_product in hB hA.
-    repeat case: ifP; move=> h1 h2; try nra.
-  + exists q1. rewrite !in_cons h3 !orbT.
-    split; rewrite//=.     
+    by repeat case: ifP; move=> h1 h2; nra.
+  + by exists q1 => //; rewrite !in_cons h3 !orbT.  
 Qed.
 
-
-Lemma sound_product' (Q : seq ( seq (@expr R (Bool_T_def impl_def m_def l_def)) 
-                                * seq (@expr R (Bool_T_def impl_def m_def l_def)))):
+Lemma sound_product' Q :
 seq_calc_product' Q -> 
-exists (q : ( seq (@expr R (Bool_T_def impl_def m_def l_def)) 
-              * seq (@expr R (Bool_T_def impl_def m_def l_def)))),
-  q \in Q /\ (eval_product (fst q) <= eval_product (snd q)).
+exists2 q : seq formula * seq formula,
+  q \in Q & (eval_product (fst q) <= eval_product (snd q)).
 Proof.
 intros; rewrite//=. dependent induction H.
-- exists (A |- A). rewrite //= mem_head. split. by [].  
-  simpl. by lra.
-- exists ([::] |- [::]). 
-  rewrite mem_head.  split. by []. 
-  rewrite /eval_product//=.
-- destruct IHseq_calc_product' as [M [IH1 IH2]]. 
-  exists M. 
-  rewrite !mem_cat //= in IH1.
-  rewrite !mem_cat. split; first last.
-  by rewrite IH2//=. move/orP: IH1.
-  move => [IH1 | /orP IH1].
-  rewrite IH1//=.
-  destruct IH1 as [IH1 | IH1].
-  rewrite IH1 !orbT//=.
-  move/orP: IH1.
-  move => [IH1 | IH1]; rewrite IH1 ?orTb ?orbT//=.
-- destruct IHseq_calc_product' as [q [IH1 IH2]].
-  exists q. rewrite mem_cat IH1 orTb.
-  split. by []. 
-  by apply IH2.
-- destruct IHseq_calc_product' as [M [IH1 IH2]].   
-  exists M. rewrite !mem_cat in IH1. 
-  rewrite mem_cat. move/orP : IH1. 
-  move => [h |/orP h].  rewrite h ?orbT; split; rewrite//=. 
-  move: h. move => [h | h]; rewrite h ?orbT; split; rewrite//=.
-- destruct IHseq_calc_product' as [q1 [IH1 IH2]]. 
-  rewrite in_cons in IH1. move/orP : IH1.
-  move => [/eqP h1 | h2].
+- by exists (A |- A) => //; rewrite mem_head.
+- by exists ([::] |- [::]).
+- case: IHseq_calc_product' => [M].
+  rewrite !mem_cat => IH1 IH2.
+  exists M => //.
+  rewrite !mem_cat.
+  move/orP: IH1 => [->// |/orP].
+  case => [-> |]; first by rewrite !orbT.
+  by move/orP => [|] ->; rewrite ?(orTb,orbT).
+- case: IHseq_calc_product' => [q IH1 IH2].
+  by exists q => //; rewrite mem_cat IH1 orTb.
+- case IHseq_calc_product' => [M + IH2].
+  rewrite !mem_cat; move/orP => [h |/orP [h | h]];
+  by exists M; rewrite ?mem_cat ?h ?orTb ?orbT//=.
+- case: IHseq_calc_product' => [q1 + IH2].
+  rewrite in_cons => /predU1P[h1|h2].
   + subst.
     rewrite //= !eval_product_add in IH2.
     have ha := eval_product_01 A.
@@ -1490,126 +1454,107 @@ intros; rewrite//=. dependent induction H.
     have hc := eval_product_01 C.
     have hd := eval_product_01 D.
     have /orP[h|h] := le_total (eval_product A) (eval_product C).
-    * exists (A |- C). rewrite //= mem_head. split. by [].
+    * exists (A |- C); first by rewrite //= mem_head.
       by rewrite h.
-    * have helper : eval_product A * eval_product B <= eval_product A * eval_product D. nra.
-      have helper1 : forall (a b d : R), a * b <= a * d ->
+    * have helper : eval_product A * eval_product B <=
+                    eval_product A * eval_product D by nra.
+      have helper1 (a b d : R) : a * b <= a * d ->
                                            0 < a ->
                                            b <= d by intros; nra.
-      have [ha' | ha'] :  0 < eval_product A \/ 0 = eval_product A. lra.
-      + exists (B |- D). rewrite //= !in_cons eq_refl orTb orbT. 
-        split. by [].
-        apply (helper1 _ _ _ helper) in ha'. rewrite//=.
-      + exists (A |- C). rewrite //= mem_head. split. by [].
-        lra.
-  + exists q1. 
-    by rewrite !in_cons h2 !orbT IH2//=.   
-- destruct IHseq_calc_product'1 as [q1 [IH11 IH12]].
-  destruct IHseq_calc_product'2 as [q2 [IH21 IH22]].
-  rewrite in_cons in IH11. rewrite in_cons in IH21. 
-  move/orP : IH11; move/orP: IH21;
-  move => [/eqP h2 | h2]; move => [/eqP h1 | h1].
-  + exists (A ++ B |- C ++ D).
-    subst.
-    rewrite in_cons eq_refl orTb. split; first by [].
+      have [ha'|ha']:  0 < eval_product A \/ 0 = eval_product A by lra.
+      + exists (B |- D); first  by rewrite //= !in_cons eq_refl orTb orbT.
+        apply (helper1 _ _ _ helper) in ha'. 
+        by rewrite//=.
+      + exists (A |- C); first by rewrite //= mem_head.
+        by lra.
+  + by exists q1 => //; rewrite !in_cons h2 !orbT.
+- case IHseq_calc_product'1 => [q1].
+  case IHseq_calc_product'2 => [q2].
+  rewrite !in_cons //= => /orP [/eqP h2 | h2] IH12 /orP[/eqP h1 | h1] IH22.
+  + exists (A ++ B |- C ++ D); subst; first by rewrite in_cons eq_refl orTb.
     rewrite //= !eval_product_add.
-    rewrite //= in IH12. rewrite //= in IH22.
-    have le_mul (a b c : R):  0 <= a -> 0 <= b -> a <= c ->
-                              b <=1 -> a * b <= c * b by intros; nra.
+    rewrite //= in IH12 IH22.
+    have le_mul : forall ( a b c :R ),  0 <= a -> 0 <= b -> a <= c ->
+                                        b <=1 -> a * b <= c * b by intros; nra.
+    
     have /andP[ha0 ha1] := eval_product_01 A.
     have /andP[hb0 hb1] := eval_product_01 B.
     have /andP[hc0 hc1] := eval_product_01 C.
     have /andP[hd0 hd1] := eval_product_01 D.
-    apply (le_mul _ _ (eval_product C) ha0 hb0) in IH12; first last. by exact hb1.
+    apply (le_mul _ _ (eval_product C) ha0 hb0) in IH22; last by exact hb1.
     have le_le : forall (a b c d : R),  0 <= a -> 0 <= b -> 0 <= c -> 0 <= d ->
-                                        a* b <= c * b -> b <= d -> a * b <= c * d.
-      by intros; nra.
+                                        a* b <= c * b -> b <= d -> a * b <= c * d by intros; nra.
     apply (le_le (eval_product A) (eval_product B) (eval_product C) 
-             (eval_product D) ha0 hb0 hc0 hd0) in IH22; first last. by exact IH12.
+             (eval_product D) ha0 hb0 hc0 hd0) in IH22;  last by exact IH12.
     by exact IH22.
-  + exists q1.
-    by rewrite !in_cons h1 IH12 !orbT.
-  + exists q2.
-    by rewrite !in_cons h2 IH22 !orbT.
-  + exists q1.
-    by rewrite !in_cons h1 IH12 !orbT.
-- case: IHseq_calc_product' => [q [+ IH2]].
-  rewrite in_cons => /predU1P[h | h].
-  + subst. exists (X ++ B ++ A ++ Y |- C).
-    rewrite mem_head. split. by [].
+  + by exists q1 => //; rewrite in_cons h1 orbT.
+  + by exists q2 => //; rewrite in_cons h2 orbT.
+  + by exists q1 => //; rewrite in_cons h1 orbT.
+- case: IHseq_calc_product' => [q1 + IH2].
+  rewrite in_cons => /predU1P[h1|h2].
+  + subst. exists ((X ++ B ++ A ++ Y |- C)); first by rewrite mem_head.
     rewrite//= !eval_product_add in IH2.
-    rewrite//= !eval_product_add. lra.
-  + exists q.
-    by rewrite in_cons h IH2 orbT.
-- move: IHseq_calc_product' => [q [+ IH2]].
-  rewrite in_cons => /predU1P[h | h].
-  + subst. exists (C |- X ++ B ++ A ++ Y).
-    rewrite mem_head. split. by [].
+    rewrite//= !eval_product_add. 
+    by lra.
+  + by exists q1 => //; rewrite !in_cons h2 !orbT.
+- case: IHseq_calc_product' => [q1 + IH2].
+  rewrite in_cons => /predU1P[h1|h2].
+  + subst. exists (C |- X ++ B ++ A ++ Y); first by rewrite mem_head.
     rewrite//= !eval_product_add in IH2.
-    rewrite//= !eval_product_add. lra.
-  + exists q.
-    by rewrite in_cons h IH2 orbT.
-- move: IHseq_calc_product' => [q [+ IH2]].
-  rewrite in_cons => /predU1P[h | h].
-  + exists (A ++ C |- B).
-    subst. rewrite //= in IH2.
-    rewrite in_cons eq_refl orTb; split; first by [].
-    rewrite //= eval_product_add.
-    have hac := eval_product_mul_le A C.
-    nra.
-  + exists q.
-    by rewrite in_cons h IH2 orbT.
+    rewrite//= !eval_product_add. 
+    by lra.
+  + by exists q1 => //; rewrite !in_cons h2 !orbT.
+- case: IHseq_calc_product' => [q1 + IH2].
+  rewrite in_cons => /predU1P[h1|h2].
+  + exists (A ++ C |- B); subst; rewrite //= in IH2.
+    * by rewrite in_cons eq_refl orTb.
+    * rewrite //= eval_product_add . 
+      have hac := eval_product_mul_le A C.
+      by nra.
+  + by exists q1 => //; rewrite !in_cons h2 !orbT. 
 - exists (ldl_bool _ _ _ _ false :: A |- B).
-  rewrite in_cons eq_refl orTb. split. by [].
-  rewrite//= /eval_product big_cons//= mul0r.
-  by have /andP[]  := eval_product_01 B.
+  + by rewrite in_cons eq_refl orTb.
+  + rewrite//= /eval_product big_cons//= mul0r.
+    have h := eval_product_01 B. rewrite /eval_product in h.
+    have helper : forall (x : R), 0 <= x <= 1 -> 0 <= x /\ x <= 1 by intros; lra.
+    apply helper in h. case h => [h1 _].
+    by rewrite h1.
 - exists (A |- [:: ldl_bool _ _ _ _ true]).
-  rewrite in_cons eq_refl orTb. split. by [].
-  rewrite//= /eval_product big_cons//= mul1r big_nil.
-  by have /andP[] := eval_product_01 A.
-- case: IHseq_calc_product' => [q1 [+ IH2]].
-  rewrite in_cons => /predU1P[IH1 | IH1].
+  + by rewrite in_cons eq_refl orTb.
+  + rewrite//= /eval_product big_cons//= mul1r big_nil.
+    by have /andP[] := eval_product_01 A.
+- case: IHseq_calc_product' => [q1 + IH2].
+  rewrite in_cons => /predU1P[h1|h2].
   + subst.
-    exists (a `** b :: B |- A).
-    rewrite in_cons eq_refl orTb. split. by [].
-    rewrite//= /eval_product !big_cons//= mulrA in IH2.
-    rewrite//= /eval_product  !big_cons//= !big_cons big_nil mulr1.
-    exact: IH2.
-  + exists q1.
-    by rewrite !in_cons IH1 IH2 !orbT.
-- move: IHseq_calc_product' => [q1 [+ IH2]].
-  rewrite in_cons => /predU1P[IH1 | IH1].
+    exists (a `** b :: B |- A); first by rewrite in_cons eq_refl orTb.
+    rewrite /= /eval_product !big_cons//= mulrA in IH2.
+    rewrite /= /eval_product !big_cons//= !big_cons big_nil mulr1.
+    by exact IH2.
+  + by exists q1 => //; rewrite !in_cons h2 !orbT.
+- case: IHseq_calc_product' => [q1 + IH2].
+  rewrite in_cons => /predU1P[h1|h2].
   + subst.
-    exists (A |- a `** b :: B).
-    rewrite in_cons eq_refl orTb. split. by [].
+    exists (A |- a `** b :: B); first by rewrite in_cons eq_refl orTb.
     rewrite//= /eval_product !big_cons//= mulrA in IH2.
     rewrite//= /eval_product !big_cons//= !big_cons big_nil mulr1.
-    exact: IH2.
-  + exists q1.
-    by rewrite !in_cons IH1 IH2 !orbT.
-- destruct IHseq_calc_product'1 as [q1 [IH11 IH12]].
-  destruct IHseq_calc_product'2 as [q2 [IH21 IH22]].
-  rewrite in_cons in IH11. rewrite in_cons in IH21.
-  move/orP : IH11; move/orP: IH21;
-  move => [/eqP h2 | h2]; move => [/eqP h1 | h1].
+    by exact IH2.
+  + by exists q1 => //; rewrite !in_cons h2 !orbT.
+- case IHseq_calc_product'1 => [q1].
+  case IHseq_calc_product'2 => [q2].
+  rewrite !in_cons //= => /orP [/eqP h2 | h2] IH22 /orP[/eqP h1 | h1] IH12.
   + subst.
-    exists (A |- (`~ a) :: B).
-    rewrite in_cons eq_refl orTb; split; first by [].
+    exists (A |- (`~ a) :: B); first by rewrite in_cons eq_refl orTb.
     rewrite //= !eval_product_add_el//= mul0r in IH22.
     rewrite //= in IH12.
     rewrite//= eval_product_add_el//=.
     by case: ifPn; intros; rewrite ?(mul0r,mul1r)//; nra.
-  + exists q1.
-    by rewrite !in_cons h1 IH12 !orbT.
-  + exists q2.
-    by rewrite !in_cons h2 IH22 !orbT.
-  + exists q1.
-    by rewrite !in_cons h1 IH12 !orbT.
-- move: IHseq_calc_product' => [q1 [+ IH2]].
+  + by exists q1 => //; rewrite in_cons h1 orbT.
+  + by exists q2 => //; rewrite in_cons h2 orbT.
+  + by exists q1 => //; rewrite in_cons h1 orbT.
+- move: IHseq_calc_product' => [q1 + IH2].
   rewrite in_cons => /predU1P[IH1 | IH1].
   + subst.
-    exists ((`~ a) :: B |- A).
-    rewrite in_cons eq_refl orTb; split; first by [].
+    exists ((`~ a) :: B |- A); first by rewrite in_cons eq_refl orTb.
     rewrite //= /eval_product !big_cons big_nil mulr1 //= in IH2.
     rewrite//= /eval_product !big_cons//=.
     case: ifPn; intros; rewrite//=.
@@ -1619,24 +1564,21 @@ intros; rewrite//=. dependent induction H.
       have ha := @translate_Bool_T_01 R _ p1 product _ _ _ a.
       have hb : forall (x : R),  ~~ (0 < x) ->
                  0 <= x <= 1 ->
-                 0 = x. intros; lra.
+                 0 = x by intros; lra.
       apply (hb _  n) in ha.
       rewrite -ha in IH2.
       have hA := eval_product_01 A. rewrite /eval_product in hA.
       have helper : \prod_(i <- B) [[i]]_product <= 0 ->
                     0 <= \prod_(i <- A) [[i]]_product <= 1 ->
-                    \prod_(i <- B) [[i]]_product <= \prod_(i <- A) [[i]]_product.
-      intros; lra.
+                    \prod_(i <- B) [[i]]_product <= \prod_(i <- A) [[i]]_product by intros; lra.
       by apply (helper IH2) in hA; exact hA.
-  + exists q1.
-    by rewrite !in_cons IH1 IH2 !orbT.
-- move: IHseq_calc_product' => [q1 [+ IH2]].
+  + by exists q1 => //; rewrite !in_cons IH1 !orbT.
+- move: IHseq_calc_product' => [q1 + IH2].
   rewrite !in_cons => /predU1P[h1 | /predU1P [h2 | h3]].
   + subst.
-    exists (a `/\ b :: B |- A).
-    rewrite in_cons eq_refl orTb; split; first by [].
+    exists (a `/\ b :: B |- A); first by rewrite in_cons eq_refl orTb.
     rewrite //= /eval_product !big_cons//= /minR !big_cons big_nil /minr. 
-    rewrite//= /eval_product !big_cons  in IH2. 
+    rewrite//= /eval_product !big_cons in IH2. 
     repeat case: ifP; move=> h1 h2; try nra.
     * have ha := @translate_Bool_T_01 R p p1 product _ _ _ (a).
       have hb := @translate_Bool_T_01 R p p1 product _ _ _ (b).
@@ -1645,110 +1587,91 @@ intros; rewrite//=. dependent induction H.
                     [[b]]_product <= [[a]]_product by split; intros; lra.
       apply lelt in h2.
       have hA' : [[b]]_product * \prod_(j <- B) [[j]]_product <= \prod_(i <- A) [[i]]_product
-      by intros; nra.
-      exact hA'.
+        by intros; nra.
+      by exact hA'.
     * rewrite mul1r.
       have ha := @translate_Bool_T_01 R p p1 product _ _ _ (a). 
       have ha1 : forall (x : R),  (x < 1) = false -> 
                  0 <= x <= 1 ->
-                 x = 1. intros; lra.
+                 x = 1 by intros; lra.
       apply (ha1 _ h2) in ha; rewrite//=.
       rewrite ha mul1r in IH2.
-      exact IH2.
+      by exact IH2.
   + subst.
-    exists (a `/\ b :: B |- A).
-    rewrite in_cons eq_refl orTb; split; first by [].
+    exists (a `/\ b :: B |- A); first by rewrite in_cons eq_refl orTb.
     rewrite //= /eval_product !big_cons//= /minR !big_cons big_nil /minr. 
-    rewrite//= /eval_product !big_cons  in IH2. 
+    rewrite//= /eval_product !big_cons in IH2. 
     repeat case: ifP; move=> h1 h2; try nra.
     * have hB := eval_product_01 B. rewrite /eval_product in hB.
       have h' : [[a]]_product * \prod_(j <- B) [[j]]_product <= \prod_(i <- A) [[i]]_product
-      by intros; nra.
-      exact h'.
+        by intros; nra.
+      by exact h'.
     * have hb := @translate_Bool_T_01 R p p1 product _ _ _ (b). 
       have hB := eval_product_01 B. rewrite /eval_product in hB.
       have hb1 : forall (x : R),  (x < 1) = false -> 
                  0 <= x <= 1 ->
-                 x = 1. intros; lra.
+                 x = 1 by  intros; lra.
       apply (hb1 _ h1) in hb; rewrite//=.
       rewrite hb mul1r in IH2.
-      nra.
+      by nra.
     * rewrite mul1r.
       have hb := @translate_Bool_T_01 R p p1 product _ _ _ (b).
       have hB := eval_product_01 B. rewrite /eval_product in hB.
-      nra.
-  + exists q1. rewrite !in_cons h3 !orbT.
-    split; rewrite//=.
-- destruct IHseq_calc_product'1 as [q1 [IH11 IH12]].
-  destruct IHseq_calc_product'2 as [q2 [IH21 IH22]].
-  rewrite in_cons in IH11. rewrite in_cons in IH21. 
-  move/orP : IH11. move/orP: IH21.
-  move => [/eqP h2 | h2]; move => [/eqP h1 | h1].
+      by nra.
+  + by exists q1 => //; rewrite !in_cons h3 !orbT.
+- case IHseq_calc_product'1 => [q1].
+  case IHseq_calc_product'2 => [q2].
+  rewrite !in_cons //= => /orP [/eqP h2 | h2] IH22 /orP[/eqP h1 | h1] IH12.
   + subst. 
-    exists (A |- a `/\ b :: B).
-    rewrite in_cons eq_refl orTb; split; first by [].
-    rewrite //= !eval_product_add_el //= in IH12.
-    rewrite //= !eval_product_add_el in IH22. 
+    exists (A |- a `/\ b :: B); first by rewrite in_cons eq_refl orTb.
+    rewrite //= !eval_product_add_el //= in IH12 IH22. 
     rewrite//= !eval_product_add_el//= /minR !big_cons big_nil /minr.
     have ha := @translate_Bool_T_01 R p p1 product _ _ _ (a).
     have hb := @translate_Bool_T_01 R p p1 product _ _ _ (b).
     have hB := eval_product_01 B.
     have hA := eval_product_01 A.
-    repeat case: ifP; move=> h1 h2; try nra.
-  + exists q1. 
-    by rewrite !in_cons h1 IH12 !orbT//=. 
-  + exists q2. 
-    by rewrite !in_cons h2 IH22 !orbT//=. 
-  + exists q1. 
-    by rewrite !in_cons h1 IH12 !orbT//=. 
-- destruct IHseq_calc_product'1 as [q1 [IH11 IH12]].
-  destruct IHseq_calc_product'2 as [q2 [IH21 IH22]].
-  rewrite in_cons in IH11. rewrite in_cons in IH21. 
-  move/orP : IH11. move/orP: IH21.
-  move => [/eqP h2 | h2]; move => [/eqP h1 | h1].
+    by repeat case: ifP; move=> h1 h2; nra.
+  + by exists q1 => //; rewrite in_cons h1 orbT.
+  + by exists q2 => //; rewrite in_cons h2 orbT.
+  + by exists q1 => //; rewrite in_cons h1 orbT.
+- case IHseq_calc_product'1 => [q1].
+  case IHseq_calc_product'2 => [q2].
+  rewrite !in_cons //= => /orP [/eqP h2 | h2] IH22 /orP[/eqP h1 | h1] IH12.
   + subst. 
-    exists (a `\/ b :: B |- A).
-    rewrite in_cons eq_refl orTb; split; first by [].
-    rewrite //= !eval_product_add_el //= in IH12.
-    rewrite //= !eval_product_add_el in IH22. 
+    exists (a `\/ b :: B |- A); first by rewrite in_cons eq_refl orTb.
+    rewrite //= !eval_product_add_el //= in IH12 IH22. 
     rewrite//= !eval_product_add_el//= /maxR !big_cons big_nil /maxr.
     have ha := @translate_Bool_T_01 R p p1 product _ _ _ (a).
     have hb := @translate_Bool_T_01 R p p1 product _ _ _ (b).
     have hB := eval_product_01 B.
     have hA := eval_product_01 A.
-    repeat case: ifP; move=> h1 h2; try nra.
-  + exists q1. 
-    by rewrite !in_cons h1 IH12 !orbT//=. 
-  + exists q2. 
-    by rewrite !in_cons h2 IH22 !orbT//=. 
-  + exists q1. 
-    by rewrite !in_cons h1 IH12 !orbT//=.  
-- move: IHseq_calc_product' => [q1 [+ IH2]].
+    by repeat case: ifP; move=> h1 h2; nra.
+  + by exists q1 => //; rewrite in_cons h1 orbT.
+  + by exists q2 => //; rewrite in_cons h2 orbT.
+  + by exists q1 => //; rewrite in_cons h1 orbT. 
+- move: IHseq_calc_product' => [q1 + IH2].
   rewrite !in_cons => /predU1P[h1 | /predU1P [h2 | h3]].
   + subst.
-    exists (A |- a `\/ b :: B).
-    rewrite in_cons eq_refl orTb; split; first by [].
+    exists (A |- a `\/ b :: B); first by rewrite in_cons eq_refl orTb.
     rewrite //= /eval_product !big_cons//= /maxR !big_cons big_nil /maxr. 
-    rewrite//= /eval_product !big_cons  in IH2. 
+    rewrite//= /eval_product !big_cons in IH2. 
     have ha := @translate_Bool_T_01 R p p1 product _ _ _ (a).
     have hb := @translate_Bool_T_01 R p p1 product _ _ _ (b).
     have hB := eval_product_01 B. 
     have hA := eval_product_01 A.
     rewrite /eval_product in hB hA.
-    repeat case: ifP; move=> h1 h2; try nra.
+    by repeat case: ifP; move=> h1 h2; nra.
   + subst.
-    exists (A |- a `\/ b :: B).
-    rewrite in_cons eq_refl orTb; split; first by [].
+    exists (A |- a `\/ b :: B); first by rewrite in_cons eq_refl orTb.
     rewrite //= /eval_product !big_cons//= /maxR !big_cons big_nil /maxr. 
-    rewrite//= /eval_product !big_cons  in IH2. 
+    rewrite//= /eval_product !big_cons in IH2. 
     have ha := @translate_Bool_T_01 R p p1 product _ _ _ (a).
     have hb := @translate_Bool_T_01 R p p1 product _ _ _ (b).
     have hB := eval_product_01 B. 
     have hA := eval_product_01 A.
     rewrite /eval_product in hB hA.
-    repeat case: ifP; move=> h1 h2; try nra.
-  + exists q1. rewrite !in_cons h3 !orbT.
-    split; rewrite//=.     
+    by repeat case: ifP; move=> h1 h2; nra.
+  + by exists q1 => //; rewrite !in_cons h3 !orbT.      
 Qed.
 
 Lemma product_true_false_admissable :
@@ -1756,14 +1679,13 @@ Lemma product_true_false_admissable :
     [[`~ ldl_bool neg_def impl_def m_def l_def false]]_product.
 Proof. by rewrite//=; case: ifP; intros; lra. Qed.
 
-Lemma product_neg_impl_admissable (e : @expr R (Bool_T_def impl_def m_def l_def)):
+Lemma product_neg_impl_admissable (e : formula):
  [[`~ e]]_product = [[e `=> ldl_bool _ _ _ _  false]]_product.
 Proof.
 rewrite//=. repeat case: ifP; intros; by rewrite ?mul0r//=.
 Qed.
 
-Lemma equivalence_product (Q : seq (seq (@expr R (Bool_T_def impl_def m_def l_def)) *
-                                    seq (@expr R (Bool_T_def impl_def m_def l_def)))):
+Lemma equivalence_product Q:
   seq_calc_product' Q -> seq_calc_product Q.
 Proof.
 intros.
@@ -1801,15 +1723,6 @@ dependent induction H.
   + by exact IHseq_calc_product'2.
 - apply orR_p. by exact IHseq_calc_product'.
 Qed.
-
-Lemma prelinearity_product :
-forall (Q : seq ( seq (@expr R (Bool_T_def impl_def m_def l_def)) 
-                  * seq (@expr R (Bool_T_def impl_def m_def l_def))))
-                   (A B : seq (@expr R (Bool_T_def impl_def m_def l_def)))
-                   (a b : @expr R (Bool_T_def impl_def m_def l_def)),
-    seq_calc_product ([::( [::] |- [:: (a `=> b) `++ (b `=> a )])] ).
-Proof.
-Admitted.
 
 End hypersequent_product.
 
