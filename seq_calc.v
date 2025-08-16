@@ -1740,185 +1740,129 @@ Reserved Notation "Q |- P" (no associativity, at level 61).
 Notation "Q |- P" := (Q, P).
 (*entailment as pair (A, B) where A |- B*)
 
+Let formula := @expr R (Bool_T_def impl_def m_def l_def).
+Let hypersequent := seq (seq formula * seq formula).
+
+Implicit Type Q P S : hypersequent.
+Implicit Type A B C D X Y : seq formula.
+
 Hypothesis neg_impl_godel : neg_impl_dl R.
 
 (*hypersequent calculus as per literature*)
-Inductive seq_calc_godel :  seq (seq (@expr R (Bool_T_def impl_def m_def l_def)) *
-                                 seq (@expr R (Bool_T_def impl_def m_def l_def)))
+Inductive seq_calc_godel :  hypersequent
       -> Prop :=
-| id_g : forall (Q :  seq ( seq (@expr R (Bool_T_def impl_def m_def l_def)) * seq (@expr R (Bool_T_def impl_def m_def l_def))))
-                (a : @expr R (Bool_T_def impl_def m_def l_def)),
+| id_g : forall Q (a : formula),
     seq_calc_godel ( ([::a] |- [::a]) :: Q)
 (*structural*)
-| eex_g : forall (Q P S1 S2: seq ( seq (@expr R (Bool_T_def impl_def m_def l_def))
-                                   * seq (@expr R (Bool_T_def impl_def m_def l_def)))),
+| eex_g : forall Q P S1 S2,
     seq_calc_godel (S1 ++ P ++ Q ++ S2) ->
     seq_calc_godel (S1 ++ Q ++ P ++ S2)
-| ew_g : forall (Q P : seq ( seq (@expr R (Bool_T_def impl_def m_def l_def))
-                             * seq (@expr R (Bool_T_def impl_def m_def l_def)))),
+| ew_g : forall Q P,
     seq_calc_godel Q ->
     seq_calc_godel (Q ++ P)
-| ec_g : forall (Q P : seq ( seq (@expr R (Bool_T_def impl_def m_def l_def)) 
-                             * seq (@expr R (Bool_T_def impl_def m_def l_def)))),
+| ec_g : forall Q P,
     seq_calc_godel (Q ++ P ++ P) ->
     seq_calc_godel (Q ++ P)
-| comm_hyper_g : forall (Q :  seq ( seq (@expr R (Bool_T_def impl_def m_def l_def)) 
-                                    * seq (@expr R (Bool_T_def impl_def m_def l_def))))
-                  (A1 A2 B1 B2 C D: seq (@expr R (Bool_T_def impl_def m_def l_def))),
+| comm_hyper_g : forall Q A1 A2 B1 B2 C D,
     seq_calc_godel ((A1 ++ B1 |- C) :: Q) ->
     seq_calc_godel ((A2 ++ B2 |- D) :: Q) ->
     seq_calc_godel ((A1 ++ A2 |- C) :: ((B1 ++ B2) |- D) :: Q)
-| comm_g : forall (Q : seq ( seq (@expr R (Bool_T_def impl_def m_def l_def)) 
-                             * seq (@expr R (Bool_T_def impl_def m_def l_def))))
-                  (A B C : seq (@expr R (Bool_T_def impl_def m_def l_def))),
+| comm_g : forall Q A B C,
     seq_calc_godel (((A ++ B ++ B) |- C) :: Q) ->
     seq_calc_godel (((A ++ B) |- C) :: Q)
-| weak_g : forall (Q : seq ( seq (@expr R (Bool_T_def impl_def m_def l_def)) 
-                             * seq (@expr R (Bool_T_def impl_def m_def l_def))))
-                  (A B C : seq (@expr R (Bool_T_def impl_def m_def l_def))),
+| weak_g : forall Q A B C,
     seq_calc_godel ((A |- C) :: Q ) ->
     seq_calc_godel (((A ++ B) |- C) :: Q )
-| exL_g : forall (Q : seq ( seq (@expr R (Bool_T_def impl_def m_def l_def)) 
-                            * seq (@expr R (Bool_T_def impl_def m_def l_def))))
-                  (A B C X Y : seq (@expr R (Bool_T_def impl_def m_def l_def))),
+| exL_g : forall Q A B C X Y,
     seq_calc_godel ((X ++ A ++ B ++ Y |- C) :: Q) ->
     seq_calc_godel ((X ++ B ++ A ++ Y |- C) :: Q)
-| exR_g : forall (Q : seq ( seq (@expr R (Bool_T_def impl_def m_def l_def)) 
-                            * seq (@expr R (Bool_T_def impl_def m_def l_def))))
-                  (A B C X Y : seq (@expr R (Bool_T_def impl_def m_def l_def))),
+| exR_g : forall Q A B C X Y,
     seq_calc_godel ((C |- (X ++ A ++ B ++ Y)) :: Q) ->
     seq_calc_godel ((C |- (X ++ B ++ A ++ Y)) :: Q)
 (*logical*)
-| bot_g : forall (Q :  seq ( seq (@expr R (Bool_T_def impl_def m_def l_def)) 
-                             * seq (@expr R (Bool_T_def impl_def m_def l_def))))
-                 (A B : seq (@expr R (Bool_T_def impl_def m_def l_def))),
+| bot_g : forall Q A B,
     seq_calc_godel (((ldl_bool _ _ _ _ false :: A) |- B) :: Q)
-| top_g : forall Q (A : seq (@expr R (Bool_T_def impl_def m_def l_def))),
+| top_g : forall Q A,
     seq_calc_godel ((A |- [::ldl_bool _ _ _ _ true]) :: Q )
-| andL_g : forall Q (A B : seq (@expr R (Bool_T_def impl_def m_def l_def)))
-                   (a b : @expr R (Bool_T_def impl_def m_def l_def)),
+| andL_g : forall Q A B (a b : formula),
     seq_calc_godel (((a :: B) |- A) :: ((b :: B) |- A):: Q ) ->
     seq_calc_godel ((((a `/\ b) :: B) |- A) :: Q) 
-| andR_g : forall (Q :  seq ( seq (@expr R (Bool_T_def impl_def m_def l_def)) 
-                              * seq (@expr R (Bool_T_def impl_def m_def l_def))))
-                  (A  : seq (@expr R (Bool_T_def impl_def m_def l_def)))
-                  (a b : @expr R (Bool_T_def impl_def m_def l_def)),
+| andR_g : forall Q A (a b : formula),
     seq_calc_godel ( (A |- [:: a]) :: Q ) ->
     seq_calc_godel ( (A |- [:: b]) :: Q) ->
     seq_calc_godel ((A |- [:: (a `/\ b)]) :: Q )
-| orL_g : forall  Q
-                  (A B : seq (@expr R (Bool_T_def impl_def m_def l_def)))
-                  (a b : @expr R (Bool_T_def impl_def m_def l_def)),
+| orL_g : forall  Q A B (a b : formula),
     seq_calc_godel ( ((b :: B) |- A) :: Q) ->
     seq_calc_godel ( ((a :: B) |- A) :: Q) ->
     seq_calc_godel (((a `\/ b) :: B |- A) :: Q)
-| orR_g : forall Q
-                  (A  : seq (@expr R (Bool_T_def impl_def m_def l_def)))
-                  (a b : @expr R (Bool_T_def impl_def m_def l_def)),
+| orR_g : forall Q A (a b : formula),
     seq_calc_godel (( A |- [::a] ) :: ( A |- [::b]) :: Q ) ->
     seq_calc_godel (( A |- [::(a `\/ b)] ) :: Q) 
-| implR_g : forall Q
-                  (A B : seq (@expr R (Bool_T_def impl_def m_def l_def)))
-                  (a b : @expr R (Bool_T_def impl_def m_def l_def)),
+| implR_g : forall Q A B (a b : formula),
     seq_calc_godel ((a :: A |- [::b]) :: Q) ->
     seq_calc_godel ((A |- [:: (a `=> b)]) :: Q)
-| implL_g : forall Q
-                  (A1 A2 B  : seq (@expr R (Bool_T_def impl_def m_def l_def)))
-                  (a b: @expr R (Bool_T_def impl_def m_def l_def)),
+| implL_g : forall Q A1 A2 B (a b: formula),
     seq_calc_godel ((A1 |- [:: a]) :: Q) ->
     seq_calc_godel ((b :: A2 |- B) :: Q) ->
     seq_calc_godel (( (a `=> b) :: A1 ++ A2 |- B) :: Q).
 
-Inductive seq_calc_godel' :  seq ( seq (@expr R (Bool_T_def impl_def m_def l_def))
-                                   * seq (@expr R (Bool_T_def impl_def m_def l_def)))
-      -> Prop :=
-| id_g' : forall (Q :  seq (seq (@expr R (Bool_T_def impl_def m_def l_def)) *
-                            seq (@expr R (Bool_T_def impl_def m_def l_def))))
-                (a : @expr R (Bool_T_def impl_def m_def l_def)),
+Inductive seq_calc_godel' : hypersequent -> Prop :=
+| id_g' : forall Q (a : formula),
     seq_calc_godel' ( ([::a] |- [::a]) :: Q)
 (*structural*)
-| eex_g' : forall (Q P S1 S2: seq ( seq (@expr R (Bool_T_def impl_def m_def l_def)) 
-                                    * seq (@expr R (Bool_T_def impl_def m_def l_def)))),
+| eex_g' : forall Q P S1 S2,
     seq_calc_godel' (S1 ++ P ++ Q ++ S2) ->
     seq_calc_godel' (S1 ++ Q ++ P ++ S2)
-| ew_g' : forall (Q P : seq ( seq (@expr R (Bool_T_def impl_def m_def l_def)) 
-                              * seq (@expr R (Bool_T_def impl_def m_def l_def)))),
+| ew_g' : forall Q P,
     seq_calc_godel' Q ->
     seq_calc_godel' (Q ++ P) 
-| ec_g' : forall (Q P : seq ( seq (@expr R (Bool_T_def impl_def m_def l_def)) 
-                              * seq (@expr R (Bool_T_def impl_def m_def l_def)))),
+| ec_g' : forall Q P,
     seq_calc_godel' (Q ++ P ++ P) ->
     seq_calc_godel' (Q ++ P)
-| comm_hyper_g' : forall (Q :  seq ( seq (@expr R (Bool_T_def impl_def m_def l_def)) 
-                                     * seq (@expr R (Bool_T_def impl_def m_def l_def))))
-                  (A1 A2 B1 B2 C D: seq (@expr R (Bool_T_def impl_def m_def l_def))),
+| comm_hyper_g' : forall Q A1 A2 B1 B2 C D,
     seq_calc_godel' (((A1 ++ B1) |- C) :: Q) ->
     seq_calc_godel' (((A2 ++ B2) |- D) :: Q) ->
     seq_calc_godel' ( ((A1 ++ A2) |- C) :: ((B1 ++ B2) |- D) :: Q)
-| comm_g' : forall (Q : seq ( seq (@expr R (Bool_T_def impl_def m_def l_def)) 
-                              * seq (@expr R (Bool_T_def impl_def m_def l_def))))
-                  (A B C : seq (@expr R (Bool_T_def impl_def m_def l_def))),
+| comm_g' : forall Q A B C,
     seq_calc_godel' (((A ++ B ++ B) |- C) :: Q) ->
     seq_calc_godel' (((A ++ B) |- C) :: Q)
-| weak_g' : forall (Q : seq ( seq (@expr R (Bool_T_def impl_def m_def l_def)) 
-                              * seq (@expr R (Bool_T_def impl_def m_def l_def))))
-                  (A B C : seq (@expr R (Bool_T_def impl_def m_def l_def))),
+| weak_g' : forall Q A B C,
     seq_calc_godel' ((A |- C) :: Q ) ->
     seq_calc_godel' (((A ++ B) |- C) :: Q )
-| exL_g' : forall (Q : seq ( seq (@expr R (Bool_T_def impl_def m_def l_def)) 
-                             * seq (@expr R (Bool_T_def impl_def m_def l_def))))
-                  (A B C X Y : seq (@expr R (Bool_T_def impl_def m_def l_def))),
+| exL_g' : forall Q A B C X Y,
     seq_calc_godel' (((X ++ A ++ B ++ Y) |- C) :: Q) ->
     seq_calc_godel' (((X ++ B ++ A ++ Y) |- C) :: Q) 
-| exR_g' : forall (Q : seq ( seq (@expr R (Bool_T_def impl_def m_def l_def)) 
-                             * seq (@expr R (Bool_T_def impl_def m_def l_def))))
-                  (A B C X Y : seq (@expr R (Bool_T_def impl_def m_def l_def))),
+| exR_g' : forall Q A B C X Y,
     seq_calc_godel' ((C |- (X ++ A ++ B ++ Y)) :: Q) ->
     seq_calc_godel' ((C |- (X ++ B ++ A ++ Y)) :: Q)
 (*logical*)
-| bot_g' : forall (Q :  seq ( seq (@expr R (Bool_T_def impl_def m_def l_def)) 
-                              * seq (@expr R (Bool_T_def impl_def m_def l_def))))
-                 (A B : seq (@expr R (Bool_T_def impl_def m_def l_def))),
+| bot_g' : forall Q A B,
     seq_calc_godel' (((ldl_bool _ _ _ _ false :: A) |- B) :: Q)
-| top_g' : forall Q 
-                 (A : seq (@expr R (Bool_T_def impl_def m_def l_def))),
+| top_g' : forall Q A,
     seq_calc_godel' ((A |- [::ldl_bool _ _ _ _ true]) :: Q )
-| andL_g' : forall Q 
-                   (A B : seq (@expr R (Bool_T_def impl_def m_def l_def)))
-                   (a b : @expr R (Bool_T_def impl_def m_def l_def)),
+| andL_g' : forall Q A B (a b : formula),
     seq_calc_godel' (((a :: B) |- A) :: ((b :: B) |- A):: Q ) ->
     seq_calc_godel' ((((a `/\ b) :: B) |- A) :: Q) 
-| andR_g' : forall (Q :  seq ( seq (@expr R (Bool_T_def impl_def m_def l_def))
-                               * seq (@expr R (Bool_T_def impl_def m_def l_def))))
-                  (A  : seq (@expr R (Bool_T_def impl_def m_def l_def)))
-                  (a b : @expr R (Bool_T_def impl_def m_def l_def)),
+| andR_g' : forall Q A (a b : formula),
     seq_calc_godel' ( (A |- [:: a]) :: Q ) ->
     seq_calc_godel' ( (A |- [:: b]) :: Q) ->
     seq_calc_godel' ((A |- [:: (a `/\ b)]) :: Q )
-| orL_g' : forall  Q
-                  (A B : seq (@expr R (Bool_T_def impl_def m_def l_def)))
-                  (a b : @expr R (Bool_T_def impl_def m_def l_def)),
+| orL_g' : forall  Q A B (a b : formula),
     seq_calc_godel' ( ((b :: B) |- A) :: Q) ->
     seq_calc_godel' ( ((a :: B) |- A) :: Q) ->
     seq_calc_godel' (((a `\/ b) :: B |- A) :: Q)
-| orR_g' : forall Q
-                  (A  : seq (@expr R (Bool_T_def impl_def m_def l_def)))
-                  (a b : @expr R (Bool_T_def impl_def m_def l_def)),
+| orR_g' : forall Q A (a b : formula),
     seq_calc_godel' (( A |- [::a] ) :: ( A |- [::b]) :: Q ) ->
     seq_calc_godel' (( A |- [::(a `\/ b)] ) :: Q) 
-| negR_g : forall Q
-                  (A  : seq (@expr R (Bool_T_def impl_def m_def l_def)))
-                  (a : @expr R (Bool_T_def impl_def m_def l_def)),
+| negR_g : forall Q A (a : formula),
     seq_calc_godel' ((a :: A |- [:: ldl_bool _ _ _ _ false]) :: Q) ->
     seq_calc_godel' ((A |- [:: (`~ a)]) :: Q)
-| negL_g : forall Q
-                  (A1 A2 B  : seq (@expr R (Bool_T_def impl_def m_def l_def)))
-                  (a : @expr R (Bool_T_def impl_def m_def l_def)),
+| negL_g : forall Q A1 A2 B (a : formula),
     seq_calc_godel' ((A1 |- [:: a]) :: Q) ->
     seq_calc_godel' (((ldl_bool _ _ _ _ false) :: A2 |- B) :: Q) ->
     seq_calc_godel' (( (`~ a) :: A1 ++ A2 |- B) :: Q).
 
-Lemma big_maxr_godel_le1 (A : seq (@expr R (Bool_T_def impl_def m_def l_def))) :
+Lemma big_maxr_godel_le1 A :
    \big[maxr/0]_(j <- A) [[j]]_Godel <= 1.
 Proof.
 have := @translate_Bool_T_01 R p p1 Godel _ _ _  (ldl_or A).
@@ -1926,7 +1870,7 @@ rewrite /= /maxR big_map.
 by case/andP.
 Qed.
 
-Lemma big_minr_godel_le1 (A : seq (@expr R (Bool_T_def impl_def m_def l_def))) :
+Lemma big_minr_godel_le1 A :
   \big[minr/1]_(j <- A) [[j]]_Godel <= 1.
 Proof.
 have := @translate_Bool_T_01 R _ p1 Godel _ _ _  (ldl_and A).
@@ -1934,7 +1878,7 @@ rewrite /= /minR big_map.
 by case/andP.
 Qed.
 
-Lemma big_maxr_godel_ge0 (A : seq (@expr R (Bool_T_def impl_def m_def l_def))) :
+Lemma big_maxr_godel_ge0 A :
    0 <= \big[maxr/0]_(j <- A) [[j]]_Godel .
 Proof.
 have := @translate_Bool_T_01 R _ p1 Godel _ _ _  (ldl_or A).
@@ -1942,38 +1886,36 @@ rewrite //= /maxR big_map.
 by case/andP.
 Qed.
 
-Lemma big_minr_godel_ge0 (A : seq (@expr R (Bool_T_def impl_def m_def l_def))) :
+Lemma big_minr_godel_ge0 A :
    0 <= \big[minr/1]_(j <- A) [[j]]_Godel .
 Proof.
 have := @translate_Bool_T_01 R _ p1 Godel _ _ _  (ldl_and A).
 by rewrite //= /minR big_map => /andP[].
 Qed.
 
-Lemma big_min_cat_godel (A B : seq (@expr R (Bool_T_def impl_def m_def l_def))):
+Lemma big_min_cat_godel A B :
   \big[minr/1]_(j <- A ++ B) [[j]]_Godel =
   minr (\big[minr/1]_(j <- A) [[j]]_Godel) (\big[minr/1]_(j <- B) [[j]]_Godel).
 Proof.
 elim: A => [|x xs IH].
-- rewrite /= big_nil//=.
-  have H := big_minr_godel_le1 B.
-  rewrite {2}/minr. case: ifP; intros; try lra.
-- simpl. rewrite !big_cons -minA. f_equal.
-  exact: IH.
+- have H := big_minr_godel_le1 B.
+  by rewrite /= big_nil//= {2}/minr; case: ifP; intros; lra.
+- simpl; rewrite !big_cons -minA; f_equal.
+  by exact: IH.
 Qed.
 
-Lemma big_max_cat_godel (A B : seq (@expr R (Bool_T_def impl_def m_def l_def))):
+Lemma big_max_cat_godel A B:
   \big[maxr/0]_(j <- A ++ B) [[j]]_Godel =
   maxr (\big[maxr/0]_(j <- A) [[j]]_Godel) (\big[maxr/0]_(j <- B) [[j]]_Godel).
 Proof.
 elim: A => [|x xs IH].
-- rewrite /= big_nil//=.
-  have H := big_maxr_godel_ge0 B.
-  rewrite {2}/maxr. case: ifP; intros; try lra.
-- simpl. rewrite !big_cons -maxA. f_equal.
+- have H := big_maxr_godel_ge0 B.
+  by rewrite /= big_nil//= {2}/maxr; case: ifP; intros; lra.
+- simpl; rewrite !big_cons -maxA; f_equal.
   by exact IH.
 Qed.
 
-Lemma big_minr_if (A B : seq (@expr R (Bool_T_def impl_def m_def l_def))) :
+Lemma big_minr_if A B :
   if \big[minr/1]_(j <- A) [[j]]_Godel <= \big[minr/1]_(j <- B) [[j]]_Godel then
     \big[minr/1]_(j <- A ++ B) [[j]]_Godel = \big[minr/1]_(j <- A) [[j]]_Godel
   else
@@ -1982,72 +1924,66 @@ Proof.
 have H := big_min_cat_godel A B.
 rewrite {2}/minr in H. rewrite//=.
 move: H. case: ifP;
-case: ifPn; intros; rewrite//=; try lra.
+case: ifPn; intros; rewrite//=; lra.
 Qed.
 
-Lemma minr_lt_godel (A B C: seq (@expr R (Bool_T_def impl_def m_def l_def))) :
+Lemma minr_lt_godel A B C :
   \big[minr/1]_(j <- C) [[j]]_Godel < \big[minr/1]_(j <- A) [[j]]_Godel /\
     \big[minr/1]_(j <- C) [[j]]_Godel < \big[minr/1]_(j <- B) [[j]]_Godel <->
  (\big[minr/1]_(j <- C) [[j]]_Godel < \big[minr/1]_(j <- A ++ B) [[j]]_Godel).
 Proof.
 split.
 - move => [h1 h2].
-  have h := big_minr_if A B. move: h.
-  by case: ifP; intros; rewrite h//=.
+  have := big_minr_if A B. 
+  by case: ifP; move => _ ->.
 - move => h.
-  have H := big_minr_if A B. move: H.
-  case: ifP; intros;
-  rewrite H in h; rewrite h;
-  split; first by []; lra.
+  have := big_minr_if A B.
+  by case: ifP; move => H' H; rewrite H in h; rewrite h; split; first by []; lra.
 Qed.
 
-Lemma minr_le_godel (A B C: seq (@expr R (Bool_T_def impl_def m_def l_def))) :
+Lemma minr_le_godel A B C :
  (\big[minr/1]_(j <- (A ++ B)) [[j]]_Godel <= \big[minr/1]_(j <- C) [[j]]_Godel) ->
   (\big[minr/1]_(j <- A) [[j]]_Godel <= \big[minr/1]_(j <- B) [[j]]_Godel /\
     \big[minr/1]_(j <- A) [[j]]_Godel <= \big[minr/1]_(j <- C) [[j]]_Godel) \/
     (\big[minr/1]_(j <- B) [[j]]_Godel <= \big[minr/1]_(j <- C) [[j]]_Godel /\
 \big[minr/1]_(j <- B) [[j]]_Godel <= \big[minr/1]_(j <- A) [[j]]_Godel).
 Proof.
-intros. have h := big_minr_if A B. move: h.
-case: ifP; intros.
-- rewrite h in H. left. by rewrite H//=.
-- right. rewrite h in H. rewrite H. split; first by []. lra.
+intros. have := big_minr_if A B.
+case: ifP; move => h' h.
+- by rewrite h in H; left; rewrite H//=.
+- by right; rewrite h in H; rewrite H; split; first by []; lra.
 Qed.
 
-Lemma minr_maxr_lt_godel (A B C: seq (@expr R (Bool_T_def impl_def m_def l_def))) :
+Lemma minr_maxr_lt_godel A B C:
   \big[maxr/0]_(j <- C) [[j]]_Godel < \big[minr/1]_(j <- A) [[j]]_Godel /\
     \big[maxr/0]_(j <- C) [[j]]_Godel < \big[minr/1]_(j <- B) [[j]]_Godel <->
  (\big[maxr/0]_(j <- C) [[j]]_Godel < \big[minr/1]_(j <- A ++ B) [[j]]_Godel).
 Proof.
 split.
 - move => [h1 h2].
-  have h := big_minr_if A B. move: h.
-  by case: ifP; intros; rewrite h.
+  have := big_minr_if A B.
+  by case: ifP; move => _ ->. 
 - move => h.
-  have H := big_minr_if A B. move: H.
-  case: ifP; intros;
-  rewrite H in h; rewrite h;
-  split; first by []; lra.
+  have := big_minr_if A B.
+  by case: ifP; move => H' H; rewrite H in h; rewrite h; split; first by []; lra.
 Qed.
 
-Lemma minr_maxr_le_godel (A B C: seq (@expr R (Bool_T_def impl_def m_def l_def))) :
+Lemma minr_maxr_le_godel A B C :
  (\big[minr/1]_(j <- (A ++ B)) [[j]]_Godel <= \big[maxr/0]_(j <- C) [[j]]_Godel) ->
   (\big[minr/1]_(j <- A) [[j]]_Godel <= \big[minr/1]_(j <- B) [[j]]_Godel /\
     \big[minr/1]_(j <- A) [[j]]_Godel <= \big[maxr/0]_(j <- C) [[j]]_Godel) \/
     (\big[minr/1]_(j <- B) [[j]]_Godel <= \big[maxr/0]_(j <- C) [[j]]_Godel /\
 \big[minr/1]_(j <- B) [[j]]_Godel <= \big[minr/1]_(j <- A) [[j]]_Godel).
 Proof.
-intros. have h := big_minr_if A B. move: h.
-case: ifP; intros.
-- rewrite h in H. left. by rewrite H//=.
-- right. rewrite h in H. rewrite H. split; first by []. lra.
+intros. have := big_minr_if A B.
+case: ifP; move => h' h.
+- by rewrite h in H; left; rewrite H//=.
+- by right; rewrite h in H; rewrite H; split; first by []; lra.
 Qed.
 
-Lemma sound_godel (Q : seq (seq (@expr R (Bool_T_def impl_def m_def l_def)) *
-                            seq (@expr R (Bool_T_def impl_def m_def l_def)))):
+Lemma sound_godel Q:
   seq_calc_godel Q ->
-  exists (q : seq (@expr R (Bool_T_def impl_def m_def l_def)) *
-              seq (@expr R (Bool_T_def impl_def m_def l_def))), q \in Q /\
+  exists2 q : seq formula * seq formula, q \in Q /\
 (minR (map (translation Godel p) (fst q))  <=  maxR (map (translation Godel p) (snd q))).
 Proof.
 intros; rewrite//=. dependent induction H.
