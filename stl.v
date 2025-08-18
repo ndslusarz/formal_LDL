@@ -331,42 +331,97 @@ Variables (nu : R) (M : nat).
 
 Local Notation seq_of_rV := (@MatrixFormula.seq_of_rV _ M.+1).
 
-Lemma in_minr (v : seq R) :
-  v != [::] -> (\big[minr/head 0 v]_(i <- v) i) \in v.
-Proof.
-Admitted.
-
-Lemma a_ge_min : forall (x : seq R) (i : R), i \in x ->
-                      x != [::] ->
-                      i - \big[minr/i]_(j <- x) j >= 0.
-      move => x i. elim x => i' x0; rewrite //= in_cons big_cons.
-      move => IH /orP [/eqP ii | ix] _; rewrite//=.  
-      - rewrite ii.
-        rewrite {1}/minr; case: ifP => h; lra.
-      - rewrite {1}/minr; case: ifP => h; try lra.
-
-Abort.
-
-
 Lemma min_nested_zero (x : seq R) :
   x != [::] ->
   \big[minr/head``_x]_(i <- x) i =
   \big[minr/(\big[minr/head``_x]_(i <- x) i)]_(i <- x) i.
 Proof.
-move=> x_ne.
-set m := \big[minr/head``_x]_(i <- x) i.
+move=> x0.
+elim x => [|a l h]; first by rewrite !big_nil//=.
+rewrite !big_cons.
+have tmp : head``_(a :: l) = a. by [].
+rewrite tmp.
+rewrite {1}/minr {3}/minr. repeat case: ifP; rewrite//= => H1 H2.
+- admit.
 
-
-
-
-(*induction x.  rewrite//=. move =>  IH.
-rewrite !big_cons. rewrite {1}/minr {4}/minr.
-repeat case: ifP; rewrite//= => h.
-- by rewrite {1}/minr; case: ifP; rewrite//=; try lra.
-- rewrite {2}/minr; case: ifP => h1.
-  + apply IHx in h1.*)
 
 Admitted.
+
+Lemma minr_le_l (x y : R) : minr x y <= x.
+Proof. rewrite /minr; case: ifP; lra. Qed.
+
+Lemma minr_le_r (x y : R)  : minr x y <= y.
+Proof. rewrite /minr; case: ifP; lra. Qed.
+
+Lemma minr_gt0 (x y : R) : 0 < x -> 0 < y -> 0 < minr x y.
+Proof. move=> hx hy; rewrite /minr; case: ifP=> //= _; exact: hy. Qed.
+
+
+Lemma big_minr_le_init (a : R) v : \big[minr/a]_(i <- v) i <= a.
+Proof.
+elim: v a=> [|x s IH] a /=.
+- by rewrite big_nil lexx.
+- rewrite big_cons.
+  by apply: (le_trans (minr_le_r _ _)); exact: IH.
+Qed.
+
+
+Lemma big_minr_gt0 (a : R) v : 0 < a -> (forall z, z \in v -> 0 < z) ->
+0 < \big[minr/a]_(i <- v) i.
+Proof.
+move=> ha; elim: v a ha=> [|x s IH] a /= ha.
+- by rewrite big_nil.
+- rewrite big_cons => hv.
+  have hx : 0 < x by apply: hv; rewrite mem_head//=. 
+  have hs : forall z, z \in s -> 0 < z
+  by move=> z hzs; apply hv;  rewrite in_cons hzs orbT//=. 
+  by apply: minr_gt0; [ exact: hx | exact: IH]. 
+Qed.
+
+Lemma min_dev_gt0 (v : seq R) :
+v != [::] ->
+(forall z, z \in v -> 0 < z) ->
+forall a, a \in v -> a != \big[minr/a]_(i <- v) i ->
+min_dev a v > 0.
+Proof.
+move=> _ Hpos a Hav HaNmin.
+rewrite /min_dev; set r := \big[minr/a]_(i <- v) i.
+have r_le_a : r <= a by apply: big_minr_le_init.
+have a_gt0 : 0 < a by apply: Hpos.
+move: (big_minr_gt0 a v a_gt0 Hpos) => r_pos.
+have r_lt_a : r < a.
+- have [a_le_r | r_lt_a] := lerP a r. 
+  + have h : a <= r -> r <= a -> r = a by intros; lra.
+    by apply (h a_le_r) in r_le_a; rewrite -{1}r_le_a in HaNmin; subst r; lra.
+  + by []. 
+- by apply: divr_gt0; try lra. 
+Qed.
+
+Lemma min_head_self (v : seq R):
+v != [::] -> forall a, a \in v ->
+\big[minr/head``_v]_(i <- v) i = \big[minr/a]_(i <- v) i.
+Proof.
+move => v0 a av.
+(*set r1 := \big[minr/head``_v]_(i <- v) i.
+set r2 := \big[minr/a]_(i <- v) i.*)
+(* Both r1 and r2 compute the minimum of v, independent of the seed. *)
+(* We show r1 <= r2 and r2 <= r1. *)
+apply/eqP; rewrite eq_le; apply/andP; split.
+- move: v0 av. elim: v; rewrite//=.
+  move => x s IH _ axs.
+  rewrite !big_cons.  case: s IH axs => [IH |y s IH] //=.
+  +  rewrite !big_nil. rewrite mem_seq1 => /eqP ->.  lra.
+(*  + rewritebig_minr_le_init.
+
+exact: fold_minr_le_init.
+- elim: v {Hne Hav}=> [|x s IH] //=.
+rewrite !big_cons.
+case: s IH=> [|y s IH] //=.
++ by rewrite !big_nil !minrxx.
+move=> IH; apply: le_trans (minr_le_l _ _).
+exact: fold_minr_le_init.*)
+Qed.
+
 
 Lemma stl_and_gt0_cvg_infty (p : R) (v : seq R)  : 
   v != [::] ->
@@ -405,8 +460,10 @@ have sum_top : (\sum_(a <- v) a * expR (- p0 * min_dev a v)) @[p0 --> +oo] -->
       exact: cvg_cst.
     under eq_fun do rewrite mulrC.
     apply: (@cvg_comp _ _ _ _ _ _ -oo).
-    - have min_ge0 : min_dev a v > 0. admit.
-      have h1 := (gt0_cvgMrNy  min_ge0 ). apply: (h1 ).
+    - have min_ge0 : min_dev a v > 0. rewrite min_dev_gt0//= .
+      rewrite /min_val  in amin. 
+      rewrite (min_head_self v _ a)//= in amin.
+      have h1 := (gt0_cvgMrNy  min_ge0 ). apply: h1.
       rewrite cvgNrNy.
       by apply: cvg_id.
     - rewrite cvgNy_compNP. 
@@ -456,7 +513,9 @@ have sum_bot : (\sum_(a <- v) expR (- p0 * min_dev a v)) @[p0 --> +oo] -->
     apply: cvg_sum => a /andP [av amin].
     under eq_fun do rewrite mulrC.
     apply: (@cvg_comp _ _ _ _ _ _ -oo).
-    - have min_ge0 : min_dev a v > 0. admit.
+    - have min_ge0 : min_dev a v > 0. rewrite min_dev_ge0//= .
+      rewrite /min_val  in amin. 
+      rewrite (min_head_self v _ a)//= in amin.
       have h1 := (gt0_cvgMrNy  min_ge0 ). apply: (h1 ).
       rewrite cvgNrNy.
       by apply: cvg_id.
@@ -482,6 +541,8 @@ have sum_bot : (\sum_(a <- v) expR (- p0 * min_dev a v)) @[p0 --> +oo] -->
     by rewrite normr0; lra.
 have non0 : ((\sum_(a <- v | a == min_val) 1)%:R : R) != 0.
 
+
+
 admit.
 have sum_inv : (\sum_(a <- v) expR (- p0 * min_dev a v))^-1 @[p0 --> +oo] --> 
                   ((\sum_(a <- v | a == min_val) 1)%:R : R)^-1.
@@ -495,6 +556,13 @@ have helper : min_val * (\sum_(a <- v | a == min_val) 1)%:R / (\sum_(a <- v | a 
   rewrite unitfE non0//=.
 rewrite helper in l.
 apply: l.
+Admitted.
+
+Lemma min_dev_lt0 (v : seq R):
+  v != [::] ->
+  forall a, a \in v -> a < 0 -> a != \big[minr/a]_(i <- v) i ->
+  min_dev a v > 0.
+Proof.
 Admitted.
 
 Lemma stl_and_lt0_cvg_infty (p : R) (v : seq R)  : 
@@ -538,10 +606,20 @@ have sum_top : (\sum_(a <- v) \big[minr/a]_(i <- v) i
     rewrite -(mulr0 (\big[minr/a]_(i <- v) i)). 
     apply/cvgrPdist_le => /= e e0.
     near=> t.
-    rewrite -mulrA.
+    rewrite -mulrA -expRD.
     near: t; move: e e0; apply/cvgrPdist_le.
     apply: cvgM => //.
     -  exact: cvg_cst.
+
+    apply: (@cvg_comp _ _ _ _ _ _ -oo).
+    - have min_ge0 : min_dev a v < 0. rewrite min_dev_gt0//= .
+      rewrite /min_val  in amin. 
+      rewrite (min_head_self v _ a)//= in amin.
+      have h1 := (gt0_cvgMrNy  min_ge0 ). apply: h1.
+      rewrite cvgNrNy.
+      by apply: cvg_id.
+    - rewrite cvgNy_compNP. 
+      by apply: cvgr_expR.*)
     - (*apply: (@cvg_comp _ _ _ _ _ _ -oo).*) admit.
       + (*rewrite cvgNy_compNP. 
         by apply: cvgr_expR.*)
