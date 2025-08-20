@@ -420,13 +420,18 @@ move=> IH; apply: le_trans (minr_le_l _ _).
 exact: fold_minr_le_init.*)
 Admitted.
 
-Lemma min_dev_left_zero (v : seq R) a b :
-  a \in v ->
-  b \in v ->
-  \big[minr/b]_(i <- v) i = \big[minr/a]_(i <- v) i.
+Lemma min_dev0 a (v : seq R) :
+  a \in v -> a = \big[minr/(head 0 v)]_(i <- v) i ->
+  min_dev a v = 0.
 Proof.
-move=> av bv.
-exact: perm_big_minr_helper4.
+move=> av aE.
+rewrite /min_dev.
+rewrite {1}aE.
+rewrite (perm_big_minr_helper4 _ av)//; last first.
+  clear -av.
+  elim: v av => // h t ih.
+  by rewrite /= mem_head.
+by rewrite subrr mul0r.
 Qed.
 
 Lemma stl_and_gt0_cvg_infty (p : R) (v : seq R)  : 
@@ -487,12 +492,7 @@ have sum_top : (\sum_(a <- v) a * expR (- p0 * min_dev a v)) @[p0 --> +oo] -->
   - rewrite -(mulr1 min_val) {1}mulr1. rewrite -mulr_sumr.
     by rewrite natr_sum //; congr (_ * _); apply: eq_bigr => i _; rewrite natr1.
   - apply: cvg_sum => a /andP [av /eqP amin].
-    have -> : min_dev a v = 0.
-      rewrite /min_dev {1}amin /min_val (perm_big_minr_helper4 _ av)//; last first.
-        clear -av.
-        elim: v av => // h t ih.
-        by rewrite /= mem_head.
-      by rewrite subrr mul0r.
+    rewrite min_dev0//.
     under eq_fun do rewrite mulr0 expR0 mulr1.
     rewrite amin.
     exact: cvg_cst.
@@ -522,7 +522,8 @@ have sum_bot : (\sum_(a <- v) expR (- p0 * min_dev a v)) @[p0 --> +oo] -->
     apply: cvg_sum => a /andP [av amin].
     under eq_fun do rewrite mulrC.
     apply: (@cvg_comp _ _ _ _ _ _ -oo).
-    - have min_ge0 : min_dev a v > 0. rewrite min_dev_ge0//= .
+    - have min_ge0 : min_dev a v > 0. 
+      rewrite min_dev_gt0//= .
       rewrite /min_val  in amin. 
       rewrite (min_head_self v _ a)//= in amin.
       have h1 := (gt0_cvgMrNy  min_ge0 ). apply: (h1 ).
@@ -542,17 +543,11 @@ have sum_bot : (\sum_(a <- v) expR (- p0 * min_dev a v)) @[p0 --> +oo] -->
   rewrite [X in _ --> X](_ : _ = (\sum_(i <- v | (i \in v) && (i == min_val)) 1)); last first.
   - by rewrite natr_sum //; congr (_ * _); apply: eq_bigr => i _; rewrite natr1.
   - apply: cvg_sum => a /andP [av /eqP amin].
-    rewrite /min_dev amin /min_val.
-    rewrite -(min_nested_zero v vnil). rewrite subrr !mul0r.
-    apply/cvgrPdist_le => /= e e0.
-    near=> t.
-    rewrite mulNr mulr0 oppr0 expR0 subrr//=.
-    by rewrite normr0; lra.
+    rewrite min_dev0//.
+    under eq_fun do rewrite mulr0 expR0.
+    exact: cvg_cst.
 have non0 : ((\sum_(a <- v | a == min_val) 1)%:R : R) != 0.
-
-
-
-admit.
+  admit.
 have sum_inv : (\sum_(a <- v) expR (- p0 * min_dev a v))^-1 @[p0 --> +oo] --> 
                   ((\sum_(a <- v | a == min_val) 1)%:R : R)^-1.
   apply: cvgV.
@@ -618,7 +613,7 @@ have sum_top : (\sum_(a <- v) \big[minr/a]_(i <- v) i
     rewrite -mulrA -expRD.
     near: t; move: e e0; apply/cvgrPdist_le.
     apply: cvgM => //.
-    -  exact: cvg_cst.
+      exact: cvg_cst.
 
     apply: (@cvg_comp _ _ _ _ _ _ -oo).
     - have min_ge0 : min_dev a v < 0. rewrite min_dev_gt0//= .
