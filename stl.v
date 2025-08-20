@@ -563,9 +563,10 @@ apply: l.
 Admitted.
 
 Lemma min_dev_lt0 (v : seq R):
-  v != [::] ->
-  forall a, a \in v -> a < 0 -> a != \big[minr/a]_(i <- v) i ->
-  min_dev a v > 0.
+v != [::] ->
+(forall z, z \in v -> 0 > z) ->
+forall a, a \in v -> a != \big[minr/a]_(i <- v) i ->
+min_dev a v < 0.
 Proof.
 Admitted.
 
@@ -616,17 +617,15 @@ have sum_top : (\sum_(a <- v) \big[minr/a]_(i <- v) i
       exact: cvg_cst.
 
     apply: (@cvg_comp _ _ _ _ _ _ -oo).
-    - have min_ge0 : min_dev a v < 0. rewrite min_dev_gt0//= .
+    - have min_lt0 : min_dev a v < 0. 
+      rewrite min_dev_lt0//= .
       rewrite /min_val  in amin. 
       rewrite (min_head_self v _ a)//= in amin.
-      have h1 := (gt0_cvgMrNy  min_ge0 ). apply: h1.
+      (*have h1 := (lt0_cvgMrNy min_lt0 ). apply: h1.
       rewrite cvgNrNy.
-      by apply: cvg_id.
+      by apply: cvg_id.*) (*need lt0_cvgMrNy like gt0_cvgMrNy*) admit.
     - rewrite cvgNy_compNP. 
-      by apply: cvgr_expR.*)
-    - (*apply: (@cvg_comp _ _ _ _ _ _ -oo).*) admit.
-      + (*rewrite cvgNy_compNP. 
-        by apply: cvgr_expR.*)
+      by apply: cvgr_expR.
   rewrite -(addr0 (min_val * (\sum_(a <- v | a == min_val) 1)%:R)).
   apply: cvgD; last by exact sum_top_rest.
   have big_seq_cond_eq : forall t, (\sum_(a <- v | a == min_val) (\big[minr/a]_(i <- v) i) *
@@ -677,8 +676,13 @@ have sum_bot : (\sum_(a <- v) expR (p0 * min_dev a v)) @[p0 --> +oo] -->
     near: t; move: e e0; apply/cvgrPdist_le.
     apply: cvg_sum => a /andP [av amin].
     apply: (@cvg_comp _ _ _ _ _ _ -oo).
-    - admit. (*mathematically yes. formalisation wise I need patience*) 
-    (*need proof that min_dev in this case < 0*)
+    - have min_lt0 : min_dev a v < 0. 
+      rewrite min_dev_lt0//= .
+      rewrite /min_val  in amin. 
+      rewrite (min_head_self v _ a)//= in amin.
+      (*have h1 := (lt0_cvgMrNy min_lt0 ). apply: h1.
+      rewrite cvgNrNy.
+      by apply: cvg_id.*) (*need lt0_cvgMrNy like gt0_cvgMrNy*) admit.
     - rewrite cvgNy_compNP. 
       by apply: cvgr_expR.
   rewrite -(addr0 ((\sum_(a <- v | a == min_val) 1)%:R)).
@@ -693,12 +697,9 @@ have sum_bot : (\sum_(a <- v) expR (p0 * min_dev a v)) @[p0 --> +oo] -->
   rewrite [X in _ --> X](_ : _ = (\sum_(i <- v | (i \in v) && (i == min_val)) 1)); last first.
   - by rewrite natr_sum //; congr (_ * _); apply: eq_bigr => i _; rewrite natr1.
   - apply: cvg_sum => a /andP [av /eqP amin].
-    rewrite /min_dev amin /min_val.
-    rewrite -(min_nested_zero v vnil). rewrite subrr !mul0r.
-    apply/cvgrPdist_le => /= e e0.
-    near=> t.
-    rewrite  mulr0 expR0 subrr//=.
-    by rewrite normr0; lra.
+    rewrite min_dev0//.
+    under eq_fun do rewrite mulr0 expR0.
+    exact: cvg_cst.
 have non0 : ((\sum_(a <- v | a == min_val) 1)%:R : R) != 0.
 
 admit.
