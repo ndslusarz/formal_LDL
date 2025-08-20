@@ -658,19 +658,24 @@ have sum_top : (\sum_(a <- v) \big[minr/a]_(i <- v) i
   rewrite big_seq_cond_eq big_seq_cond. 
   near: t; move: e e0; apply/cvgrPdist_le.
   (*double check the below*)
-  rewrite [X in _ --> X](_ : _ = (\sum_(i <- v | (i \in v) && (i == min_val)) (\big[minr/i]_(i <- v) i)));
+  rewrite [X in _ --> X](_ : _ = (\sum_(i <- v | (i \in v) && (i == min_val)) min_val));
     last first.
-  - rewrite /min_val. admit. 
-    (*need *1 on the rgith and to prove that the minr with i is the same as min_val*)
-(*rewrite -(mulr1 (\big[minr/i]_(i0 <- v) i0)). rewrite -mulr_sumr.
-    by rewrite natr_sum //; congr (_ * _); apply: eq_bigr => i _; rewrite natr1.*)
-  - admit. (*apply: cvg_sum => a /andP [av /eqP amin].
-    rewrite /min_dev amin /min_val.
-    rewrite -(min_nested_zero v vnil). rewrite subrr !mul0r.
-    apply/cvgrPdist_le => /= e e0.
-    near=> t.
-    rewrite mulNr mulr0 oppr0 expR0 mulr1 subrr//=.
-    by rewrite normr0; lra.*)
+  - rewrite -(mulr1 min_val) {1}mulr1. rewrite -mulr_sumr.
+    by rewrite //; congr (_ * _); apply: eq_bigr => i _; rewrite natr1.
+  - apply: cvg_sum => a /andP [av /eqP amin].
+    rewrite min_dev0//.
+    under eq_fun do rewrite mulr0 !expR0 !mulr1.
+    rewrite amin.
+    have hh : head``_v \in v. 
+      clear -av.
+      elim: v av=> // h t ih.
+      by rewrite /= mem_head.
+    have mm : \big[minr/min_val]_(i <- v) i = min_val.
+      rewrite {2}/min_val.
+      rewrite (perm_big_minr_helper4 _ hh)//=.
+      by rewrite /min_val min_in_self//=.
+    under eq_fun do rewrite mm.
+    exact: cvg_cst.
 (*bottom sum*)
 have sum_spl2 : forall (x : R),   (\sum_(a <- v)  expR (x * min_dev a v))
   = \sum_(a <- v | a == min_val)  expR (x * min_dev a v)
