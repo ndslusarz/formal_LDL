@@ -603,7 +603,7 @@ have sum_spl1 : forall (x : R),   \sum_(a <- v) \big[minr/a]_(i <- v) i * expR (
 (*top sum*)
 have sum_top : (\sum_(a <- v) \big[minr/a]_(i <- v) i
                 * expR (min_dev a v) * expR (p0 * min_dev a v)) @[p0 --> +oo] --> 
-                (min_val) * (\sum_(a <- v | a == min_val) 1)%:R. 
+                (min_val) * (\sum_(a <- v | a == min_val) 1). 
   apply/cvgrPdist_le => /= e e0.
   near=> t.
   rewrite sum_spl1.
@@ -631,18 +631,22 @@ have sum_top : (\sum_(a <- v) \big[minr/a]_(i <- v) i
     near: t; move: e e0; apply/cvgrPdist_le.
     apply: cvgM => //.
       exact: cvg_cst.
-
     apply: (@cvg_comp _ _ _ _ _ _ -oo).
     - have min_lt0 : min_dev a v < 0. 
       rewrite min_dev_lt0//= .
       rewrite /min_val  in amin. 
       rewrite (min_head_self v _ a)//= in amin.
-      (*have h1 := (lt0_cvgMrNy min_lt0 ). apply: h1.
-      rewrite cvgNrNy.
-      by apply: cvg_id.*) (*need lt0_cvgMrNy like gt0_cvgMrNy*) admit.
+      rewrite cvgy_compNP//=.
+      have hswap x : min_dev a v + (- x * min_dev a v)%R =
+                       (- min_dev a v) * (- 1 + x). lra.
+      under eq_fun do rewrite hswap. 
+      have min_lt0' : - min_dev a v > 0. lra.
+      have h1 := gt0_cvgMrNy min_lt0'. apply: h1.
+      under eq_fun do rewrite addrC.
+      apply: cvg_addrr_Ny.
     - rewrite cvgNy_compNP. 
       by apply: cvgr_expR.
-  rewrite -(addr0 (min_val * (\sum_(a <- v | a == min_val) 1)%:R)).
+  rewrite -(addr0 (min_val * (\sum_(a <- v | a == min_val) 1))).
   apply: cvgD; last by exact sum_top_rest.
   have big_seq_cond_eq : forall t, (\sum_(a <- v | a == min_val) (\big[minr/a]_(i <- v) i) *
                                       expR (min_dev a v) * expR (t * min_dev a v)) = 
@@ -673,7 +677,7 @@ have sum_spl2 : forall (x : R),   (\sum_(a <- v)  expR (x * min_dev a v))
     + \sum_(a <- v | a != min_val)  expR (x * min_dev a v). move => x0.
   by rewrite (bigID (fun a => a == min_val)).
 have sum_bot : (\sum_(a <- v) expR (p0 * min_dev a v)) @[p0 --> +oo] --> 
-                 ((\sum_(a <- v | a == min_val) 1)%:R : R).
+                 ((\sum_(a <- v | a == min_val) 1) : R).
   apply/cvgrPdist_le => /= e e0.
   near=> t.
   rewrite sum_spl2.
@@ -696,12 +700,17 @@ have sum_bot : (\sum_(a <- v) expR (p0 * min_dev a v)) @[p0 --> +oo] -->
       rewrite min_dev_lt0//= .
       rewrite /min_val  in amin. 
       rewrite (min_head_self v _ a)//= in amin.
-      (*have h1 := (lt0_cvgMrNy min_lt0 ). apply: h1.
-      rewrite cvgNrNy.
-      by apply: cvg_id.*) (*need lt0_cvgMrNy like gt0_cvgMrNy*) admit.
+      rewrite cvgy_compNP//=.
+      have hswap x : x * min_dev a v = - x * (- min_dev a v). lra.
+      under eq_fun do rewrite hswap mulrC. 
+      have min_lt0' : - min_dev a v > 0. lra.
+      have h1 := gt0_cvgMrNy min_lt0'. apply: h1.
+      have triv :forall (x : R),  - - x = x. move => x; lra.
+      under eq_fun do rewrite triv.
+      apply: cvg_id.
     - rewrite cvgNy_compNP. 
       by apply: cvgr_expR.
-  rewrite -(addr0 ((\sum_(a <- v | a == min_val) 1)%:R)).
+  rewrite -(addr0 ((\sum_(a <- v | a == min_val) 1))).
   apply: cvgD; last by exact sum_bot_rest.
   have big_seq_cond_eq : forall t, (\sum_(a <- v | a == min_val)  expR (t * min_dev a v)) = 
                         (\sum_(a <- v | (a \in v) && (a == min_val))  expR (t * min_dev a v)).
@@ -711,25 +720,29 @@ have sum_bot : (\sum_(a <- v) expR (p0 * min_dev a v)) @[p0 --> +oo] -->
   rewrite big_seq_cond_eq big_seq_cond. 
   near: t; move: e e0; apply/cvgrPdist_le.
   rewrite [X in _ --> X](_ : _ = (\sum_(i <- v | (i \in v) && (i == min_val)) 1)); last first.
-  - by rewrite natr_sum //; congr (_ * _); apply: eq_bigr => i _; rewrite natr1.
+  - by rewrite //; congr (_ * _); apply: eq_bigr => i _; rewrite natr1.
   - apply: cvg_sum => a /andP [av /eqP amin].
     rewrite min_dev0//.
     under eq_fun do rewrite mulr0 expR0.
     exact: cvg_cst.
-have non0 : ((\sum_(a <- v | a == min_val) 1)%:R : R) != 0.
-
-admit.
-have sum_inv : (\sum_(a <- v) expR (p0 * min_dev a v))^-1 @[p0 --> +oo] --> 
-                  ((\sum_(a <- v | a == min_val) 1)%:R : R)^-1.
+have gt0 : ((\sum_(a <- v | a == min_val) 1) : R) > 0.
+  rewrite sumr_gt0//=. exists min_val;  split; rewrite ?eq_refl//=. 
+  rewrite /min_val.
+  rewrite min_in_self//=. (*admitted lemma*)
+  clear -vnil.
+  elim: v vnil=> // h t ih.
+  by rewrite /= mem_head.
+have sum_inv : (\sum_(a <- v) expR ( p0 * min_dev a v))^-1 @[p0 --> +oo] --> 
+                  ((\sum_(a <- v | a == min_val) 1): R)^-1.
   apply: cvgV.
-  - rewrite non0//=. 
+  - by apply lt0r_neq0; exact gt0. 
   - exact sum_bot.
 have l :=  (@cvgM _ _ _ _ _ _ _ _ sum_top sum_inv).
 rewrite -fctM in l.
-have helper : min_val * (\sum_(a <- v | a == min_val) 1)%:R / (\sum_(a <- v | a == min_val) 1)%:R = min_val.
+have helper : min_val * (\sum_(a <- v | a == min_val) 1) / (\sum_(a <- v | a == min_val) 1) = min_val.
   rewrite mulrK//=.
-  rewrite unitfE non0//=.
-rewrite helper in l.
+  rewrite unitfE. apply lt0r_neq0; exact gt0.
+ rewrite helper in l.
 apply: l.
 Admitted.
 
