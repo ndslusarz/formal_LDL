@@ -405,15 +405,24 @@ rewrite (perm_big_minr_helper4 _ av)//; last first.
 by rewrite subrr mul0r.
 Qed.
 
+Lemma bigmin_mem_or_arg (v : seq R) a :
+  (\big[minr/a]_(i <- v) i \in v) \/ (\big[minr/a]_(i <- v) i = a).
+Proof.
+elim: v => [|x v IH]. right. rewrite big_nil//=.
+rewrite big_cons {1}/minr {3}/minr.
+case: ifP => _.
+  - by left; rewrite inE eq_refl.
+  - have [iv |->] := IH; last by right. 
+    by left; rewrite inE iv orbT.
+Qed.
+
 Lemma min_in_self (v : seq R) a:
 a \in v -> \big[minr/a]_(i <- v) i \in v.
 Proof.
-elim: v => // h t ih av.
-rewrite big_cons.
-rewrite {1}/minr; case: ifP => H.
-- by rewrite mem_head.
-
-Admitted.
+move => av.
+have [H|->] := bigmin_mem_or_arg v a; first exact: H.
+exact: av.
+Qed.
 
 Lemma stl_and_gt0_cvg_infty (p : R) (v : seq R)  : 
   v != [::] ->
@@ -530,7 +539,7 @@ have sum_bot : (\sum_(a <- v) expR (- p0 * min_dev a v)) @[p0 --> +oo] -->
 have gt0 : ((\sum_(a <- v | a == min_val) 1) : R) > 0.
   rewrite sumr_gt0//=. exists min_val;  split; rewrite ?eq_refl//=. 
   rewrite /min_val.
-  rewrite min_in_self//=. (*admitted lemma*)
+  rewrite min_in_self//=.
   clear -vnil.
   elim: v vnil=> // h t ih.
   by rewrite /= mem_head.
@@ -546,7 +555,8 @@ have helper : min_val * (\sum_(a <- v | a == min_val) 1) / (\sum_(a <- v | a == 
   rewrite unitfE. apply lt0r_neq0; exact gt0.
  rewrite helper in l.
 apply: l.
-Admitted.
+Unshelve. all: end_near.
+Qed.
 
 
 Lemma minr_lt0 (x y : R) : 0 > x -> 0 > y -> 0 > minr x y.
@@ -733,7 +743,7 @@ have sum_bot : (\sum_(a <- v) expR (p0 * min_dev a v)) @[p0 --> +oo] -->
 have gt0 : ((\sum_(a <- v | a == min_val) 1) : R) > 0.
   rewrite sumr_gt0//=. exists min_val;  split; rewrite ?eq_refl//=. 
   rewrite /min_val.
-  rewrite min_in_self//=. (*admitted lemma*)
+  rewrite min_in_self//=.
   clear -vnil.
   elim: v vnil=> // h t ih.
   by rewrite /= mem_head.
@@ -749,7 +759,8 @@ have helper : min_val * (\sum_(a <- v | a == min_val) 1) / (\sum_(a <- v | a == 
   rewrite unitfE. apply lt0r_neq0; exact gt0.
  rewrite helper in l.
 apply: l.
-Admitted.
+Unshelve. all: end_near.
+Qed.
 
 End stl_and_conv_lattice.
 
