@@ -71,17 +71,18 @@ Lemma dl2_morA (e1 e2 e3 : expr (Bool_T_undef impl_def m_def l_undef)) :
   [[ e1 `++ (e2 `++ e3) ]]_dl2e = [[ (e1 `++ e2) `++ e3 ]]_dl2e.
 Proof. by rewrite /= !big_cons !big_nil !adde0 addeA. Qed.
 
-Theorem dl2_mand_unit f1 f2 (e :  (expr (Bool_T_def f1 m_def f2))) :
+Theorem dl2_mand_unit f1 f2 (e : expr (Bool_T_def f1 m_def f2)) :
   [[ e `** (ldl_bool _ _ _ _ true) ]]_dl2e = [[ e ]]_dl2e.
 Proof. by rewrite /= !big_cons big_nil !adde0. Qed.
 
 Lemma dl2_ereal_translation_le0 e :
-  ([[ e ]]_dl2e <= 0 :> ereal_type_translation (Bool_T_undef impl_def m_def l_undef))%E.
+  ([[ e ]]_dl2e <= 0
+    :> ereal_type_translation (Bool_T_undef impl_def m_def l_undef))%E.
 Proof.
 dependent induction e using expr_ind' => /=.
 - by case: b.
-- rewrite /maxe; case: ifP; move => h; rewrite//=.
-  admit. (*simple, use h*)
+- rewrite /maxe; case: ifPn => h //=.
+  by rewrite leeNl oppe0 leNgt h.
 - rewrite big_map big_seq sume_le0// => t tl.
   move/List.Forall_forall : H => /(_ t); apply => //.
   exact/In_in.
@@ -90,17 +91,19 @@ dependent induction e using expr_ind' => /=.
   exact/In_in.
 - case: c => //=.
   by rewrite lee_fin oppr_le0 le_max lexx orbT.
-Admitted.
+Qed.
 
-Theorem dl2_residuation (e1 e2 e3 :  (expr (Bool_T_undef impl_def m_def l_undef))) :
-  ([[ e1 `** e2 ]]_dl2e <= [[ e3 ]]_dl2e)%E <->
-    ([[ e2 ]]_dl2e <= [[ e1 `=> e3 ]]_dl2e)%E.
+Theorem dl2_residuation (e1 e2 e3 : expr (Bool_T_undef impl_def m_def l_undef)) :
+  ([[ e1 `** e2 ]]_dl2e <= [[ e3 ]]_dl2e <->
+   [[ e2 ]]_dl2e <= [[ e1 `=> e3 ]]_dl2e)%E.
 Proof.
-split; move => /= H.
-- rewrite !big_cons big_nil addr0 in H. 
-  rewrite /maxe; case: ifP; move => /eqP h.
-  + rewrite oppe0; exact (dl2_ereal_translation_le0 e2).
-  + admit. (*from H*)
+split => /= H.
+- rewrite !big_cons big_nil addr0 in H.
+  rewrite /maxe; case: ifPn => h.
+  + by rewrite oppe0; exact: dl2_ereal_translation_le0.
+  + rewrite oppeB; last first.
+      admit.
+    admit.
 - rewrite !big_cons big_nil addr0.
   move: H; rewrite/maxe;  case: ifP; move => h1 h2.
   + (*both simple, from h1 h2*)
@@ -198,7 +201,7 @@ rewrite//=; case: ifP => /eqP H1 H2.
   auto.
 Qed.*)
 
-Lemma dl2_ereal_translations_Vector_coincide: forall n (e : @expr R (Vector_T n)),
+Lemma dl2_ereal_translations_Vector_coincide : forall n (e : @expr R (Vector_T n)),
   [[ e ]]_dl2e = [[ e ]]_B.
 Proof.
 dependent induction e => //=.
