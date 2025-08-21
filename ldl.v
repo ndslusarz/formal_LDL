@@ -265,7 +265,6 @@ End type_translation.
 Section bool_translation.
 Local Open Scope ring_scope.
 Local Open Scope ldl_scope.
-Local Open Scope mset_scope. 
 Context {R : realType}.
 
 Fixpoint bool_translation {t} (e : @expr R t) : bool_type_translation t :=
@@ -372,7 +371,6 @@ Fixpoint translation {t} (e : @expr R t) {struct e} : type_translation t :=
        | GodelS => maxR (map translation Es)
        | productS => product_dl_prod (map translation Es)
        end
-
     (*| `~ E1 => 1 - {[ E1 ]}*)
     | ldl_not _ _ _ E1 =>
        match l with
@@ -386,19 +384,28 @@ Fixpoint translation {t} (e : @expr R t) {struct e} : type_translation t :=
 
     | ldl_impl _ _ _ E1 E2 =>
         match l with
-       | Lukasiewicz => minr (1 - translation E1 + translation E2) 1
-       | Yager => minr (((1 - translation E1)`^p + (translation E2)`^p )`^p^-1) 1
-       | Godel => if translation E2 < translation E1 then translation E2 else 1
-       | product => if translation E2 < translation E1 then
-                      translation E2 / translation E1
+       | Lukasiewicz => minr (1 - {[ E1 ]} + {[ E2 ]}) 1
+       | Yager => minr (((1 - {[ E1 ]})`^p + ({[ E2 ]})`^p )`^p^-1) 1
+       | Godel => if {[ E2 ]} < {[ E1 ]} then {[ E2 ]} else 1
+       | product => if {[ E2 ]} < {[ E1 ]} then
+                      {[ E2 ]} / {[ E1 ]}
                     else
                       1
-       | GodelS => maxr (1 - (translation E1)) (translation E2)
-       | productS => 1 - ( 1 - (translation E2)) * (translation E1)
+       | GodelS => maxr (1 - {[ E1 ]}) {[ E2 ]}
+       | productS => 1 - ( 1 - {[ E2 ]}) * {[ E1 ]}
        end
 
-    | E1 `== E2 => if {[ E1 ]} == -{[ E2 ]} then ({[ E1 ]} == {[ E2 ]})%:R else maxr (1 - `|({[ E1 ]} - {[ E2 ]}) / ({[ E1 ]} + {[ E2 ]})|) 0
-    | E1 `<= E2 => if {[ E1 ]} == -{[ E2 ]} then ({[ E1 ]} <= {[ E2 ]})%R%:R else maxr (1 - maxr (({[ E1 ]} - {[ E2 ]}) / `|{[ E1 ]} + {[ E2 ]}|) 0) 0
+    | E1 `== E2 => if {[ E1 ]} == - {[ E2 ]} then
+                     ({[ E1 ]} == {[ E2 ]})%:R
+                   else
+                     maxr (1 - `|({[ E1 ]} - {[ E2 ]}) / ({[ E1 ]} + {[ E2 ]})|)
+                          0
+    | E1 `<= E2 => if {[ E1 ]} == - {[ E2 ]} then
+                     ({[ E1 ]} <= {[ E2 ]})%R%:R
+                   else
+                     maxr (1 - maxr (({[ E1 ]} - {[ E2 ]}) /
+                                      `|{[ E1 ]} + {[ E2 ]}|) 0)
+                          0
 
     | ldl_fun n m f => f
     | ldl_app n m f v => (translation f) (translation v)
@@ -420,15 +427,25 @@ Fixpoint dl2_ereal_translation {t} (e : @expr R t) {struct e} : ereal_type_trans
   | ldl_real r => r
   | ldl_idx n i => i
   | ldl_vec n t => t
-
   | ldl_and _ _ _ Es => +oo (* default value, all lemmas are for negation-free formulas *)
   | ldl_or _ _ _ Es => +oo (* default value, all lemmas are for negation-free formulas *)
-  | ldl_mand _ _ _ Es => \sum_(i <- map dl2_ereal_translation Es) i
-  | ldl_mor _ _ _ Es => \sum_(i <- map dl2_ereal_translation Es) i (*((- 1) ^+ (size Es).+1)%:E * prodE (map dl2_ereal_translation Es)*)
+  | ldl_mand _ _ _ Es =>
+      if has (pred1 -oo) (map dl2_ereal_translation Es) then
+        -oo
+      else if has (pred1 +oo) (map dl2_ereal_translation Es) then
+        -oo
+      else
+        \sum_(i <- map dl2_ereal_translation Es) i
+  | ldl_mor _ _ _ Es =>
+      if has (pred1 -oo) (map dl2_ereal_translation Es) then
+        -oo
+      else if has (pred1 +oo) (map dl2_ereal_translation Es) then
+        -oo
+      else
+        \sum_(i <- map dl2_ereal_translation Es) i
   | ldl_not _ _ _ E1 => +oo (* default value, all lemmas are for negation-free formulas *)
   | ldl_impl _ _ _ E1 E2 =>  (- maxe ({[ E1 ]} - {[ E2 ]}) 0)
                                 (*TODO: add once tested the right version for standard dl2*)
-
   | E1 `== E2 => (- `| {[ E1 ]} - {[ E2 ]}|)%:E
   | E1 `<= E2 => (- maxr ({[ E1 ]} - {[ E2 ]}) 0)%:E
 

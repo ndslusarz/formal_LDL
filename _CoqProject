@@ -18,3 +18,4 @@ stl.v
 stl_ereal.v
 example.v
 seq_calc.v
+bool_seq_calc.v

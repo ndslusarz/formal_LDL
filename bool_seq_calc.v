@@ -9,6 +9,13 @@ From mathcomp Require Import topology derive normedtype sequences
  exp measure lebesgue_measure lebesgue_integral hoelder finmap multiset.
 Require Import mathcomp_extra analysis_extra ldl fuzzy.
 
+(**md**************************************************************************)
+(* # Classical sequent calculus                                               *)
+(*   seq_calc_bool_ms - sequent calc for standard boolean logic               *)
+(*                      using multisets                                       *)
+(*   sound_sc_bool_mseq - soundness proof                                     *)
+(******************************************************************************)
+
 Set Implicit Arguments.
 Unset Strict Implicit.
 Unset Printing Implicit Defensive.
@@ -17,17 +24,10 @@ Import Num.Def Num.Theory GRing.Theory.
 Import Order.TTheory.
 Import numFieldTopology.Exports.
 
-(**md**************************************************************************)
-(* # Classical sequent calculus                                               *)
-(*   seq_calc_bool_ms - sequent calc for standard boolean logic               *)
-(*                      using multisets                                       *)
-(*   sound_sc_bool_mseq - soundness proof                                     *)     
-(******************************************************************************)                                                                                              
-
 Reserved Notation "{[ e ]}" (format "{[  e  ]}").
 
-HB.instance Definition _ (R : realType) x y z v := 
-  @gen_choiceMixin (@expr R (Bool_T x y z v)). 
+HB.instance Definition _ (R : realType) x y z v :=
+  @gen_choiceMixin (@expr R (Bool_T x y z v)).
 
 Reserved Notation "Q |= P" (no associativity, at level 61).
 Reserved Notation "Q |- P" (no associativity, at level 61).
@@ -35,7 +35,7 @@ Reserved Notation "Q |- P" (no associativity, at level 61).
 Section seq_calc_bool.
 Local Open Scope ring_scope.
 Local Open Scope ldl_scope.
-Local Open Scope mset_scope. 
+Local Open Scope mset_scope.
 Context {R : realType}.
 Context {K : choiceType}.
 Implicit Types  (A : {mset K}) (s : seq K).
@@ -59,7 +59,7 @@ Inductive seq_calc_bool_ms : {mset (@expr R (Bool_T_def impl_def m_undef l_def))
 | andL2 :  forall (Q P : {mset (@expr R (Bool_T_def impl_def m_undef l_def))}) (a b : @expr R (Bool_T_def impl_def m_undef l_def)),
     b +` Q  |= P ->
       (a `/\ b) +` Q |= P
-| orR1 : forall (Q P : {mset (@expr R (Bool_T_def impl_def m_undef l_def))}) 
+| orR1 : forall (Q P : {mset (@expr R (Bool_T_def impl_def m_undef l_def))})
                 (a : @expr R (Bool_T_def impl_def m_undef l_def))
                  (b : (@expr R (Bool_T_def impl_def m_undef l_def))),
     Q |=  a +` P ->
@@ -69,7 +69,7 @@ Inductive seq_calc_bool_ms : {mset (@expr R (Bool_T_def impl_def m_undef l_def))
                  (b : (@expr R (Bool_T_def impl_def m_undef l_def))),
     Q |=  b +` P ->
       Q |=  (a `\/ b) +` P
-| orL :  forall (Q P : {mset (@expr R (Bool_T_def impl_def m_undef l_def))}) 
+| orL :  forall (Q P : {mset (@expr R (Bool_T_def impl_def m_undef l_def))})
                 (a : @expr R (Bool_T_def impl_def m_undef l_def))
                  (b : (@expr R (Bool_T_def impl_def m_undef l_def))),
     a+`Q  |= P ->  b +` Q |= P ->
@@ -81,43 +81,43 @@ where "Q |= P" := (seq_calc_bool_ms Q P).
 
 
 Lemma sound_sc_bool_mseq (Q P : {mset expr (Bool_T_def impl_def m_undef l_def)}) :
-Q |= P -> 
-(forall (q : expr (Bool_T_def impl_def m_undef l_def)), 
+Q |= P ->
+(forall (q : expr (Bool_T_def impl_def m_undef l_def)),
     (q \in Q) -> <<q>> = <<ldl_bool neg_def _ _ _ true>>) ->
     exists (p : expr (Bool_T_def impl_def m_undef l_def)) , (p \in P) /\ <<p>> = <<ldl_bool neg_def _ _ _ true>>.
 Proof.
  rewrite //=. intros. dependent induction H.
-- exists a. have H := H0 a. 
+- exists a. have H := H0 a.
   rewrite in_mset1D eq_refl orTb ?andTb.
   move: H; rewrite in_mset1D eq_refl orTb ?andTb//=.
   auto.
 - exfalso.  move: H0.
   rewrite//=. apply contrapT. rewrite  not_implyE.
-  rewrite not_andE notE. left. 
+  rewrite not_andE notE. left.
   rewrite -existsNP.
   exists (ldl_bool neg_def _ _ _ false).
-  rewrite in_mset1D eq_refl orTb//=. 
+  rewrite in_mset1D eq_refl orTb//=.
   auto.
 - exists (ldl_bool neg_def _ _ _ true).
-  by rewrite in_mset1D eq_refl orTb//=. 
+  by rewrite in_mset1D eq_refl orTb//=.
 - destruct (IHseq_calc_bool_ms1 H1) as [x [IH11 IH12]].
   destruct (IHseq_calc_bool_ms2 H1) as [y [IH21 IH22]].
   rewrite in_mset1D in IH11. move/orP: IH11.
   move => IH11.
   destruct IH11.
-    + move/eqP: H2. move/esym => H2. subst. 
+    + move/eqP: H2. move/esym => H2. subst.
       rewrite in_mset1D in IH21. move/orP: IH21.
-      move => IH21. destruct IH21. 
+      move => IH21. destruct IH21.
       * move/eqP: H2. move/esym => H2.
-        subst. 
-        exists (x `/\ y). 
+        subst.
+        exists (x `/\ y).
         simpl; split; eauto.
         - by rewrite in_mset1D eq_refl orTb.
-        - rewrite big_cons big_seq1. 
+        - rewrite big_cons big_seq1.
           by rewrite IH12 IH22.
       * exists y. rewrite IH22 in_mset1D H2 orbT. eauto.
     +  exists x.  rewrite IH12 in_mset1D H2 orbT. eauto.
-- have H1 := (H0 (a `/\ b)). 
+- have H1 := (H0 (a `/\ b)).
   rewrite in_mset1D eq_refl orTb in H1.
   simpl in H1.
   rewrite big_cons big_seq1 in H1.
@@ -130,7 +130,7 @@ Proof.
           by apply ha.
         + by [].
       * apply H0. by rewrite in_mset1D H2 orbT.
-- have H1 := (H0 (a `/\ b)). 
+- have H1 := (H0 (a `/\ b)).
   rewrite in_mset1D eq_refl orTb in H1.
   simpl in H1.
   rewrite big_cons big_seq1 in H1.
@@ -147,23 +147,23 @@ Proof.
   rewrite in_mset1D in IH1. move/orP: IH1.
   move => IH1.
   destruct IH1.
-    + move/eqP: H1. move => H1. subst. 
+    + move/eqP: H1. move => H1. subst.
       exists (a `\/ b).
-      rewrite in_mset1D eq_refl orTb//= big_cons big_seq1 IH2. 
+      rewrite in_mset1D eq_refl orTb//= big_cons big_seq1 IH2.
       by rewrite orTb//.
-    + exists x. 
+    + exists x.
       by rewrite IH2 in_mset1D H1 orbT//.
 - destruct (IHseq_calc_bool_ms H0) as [x [IH1 IH2]].
   rewrite in_mset1D in IH1. move/orP: IH1.
   move => IH1.
   destruct IH1.
-    + move/eqP: H1. move => H1. subst. 
+    + move/eqP: H1. move => H1. subst.
       exists (a `\/ b).
-      rewrite in_mset1D eq_refl orTb//= big_cons big_seq1 IH2. 
+      rewrite in_mset1D eq_refl orTb//= big_cons big_seq1 IH2.
       by rewrite orbT//.
-    + exists x. 
+    + exists x.
       by rewrite IH2 in_mset1D H1 orbT//.
-- have H2 := (H1 (a `\/ b)). 
+- have H2 := (H1 (a `\/ b)).
   rewrite in_mset1D eq_refl orTb in H2.
   simpl in H2.
   rewrite big_cons big_seq1 in H2.
@@ -181,11 +181,11 @@ Proof.
     * move/eqP: H2. move => H2.
       subst. by apply hb.
     * apply H1. by rewrite in_mset1D H2 orbT.
-- have H1 := H0 (`~ a). 
+- have H1 := H0 (`~ a).
   rewrite in_mset1D eq_refl orTb in H1.
-  destruct IHseq_calc_bool_ms as [x y]. 
+  destruct IHseq_calc_bool_ms as [x y].
   + intros. apply H0.
-    by rewrite in_mset1D H2 orbT. 
+    by rewrite in_mset1D H2 orbT.
   + exists x. destruct y as [h1 h2].
     rewrite h2.
     rewrite in_mset1D in h1. move/orP: h1. move => [h1 | h3].
