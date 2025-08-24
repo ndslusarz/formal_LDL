@@ -12,27 +12,26 @@ Require Import mathcomp_extra analysis_extra ldl dl2.
 (* # Properties of DL2 on extended reals                                      *)
 (*                                                                            *)
 (* ## Structural properties                                                   *)
-(* - dl2_andC_nary == n-ary commutativity of conjunction                      *)
-(* - dl2_andC == commutativity of conjunction                                 *)
-(* - dl2_andA == associativity of conjunction                                 *)
-(* - dl2_orC_nary == n-ary commutativity of disjunction                       *)
-(* - dl2_orC == commutativity of disjunction                                  *)
-(* - dl2_orA == associativity of disjunction                                  *)
+(* - dl2_mandC_nary == n-ary commutativity of conjunction                     *)
+(* - dl2_mandC == commutativity of conjunction                                *)
+(* - dl2_mandA == associativity of conjunction                                *)
+(* - dl2_morC_nary == n-ary commutativity of disjunction                      *)
+(* - dl2_morC == commutativity of disjunction                                 *)
+(* - dl2_morA == associativity of Ydisjunction                                *)
+(* - dl2_mand_unit == unit element of conjunction                             *)
+(* - dl2_residuation == residuation property                                  *)
 (*                                                                            *)
 (* ## Adequacy                                                                *)
 (* - dl2_ereal_translation_le0 == invariant for the translation: all values   *)
 (*                                are in the range $[-\infty, 0]$             *)
 (* - dl2_nary_inversion_andE1 == inversion lemma for conjunction/true         *)
 (* - dl2_nary_inversion_andE0 == inversion lemma for conjuntion/false         *)
-(* - dl2_nary_inversion_orE1 == inversion lemma for disjunction/true          *)
-(* - dl2_nary_inversion_orE0 == inversion lemma for disjunction/false         *)
 (* - dl2_translations_Vector_coincide == shows that the Boolean translation   *)
 (*   and the DL2 translation coincide on expressions of type Vector_T         *)
 (* - dl2_translations_Index_coincide == shows that the Boolean translation    *)
 (*   and the DL2 translation coincide on expressions of type Index_T          *)
 (* - dl2_translations_Real_coincide == shows that the Boolean translation and *)
 (*   the DL2 translation coincide on expressions of type Real_T               *)
-(* - dl2_ereal_adequacy == final adequacy result for DL2                      *)
 (******************************************************************************)
 
 Import Num.Def Num.Theory GRing.Theory.
@@ -241,6 +240,65 @@ Proof.
 dependent induction e => //=;
 rewrite ?(IHe1 e1 erefl JMeq_refl) ?(IHe2 e2 erefl JMeq_refl) ?(IHe e erefl JMeq_refl) //=.
 by rewrite dl2_ereal_translations_Vector_coincide dl2_ereal_translations_Index_coincide.
+Qed.
+
+Definition is_dl2 b (x : \bar R) := (if b then x == 0 else x < 0)%E.
+
+Lemma dl2_nary_inversion_andE1 (s : seq (expr (Bool_T_undef impl_def m_def l_undef))) :
+  is_dl2 true ([[ ldl_mand s ]]_dl2e) ->
+  (forall i, (i < size s)%N -> is_dl2 true ([[ nth (ldl_bool _ _ _ _ false) s i ]]_dl2e)).
+Proof.
+rewrite/is_dl2//=.
+case: ifPn => //; case: ifPn => //.
+elim: s => //= a l IH + + + i size.
+rewrite !negb_or => /andP [hap lp] /andP [han ln].
+rewrite big_cons nadde_eq0//=. 
+- move => /andP [ha hl].
+  case: i size => [_|i ih].
+  + by rewrite nth0//=.
+  + rewrite -nth_behead//=. apply IH => //=.
+- exact: dl2_ereal_translation_le0.
+- rewrite big_seq_cond; apply: sume_le0 => /= x.
+    by rewrite andbT => /mapP[/= e et] ->; exact: dl2_ereal_translation_le0.
+Qed.
+
+Lemma dl2_nary_inversion_andE0 (s : seq (expr (Bool_T_undef impl_def m_def l_undef))) :
+  is_dl2 false ([[ ldl_mand s ]]_dl2e) ->
+  (exists i, (is_dl2 false ([[ nth (ldl_bool _ _ _ _ false) s i ]]_dl2e)) && (i < size s)%nat) \/
+  (exists i, ([[ nth (ldl_bool _ _ _ _ false) s i ]]_dl2e == +oo%E) && (i < size s)%nat).
+Proof.
+rewrite/is_dl2//=.
+case: ifPn => //=.
+- move => hs _. left. 
+  have /hasP [y /mapP [x xin ->] /eqP hx] := hs.
+  set i := index x s.
+  exists i; apply/andP; split.
+  + have -> : nth (ldl_bool neg_undef impl_def m_def l_undef false) s i = x; 
+      first by rewrite /i nth_index.
+    by rewrite hx.
+  + by rewrite /i index_mem.
+- case: ifPn => // h1 h.
+  + right. have /hasP [y /mapP [x xin ->] /eqP hx] := h1.
+  set i := index x s.
+  exists i; apply/andP; split.
+  + have -> : nth (ldl_bool neg_undef impl_def m_def l_undef false) s i = x; 
+      first by rewrite /i nth_index.
+    by rewrite hx.
+  + by rewrite /i index_mem.
+  + left.
+    elim: s h1 h H => [ |h t ih] //=; first by rewrite big_nil ltxx.
+    rewrite !negb_or => /andP [hap lp] /andP [han ln].
+    rewrite big_cons => /nadde_lt0 => /(_ (dl2_ereal_translation_le0 _)).
+    have : (\sum_(j <- [seq [[i]]_dl2e | i <- t]) j <= 0)%E.
+      rewrite big_seq_cond; apply: sume_le0 => /= z.
+      by rewrite andbT => /mapP[/= e et ->]; exact: dl2_ereal_translation_le0.
+    move=> /[swap] /[apply] /orP[H|H];
+           first by exists 0%N; rewrite /= H.
+    have [i /andP [H1 H2]] := ih lp ln H.
+    exists i.+1; apply/andP; split.
+    * case: i H1 H2 => [H1 H2|i H1 H2]; by rewrite -nth_behead//=.
+    * have Hi_le : (i.+1 <= size t)%N by []. 
+      exact: (leq_ltn_trans Hi_le (ltnSn _)).
 Qed.
 
 End dl2_lemmas.
