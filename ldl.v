@@ -445,7 +445,7 @@ Fixpoint dl2_ereal_translation {t} (e : @expr R t) {struct e} : ereal_type_trans
         \sum_(i <- map dl2_ereal_translation Es) i
   | ldl_not _ _ _ E1 => +oo (* default value, all lemmas are for negation-free formulas *)
   | ldl_impl _ _ _ E1 E2 =>  (- maxe ({[ E1 ]} - {[ E2 ]}) 0)
-                                (*TODO: add once tested the right version for standard dl2*)
+                                
   | E1 `== E2 => (- `| {[ E1 ]} - {[ E2 ]}|)%:E
   | E1 `<= E2 => (- maxr ({[ E1 ]} - {[ E2 ]}) 0)%:E
 
@@ -475,14 +475,9 @@ Fixpoint dl2_translation {t} (e : @expr R t) {struct e} : type_translation t :=
   | ldl_or _ _ _ Es => 0 (* default value, all lemmas are for negation-free formulas *)
   | ldl_mand _ _ _ Es => \sum_(i <- map dl2_translation Es) i
   | ldl_mor _ _ _ Es => \sum_(i <- map dl2_translation Es) i
-(*if (\big[maxr/0]_(i <- (map dl2_translation Es)) i == 0) then 0
-                        else (1/(sumR (map (fun E => 1/({[ E ]} :
-                  type_translation (Bool_T _ _ m_def _))) Es)))*)
 
-(*(- 1) ^+ (size Es).+1 * prodR (map dl2_translation Es)*)
   | ldl_not _ _ _ E1 => 0 (* default value, all lemmas are for negation-free formulas *)
   | ldl_impl _ _ _ E1 E2 => (- maxr ({[ E1 ]} - {[ E2 ]}) 0)
-(*if {[ E1 ]} == 0 then {[ E2 ]} else 0*) (*old version, remove once checked*)
 
   | E1 `== E2 => (- `| {[ E1 ]} - {[ E2 ]}|)
   | E1 `<= E2 => (- maxr ({[ E1 ]} - {[ E2 ]}) 0)

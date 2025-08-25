@@ -17,6 +17,16 @@ Import Num.Def Num.Theory GRing.Theory.
 Import Order.TTheory.
 Import numFieldTopology.Exports.
 
+(**md**************************************************************************)
+(* # Hypersequent calculi for DL2                                             *)
+(*                                                                            *)
+(*                                                                            *)
+(* ## DL2                                                                     *)
+(* - seq_calc_dl2 == hypersequent calculus DL2                                *)
+(* - sound_dl2 == soundness of seq_calc_dl2                                   *)
+(*                                                                            *)
+(******************************************************************************)
+
 Reserved Notation "{[ e ]}" (format "{[  e  ]}").
 
 HB.instance Definition _ (R : realType) x y z v :=
