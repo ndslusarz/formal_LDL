@@ -930,9 +930,9 @@ case: ifPn => [h1|].
 Qed.
 
 Theorem Yager_mandA f1 f2 (e1 e2 e3 : expr (Bool_T_def f1 m_def f2)) : (0 < p) ->
-  [[ (e1 `** e2) `** e3]]_Yager = [[ e1 `** (e2 `** e3) ]]_Yager.
+  [[ e1 `** (e2 `** e3)]]_Yager = [[ (e1 `** e2) `** e3 ]]_Yager.
 Proof.
-move=> p0.
+move=> p0. symmetry.
 have pneq0 : p != 0 by exact: lt0r_neq0.
 have := translate_Bool_T_01 p p1 Yager _ _ _ e1.
 have := translate_Bool_T_01 p p1 Yager _ _ _ e2.
