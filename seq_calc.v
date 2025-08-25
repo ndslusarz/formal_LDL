@@ -20,19 +20,46 @@ Import numFieldTopology.Exports.
 (*  grouped by DL                                                             *)
 (*                                                                            *)
 (*                                                                            *)
-(*   connectives_axioms - mutual relations between logical connectives,       *)
-(*                        proven  per logic when applicable                   *)
-(*                                                                            *)
-(*                                                                            *)
 (* ## Lukasiewicz                                                             *)
-(* - seq_calc_luka_impl == hypersequent calculus for the minimal implication  *)
+(* - seq_calc_luka_impl == hypersequent calculus for the minimal              *)
 (*   language fragment                                                        *)
 (* - seq_calc_luka == hypersequent calculus for the full syntax               *)
+(* - sound_luka_impl == soundness of seq_calc_luka_impl                       *)
+(* - sound_luka == soundness of seq_calc_luka                                 *)
+(* - luka_neg_impl_admissable == proof that negation can be defined in terms  *)
+(*   of implication and bottom                                                *)
+(* - luka_true_false_admissable == proof that true can be defined in terms    *)
+(*   of negation and bottom                                                   *)
+(* - luka_mand_impl_admissable == proof that ** can be defined in terms       *)
+(*   of implication and negation                                              *)
+(* - luka_mor_impl_admissable == proof that ** can be defined in terms        *)
+(*    of implication and negation                                             *)
+(* - luka_implL_extended == alternate derivable left implication rule         *)
+(* - equivalence_luka == equivalence of seq_calc_luka and seq_calc_luka_impl  *)
 (*                                                                            *)
 (* ## product                                                                 *)
+(* - seq_calc_product == hypersequent calculus for the minimal                *)
+(*   language fragment                                                        *)
+(* - seq_calc_product' == hypersequent calculus for the full syntax           *)
+(* - sound_product == soundness of seq_calc_product                           *)
+(* - sound_product' == soundness of seq_calc_product'                         *)
+(* - product_neg_impl_admissable == proof that negation can be defined in     *)
+(*   terms of implication and bottom                                          *)
+(* - product_true_false_admissable == proof that true can be defined in terms *)
+(*   of negation and bottom                                                   *)
+(* - equivalence_product == equivalence of seq_calc_product'                  *)
+(*   and seq_calc_product                                                     *)
 (*                                                                            *)
 (* ## Godel                                                                   *)
-(*TO DO: FILL OUT                                                             *)
+(* - seq_calc_godel == hypersequent calculus for the minimal                  *)
+(*   language fragment                                                        *)
+(* - seq_calc_godel' == hypersequent calculus for the full syntax             *)
+(* - sound_godel == soundness of seq_calc_godel                               *)
+(* - sound_godel == soundness of seq_calc_godel'                              *)
+(* - godel_neg_impl_admissable == proof that negation can be defined in terms *)
+(*   of implication and bottom                                                *)
+(* - equivalence_godel == equivalence of seq_calc_godel'                      *)
+(*   and seq_calc_godel                                                       *)
 (******************************************************************************)
 
 Reserved Notation "{[ e ]}" (format "{[  e  ]}").
@@ -693,7 +720,7 @@ Lemma luka_true_false_admissable :
     [[`~ ldl_bool neg_def impl_def m_def l_def false]]_Lukasiewicz.
 Proof. by rewrite//= subr0. Qed.
 
-Lemma luka_and_impl_admissable (a b: formula):
+Lemma luka_mand_impl_admissable (a b: formula):
   [[a `** b]]_Lukasiewicz = [[`~ (a `=> `~b)]]_Lukasiewicz.
 Proof.
 rewrite//=/maxr/minr.
@@ -733,7 +760,7 @@ case: ifP; case: ifP; rewrite//= => h1 h2; try lra.
   by lra.
 Qed.
 
-Lemma luka_or_impl_admissable (a b : formula):
+Lemma luka_mor_impl_admissable (a b : formula):
   [[a `++ b]]_Lukasiewicz = [[(`~ a) `=> b]]_Lukasiewicz.
 Proof.
 rewrite//=/maxr/minr.
