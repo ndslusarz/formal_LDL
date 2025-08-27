@@ -66,14 +66,17 @@ Context {R : realType}.
 
 Local Notation expr := (@expr R).
 
-Definition ldl_real_add n :=
+Definition ldl_add n :=
   ldl_fun2 (fun (x y : n.-tuple R) => [tuple tnth x i + tnth y i | i < n]%R).
 
-Definition ldl_real_sub n :=
+Definition ldl_sub n :=
   ldl_fun2 (fun (x y : n.-tuple R) => [tuple tnth x i - tnth y i | i < n]%R).
 
 (*Notes:
 - does not say groups need to cover ALL indices*)
+
+Definition ldl_sum_vec n :=
+  ldl_fun (fun x : n.-tuple R => (mktuple (fun => foldr GRing.add 0 x)) : 1.-tuple R)%R.
 
 (* Fixpoint ldl_sum_vec (x : seq (expr Real_T)) := *)
 (*   match x with *)

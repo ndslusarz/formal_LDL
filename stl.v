@@ -105,9 +105,9 @@ Qed.
 Lemma stl_translations_Vector_coincide : forall n (e : @expr R (Vector_T n)),
   nu.-[[ e ]]_stl = [[ e ]]_B.
 Proof.
-dependent induction e => //=.
-dependent destruction e1.
-by rewrite (IHe2 _ _ _ e2 erefl JMeq_refl).
+dependent induction e => //=; dependent destruction e1.
+- by rewrite (IHe2 _ _ _ e2 erefl JMeq_refl).
+- by rewrite IHe2 ?IHe3.
 Qed.
 
 Lemma stl_translations_Index_coincide : forall n (e : expr (Index_T n)),
