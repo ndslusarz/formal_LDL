@@ -57,6 +57,8 @@ Notation "Q |- P" := (Q, P).
 Inductive seq_calc_dl2 :  hypersequent -> Prop :=
 | id_dl2 : forall Q (a : formula),
     seq_calc_dl2 ( ([::a] |- [:: a]) :: Q)
+| empty : forall Q,
+    seq_calc_dl2 (([::] |- [::]) :: Q)
 (*structural*)
 | eex_dl2 : forall Q P S1 S2,
     seq_calc_dl2 (S1 ++ P ++ Q ++ S2) ->
@@ -92,13 +94,6 @@ Inductive seq_calc_dl2 :  hypersequent -> Prop :=
 | mandR_dl2 : forall Q A B (a b : formula),
     seq_calc_dl2 ((A |- a :: b :: B ) :: Q) ->
     seq_calc_dl2 (( A |- (a `** b) :: B) :: Q)
-| morL_dl2 : forall Q A B (a b : formula),
-    seq_calc_dl2 ((a :: A |- B) :: Q) ->
-    seq_calc_dl2 ((b :: A |- B) :: Q) ->
-    seq_calc_dl2 (((a `++ b) :: A |- B) :: Q)
-| morR_dl2 : forall Q A B (a b : formula),
-    seq_calc_dl2 ((A |- a :: b :: B ) :: Q) ->
-    seq_calc_dl2 (( A |- (a `++ b) :: B) :: Q)
 | implR_dl2 : forall Q A B (a b : formula),
     seq_calc_dl2 ((A|- B) :: Q ) ->
     seq_calc_dl2 ((a :: A |- b :: B) :: Q) ->
@@ -123,12 +118,7 @@ Inductive seq_calc_dl2 :  hypersequent -> Prop :=
     seq_calc_dl2 (( A |- (a `\/ b):: B ) :: Q) 
 .
 
-Lemma dl2_mor_mand_equiv A:
- [[(ldl_mand A)]]_dl2 = [[(ldl_mor A)]]_dl2.
-Proof. rewrite//=. Qed.
-
 Definition eval_dl2 A := [[(ldl_mand A)]]_dl2 .
-
 
 Lemma eval_dl2_cat A B :
  eval_dl2 (A ++ B) = eval_dl2 A + eval_dl2 B.
@@ -149,6 +139,7 @@ seq_calc_dl2 Q ->
 Proof.
 intros; rewrite//=. dependent induction H.
 - by exists ([:: a] |- [:: a]) => //; rewrite mem_head.
+- by exists ([::] |- [::]).
 - case: IHseq_calc_dl2 => [M].
   rewrite !mem_cat => -[IH1 IH2].
   exists M => //.
@@ -223,28 +214,6 @@ intros; rewrite//=. dependent induction H.
 - case IHseq_calc_dl2_1 => [q1].
   case IHseq_calc_dl2_2 => [q2].
   rewrite !in_cons //= => /orP [/eqP h2 | h2] IH22 /orP[/eqP h1 | h1] IH12.
-  + subst. exists (a `++ b :: A |- B); first by rewrite mem_head.
-    rewrite//= !eval_dl2_cons in IH12 IH22.
-    rewrite//= eval_dl2_cons/= !big_cons big_nil addr0.
-    have ha := dl2_translation_le0 a.
-    have hb := dl2_translation_le0 b. 
-    have h : ([[a]]_dl2 + eval_dl2 A)%E <= eval_dl2 B ->
-             ([[a]]_dl2 + [[b]]_dl2 + eval_dl2 A)%E <= eval_dl2 B by lra.
-    rewrite (h IH12)//=.
-  + by exists q1 => //; rewrite !in_cons h1 !orbT.
-  + by exists q2 => //; rewrite !in_cons h2 !orbT.
-  + by exists q1 => //; rewrite !in_cons h1 !orbT.
-- case: IHseq_calc_dl2 => [q + IH2].
-  rewrite in_cons => /predU1P[h | h].
-  + subst. exists (A |- a `++ b :: B); first by rewrite mem_head.
-    have ev_0 : eval_dl2 [::] = 0. 
-      by rewrite /eval_dl2/= big_nil//=.
-    rewrite//= !eval_dl2_cons addrA//= in IH2.
-    rewrite//= eval_dl2_cons/= !big_cons big_nil addr0//=.
-  + by exists q => //; rewrite in_cons h orbT.
-- case IHseq_calc_dl2_1 => [q1].
-  case IHseq_calc_dl2_2 => [q2].
-  rewrite !in_cons //= => /orP [/eqP h2 | h2] IH22 /orP[/eqP h1 | h1] IH12.
   + subst. exists (A |- a `=> b :: B); first by rewrite mem_head.
     rewrite//= in IH12.
     rewrite//= eval_dl2_cons eval_dl2_cons in IH22.
@@ -311,9 +280,53 @@ intros; rewrite//=. dependent induction H.
   + by exists q => //; rewrite in_cons h orbT.
 Qed.
 
+Lemma eex_nil Q P :
+    seq_calc_dl2 (P ++ Q) ->
+    seq_calc_dl2 (Q ++ P).
+Proof.
+intros.
+have hxy M L : M ++ L = [::] ++ M ++ L ++ [::] by rewrite /= cats0.
+rewrite (hxy _  P Q) in H.
+rewrite (hxy _  Q P).
+exact/eex_dl2/H.
+Qed.
+
+Lemma exL_nil Q A B C :
+    seq_calc_dl2 (((A ++ B) |- C) :: Q) ->
+    seq_calc_dl2 (((B ++ A) |- C) :: Q).
+Proof.
+intros.
+have hxy M L : M ++ L = [::] ++ M ++ L ++ [::] by rewrite /= cats0.
+rewrite (hxy _  A B) in H.
+rewrite (hxy _  B A).
+exact/exL_dl2/H.
+Qed.
+
+Lemma exR_nil Q A B C :
+    seq_calc_dl2 ((C |- (A ++ B)) :: Q) ->
+    seq_calc_dl2 ((C |- (B ++ A)) :: Q).
+Proof.
+intros.
+have hxy M L : M ++ L = [::] ++ M ++ L ++ [::] by rewrite /= cats0.
+rewrite (hxy _  A B) in H.
+rewrite (hxy _  B A).
+exact/exR_dl2/H.
+Qed.
+
 Lemma dl2_residuation:
   forall (a b : formula),
     seq_calc_dl2 ([:: ([::] |- [::(a `=> b) `\/ (b `=> a)])]).
-
+Proof.
+intros. 
+apply orR_dl2.
+apply implR_dl2.
+- rewrite -cat1s.
+  apply ew_dl2. apply empty.
+- rewrite -cat1s. apply eex_nil. apply implR_dl2. 
+  + rewrite -cat1s.
+  apply ew_dl2. apply empty.
+  + 
+(*apply comm_hyper_dl2.*)
+Admitted.
 
 End dl2_hyperseq_calc.

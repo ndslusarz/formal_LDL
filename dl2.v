@@ -67,11 +67,13 @@ Proof. by rewrite /= !big_cons !big_nil !addr0 addrA. Qed.
 
 Lemma dl2_morC_nary f1 f2 (s1 s2 : seq (expr (Bool_T_def f1 m_def f2))) :
   perm_eq s1 s2 -> [[ldl_mor s1]]_dl2 = [[ldl_mor s2]]_dl2.
-Proof. by move=> pi; rewrite /= !big_map (perm_big _ pi). Qed.
+Proof. by move=> pi; rewrite /= !big_map (perm_big _ pi)/= (perm_size pi). Qed.
 
 Lemma dl2_morC f1 f2 (e1 e2 : expr (Bool_T_def f1 m_def f2)) :
   [[ e1 `++ e2 ]]_dl2 = [[ e2 `++ e1 ]]_dl2.
-Proof. by rewrite /= !big_cons !big_nil /= addr0 addr0 addrC. Qed.
+Proof. 
+rewrite /= !big_cons big_nil !mulr1; congr *%R.
+by rewrite mulrC. Qed.
 
 Lemma dl2_translation_le0 e :
   [[ e ]]_dl2 <= 0 :> type_translation (Bool_T_dl2).
@@ -105,9 +107,28 @@ dependent induction e using expr_ind' => /=.
 - rewrite big_map big_seq sumr_le0// => t tl.
   move/List.Forall_forall : H => /(_ t); apply => //.
   exact/In_in.
-- rewrite big_map big_seq sumr_le0// => t tl.
-  move/List.Forall_forall : H => /(_ t); apply => //.
-  exact/In_in.
+- rewrite big_map big_seq; have [ol|ol] := boolP (odd (length l)).
+    rewrite exprS -signr_odd ol expr1 mulrN1 opprK mul1r.
+    have [l0|l0] := pselect (forall i, i \in l -> [[i]]_dl2 != 0); last first.
+      move/existsNP : l0 => [/= x /not_implyP[xl /negP/negPn/eqP x0]].
+      rewrite le_eqVlt; apply/orP; left.
+      rewrite prodr_seq_eq0; apply/hasP; exists x => //.
+      by rewrite xl x0 eqxx.
+    apply/ltW; rewrite -sgr_cp0 -big_seq prodrN1.
+      by rewrite -signr_odd ol expr1.
+    move=> /=e el; rewrite lt_neqAle l0//.
+    by move/List.Forall_forall : H => /(_ e); apply => //; exact/In_in.
+  rewrite exprS -signr_odd (negbTE ol) expr0 mulN1r.
+  rewrite mulN1r oppr_le0.
+  have [l0|l0] := pselect (forall i, i \in l -> [[i]]_dl2 != 0); last first.
+    move/existsNP : l0 => [/= x /not_implyP[xl /negP/negPn/eqP x0]].
+    rewrite le_eqVlt; apply/orP; left.
+    rewrite eq_sym prodr_seq_eq0; apply/hasP; exists x => //.
+    by rewrite xl x0 eqxx.
+  apply/ltW; rewrite -sgr_gt0 -big_seq prodrN1.
+    by rewrite -signr_odd (negbTE ol) expr0.
+  move=> e el; rewrite lt_neqAle l0//=.
+  by move/List.Forall_forall : H => /(_ e); apply => //; exact/In_in.
 - case: c => //=.
   by rewrite oppr_le0 le_max lexx orbT.
 Qed.
@@ -213,7 +234,14 @@ have minr_le0 : forall (a : R), a <= 0 -> (minr a 0) = a.
 rewrite/minr/maxr; repeat case: ifPn; intros; try lra.
 Qed.
 
-
+Lemma dl2_prelinearity (e1 e2 e3 : expr Bool_T_dl2) :
+  [[e1 `** e2]]_dl2 <= [[ e3 ]]_dl2 <-> [[ e2 ]]_dl2 <= [[e1 `=> e3]]_dl2.
+Proof.
+have h1 := dl2_translation_le0 e1.
+have h2 := dl2_translation_le0 e2.
+have h3 := dl2_translation_le0 e3.
+split; rewrite//=; rewrite !big_cons big_nil ?addr0 /maxr; repeat case: ifP; intros; lra.
+Qed.
 
 Definition is_dl2 b (x : R) := if b then x == 0 else x < 0.
 
@@ -282,6 +310,8 @@ dependent induction e => //=;
 rewrite ?(IHe1 e1 erefl JMeq_refl) ?(IHe2 e2 erefl JMeq_refl) ?(IHe e erefl JMeq_refl) //=.
 by rewrite dl2_translations_Vector_coincide dl2_translations_Index_coincide.
 Qed.
+
+
 
 End dl2_lemmas.
 

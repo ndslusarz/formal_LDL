@@ -476,7 +476,7 @@ Fixpoint dl2_translation {t} (e : @expr R t) {struct e} : type_translation t :=
   | ldl_or _ _ _  [::] => 0
   | ldl_or _ _ _  Es  => \big[maxr/head``_(map dl2_translation Es)]_(i <- map dl2_translation Es) i
   | ldl_mand _ _ _ Es => \sum_(i <- map dl2_translation Es) i
-  | ldl_mor _ _ _ Es => \sum_(i <- map dl2_translation Es) i
+  | ldl_mor _ _ _ Es => (- 1) ^+ (size Es).+1 * \prod_(i <- (map dl2_translation Es)) i
 
   | ldl_not _ _ _ E1 => 0 (* default value, all lemmas are for negation-free formulas *)
   | ldl_impl _ _ _ E1 E2 => (- maxr ({[ E1 ]} - {[ E2 ]}) 0)
