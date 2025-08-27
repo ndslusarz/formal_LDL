@@ -313,7 +313,7 @@ rewrite (hxy _  B A).
 exact/exR_dl2/H.
 Qed.
 
-Lemma dl2_residuation:
+(*Lemma dl2_residuation:
   forall (a b : formula),
     seq_calc_dl2 ([:: ([::] |- [::(a `=> b) `\/ (b `=> a)])]).
 Proof.
@@ -327,6 +327,6 @@ apply implR_dl2.
   apply ew_dl2. apply empty.
   + 
 (*apply comm_hyper_dl2.*)
-Admitted.
+Admitted.*)
 
 End dl2_hyperseq_calc.
