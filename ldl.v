@@ -90,7 +90,7 @@ Definition Bool_T_def := Bool_T neg_def.
 
 (*flags of the DLs*)
 Definition Bool_T_fuzzy := Bool_T neg_def impl_def m_def l_def.
-Definition Bool_T_dl2 := Bool_T neg_undef impl_def m_def l_undef.
+Definition Bool_T_dl2 := Bool_T neg_undef impl_def m_def l_def.
 Definition Bool_T_stl := Bool_T neg_def impl_undef m_undef l_def.
 
 Inductive comparison : Type := cmp_le | cmp_eq.
@@ -105,15 +105,15 @@ Inductive expr : ldl_type -> Type :=
   | ldl_real : R -> expr Real_T
   | ldl_vec : forall n, expr Real_T ^ n -> expr (Vector_T n)
   (* connectives *)
-  | ldl_and : forall x y z, seq (expr (Bool_T x y z l_def)) -> expr (Bool_T x y z l_def)
-  | ldl_or : forall x y z, seq (expr (Bool_T x y z l_def)) -> expr (Bool_T x y z l_def)
-  | ldl_not : forall x y z, expr (Bool_T neg_def x y z) -> expr (Bool_T neg_def  x y z)
-  | ldl_impl : forall x y z, expr (Bool_T x impl_def y z) -> expr (Bool_T x impl_def y z)
-                            -> expr (Bool_T x impl_def y z)
-  | ldl_mand : forall x y z, seq (expr (Bool_T x y m_def z)) -> expr (Bool_T x y m_def z)
-  | ldl_mor : forall x y z, seq (expr (Bool_T x y m_def z)) -> expr (Bool_T x y m_def z)
+  | ldl_and : forall fn fi fm, seq (expr (Bool_T fn fi fm l_def)) -> expr (Bool_T fn fi fm l_def)
+  | ldl_or : forall fn fi fm, seq (expr (Bool_T fn fi fm l_def)) -> expr (Bool_T fn fi fm l_def)
+  | ldl_not : forall fi fm fl, expr (Bool_T neg_def fi fm fl) -> expr (Bool_T neg_def  fi fm fl) 
+  | ldl_impl :forall fn fm fl, expr (Bool_T fn impl_def fm fl) 
+                               -> expr (Bool_T fn impl_def fm fl) -> expr (Bool_T fn impl_def fm fl)
+  | ldl_mand : forall fn fi fl, seq (expr (Bool_T fn fi m_def fl)) -> expr (Bool_T fn fi m_def fl)
+  | ldl_mor : forall fn fi fl, seq (expr (Bool_T fn fi m_def fl)) -> expr (Bool_T fn fi m_def fl) 
   (* comparisons *)
-  | ldl_cmp : forall x y z v, comparison -> expr Real_T -> expr Real_T -> expr (Bool_T x y z v)
+  | ldl_cmp : forall fn fi fm fl, comparison -> expr Real_T -> expr Real_T -> expr (Bool_T fn fi fm fl)
   (* networks and applications *)
   | ldl_fun : forall n m, (R ^ n -> R ^ m) -> expr (Fun_T n m)
   | ldl_fun2 : forall n m l, (R ^ n -> R ^ m -> R ^ l) -> expr (Fun2_T n m l)
@@ -486,10 +486,12 @@ Fixpoint dl2_translation {t} (e : @expr R t) {struct e} : type_translation t :=
   | ldl_real r => r
   | ldl_vec n t => [ffun i => dl2_translation (t i)]
 
-  | ldl_and _ _ _ Es => 0 (* default value, all lemmas are for negation-free formulas *)
-  | ldl_or _ _ _ Es => 0 (* default value, all lemmas are for negation-free formulas *)
+  | ldl_and _ _ _  [::] => 0
+  | ldl_and _ _ _  Es  => \big[minr/head``_(map dl2_translation Es)]_(i <- map dl2_translation Es) i
+  | ldl_or _ _ _  [::] => 0
+  | ldl_or _ _ _  Es  => \big[maxr/head``_(map dl2_translation Es)]_(i <- map dl2_translation Es) i
   | ldl_mand _ _ _ Es => \sum_(i <- map dl2_translation Es) i
-  | ldl_mor _ _ _ Es => \sum_(i <- map dl2_translation Es) i
+  | ldl_mor _ _ _ Es => (- 1) ^+ (size Es).+1 * \prod_(i <- (map dl2_translation Es)) i
 
   | ldl_not _ _ _ E1 => 0 (* default value, all lemmas are for negation-free formulas *)
   | ldl_impl _ _ _ E1 E2 => (- maxr ({[ E1 ]} - {[ E2 ]}) 0)
