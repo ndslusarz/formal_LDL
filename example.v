@@ -37,26 +37,24 @@ Context {R : realType}.
 Local Notation expr := (@expr R).
 
 Let ldl_norm_infty n : expr (Fun_T n.+1 1) := ldl_fun
-  (fun t : n.+1.-tuple R => [tuple \big[maxr/[tnth t 0] ]_(i <- t) i ])%R.
+  (fun t : R ^ n.+1 => [ffun x : 'I_1 => \big[maxr/t 0]_(i < n.+1) t i ])%R.
 
-Program Definition ldl_vec_sub n :=
-  ldl_fun2 (fun (x y : n.-tuple R) => [tuple tnth x i - tnth y i | i < n]%R).
+Let ldl_vec_sub n :=
+  ldl_fun2 (fun (x y : R ^ n) => [ffun i => x i - y i]%R).
 
 Lemma ldl_vec_sub0 n (e : expr (Vector_T n)) :
-  [[ ldl_app2 (ldl_vec_sub n) e (ldl_vec [tuple of nseq n 0%R]) ]]_B = [[ e ]]_B.
+  [[ ldl_app2 (ldl_vec_sub n) e (ldl_vec [ffun x => ldl_real 0%R]) ]]_B = [[ e ]]_B.
 Proof.
-by dependent induction e => /=; apply/eq_from_tnth => i; rewrite tnth_mktuple tnth_nseq subr0.
+by dependent induction e => /=; apply/ffunP => i; rewrite !ffunE/= subr0.
 Qed.
 
 Context {n m : nat} (eps delta : expr Real_T) (f : expr (Fun_T n.+1 m.+1))
   (v : expr (Vector_T n.+1)) (x : expr (Vector_T n.+1)).
 
+Let idx0 := @ldl_idx R 1 ord0.
 Definition eps_delta_robust fn fm fl : expr (Bool_T fn impl_def fm fl) :=
-  ldl_impl
-    (ldl_lookup (ldl_app (ldl_norm_infty n) (ldl_app2 (ldl_vec_sub _) x v))
-                (ldl_idx ord0) `<= eps)
-    (ldl_lookup (ldl_app (ldl_norm_infty m) (ldl_app2 (ldl_vec_sub _) (ldl_app f x) (ldl_app f v)))
-                (ldl_idx ord0) `<= delta).
+  ((ldl_app (ldl_norm_infty n) (ldl_app2 (ldl_vec_sub _) x v)) `! idx0 `<= eps) `=>
+    ((ldl_app (ldl_norm_infty m) (ldl_app2 (ldl_vec_sub _) (ldl_app f x) (ldl_app f v))) `! idx0 `<= delta).
 
 End example_robust.
 
@@ -64,14 +62,12 @@ Section example_hierarchical.
 Local Open Scope ldl_scope.
 Context {R : realType}.
 
-Definition group_confidence n m eps a b c
-    (f : expr (Fun_T n.+1 m.+1))
-    (x : expr (Vector_T n.+1))
-    (gs : seq (expr (Index_T m.+1))) :=
-  @ldl_and R a b c
-    (map
-       (fun idx =>
-          (((ldl_app f x) `! idx) `<= ldl_real eps) `/\
-            ((ldl_real (1-eps)) `<= (ldl_app f x) `! idx)) gs).
+Definition group_confidence n m x y z eps
+    (f : expr (Fun_T n.+1 m.+1)) (v : expr (Vector_T n.+1))
+    (idxs : seq (expr (Index_T m.+1))) :=
+  @ldl_and R x y z
+    [seq (((ldl_app f v) `! idx) `<= ldl_real eps) `/\
+           ((ldl_real (1-eps)) `<= (ldl_app f v) `! idx)
+    | idx <- idxs].
 
 End example_hierarchical.

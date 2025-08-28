@@ -152,26 +152,43 @@ have H2' := dl2_translation_le0 _ E2;
 have H1' := dl2_translation_le0 _ E1; try lra.
 Qed.
 
+Lemma dl2_translations_coincide t (e : @expr R t) n m j :
+  (t = Real_T \/ t = Vector_T n \/ t = Index_T n \/ t = Fun_T n m \/ t = Fun2_T n m j) ->
+  [[ e ]]_dl2 ~= [[ e ]]_B.
+Proof.
+dependent induction e using expr_ind' => //=; move=> [|[|[|[|]]]]t0//.
+- by under eq_ffun => i do (rewrite (H i 0 0 0); last by left).
+- rewrite (JMeq_eq (IHe1 n m j _)); last by (right; right; right; left).
+  by rewrite (JMeq_eq (IHe2 n m j _)); last by (right; left).
+- rewrite (JMeq_eq (IHe1 n m l _)); last by (right; right; right; right).
+  rewrite (JMeq_eq (IHe2 n m l _)); last by (right; left).
+  by rewrite (JMeq_eq (IHe3 m n l _)); last by (right; left).
+- rewrite (JMeq_eq (IHe1 n m j _)); last by (right; left).
+  by rewrite (JMeq_eq (IHe2 n m j _)); last by (right; right; left).
+Qed.
+
+Lemma dl2_translations_Fun_coincide:
+  forall n m (e : expr (Fun_T n m)), [[ e ]]_dl2 = [[ e ]]_B.
+Proof.
+by move=> n m e; apply/JMeq_eq/(dl2_translations_coincide _ _ n m 0); right;right;right;left.
+Qed.
+
 Lemma dl2_translations_Vector_coincide: forall n (e : @expr R (Vector_T n)),
   [[ e ]]_dl2 = [[ e ]]_B.
 Proof.
-dependent induction e => //=; dependent destruction e1.
-- by rewrite (IHe2 _ _ e2 erefl JMeq_refl).
-- by rewrite IHe2 ?IHe3.
+by move=> n e; apply/JMeq_eq/(dl2_translations_coincide _ _ n 0 0); right;left.
 Qed.
 
 Lemma dl2_translations_Index_coincide: forall n (e : expr (Index_T n)),
   [[ e ]]_dl2 = [[ e ]]_B.
 Proof.
-dependent induction e => //=.
+by move=> n e; apply/JMeq_eq/(dl2_translations_coincide _ _ n 0 0); right;right;left.
 Qed.
 
 Lemma dl2_translations_Real_coincide (e : expr Real_T):
   [[ e ]]_dl2 = [[ e ]]_B.
 Proof.
-dependent induction e => //=;
-rewrite ?(IHe1 e1 erefl JMeq_refl) ?(IHe2 e2 erefl JMeq_refl) ?(IHe e erefl JMeq_refl) //=.
-by rewrite dl2_translations_Vector_coincide dl2_translations_Index_coincide.
+by apply/JMeq_eq/(dl2_translations_coincide _ _ 0 0 0); left.
 Qed.
 
 End dl2_lemmas.

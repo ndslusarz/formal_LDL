@@ -95,32 +95,43 @@ Hypothesis p1 : 1 <= p.
 
 Local Notation "[[ e ]]_ l" := (@translation R l p _ e).
 
+Lemma translations_coincide t (e : @expr R t) n m j :
+  (t = Real_T \/ t = Vector_T n \/ t = Index_T n \/ t = Fun_T n m \/ t = Fun2_T n m j) ->
+  [[ e ]]_l ~= [[ e ]]_B.
+Proof.
+dependent induction e using expr_ind' => //=; move=> [|[|[|[|]]]]t0//.
+- by under eq_ffun => i do (rewrite (H i 0 0 0); last by left).
+- rewrite (JMeq_eq (IHe1 n m j _)); last by (right; right; right; left).
+  by rewrite (JMeq_eq (IHe2 n m j _)); last by (right; left).
+- rewrite (JMeq_eq (IHe1 n m l0 _)); last by (right; right; right; right).
+  rewrite (JMeq_eq (IHe2 n m l0 _)); last by (right; left).
+  by rewrite (JMeq_eq (IHe3 m n l0 _)); last by (right; left).
+- rewrite (JMeq_eq (IHe1 n m j _)); last by (right; left).
+  by rewrite (JMeq_eq (IHe2 n m j _)); last by (right; right; left).
+Qed.
+
 Lemma translations_Fun_coincide:
   forall n m (e : expr (Fun_T n m)), [[ e ]]_l = [[ e ]]_B.
 Proof.
-dependent induction e => //=.
+by move=> n m e; apply/JMeq_eq/(translations_coincide _ _ n m 0); right;right;right;left.
 Qed.
 
 Lemma translations_Vector_coincide: forall n (e : @expr R (Vector_T n)),
   [[ e ]]_l = [[ e ]]_B.
 Proof.
-dependent induction e => //=; dependent destruction e1.
-- by rewrite (IHe2 _ p1 _ e2 erefl JMeq_refl).
-- by rewrite IHe2 ?IHe3.
+by move=> n e; apply/JMeq_eq/(translations_coincide _ _ n 0 0); right;left.
 Qed.
 
 Lemma translations_Index_coincide: forall n (e : expr (Index_T n)),
   [[ e ]]_l = [[ e ]]_B.
 Proof.
-dependent induction e => //=.
+by move=> n e; apply/JMeq_eq/(translations_coincide _ _ n 0 0); right;right;left.
 Qed.
 
 Lemma translations_Real_coincide (e : expr Real_T):
   [[ e ]]_l = [[ e ]]_B.
 Proof.
-dependent induction e => //=;
-rewrite ?(IHe1 e1 erefl JMeq_refl) ?(IHe2 e2 erefl JMeq_refl) ?(IHe e erefl JMeq_refl) //=.
-by rewrite translations_Vector_coincide translations_Index_coincide.
+by apply/JMeq_eq/(translations_coincide _ _ 0 0 0); left.
 Qed.
 
 Lemma translate_Bool_T_01 dl f1 f2 f3 (e : expr (Bool_T_def f1 f2 f3)) :
