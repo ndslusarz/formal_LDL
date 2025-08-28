@@ -149,6 +149,7 @@ Notation "a `!= b" := (`~ (a == b)) (at level 70).
 Notation "a `< b"  := (a `<= b /\ a `!= b) (at level 70).
 Notation "a `>= b" := (b `<= a) (at level 70).
 Notation "a `> b"  := (b `< a) (at level 70).
+Notation "a `! b"  := (ldl_lookup a b). 
 
 Check expr_ind.
 

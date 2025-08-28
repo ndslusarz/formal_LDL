@@ -64,41 +64,14 @@ Section example_hierarchical.
 Local Open Scope ldl_scope.
 Context {R : realType}.
 
-Local Notation expr := (@expr R).
-
-Definition ldl_add n :=
-  ldl_fun2 (fun (x y : n.-tuple R) => [tuple tnth x i + tnth y i | i < n]%R).
-
-Definition ldl_sub n :=
-  ldl_fun2 (fun (x y : n.-tuple R) => [tuple tnth x i - tnth y i | i < n]%R).
-
-(*Notes:
-- does not say groups need to cover ALL indices*)
-
-Definition ldl_sum_vec n :=
-  ldl_fun (fun x : n.-tuple R => (mktuple (fun => foldr GRing.add 0 x)) : 1.-tuple R)%R.
-
-(* Fixpoint ldl_sum_vec (x : seq (expr Real_T)) := *)
-(*   match x with *)
-(*   | nil => ldl_real 0 *)
-(*   | a::l => ldl_real_add a (ldl_sum_vec l) *)
-(* end. *)
-
-Definition prob_group n m
+Definition group_confidence n m eps a b c
     (f : expr (Fun_T n.+1 m.+1))
     (x : expr (Vector_T n.+1))
     (gs : seq (expr (Index_T m.+1))) :=
-  ldl_sum_vec (map (ldl_lookup (ldl_app f x)) gs).
-
-Context {n m : nat} (eps : expr Real_T) (f : expr (Fun_T n.+1 m.+1))
-  (x : expr (Vector_T n.+1)) (Gs : seq (seq (expr (Index_T m.+1))))
-  (fn : flag_neg) (fi : flag_impl) (fm : flag_monoid).
-
-Let fancy_or (eps p : expr Real_T) :=
- (ldl_cmp fn fi fm l_def cmp_le p eps) `\/
- (ldl_cmp fn fi fm l_def cmp_le (ldl_real_sub (ldl_real 1) p) eps).
-
-Definition group_similiarity :=
-  ldl_and (map (fancy_or eps) (map (prob_group f x) Gs)).
+  @ldl_and R a b c
+    (map
+       (fun idx =>
+          (((ldl_app f x) `! idx) `<= ldl_real eps) `/\
+            ((ldl_real (1-eps)) `<= (ldl_app f x) `! idx)) gs).
 
 End example_hierarchical.
