@@ -1088,7 +1088,7 @@ rewrite -powRrM divff//= ?powRr1 ?p_nq//=; try lra.
 rewrite /minr; case: ifP; move => hy; lra.
 Qed.
 
-(*Lemma Yager_prelinearity (e1 e2 e3 : expr Bool_T_fuzzy) :
+Lemma Yager_prelinearity (e1 e2 e3 : expr Bool_T_fuzzy) :
   [[e1 `** e2]]_Yager <= [[ e3 ]]_Yager <-> [[ e2 ]]_Yager <= [[e1 `=> e3]]_Yager.
 Proof.
 have := translate_Bool_T_01 p p1 Yager _ _ _ e1.
@@ -1098,24 +1098,27 @@ split; rewrite//= !big_cons big_nil !addr0 /maxr/minr; case: ifP;
   set x := (1 - [[e1]]_Yager) `^ p; 
   set y := (1 - [[e2]]_Yager) `^ p;
   set z := [[e3]]_Yager; intros; case: ifP => H'.
-- move: H'. set xx := (x + (z `^ p)%R)%E `^ p^-1. lra.
+- move: H'. set xx := (x + (z `^ p)%R)%E `^ p^-1.
+  have h : forall (a b : R), 0 <= b <= 1 ->
+                             a < 1 ->
+                             b <= a. 
+Admitted.
 
-Lemma Lukasiewicz_involution (e : expr Bool_T_fuzzy) :
-  [[`~ (`~e)]]_Yager = [[ e ]]_Yager_Lukasiewicz.
+Lemma Yager_involution (e : expr Bool_T_fuzzy) :
+  [[`~ (`~e)]]_Yager = [[ e ]]_Yager.
 Proof. by rewrite//=; lra. Qed.
 
-
-Lemma Lukasiewicz_demorgan_mand  (e1 e2 : expr Bool_T_fuzzy) :
-  [[`~ (e1 `** e2)]]_Lukasiewicz = [[(`~ e1) `++ (`~ e2)]]_Lukasiewicz.
+Lemma Yager_demorgan_mand  (e1 e2 : expr Bool_T_fuzzy) :
+  [[`~ (e1 `** e2)]]_Yager = [[(`~ e1) `++ (`~ e2)]]_Yager.
 Proof.
 rewrite//= !big_cons big_nil !addr0 /maxr /minr; repeat case: ifP; intros; lra.
 Qed.
 
-Lemma Lukasiewicz_demorgan_mor  (e1 e2 : expr Bool_T_fuzzy) :
-  [[`~ (e1 `++ e2)]]_Lukasiewicz = [[(`~ e1) `** (`~ e2)]]_Lukasiewicz.
+Lemma Yager_demorgan_mor  (e1 e2 : expr Bool_T_fuzzy) :
+  [[`~ (e1 `++ e2)]]_Yager = [[(`~ e1) `** (`~ e2)]]_Yager.
 Proof.
-rewrite//= !big_cons big_nil !addr0 /maxr /minr; repeat case: ifP; intros; lra.
-Qed*)
+rewrite//= !big_cons big_nil !addr0 /maxr /minr; repeat case: ifP; intros.
+Admitted.
 
 End Yager_lemmas.
 
