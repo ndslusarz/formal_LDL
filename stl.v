@@ -102,26 +102,43 @@ case: ifPn; first by rewrite addrC.
 by case: ifPn; first by rewrite addrC.
 Qed.
 
-Lemma stl_translations_Vector_coincide : forall n (e : @expr R (Vector_T n)),
-  nu.-[[ e ]]_stl = [[ e ]]_B.
+Lemma stl_translations_coincide t (e : @expr R t) n m j :
+  (t = Real_T \/ t = Vector_T n \/ t = Index_T n \/ t = Fun_T n m \/ t = Fun2_T n m j) ->
+  nu.-[[ e ]]_stl ~= [[ e ]]_B.
 Proof.
-dependent induction e => //=.
-dependent destruction e1.
-by rewrite (IHe2 _ _ _ e2 erefl JMeq_refl).
+dependent induction e using expr_ind' => //=; move=> [|[|[|[|]]]]t0//.
+- by under eq_ffun => i do (rewrite (H i 0 0 0); last by left).
+- rewrite (JMeq_eq (IHe1 n m j _)); last by (right; right; right; left).
+  by rewrite (JMeq_eq (IHe2 n m j _)); last by (right; left).
+- rewrite (JMeq_eq (IHe1 n m l _)); last by (right; right; right; right).
+  rewrite (JMeq_eq (IHe2 n m l _)); last by (right; left).
+  by rewrite (JMeq_eq (IHe3 m n l _)); last by (right; left).
+- rewrite (JMeq_eq (IHe1 n m j _)); last by (right; left).
+  by rewrite (JMeq_eq (IHe2 n m j _)); last by (right; right; left).
 Qed.
 
-Lemma stl_translations_Index_coincide : forall n (e : expr (Index_T n)),
+Lemma stl_translations_Fun_coincide:
+  forall n m (e : expr (Fun_T n m)), nu.-[[ e ]]_stl = [[ e ]]_B.
+Proof.
+by move=> n m e; apply/JMeq_eq/(stl_translations_coincide _ _ n m 0); right;right;right;left.
+Qed.
+
+Lemma stl_translations_Vector_coincide: forall n (e : @expr R (Vector_T n)),
   nu.-[[ e ]]_stl = [[ e ]]_B.
-Proof. by dependent induction e. Qed.
+Proof.
+by move=> n e; apply/JMeq_eq/(stl_translations_coincide _ _ n 0 0); right;left.
+Qed.
+
+Lemma stl_translations_Index_coincide: forall n (e : expr (Index_T n)),
+  nu.-[[ e ]]_stl = [[ e ]]_B.
+Proof.
+by move=> n e; apply/JMeq_eq/(stl_translations_coincide _ _ n 0 0); right;right;left.
+Qed.
 
 Lemma stl_translations_Real_coincide (e : expr Real_T):
   nu.-[[ e ]]_stl = [[ e ]]_B.
 Proof.
-dependent induction e => //=;
-rewrite ?(IHe1 e1 erefl JMeq_refl)
-        ?(IHe2 e2 erefl JMeq_refl)
-        ?(IHe e erefl JMeq_refl) //=.
-by rewrite stl_translations_Vector_coincide stl_translations_Index_coincide.
+by apply/JMeq_eq/(stl_translations_coincide _ _ 0 0 0); left.
 Qed.
 
 Definition is_stl b (x : R) := if b then x >= 0 else x < 0.
