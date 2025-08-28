@@ -1277,6 +1277,34 @@ Theorem product_mand_unit f1 f2 (e :  (expr (Bool_T_def f1 m_def f2))) :
   [[ e `** (ldl_bool _ _ _ _ true) ]]_product = [[ e ]]_product.
 Proof. by rewrite /= !big_cons big_nil !mulr1. Qed.
 
+Lemma product_prelinearity (e1 e2 e3 : expr Bool_T_fuzzy) :
+  [[e1 `** e2]]_product <= [[ e3 ]]_product <-> [[ e2 ]]_product <= [[e1 `=> e3]]_product.
+Proof.
+have := translate_Bool_T_01 p p1 product _ _ _ e1.
+have := translate_Bool_T_01 p p1 product _ _ _ e2.
+have := translate_Bool_T_01 p p1 product _ _ _ e3.
+split; rewrite//= !big_cons big_nil mulr1 /maxr/minr; case: ifP; try nra.
+- move => h1 h2. 
+  have : [[e1]]_product = 0 \/ [[e1]]_product > 0 by lra.
+  move => [h|h]; first by rewrite h in h1; lra.
+  have inv_pos : 0 < ([[e1]]_product)^-1.
+    by rewrite invr_gt0 h//=.
+  have HH := (@ler_pM _ _ _ ([[e1]]_product)^-1 ([[e1]]_product)^-1 _ _ h2).
+  rewrite mulrC//= in HH.
+  have e21 : [[e1]]_product / [[e1]]_product = 1 by rewrite mulfV//=; lra.
+  rewrite -(mulr1 ([[e2]]_product)) -e21 mulrA.
+  apply HH; try nra.
+- move => h1 h2. 
+  have : [[e1]]_product = 0 \/ [[e1]]_product > 0 by lra.
+  move => [h|h]; first by rewrite h in h1; lra.
+    have inv_pos : 0 < ([[e1]]_product)^-1.
+    by rewrite invr_gt0 h//=.
+  have HH := (@ler_pM _ _ _ ([[e1]]_product) ([[e1]]_product) _ _ h2).
+  rewrite mulrC//= in HH.
+  have e21 : [[e1]]_product / [[e1]]_product = 1 by rewrite mulfV//=; lra.
+  rewrite -(mulr1 ([[e3]]_product)) -e21 mulrA. nra.
+Qed.
+
 End product_lemmas.
 
 Section lattice_fuzzy_lemmas.
@@ -1373,5 +1401,18 @@ have := translate_Bool_T_01 p p1 dl _ _ _ e1.
 have := translate_Bool_T_01 p p1 dl _ _ _ e2.
 rewrite/minr/maxr; repeat case: ifP; intros; try lra.
 Qed.
+
+Lemma fuzzy_demorgan_mor  (e1 e2 : expr Bool_T_fuzzy) :
+  [[`~ (e1 `\/ e2)]]_ dl = [[(`~ e1) `/\ (`~ e2)]]_ dl.
+Proof.
+case: dl; rewrite//= /minR /maxR !big_cons !big_nil /minr /maxr; repeat case: ifP; intros; lra.
+Qed.
+
+Lemma fuzzy_demorgan_and  (e1 e2 : expr Bool_T_fuzzy) :
+  [[`~ (e1 `/\ e2)]]_ dl = [[(`~ e1) `\/ (`~ e2)]]_ dl.
+Proof.
+case: dl; rewrite//= /minR /maxR !big_cons !big_nil /minr /maxr; repeat case: ifP; intros; lra.
+Qed.
+
 
 End lattice_fuzzy_lemmas.
