@@ -88,12 +88,15 @@ Inductive seq_calc_dl2 :  hypersequent -> Prop :=
     seq_calc_dl2 ((A |- [::(ldl_bool _ _ _ _ true)]) :: Q)
     
 | mandL_dl2 : forall Q A B (a b : formula),
-    seq_calc_dl2 ((a :: A |- B) :: Q) ->
-    seq_calc_dl2 ((b :: A |- B) :: Q) ->
+    seq_calc_dl2 ((a::b :: A |- B) :: Q) ->
     seq_calc_dl2 (((a `** b) :: A |- B) :: Q)
-| mandR_dl2 : forall Q A B (a b : formula),
-    seq_calc_dl2 ((A |- a :: b :: B ) :: Q) ->
-    seq_calc_dl2 (( A |- (a `** b) :: B) :: Q)
+(*    seq_calc_dl2 ((a :: A |- B) :: Q) ->
+    seq_calc_dl2 ((b :: A |- B) :: Q) ->
+    seq_calc_dl2 (((a `** b) :: A |- B) :: Q)*)
+| mandR_dl2 : forall Q A1 A2 B1 B2 (a b : formula),
+    seq_calc_dl2 ((A1 |- a  :: B1 ) :: Q) ->
+    seq_calc_dl2 ((A2 |-  b :: B2 ) :: Q) ->
+    seq_calc_dl2 (( A1 ++ A2 |- (a `** b) :: B1 ++ B2) :: Q)
 | implR_dl2 : forall Q A B (a b : formula),
     seq_calc_dl2 ((A|- B) :: Q ) ->
     seq_calc_dl2 ((a :: A |- b :: B) :: Q) ->
@@ -189,28 +192,25 @@ intros; rewrite//=. dependent induction H.
   + by exists q => //; rewrite in_cons h orbT.
 - exists (A |- [:: ldl_bool _ _ _ _ true ]); first by rewrite mem_head.
   by rewrite//= /eval_dl2/= !big_cons big_nil !addr0 eval_dl2_and_le0/=.
+- case: IHseq_calc_dl2 => [q + IH2].
+  rewrite in_cons => /predU1P[h | h].
+  + subst. exists (a `** b :: A |- B); first by rewrite mem_head.
+    rewrite//= !eval_dl2_cons in IH2.
+    rewrite//= eval_dl2_cons/= !big_cons big_nil addr0.
+    rewrite addrA in IH2.
+    by []. 
+  + by exists q => //; rewrite in_cons h orbT.
 - case IHseq_calc_dl2_1 => [q1].
   case IHseq_calc_dl2_2 => [q2].
   rewrite !in_cons //= => /orP [/eqP h2 | h2] IH22 /orP[/eqP h1 | h1] IH12.
-  + subst. exists (a `** b :: A |- B); first by rewrite mem_head.
-    rewrite//= !eval_dl2_cons in IH12 IH22.
-    rewrite//= eval_dl2_cons/= !big_cons big_nil addr0.
-    have ha := dl2_translation_le0 a.
-    have hb := dl2_translation_le0 b. 
-    have h : ([[a]]_dl2 + eval_dl2 A)%E <= eval_dl2 B ->
-             ([[a]]_dl2 + [[b]]_dl2 + eval_dl2 A)%E <= eval_dl2 B by lra.
-    rewrite (h IH12)//=.
+  + subst. exists (A1 ++ A2 |- a `** b :: B1 ++ B2); first by rewrite mem_head.
+    have ev_0 : eval_dl2 [::] = 0. 
+      rewrite /eval_dl2/= big_nil//=.
+    rewrite//= !eval_dl2_cons ?addrA//= in IH12 IH22.
+    by rewrite//= eval_dl2_cons/= !big_cons big_nil addr0 !eval_dl2_cat; lra.
   + by exists q1 => //; rewrite !in_cons h1 !orbT.
   + by exists q2 => //; rewrite !in_cons h2 !orbT.
   + by exists q1 => //; rewrite !in_cons h1 !orbT.
-- case: IHseq_calc_dl2 => [q + IH2].
-  rewrite in_cons => /predU1P[h | h].
-  + subst. exists (A |- a `** b :: B); first by rewrite mem_head.
-    have ev_0 : eval_dl2 [::] = 0. 
-    rewrite /eval_dl2/= big_nil//=.
-    rewrite//= !eval_dl2_cons addrA//= in IH2.
-    by rewrite//= eval_dl2_cons/= !big_cons big_nil addr0.
-  + by exists q => //; rewrite in_cons h orbT.
 - case IHseq_calc_dl2_1 => [q1].
   case IHseq_calc_dl2_2 => [q2].
   rewrite !in_cons //= => /orP [/eqP h2 | h2] IH22 /orP[/eqP h1 | h1] IH12.
