@@ -780,7 +780,7 @@ Lemma luka_cat1C Q a :
     seq_calc_luka_impl ([::a] ++ Q).
 Proof.
 rewrite//=.
-Admitted.
+Qed.
 
 Lemma luka_catC Q P :
     seq_calc_luka_impl (P ++ Q) ->
