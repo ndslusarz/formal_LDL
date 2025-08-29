@@ -775,8 +775,14 @@ case: ifPn; case: ifPn; rewrite//= !big_cons big_nil ?addr0 => h1 h2.
 Qed.
 
 (*specific exchange rules for simpler cases*)
+Lemma luka_cat1C Q a :
+    seq_calc_luka_impl (a :: Q) =
+    seq_calc_luka_impl ([::a] ++ Q).
+Proof.
+rewrite//=.
+Admitted.
 
-Lemma luka_eex_nil Q P :
+Lemma luka_catC Q P :
     seq_calc_luka_impl (P ++ Q) ->
     seq_calc_luka_impl (Q ++ P).
 Proof.
@@ -810,28 +816,27 @@ exact/exR_l/H.
 Qed.
 
 (*an alternate derivable implication rule, derivable*)
-Lemma luka_implL_extended:
-  forall Q A B (a b : formula),
-    seq_calc_luka_impl ((B |- A) ::(( b :: B) |- a:: A) :: Q ) ->
-    seq_calc_luka_impl ((((a `=> b) :: B) |- A) :: Q).
+Lemma luka_implL_extended Q A B (a b : formula):
+    seq_calc_luka_impl ((B |- A) :: (b :: B |- a :: A) :: Q ) ->
+    seq_calc_luka_impl (((a `=> b) :: B |- A) :: Q).
 Proof.
-intros. rewrite -cat1s.
-apply luka_eex_nil.
+move => H. rewrite luka_cat1C.
+apply luka_catC.
 apply ec_l.
 rewrite -(cat1s (a `=> b) B).
-apply luka_eex_nil.
+apply luka_catC.
 apply luka_exL_nil.
 apply w_l.
 rewrite -(cat1s _ Q) -cat1s.
-apply luka_eex_nil. 
+apply luka_catC. 
 rewrite -catA.
-apply (@luka_eex_nil _ (Q ++ [:: B |- A])).
-apply luka_eex_nil.
+apply (@luka_catC _ (Q ++ [:: B |- A])).
+apply luka_catC.
 apply implL_l.
 rewrite -cat1s.
 move: H.
 rewrite -cat1s -(cat1s _ Q) .
-move/(@luka_eex_nil ([:: b :: B |- a :: A] ++ Q) _ ).
+move/(@luka_catC ([:: b :: B |- a :: A] ++ Q) _ ).
 by rewrite -catA.
 Qed.
 
@@ -890,7 +895,7 @@ dependent induction H.
                     [:: A |- ldl_bool _ _ _ _ false :: B] ++ ((
                        b `=> ldl_bool _ _ _ _ false :: A |- [:: a, ldl_bool _ _ _ _ false & B]) :: Q).
       by [].
-    apply luka_eex_nil => /=.
+    apply luka_catC => /=.
     apply luka_implL_extended.
     have -> : [:: A |- [:: a, ldl_bool _ _ _ _ false & B],
                       ldl_bool _ _ _ _ false :: A |- [:: b, a, ldl_bool _ _ _ _ false & B]
@@ -899,7 +904,7 @@ dependent induction H.
                        (( ldl_bool _ _ _ _ false :: A |- [:: b, a, ldl_bool _ _ _ _ false & B]) ::
       Q ++ [:: A |- ldl_bool _ _ _ _ false :: B]).
       by [].
-    apply luka_eex_nil.
+    apply luka_catC.
     apply ew_l .
     have -> : ldl_bool _ _ _ _ false :: A |- [:: b, a, ldl_bool _ _ _ _ false & B] =
                      ([::ldl_bool _ _ _ _ false] ++ A |- [:: b] ++[:: a]++[:: ldl_bool _ _ _ _ false] ++ B).
@@ -923,7 +928,7 @@ dependent induction H.
   rewrite neg_impl_luka.
   have -> : [:: A |- B, b :: A |- a `=> ldl_bool  _ _ _ _ false :: B & Q] =
             [:: A |- B] ++ ((b :: A |- a `=> ldl_bool  _ _ _ _ false :: B) :: Q) by [].
-  apply: luka_eex_nil => /=.
+  apply: luka_catC => /=.
   apply: implR_l.
   + rewrite -(cat1s b A).
     apply/luka_exL_nil/w_l.
