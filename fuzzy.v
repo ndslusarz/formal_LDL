@@ -1232,6 +1232,22 @@ have := translate_Bool_T_01 p p1 Godel _ _ _ e2.
 split; rewrite//=/minR; rewrite !big_cons big_nil /minr; repeat case: ifP; intros; try lra.
 Qed.
 
+Lemma Godel_demorgan_mand  (e1 e2 : expr Bool_T_fuzzy) :
+  [[`~ (e1 `** e2)]]_Godel = [[(`~ e1) `++ (`~ e2)]]_Godel.
+Proof.
+have := translate_Bool_T_01 p p1 Godel _ _ _ e1.
+have := translate_Bool_T_01 p p1 Godel _ _ _ e2.
+by rewrite//= /minR /maxR !big_cons !big_nil /maxr /minr; repeat case: ifP; intros; lra.
+Qed.
+
+Lemma Godel_demorgan_mor  (e1 e2 : expr Bool_T_fuzzy) :
+  [[`~ (e1 `++ e2)]]_Godel = [[(`~ e1) `** (`~ e2)]]_Godel.
+Proof.
+have := translate_Bool_T_01 p p1 Godel _ _ _ e1.
+have := translate_Bool_T_01 p p1 Godel _ _ _ e2.
+by rewrite//= /minR /maxR !big_cons !big_nil /maxr /minr; repeat case: ifP; intros; lra.
+Qed.
+
 End Godel_lemmas.
 
 Section product_lemmas.
@@ -1317,6 +1333,26 @@ split; rewrite//= !big_cons big_nil mulr1 /maxr/minr; case: ifP; try nra.
   rewrite mulrC//= in HH.
   have e21 : [[e1]]_product / [[e1]]_product = 1 by rewrite mulfV//=; lra.
   rewrite -(mulr1 ([[e3]]_product)) -e21 mulrA. nra.
+Qed.
+
+Lemma product_demorgan_mand  (e1 e2 : expr Bool_T_fuzzy) :
+  [[`~ (e1 `** e2)]]_product = [[(`~ e1) `++ (`~ e2)]]_product.
+Proof.
+have := translate_Bool_T_01 p p1 product _ _ _ e1.
+have := translate_Bool_T_01 p p1 product _ _ _ e2.
+rewrite//=/product_dl_prod /product_dl_mul !big_cons !big_nil.  
+repeat case: ifP; rewrite !mulr1 !mulr0 !addr0 !subr0 ?mulr0 ?mul0r ?addr0 ?add0r ?subr0 ?mulr1 ?oppr0;
+ move => h1 h2 H1 H2 H3; rewrite//=; try nra.
+Qed.
+
+Lemma product_demorgan_mor  (e1 e2 : expr Bool_T_fuzzy) :
+  [[`~ (e1 `++ e2)]]_product = [[(`~ e1) `** (`~ e2)]]_product.
+Proof.
+have := translate_Bool_T_01 p p1 product _ _ _ e1.
+have := translate_Bool_T_01 p p1 product _ _ _ e2.
+rewrite//=/product_dl_prod /product_dl_mul !big_cons !big_nil.  
+repeat case: ifP; rewrite !mulr1 !mulr0 !addr0 !subr0 ?mulr0 ?mul0r ?addr0 ?add0r ?subr0 ?mulr1 ?oppr0;
+ move => h1 h2 H1 H2 H3; rewrite//=; try nra.
 Qed.
 
 End product_lemmas.
