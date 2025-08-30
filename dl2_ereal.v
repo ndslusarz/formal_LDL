@@ -102,37 +102,17 @@ move/(perm_map (fun e => [[e]]_dl2e)) : (s12) => /[dup].
 move/(perm_has (pred1 -oo%E)) ->.
 move/(perm_has (pred1 +oo%E)) ->.
 case: ifPn => //=; case: ifPn => //= _ _.
-rewrite !big_map.
-exact: perm_big.
+by rewrite !big_map (perm_size s12) (perm_big _ s12)//=.
 Qed.
 
 Lemma dl2_morC (e1 e2 : expr (Bool_T_undef impl_def m_def l_undef)) :
  [[ e1 `++ e2 ]]_dl2e = [[ e2 `++ e1 ]]_dl2e.
 Proof.
-rewrite /= !orbF !big_cons !big_nil !adde0.
+rewrite /= !orbF !big_cons !big_nil !mule1.
 rewrite !(orbC ([[e2]]_dl2e == _)).
-by rewrite addeC.
+by rewrite (muleC ([[e1]]_dl2e) _).
 Qed.
 
-Lemma dl2_morA (e1 e2 e3 : expr (Bool_T_undef impl_def m_def l_undef)) :
-  [[ e1 `++ (e2 `++ e3) ]]_dl2e = [[ (e1 `++ e2) `++ e3 ]]_dl2e.
-Proof.
-rewrite /= !orbF !big_cons !big_nil !adde0.
-have [H1//=|/negbTE H1/=] := eqVneq ([[e1]]_dl2e) -oo%E.
-have [H2//=|/negbTE H2/=] := eqVneq ([[e2]]_dl2e) -oo%E.
-have [H3/=|/negbTE H3/=] := eqVneq ([[e3]]_dl2e) -oo%E.
-  by rewrite orbT.
-have [K1//=|/negbTE K1/=] := eqVneq ([[e1]]_dl2e) +oo%E.
-  have [K2//=|/negbTE K2/=] := eqVneq ([[e2]]_dl2e) +oo%E.
-  have [K3//=|/negbTE K3/=] := eqVneq ([[e3]]_dl2e) +oo%E.
-  by case: ifPn.
-have [K2//=|/negbTE K2/=] := eqVneq ([[e2]]_dl2e) +oo%E.
-have [K3//=|/negbTE K3/=] := eqVneq ([[e3]]_dl2e) +oo%E.
-  rewrite !orbF !orbT.
-  by case: ifPn.
-rewrite !adde_eq_ninfty !orbF H1 H2 H3/=.
-by rewrite !adde_eq_pinfty H1 H2 H3 K1 K2 K3/= addeA.
-Qed.
 
 Lemma dl2_ereal_translation_le0 e :
   ([[ e ]]_dl2e <= 0
@@ -148,12 +128,57 @@ dependent induction e using expr_ind' => /=.
   move/List.Forall_forall : H => /(_ t); apply => //.
   exact/In_in.
 - case: ifPn => //.
-  case: ifPn => //.
-  rewrite big_map big_seq sume_le0// => t tl.
-  move/List.Forall_forall : H => /(_ t); apply => //.
-  exact/In_in.
+  case: ifPn => // hi1 hi2.
+  rewrite  big_map big_seq; have [ol|ol] := boolP (odd (length l)).
+    rewrite exprS -signr_odd ol expr1 mulrN1 !EFinN oppeK mul1e.
+    have [l0|l0] := pselect (forall i, i \in l -> [[i]]_dl2e != 0)%E; last first.
+      move/existsNP : l0 => [/= x /not_implyP[xl /negP/negPn/eqP x0]].
+      rewrite le_eqVlt; apply/orP; left.
+      rewrite prode_seq_eq0; apply/hasP; exists x => //.
+      by rewrite xl x0 eqxx.
+    apply/ltW/sgeN1_lt0; rewrite -big_seq prodeN1.
+      by rewrite -signr_odd ol expr1.
+    move=> e el; rewrite lt_neqAle l0//=.
+    by move/List.Forall_forall : H => /(_ e); apply => //; exact/In_in.
+  rewrite exprS -signr_odd (negbTE ol) expr0 mulN1r.
+  rewrite EFinN mulN1e oppe_le0.
+  have [l0|l0] := pselect (forall i, i \in l -> [[i]]_dl2e != 0)%E; last first.
+    move/existsNP : l0 => [/= x /not_implyP[xl /negP/negPn/eqP x0]].
+    rewrite le_eqVlt; apply/orP; left.
+    rewrite eq_sym prode_seq_eq0; apply/hasP; exists x => //.
+    by rewrite xl x0 eqxx.
+  apply/ltW/sge1_gt0; rewrite -big_seq prodeN1.
+    by rewrite -signr_odd (negbTE ol) expr0.
+  move=> e el; rewrite lt_neqAle l0//=.
+  by move/List.Forall_forall : H => /(_ e); apply => //; exact/In_in.
 - case: c => //=.
   by rewrite lee_fin oppr_le0 le_max lexx orbT.
+Qed.
+
+Lemma dl2_morA (e1 e2 e3 : expr (Bool_T_undef impl_def m_def l_undef)) :
+  [[ e1 `++ (e2 `++ e3) ]]_dl2e = [[ (e1 `++ e2) `++ e3 ]]_dl2e.
+Proof.
+rewrite /= !orbF !big_cons !big_nil !mule1.
+have [H1//=|/negbTE H1/=] := eqVneq ([[e1]]_dl2e) -oo%E.
+have [H2//=|/negbTE H2/=] := eqVneq ([[e2]]_dl2e) -oo%E.
+have [H3/=|/negbTE H3/=] := eqVneq ([[e3]]_dl2e) -oo%E.
+  by rewrite orbT.
+have [K1//=|/negbTE K1/=] := eqVneq ([[e1]]_dl2e) +oo%E.
+  have [K2//=|/negbTE K2/=] := eqVneq ([[e2]]_dl2e) +oo%E.
+  have [K3//=|/negbTE K3/=] := eqVneq ([[e3]]_dl2e) +oo%E.
+  by case: ifPn.
+have [K2//=|/negbTE K2/=] := eqVneq ([[e2]]_dl2e) +oo%E.
+have [K3//=|/negbTE K3/=] := eqVneq ([[e3]]_dl2e) +oo%E.
+  rewrite !orbF !orbT.
+  by case: ifPn.
+have T1 := dl2_ereal_translation_le0 e1.
+have T2 := dl2_ereal_translation_le0 e2.
+have T3 := dl2_ereal_translation_le0 e3.
+rewrite !mule_eq_ninfty !orbF H1 H2 H3 K1 K2 K3 !andbF.
+rewrite !mule_eq_pinfty H1 H2 H3 K1 K2 K3/=//= !andbF.
+rewrite !mule_eq_ninfty !orbF H1 H2 H3 K1 K2 K3 !andbF/=.
+rewrite !muleA.
+rewrite (muleC (((-1) ^+ 3)%:E * [[e1]]_dl2e) _) muleA//=.
 Qed.
 
 Theorem dl2_mand_unit (e : expr (Bool_T_undef impl_def m_def l_undef)) :
