@@ -125,31 +125,24 @@ End expr.
 
 Declare Scope ldl_scope.
 
-Notation "a `/\ b" := (ldl_and [:: a; b]) (at level 45).
-Notation "a `\/ b" := (ldl_or [:: a; b]) (at level 45).
-Notation "a `** b" := (ldl_mand [:: a; b]) (at level 45).
-Notation "a `++ b" := (ldl_mor [:: a; b]) (at level 45).
-Notation "a `=> b" := (ldl_impl a b) (at level 55).
-(*Notation "a `=> b" := (ldl_or [:: (ldl_not a); b]) (at level 55).*)
-Notation "`~ a"    := (ldl_not a) (at level 75).
-Definition ldl_add (R : realType) := ldl_fun (fun (t : R ^ 2) => [ffun x : 'I_1 => t 0 + t 1])%R.
-Definition ldl_mul {R : realType} := ldl_fun (fun (t : R ^ 2) => [ffun x : 'I_1 => t 0 * t 1])%R.
-Definition ldl_sub {R : realType} := ldl_fun (fun (t : R ^ 2) => [ffun x : 'I_1 => t 0 - t 1])%R.
-Definition ldl_opp {R : realType}  := ldl_fun (fun (t : R ^ 1) => [ffun x : 'I_1 => - t 0])%R.
-Notation "a `+ b"  := (ldl_lookup (ldl_app ldl_add [tuple a; b]) 0) (at level 50).
-Notation "a `- b"  := (ldl_lookup (ldl_app ldl_sub [tuple a; b]) 0) (at level 45).
-Notation "a `* b"  := (ldl_lookup (ldl_app ldl_mul [tuple a; b]) 0) (at level 40).
-Notation "`- a"    := (ldl_lookup (ldl_app ldl_opp [tuple a]) 0) (at level 45).
+Notation "a `/\ b" := (ldl_and [:: a; b]) (at level 45) : ldl_scope.
+Notation "a `\/ b" := (ldl_or [:: a; b]) (at level 45) : ldl_scope.
+Notation "a `** b" := (ldl_mand [:: a; b]) (at level 45) : ldl_scope.
+Notation "a `++ b" := (ldl_mor [:: a; b]) (at level 45) : ldl_scope.
+Notation "a `=> b" := (ldl_impl a b) (at level 80) : ldl_scope.
+Notation "`~ a"    := (ldl_not a) (at level 75) : ldl_scope.
 
 Local Open Scope ldl_scope.
 
-Notation "a `<= b" := (ldl_cmp _ _ _ _ cmp_le a b) (at level 70).
-Notation "a `== b" := (ldl_cmp _ _ _ _ cmp_eq a b) (at level 70).
-Notation "a `!= b" := (`~ (a == b)) (at level 70).
-Notation "a `< b"  := (a `<= b /\ a `!= b) (at level 70).
-Notation "a `>= b" := (b `<= a) (at level 70).
-Notation "a `> b"  := (b `< a) (at level 70).
-Notation "a `! b"  := (ldl_lookup a b). 
+Notation "a `<= b" := (ldl_cmp _ _ _ _ cmp_le a b) (at level 40) : ldl_scope.
+Notation "a `== b" := (ldl_cmp _ _ _ _ cmp_eq a b) (at level 40) : ldl_scope.
+Notation "a `!= b" := (`~ (a == b)) (at level 40) : ldl_scope.
+Notation "a `< b"  := (a `<= b /\ a `!= b) (at level 40) : ldl_scope.
+Notation "a `>= b" := (b `<= a) (at level 40) : ldl_scope.
+Notation "a `> b"  := (b `< a) (at level 40) : ldl_scope.
+Notation "a `! b"  := (ldl_lookup a b) : ldl_scope.
+Notation "f '`@' x" := (ldl_app f x) (at level 60) : ldl_scope.
+Notation "f '`@2' ( x , y )" := (ldl_app2 f x y) (at level 60) : ldl_scope.
 
 Check expr_ind.
 
