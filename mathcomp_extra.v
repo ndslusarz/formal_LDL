@@ -85,8 +85,8 @@ Implicit Types s : seq R.
 
 (*Definition sumR s := \sum_(i <- s) i.*)
 (*Definition prodR s := \prod_(i <- s) i.*)
-Definition minR s : R := \big[minr/1]_(i <- s) i.
-Definition maxR s : R := \big[maxr/0]_(i <- s) i.
+Definition minR n f : R := \big[minr/1]_(i < n) f i.
+Definition maxR n f : R := \big[maxr/0]_(i < n) f i.
 
 End alias_for_bigops.
 

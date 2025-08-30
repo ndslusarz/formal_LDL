@@ -105,13 +105,13 @@ Inductive expr : ldl_type -> Type :=
   | ldl_real : R -> expr realT
   | ldl_vec : forall n, R ^ n -> expr (vectorT n)
   (* connectives *)
-  | ldl_and : forall fn fi fm, seq (expr (boolT fn fi fm l_def)) -> expr (boolT fn fi fm l_def)
-  | ldl_or : forall fn fi fm, seq (expr (boolT fn fi fm l_def)) -> expr (boolT fn fi fm l_def)
-  | ldl_not : forall fi fm fl, expr (boolT neg_def fi fm fl) -> expr (boolT neg_def  fi fm fl)
-  | ldl_impl :forall fn fm fl, expr (boolT fn impl_def fm fl)
+  | ldl_and : forall fn fi fm n, (expr (boolT fn fi fm l_def)) ^ n -> expr (boolT fn fi fm l_def)
+  | ldl_or : forall fn fi fm n, (expr (boolT fn fi fm l_def)) ^ n -> expr (boolT fn fi fm l_def)
+  | ldl_not : forall fi fm fl, expr (boolT neg_def fi fm fl) -> expr (boolT neg_def  fi fm fl) 
+  | ldl_impl :forall fn fm fl, expr (boolT fn impl_def fm fl) 
                                -> expr (boolT fn impl_def fm fl) -> expr (boolT fn impl_def fm fl)
-  | ldl_mand : forall fn fi fl, seq (expr (boolT fn fi m_def fl)) -> expr (boolT fn fi m_def fl)
-  | ldl_mor : forall fn fi fl, seq (expr (boolT fn fi m_def fl)) -> expr (boolT fn fi m_def fl)
+  | ldl_mand : forall fn fi fl n, (expr (boolT fn fi m_def fl)) ^ n -> expr (boolT fn fi m_def fl)
+  | ldl_mor : forall fn fi fl n, (expr (boolT fn fi m_def fl)) ^ n -> expr (boolT fn fi m_def fl) 
   (* comparisons *)
   | ldl_cmp : forall fn fi fm fl, comparison -> expr realT -> expr realT -> expr (boolT fn fi fm fl)
   (* networks and applications *)
@@ -151,21 +151,21 @@ Lemma expr_ind' (R : realType) :
        (forall (n : nat) (o : 'I_n), P (indexT n) (ldl_idx o)) ->
        (forall s : R, P realT (ldl_real s)) ->
        (forall (n : nat) (t : R ^ n), P (vectorT n) (ldl_vec t)) ->
-       (forall (x : flag_neg) (y : flag_impl) (z : flag_monoid) (l : seq (expr (boolT x y z l_def))),
-          List.Forall (fun a => P (boolT x y z l_def) a) l -> P (boolT x y z l_def) (ldl_and l)) ->
-       (forall (x : flag_neg) (y : flag_impl) (z : flag_monoid) (l : seq (expr (boolT x y z l_def))),
-        List.Forall (fun a => P (boolT x y z l_def) a) l -> P (boolT x y z l_def) (ldl_or l)) ->
+       (forall (x : flag_neg) (y : flag_impl) (z : flag_monoid) n (l : (expr (boolT x y z l_def)) ^ n),
+          (forall a, P (boolT x y z l_def) (l a)) -> P (boolT x y z l_def) (ldl_and l)) ->
+       (forall (x : flag_neg) (y : flag_impl) (z : flag_monoid) n (l : (expr (boolT x y z l_def)) ^ n),
+        (forall a, P (boolT x y z l_def) (l a)) -> P (boolT x y z l_def) (ldl_or l)) ->
        (forall (x : flag_impl) (y : flag_monoid) (z : flag_lattice) (e : expr (boolT_def x y z)),
         P (boolT_def x y z) e -> P (boolT_def x y z) (ldl_not e)) ->
        (forall (x : flag_neg) (y : flag_monoid) (z : flag_lattice) (e : expr (boolT x impl_def y z)),
         P (boolT x impl_def y z) e ->
         forall e0 : expr (boolT x impl_def y z),
         P (boolT x impl_def y z) e0 -> P (boolT x impl_def y z) (ldl_impl e e0)) ->
-       (forall (x : flag_neg) (y : flag_impl) (z : flag_lattice) (l : seq (expr (boolT x y m_def z))),
-          List.Forall (fun a => P (boolT x y m_def z) a) l -> P (boolT x y m_def z) (ldl_mand l)) ->
-       (forall (x : flag_neg) (y : flag_impl) (z : flag_lattice) (l : seq (expr (boolT x y m_def z))),
-        List.Forall (fun a => P (boolT x y m_def z) a) l -> P (boolT x y m_def z) (ldl_mor l)) ->
-       (forall (x : flag_neg) (y : flag_impl) (z : flag_monoid) (v : flag_lattice)
+       (forall (x : flag_neg) (y : flag_impl) (z : flag_lattice) n (l : (expr (boolT x y m_def z)) ^ n),
+          (forall a, P (boolT x y m_def z) (l a)) -> P (boolT x y m_def z) (ldl_mand l)) ->
+       (forall (x : flag_neg) (y : flag_impl) (z : flag_lattice) n (l : (expr (boolT x y m_def z)) ^ n),
+        (forall a, P (boolT x y m_def z) (l a)) -> P (boolT x y m_def z) (ldl_mor l)) ->
+       (forall (x : flag_neg) (y : flag_impl) (z : flag_monoid) (v : flag_lattice) 
           (c : comparison) (e : expr realT),
         P realT e -> forall e0 : expr realT, P realT e0 -> P (boolT x y z v) (ldl_cmp x y z v c e e0)) ->
        (forall (n m : nat) (t : R ^ n -> R ^ m), P (funT n m) (ldl_fun t)) ->
@@ -186,36 +186,12 @@ destruct e.
   * exact: H0.
   * exact: H1.
   * exact: H2.
-  * apply: H3.
-    induction l.
-    + exact: List.Forall_nil.
-    + apply List.Forall_cons_iff.
-      split.
-      - exact: F1.
-      - exact: IHl.
-  * apply: H4.
-    induction l.
-    + exact: List.Forall_nil.
-    + apply List.Forall_cons_iff.
-      split.
-      - exact: F1.
-      - exact: IHl.
+  * exact: H3.
+  * exact: H4.
   * exact: H7; eauto.
   * exact: H11; eauto.
-  * apply: H12.
-    induction l.
-    + exact: List.Forall_nil.
-    + apply List.Forall_cons_iff.
-      split.
-      - exact: F1.
-      - exact: IHl.
-  * apply H13.
-    induction l.
-    + exact: List.Forall_nil.
-    + apply List.Forall_cons_iff.
-      split.
-      - exact: F1.
-      - exact: IHl.
+  * exact: H12.
+  * exact: H13.
   * exact: H14; eauto.
   * exact: H15; eauto.
   * exact: H16; eauto.
@@ -275,12 +251,12 @@ Fixpoint bool_translation {t} (e : @expr R t) : bool_type_translation t :=
   | ldl_real r => r
   | ldl_vec n t => t
 
-  | ldl_and f1 f2 f3  Es => \big[andb/true]_(i <- map bool_translation Es) i
-  | ldl_or f1 f2 f3  Es => \big[orb/false]_(i <- map bool_translation Es) i
+  | ldl_and f1 f2 f3 n Es => \big[andb/true]_(i < n) bool_translation (Es i)
+  | ldl_or f1 f2 f3 n Es => \big[orb/false]_(i < n) bool_translation (Es i)
   | ldl_not f2 f3 f4  E1 => ~~ << E1 >>
   | ldl_impl f1 f3 f4 E1  E2 => << E1 >> ==> << E2>>
-  | ldl_mand f1 f2 f4  Es => \big[andb/true]_(i <- map bool_translation Es) i
-  | ldl_mor f1 f2 f4  Es => \big[orb/false]_(i <- map bool_translation Es) i
+  | ldl_mand f1 f2 f4 n Es => \big[andb/true]_(i < n) bool_translation (Es i)
+  | ldl_mor f1 f2 f4 n Es => \big[orb/false]_(i < n) bool_translation (Es i)
 
   | E1 `== E2 => << E1 >> == << E2 >>
   | E1 `<= E2 => << E1 >> <= << E2 >>
@@ -299,8 +275,8 @@ Notation "[[ e ]]_B" := (bool_translation e) : ldl_scope.
 
 Definition product_dl_mul {R : numDomainType} (a b : R) := (a + b - a * b)%R.
 
-Definition product_dl_prod {R : numDomainType} (s : seq R) :=
-  (\big[product_dl_mul/0]_(i <- s) i)%R.
+Definition product_dl_prod {R : numDomainType} n (f : 'I_n -> R) :=
+  (\big[product_dl_mul/0]_(i < n) f i)%R.
 
 Section product_dl_mul.
 Context {R : realDomainType}.
@@ -352,27 +328,27 @@ Fixpoint translation {t} (e : @expr R t) {struct e} : type_translation t :=
    | ldl_real r => r
    | ldl_vec n t => t
 
-   | ldl_and _ _ _  Es => minR (map translation Es)
-   | ldl_or _ _ _ Es => maxR (map translation Es)
-   | ldl_mand _ _ _ Es =>
+   | ldl_and _ _ _ n Es => minR (fun i => translation (Es i))
+   | ldl_or _ _ _ n Es => maxR (fun i => translation (Es i))
+   | ldl_mand _ _ _ n Es =>
        match l with
-       | Lukasiewicz => maxr (\sum_(i <- map translation Es) i - (size Es)%:R+1) 0
-       | Yager => maxr (1 - (\sum_(i <- map (fun E => (1 - ({[ E ]} :
-                  type_translation (boolT _ _ m_def _ )))`^p) Es) i)`^p^-1) 0
-       | Godel => minR (map translation Es)
-       | product => \prod_(i <- map translation Es) i
-       | GodelS => minR (map translation Es)
-       | productS => \prod_(i <- map translation Es) i
+       | Lukasiewicz => maxr (\sum_(i < n) translation (Es i) - n%:R+1) 0
+       | Yager => maxr (1 - (\sum_(i < n) (1 - ({[ Es i ]} :
+                  type_translation (boolT _ _ m_def _ )))`^p)`^p^-1) 0
+       | Godel => minR (fun i => translation (Es i))
+       | product => \prod_(i < n) translation (Es i)
+       | GodelS => minR (fun i => translation (Es i))
+       | productS => \prod_(i < n) translation (Es i)
        end
-   | ldl_mor _ _ _ Es =>
+   | ldl_mor _ _ _ n Es =>
        match l with
-       | Lukasiewicz => minr (\sum_(i <- map translation Es) i) 1
-       | Yager => minr ((\sum_(i <- map (fun E => ({[ E ]} :
-                  type_translation (boolT _ _ m_def _))`^p) Es) i)`^p^-1) 1
-       | Godel => maxR (map translation Es)
-       | product => product_dl_prod (map translation Es)
-       | GodelS => maxR (map translation Es)
-       | productS => product_dl_prod (map translation Es)
+       | Lukasiewicz => minr (\sum_(i < n) translation (Es i)) 1
+       | Yager => minr ((\sum_(i < n) ({[ Es i ]} :
+                  type_translation (boolT _ _ m_def _))`^p)`^p^-1) 1
+       | Godel => maxR (fun i => translation (Es i))
+       | product => product_dl_prod (fun i => translation (Es i))
+       | GodelS => maxR (fun i => translation (Es i))
+       | productS => product_dl_prod (fun i => translation (Es i))
        end
   (*| `~ E1 => 1 - {[ E1 ]}*)
   | ldl_not _ _ _ E1 =>
@@ -431,22 +407,18 @@ Fixpoint dl2_ereal_translation {t} (e : @expr R t) {struct e} : ereal_type_trans
   | ldl_idx n i => i
   | ldl_real r => r
   | ldl_vec n t => t
-  | ldl_and _ _ _ Es => \big[mine/0]_(i <- map dl2_ereal_translation Es) i
-  | ldl_or _ _ _ Es =>\big[maxe/-oo]_(i <- map dl2_ereal_translation Es) i
-  | ldl_mand _ _ _ Es =>
-      if has (pred1 -oo) (map dl2_ereal_translation Es) then
-        -oo
-      else if has (pred1 +oo) (map dl2_ereal_translation Es) then
-        -oo
+  | ldl_and _ _ _ n Es => \big[mine/0]_(i < n) dl2_ereal_translation (Es i)
+  | ldl_or _ _ _ n Es =>\big[maxe/-oo]_(i < n) dl2_ereal_translation (Es i)
+  | ldl_mand _ _ _ n Es =>
+      if [exists i, dl2_ereal_translation (Es i) == -oo ] then -oo
+      else if [exists i, dl2_ereal_translation (Es i) == +oo] then -oo
       else
-        \sum_(i <- map dl2_ereal_translation Es) i
-  | ldl_mor _ _ _ Es =>
-      if has (pred1 -oo) (map dl2_ereal_translation Es) then
-        -oo
-      else if has (pred1 +oo) (map dl2_ereal_translation Es) then
-        -oo
+        \sum_(i < n) dl2_ereal_translation (Es i)
+  | ldl_mor _ _ _ n Es =>
+      if [exists i, dl2_ereal_translation (Es i) == -oo ] then -oo
+      else if [exists i, dl2_ereal_translation (Es i) == +oo] then -oo
       else
-        ((- 1) ^+ (size Es).+1)%:E * (\prod_(i <- map dl2_ereal_translation Es) i)
+        (- 1)%:E ^+ n.+1 * \prod_(i < n) dl2_ereal_translation (Es i)
   | ldl_not _ _ _ E1 => +oo (* default value, all lemmas are for negation-free formulas *)
   | ldl_impl _ _ _ E1 E2 =>  (- maxe ({[ E1 ]} - {[ E2 ]}) 0)
   | E1 `== E2 => (- `| {[ E1 ]} - {[ E2 ]}|)%:E
@@ -476,12 +448,12 @@ Fixpoint dl2_translation {t} (e : @expr R t) {struct e} : type_translation t :=
   | ldl_real r => r
   | ldl_vec n t => t
 
-  | ldl_and _ _ _  [::] => 0
-  | ldl_and _ _ _  Es  => \big[minr/head``_(map dl2_translation Es)]_(i <- map dl2_translation Es) i
-  | ldl_or _ _ _  [::] => 0
-  | ldl_or _ _ _  Es  => \big[maxr/head``_(map dl2_translation Es)]_(i <- map dl2_translation Es) i
-  | ldl_mand _ _ _ Es => \sum_(i <- map dl2_translation Es) i
-  | ldl_mor _ _ _ Es => (- 1) ^+ (size Es).+1 * \prod_(i <- (map dl2_translation Es)) i
+  | ldl_and _ _ _ 0 _ => 0
+  | ldl_and _ _ _ n.+1 Es => 0(* \big[minr/Es 0]_(i < n.+1) dl2_translation (Es i) *)
+  | ldl_or _ _ _ 0 _ => 0
+  | ldl_or _ _ _ n.+1 Es => 0 (* \big[maxr/Es 0]_(i < n.+1) dl2_translation (Es i) *)
+  | ldl_mand _ _ _ n Es => \sum_(i < n) dl2_translation (Es i)
+  | ldl_mor _ _ _ n Es => (- 1) ^+ n.+1 * \prod_(i < n) dl2_translation (Es i)
 
   | ldl_not _ _ _ E1 => 0 (* default value, all lemmas are for negation-free formulas *)
   | ldl_impl _ _ _ E1 E2 => (- maxr ({[ E1 ]} - {[ E2 ]}) 0)
@@ -512,8 +484,8 @@ Definition mine_dev (x y : \bar R) : \bar R := (x - y) / y.
 
 Definition maxe_dev (x y : \bar R) : \bar R := (x - y) / x.
 
-Let bigmine (s : seq (\bar R)) := \big[mine/+oo]_(i <- s) i.
-Let bigmaxe (s : seq (\bar R)) := \big[maxe/-oo]_(i <- s) i.
+Let bigmine n (f : 'I_n -> (\bar R)) := \big[mine/+oo]_(i < n) f i.
+Let bigmaxe n (f : 'I_n -> (\bar R)) := \big[maxe/-oo]_(i < n) f i.
 
 Fixpoint stl_ereal_translation {t} (e : expr t) : ereal_type_translation t :=
   match e in expr t return ereal_type_translation t with
@@ -523,34 +495,34 @@ Fixpoint stl_ereal_translation {t} (e : expr t) : ereal_type_translation t :=
   | ldl_real r => r
   | ldl_vec n t => t
 
-  | ldl_and _ _ _ Es =>
-      let A := map stl_ereal_translation Es in
+  | ldl_and _ _ _ n Es =>
+      let A := stl_ereal_translation \o Es in
       let a_min : \bar R := bigmine A in
       let a'_i (a_i : \bar R) := mine_dev a_i a_min in
       if a_min == -oo then -oo
       else if a_min == +oo then +oo
         else if a_min < 0 then
-          (\sum_(a <- A) a_min * expeR (a'_i a) * expeR (nu%:E * a'_i a)) /
-          (\sum_(a <- A) expeR (nu%:E * a'_i a))
+          (\sum_(i < n) a_min * expeR (a'_i (A i)) * expeR (nu%:E * a'_i (A i))) /
+          (\sum_(i < n) expeR (nu%:E * a'_i (A i)))
         else if a_min > 0 then
-          (\sum_(a <- A) (a * expeR (-nu%:E * a'_i a))) /
-          (\sum_(a <- A) expeR (nu%:E * a'_i a))
+          (\sum_(i < n) ((A i) * expeR (-nu%:E * a'_i (A i)))) /
+          (\sum_(i < n) expeR (nu%:E * a'_i (A i)))
         else 0
-  | ldl_or _ _ _ Es =>
-      let A := map stl_ereal_translation Es in
+  | ldl_or _ _ _ n Es =>
+      let A := stl_ereal_translation \o Es in
       let a_max : \bar R := bigmaxe A in
       let a'_i (a_i : \bar R) := maxe_dev a_max a_i in
       if a_max == -oo then -oo
       else if a_max == +oo then +oo
         else if a_max > 0 then
-          (\sum_(a <- A) a_max * expeR (a'_i a) * expeR (nu%:E * a'_i a)) /
-          (\sum_(a <- A) expeR (nu%:E * a'_i a))
+          (\sum_(i < n) a_max * expeR (a'_i (A i)) * expeR (nu%:E * a'_i (A i))) /
+          (\sum_(i < n) expeR (nu%:E * a'_i (A i)))
         else if a_max < 0 then
-          (\sum_(a <- A) a * expeR (-nu%:E * a'_i a)) /
-          (\sum_(a <- A) expeR (nu%:E * a'_i a))
+          (\sum_(i < n) (A i) * expeR (-nu%:E * a'_i (A i))) /
+          (\sum_(i < n) expeR (nu%:E * a'_i (A i)))
         else 0
-  | ldl_mand _ _ _ Es => 0 (* default value, all lemmas are for monoid free formulas *)
-  | ldl_mor _ _ _ Es => 0 (* default value, all lemmas are for monoid free formulas *)
+  | ldl_mand _ _ _ n Es => 0 (* default value, all lemmas are for monoid free formulas *)
+  | ldl_mor _ _ _ n Es => 0 (* default value, all lemmas are for monoid free formulas *)
   | ldl_not _ _ _ E1 => - {[ E1 ]}
   | ldl_impl _ _ _ E1 E2 => 0 (* default value, all lemmas are for implication-free formulas *)
 
@@ -572,15 +544,16 @@ Notation "nu .-[[ e ]]_stle" := (stl_ereal_translation nu e) : ldl_scope.
 
 Section min_max_dev.
 Context {R : realType}.
+Local Open Scope ring_scope.
 
-Definition min_dev (x : R) (s : seq R) : R :=
-  let r := \big[minr/x]_(i <- s) i in (x - r) / r.
+Definition min_dev (x : R) n (f : 'I_n -> R) : R :=
+  let r := \big[minr/x]_(i < n) f i in (x - r) / r.
 
-Lemma min_dev_nseq (p : R) n : min_dev p (nseq n.+1 p) = 0%R.
-Proof. by rewrite /min_dev big_nseq iter_minr// subrr mul0r. Qed.
+Lemma min_dev_nseq (p : R) n : min_dev p (fun i : 'I_n.+1 => p) = 0%R.
+Admitted.
 
-Definition max_dev {R : realType} (x : R) (s : seq R) : R :=
-  let r := \big[maxr/x]_(i <- s) i in (r - x) / r.
+Definition max_dev {R : realType} (x : R) n (f : 'I_n -> R) : R :=
+  let r := \big[maxr/x]_(i < n) f i in (r - x) / r.
 
 End min_max_dev.
 
@@ -592,36 +565,32 @@ Variables (p : R) (nu : R).
 Hypothesis p1 : 1 <= p.
 Hypothesis nu0 : 0 < nu.
 
-Definition stl_and_gt0 (v : seq R) :=
-  (\sum_(a <- v) a * expR (- nu * min_dev a v)) /
-    \sum_(a <- v) expR (-nu * min_dev a v).
+Definition stl_and_gt0 n (v : 'I_n -> R) :=
+  (\sum_(a < n) v a * expR (- nu * min_dev (v a) v)) /
+    \sum_(a < n) expR (-nu * min_dev (v a) v).
 
-Definition stl_and_lt0 (v : seq R) :=
-  (\sum_(a <- v)
-    (\big[minr/a]_(i <- v) i) * expR (min_dev a v) * expR (nu * min_dev a v)) /
-      \sum_(a <- v) expR (nu * min_dev a v).
+Definition stl_and_lt0 n (v : 'I_n -> R) :=
+  (\sum_(a < n)
+    (\big[minr/v a]_(i < n) v i) * expR (min_dev (v a) v) * expR (nu * min_dev (v a) v)) /
+      \sum_(a < n) expR (nu * min_dev (v a) v).
 
-Definition stl_or_gt0 (v : seq R) :=
-  (\sum_(a <- v)
-    (\big[maxr/a]_(i <- v) i) * expR (max_dev a v) * expR (nu * max_dev a v)) /
-    (\sum_(a <- v) expR (nu * max_dev a v)).
+Definition stl_or_gt0 n (v : 'I_n -> R) :=
+  (\sum_(a < n)
+    (\big[maxr/v a]_(i < n) v i) * expR (max_dev (v a) v) * expR (nu * max_dev (v a) v)) /
+    (\sum_(a < n) expR (nu * max_dev (v a) v)).
 
-Definition stl_or_lt0 (v : seq R) :=
-  (\sum_(a <- v) a * expR (-nu * max_dev a v)) /
-    (\sum_(a <- v) expR (nu * max_dev a v)).
+Definition stl_or_lt0 n (v : 'I_n -> R) :=
+  (\sum_(a < n) v a * expR (-nu * max_dev (v a) v)) /
+    (\sum_(a < n) expR (nu * max_dev (v a) v)).
 
-Definition stl_and (a_min : R) h (t : seq R) : R :=
-  if a_min < 0 then
-    stl_and_lt0 (h :: t)
-  else if a_min > 0 then
-    stl_and_gt0 (h :: t)
+Definition stl_and (a_min : R) n (t : 'I_n -> R) : R :=
+  if a_min < 0 then stl_and_lt0 t
+  else if a_min > 0 then stl_and_gt0 t
   else 0.
 
-Definition stl_or (a_max : R) h (t : seq R) : R :=
-  if a_max > 0 then
-    stl_or_gt0 (h :: t)
-  else if a_max < 0 then
-    stl_or_lt0 (h :: t)
+Definition stl_or (a_max : R) n (t : 'I_n -> R) : R :=
+  if a_max > 0 then stl_or_gt0 t
+  else if a_max < 0 then stl_or_lt0 t
   else 0.
 
 Fixpoint stl_translation {t} (e : expr t) : type_translation t :=
@@ -632,20 +601,18 @@ Fixpoint stl_translation {t} (e : expr t) : type_translation t :=
   | ldl_real r => r
   | ldl_vec n t => t
 
-  | ldl_and _ _ _ [::] => 1
-  | ldl_and _ _ _ (e0 :: s) =>
-      let A := map stl_translation s in
-      let a0 := stl_translation e0 in
-      let a_min : R := \big[minr/a0]_(i <- A) i in
-      stl_and a_min a0 A
-  | ldl_or _ _ _ [::] => -1
-  | ldl_or _ _ _ (e0 :: s) =>
-      let A := map stl_translation s in
-      let a0 := stl_translation e0 in
-      let a_max: R := \big[maxr/a0]_(i <- A) i in
-      stl_or a_max a0 A
-  | ldl_mand _ _ _ Es => 0 (* default value, all lemmas are for negation-free formulas *)
-  | ldl_mor _ _ _ Es => 0 (* default value, all lemmas are for negation-free formulas *)
+  | ldl_and _ _ _ 0 _ => 1
+  | ldl_and _ _ _ n.+1 s =>
+      let A := stl_translation \o s in
+      let a_min : R := \big[minr/A ord0]_(i < n.+1) A i in
+      stl_and a_min A
+  | ldl_or _ _ _ 0 _ => -1
+  | ldl_or _ _ _ n.+1 s =>
+      let A := stl_translation \o s in
+      let a_max: R := \big[maxr/A ord0]_(i < n.+1) A i in
+      stl_or a_max A
+  | ldl_mand _ _ _ _ _ => 0 (* default value, all lemmas are for negation-free formulas *)
+  | ldl_mor _ _ _ _ _ => 0 (* default value, all lemmas are for negation-free formulas *)
   | `~ E1 => - {[ E1 ]}
   | E1 `=> E2 => 0 (* default value, all lemmas are for negation-free formulas *)
 
@@ -686,14 +653,14 @@ Fixpoint stl_infty_translation {t} (e : @expr R t) {struct e} : type_translation
   | ldl_real r => r
   | ldl_vec n t => t
 
-  | ldl_and _ _ _  [::] => 0
-  | ldl_and _ _ _  Es  => \big[minr/head``_(map stl_infty_translation Es)]_(i <- map stl_infty_translation Es) i
-  | ldl_or _ _ _  [::] => 0
-  | ldl_or _ _ _  Es  => \big[maxr/head``_(map stl_infty_translation Es)]_(i <- map stl_infty_translation Es) i
-  | ldl_mand _ _ _  [::] => 0
-  | ldl_mand _ _ _  Es  => \big[minr/head``_(map stl_infty_translation Es)]_(i <- map stl_infty_translation Es) i
-  | ldl_mor _ _ _  [::] => 0
-  | ldl_mor _ _ _  Es  => \big[maxr/head``_(map stl_infty_translation Es)]_(i <- map stl_infty_translation Es) i
+  | ldl_and _ _ _ 0 _ => 0
+  | ldl_and _ _ _ n.+1 Es  => \big[minr/stl_infty_translation (Es ord0)]_(i < n.+1) stl_infty_translation (Es i)
+  | ldl_or _ _ _ 0 _ => 0
+  | ldl_or _ _ _ n.+1 Es  => \big[maxr/stl_infty_translation (Es ord0)]_(i < n.+1) stl_infty_translation (Es i)
+  | ldl_mand _ _ _ 0 _ => 0
+  | ldl_mand _ _ _ n.+1 Es  => \big[minr/stl_infty_translation (Es ord0)]_(i < n.+1) stl_infty_translation (Es i)
+  | ldl_mor _ _ _ 0 _ => 0
+  | ldl_mor _ _ _ n.+1 Es => \big[maxr/stl_infty_translation (Es ord0)]_(i < n.+1) stl_infty_translation (Es i)
 
   | ldl_not _ _ _ E1 => - {[ E1 ]}
   | ldl_impl _ _ _ E1 E2 => 0 (* default value, all lemmas are for negation-free formulas *)

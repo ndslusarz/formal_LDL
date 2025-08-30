@@ -56,6 +56,9 @@ Context {n m : nat} (eps delta : expr realT) (f : expr (funT n.+1 m.+1))
 Definition eps_delta_robust fn fm fl : expr (boolT fn impl_def fm fl) :=
   `| x `- v | `<= eps `=> `| (f `@ x) `- (f `@ v) | `<= delta.
 
+Let eps_delta_robust_dl2 := ([[ eps_delta_robust neg_undef m_undef l_undef ]]_dl2).
+Compute eps_delta_robust_dl2.
+
 End example_robust.
 
 Section example_hierarchical.
