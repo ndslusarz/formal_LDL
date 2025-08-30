@@ -448,9 +448,9 @@ Fixpoint dl2_translation {t} (e : @expr R t) {struct e} : type_translation t :=
   | ldl_vec n t => t
 
   | ldl_and _ _ _ 0 _ => 0
-  | ldl_and _ _ _ n.+1 Es => 0(* \big[minr/Es 0]_(i < n.+1) dl2_translation (Es i) *)
+  | ldl_and _ _ _ n.+1 Es => \big[minr/dl2_translation (Es ord0)]_(i < n.+1) dl2_translation (Es i)
   | ldl_or _ _ _ 0 _ => 0
-  | ldl_or _ _ _ n.+1 Es => 0 (* \big[maxr/Es 0]_(i < n.+1) dl2_translation (Es i) *)
+  | ldl_or _ _ _ n.+1 Es => \big[maxr/dl2_translation (Es ord0)]_(i < n.+1) dl2_translation (Es i)
   | ldl_mand _ _ _ n Es => \sum_(i < n) dl2_translation (Es i)
   | ldl_mor _ _ _ n Es => (- 1) ^+ n.+1 * \prod_(i < n) dl2_translation (Es i)
 

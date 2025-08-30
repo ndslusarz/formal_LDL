@@ -190,18 +190,16 @@ dependent induction e using expr_ind'.
   + rewrite /maxr. case: ifP.
     * by lra.
     * move=> /negbT; rewrite -leNgt => -> /=.
-      rewrite big_map -lerBrDr subrr subr_le0; rewrite sum_01// => e el0.
-      by rewrite (andP (H e  _ _ _ _ _ _ _ _ _)).2 //; exact/In_in.
+      rewrite -lerBrDr subrr subr_le0 sum_01// => i.
+      by rewrite (andP (H i _ _ _ _ _ _ _ _)).2 //; exact/In_in.
   + rewrite /maxr. case: ifP.
     * by lra.
     * move=> /negbT; rewrite -leNgt => -> /=.
-      by rewrite big_map gerBl ?powR_ge0.
+      by rewrite gerBl ?powR_ge0.
   + apply/andP; split.
-    * rewrite /minR big_seq.
-      rewrite le_bigmin// => i /mapP[x xl0 ->].
-      by apply: (andP (@H _  _ _ _ _ _ _ _ _ _)).1 => //; rewrite -In_in.
-    * rewrite /minR big_map big_seq.
-      rewrite bigmin_idl.
+    * rewrite /minR le_bigmin// => i _.
+      by apply: (andP (@H _ _ _ _ _ _ _ _ _)).1 => //; rewrite -In_in.
+    * rewrite /minR bigmin_idl.
       suff : forall (x y : R), minr x y <= x => // x y.
       by rewrite /minr; case: ifPn; lra.
   + apply: prod01 => e.

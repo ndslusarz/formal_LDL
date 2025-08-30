@@ -90,11 +90,11 @@ Definition maxR n f : R := \big[maxr/0]_(i < n) f i.
 
 End alias_for_bigops.
 
-Lemma sum_01 {R : numDomainType} (I : eqType) (s : seq I) (f : I -> R) :
-  (forall i, i \in s -> f i <= 1) -> \sum_(i <- s) f i <= (size s)%:R.
+Lemma sum_01 {R : numDomainType} n (f : 'I_n -> R) :
+  (forall i, f i <= 1) -> \sum_i f i <= n%:R.
 Proof.
-move=> s01; rewrite -sum1_size natr_sum big_seq [leRHS]big_seq.
-by rewrite ler_sum// => r /s01 /andP[].
+move: f; elim: n => [f h | n ih f h]; first by rewrite big_ord0.
+by rewrite big_ord_recl -nat1r lerD// ih.
 Qed.
 
 Lemma prodr_seq_eq0 {R : numDomainType} {I : Type} (r : seq I) (P : pred I)
@@ -136,36 +136,33 @@ elim: s => [_|e0].
 Qed.
 
 Lemma psumr_eqsize {R : realDomainType} :
-  forall (I : eqType) (r : seq I) [F : I -> R],
-  (forall i : I, F i <= 1)%R ->
-  (\sum_(i <- r) F i = (size r)%:R) <-> forall i, i \in r -> (F i = 1).
+  forall n [F : 'I_n -> R],
+  (forall i, F i <= 1)%R ->
+  (\sum_(i < n) F i = n%:R) <-> forall i, F i = 1.
 Proof.
-move => I r F h1.
-elim: r.
-- by rewrite big_nil.
-- move => a s IH.
-  split.
-  + have : (\sum_(i <- s) F i <= (size s)%:R)%R.
-      by apply: sum_01 => i _.
-    rewrite /= le_eqVlt big_cons => /predU1P[h|h].
-      rewrite -natr1 addrC h.
-      move/addrI => h' i.
-      rewrite in_cons => /predU1P[->|ils]; first by rewrite h'.
-      exact: IH.1.
-    have: F a + \sum_(j <- s) F j < (size (a :: s))%:R.
-      rewrite /= -nat1r.
-      move: h.
-      set x := \sum_(i <- s) F i.
-      set y := size s.
-      have := h1 a.
-      lra.
-    set x := F a + \sum_(j <- s) F j.
-    set y := ((size (a :: s)))%:R.
-    lra.
-  + move=> h.
-    rewrite /= -nat1r big_cons h.
-      by apply: congr1; apply: IH.2 => i ias; apply: h; rewrite in_cons ias orbT.
-    by rewrite in_cons eqxx.
+elim; first by move=> F h; rewrite big_ord0; split => // _; case.
+move => n ih F h1; split.
+- rewrite big_ord_recl/=.
+  have : (\sum_(i < n) F (lift ord0 i) <= n%:R)%R.
+    by apply/(@sum_01 _ _ (fun i => F (lift ord0 i))) => i; exact: h1.
+  (* have : (\sum_(i < n) F (widen_ord (leqnSn n) i) <= n%:R)%R. *)
+  (*   by apply/(@sum_01 _ _ (fun i => F (widen_ord (leqnSn n) i))) => i; exact: h1. *)
+  rewrite /= le_eqVlt => /predU1P[h|h].
+    rewrite -natr1 h addrC.
+    move/addrI => h' i.
+    have [->//|/eqP i0] := eqVneq i ord0.
+    move: i0; case: (unliftP ord0 i) => //= j -> _.
+    by have /= -> := ((@ih (F \o lift ord0) _).1).
+  rewrite /= -nat1r.
+  move: h.
+  set x := \sum_(i < n) F (lift ord0 i).
+  set y := n.
+  have := h1 ord0.
+  lra.
+move=> h.
+rewrite /= -nat1r big_ord_recr h/= addrC.
+congr +%R.
+exact/ih.
 Qed.
 
 Lemma prod1_01 {R : realDomainType} :
