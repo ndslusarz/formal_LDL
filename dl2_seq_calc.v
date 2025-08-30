@@ -30,7 +30,7 @@ Import numFieldTopology.Exports.
 Reserved Notation "{[ e ]}" (format "{[  e  ]}").
 
 HB.instance Definition _ (R : realType) x y z v :=
-  @gen_choiceMixin (@expr R (Bool_T x y z v)).
+  @gen_choiceMixin (@expr R (boolT x y z v)).
 
 Reserved Notation "Q |= P" (no associativity, at level 61).
 Reserved Notation "Q |- P" (no associativity, at level 61).
@@ -45,7 +45,7 @@ Implicit Types (s : seq K).
 Variable p : R.
 Local Notation "[[ e ]]_dl2" := (@dl2_translation R  _ e).
 
-Let formula := @expr R Bool_T_dl2.
+Let formula := @expr R boolT_dl2.
 Let hypersequent := seq (seq formula * seq formula).
 
 Implicit Type Q P S : hypersequent.
@@ -194,7 +194,7 @@ intros; rewrite//=. dependent induction H.
   by rewrite//= /eval_dl2/= !big_cons big_nil !addr0 eval_dl2_and_le0/=.
 - case: IHseq_calc_dl2 => [q + IH2].
   rewrite in_cons => /predU1P[h | h].
-  + subst. exists (a `** b :: A |- B); first by rewrite mem_head.
+  + subst. exists ((a `** b) :: A |- B); first by rewrite mem_head.
     rewrite//= !eval_dl2_cons in IH2.
     rewrite//= eval_dl2_cons/= !big_cons big_nil addr0.
     rewrite addrA in IH2.
@@ -203,7 +203,7 @@ intros; rewrite//=. dependent induction H.
 - case IHseq_calc_dl2_1 => [q1].
   case IHseq_calc_dl2_2 => [q2].
   rewrite !in_cons //= => /orP [/eqP h2 | h2] IH22 /orP[/eqP h1 | h1] IH12.
-  + subst. exists (A1 ++ A2 |- a `** b :: B1 ++ B2); first by rewrite mem_head.
+  + subst. exists (A1 ++ A2 |- (a `** b) :: B1 ++ B2); first by rewrite mem_head.
     have ev_0 : eval_dl2 [::] = 0. 
       rewrite /eval_dl2/= big_nil//=.
     rewrite//= !eval_dl2_cons ?addrA//= in IH12 IH22.
@@ -214,7 +214,7 @@ intros; rewrite//=. dependent induction H.
 - case IHseq_calc_dl2_1 => [q1].
   case IHseq_calc_dl2_2 => [q2].
   rewrite !in_cons //= => /orP [/eqP h2 | h2] IH22 /orP[/eqP h1 | h1] IH12.
-  + subst. exists (A |- a `=> b :: B); first by rewrite mem_head.
+  + subst. exists (A |- (a `=> b) :: B); first by rewrite mem_head.
     rewrite//= in IH12.
     rewrite//= eval_dl2_cons eval_dl2_cons in IH22.
     rewrite//= eval_dl2_cons//= /maxr; case: ifP; move => /eqP hc;
@@ -225,7 +225,7 @@ intros; rewrite//=. dependent induction H.
 - case IHseq_calc_dl2_1 => [q1].
   case IHseq_calc_dl2_2 => [q2].
   rewrite !in_cons //= => /orP [/eqP h2 | h2] IH22 /orP[/eqP h1 | h1] IH12.
-  + subst. exists (a `=> b :: A |- B); first by rewrite mem_head.
+  + subst. exists ((a `=> b) :: A |- B); first by rewrite mem_head.
     rewrite//= in IH12.
     rewrite//= eval_dl2_cons eval_dl2_cons in IH22.
     rewrite//= eval_dl2_cons//= /maxr; case: ifP; move => /eqP hc.
@@ -236,11 +236,11 @@ intros; rewrite//=. dependent induction H.
   + by exists q1 => //; rewrite !in_cons h1 !orbT.
 - case: IHseq_calc_dl2 => [q + IH2].
   rewrite !in_cons => /predU1P[h |/predU1P [h | h]].
-  + subst. exists (a `/\ b :: B |- A); first by rewrite mem_head.
+  + subst. exists ((a `/\ b) :: B |- A); first by rewrite mem_head.
     rewrite//= !eval_dl2_cons //= in IH2.
     rewrite//= eval_dl2_cons/= !big_cons big_nil//=.
     by rewrite /minr; repeat case: ifP; move => h1 h2; lra.
-  + subst. exists (a `/\ b :: B |- A); first by rewrite mem_head.
+  + subst. exists ((a `/\ b) :: B |- A); first by rewrite mem_head.
     rewrite//= !eval_dl2_cons //= in IH2.
     rewrite//= eval_dl2_cons/= !big_cons big_nil//=.
     by rewrite /minr; repeat case: ifP; move => h1 h2; lra.
@@ -248,7 +248,7 @@ intros; rewrite//=. dependent induction H.
 - case IHseq_calc_dl2_1 => [q1].
   case IHseq_calc_dl2_2 => [q2].
   rewrite !in_cons //= => /orP [/eqP h2 | h2] IH22 /orP[/eqP h1 | h1] IH12.
-  + subst. exists (A |- a `/\ b :: B); first by rewrite mem_head.
+  + subst. exists (A |- (a `/\ b) :: B); first by rewrite mem_head.
     rewrite//= !eval_dl2_cons in IH12 IH22.
     rewrite//= eval_dl2_cons//= !big_cons big_nil /minr.
     repeat case: ifP; move => /eqP hc;
@@ -259,7 +259,7 @@ intros; rewrite//=. dependent induction H.
 - case IHseq_calc_dl2_1 => [q1].
   case IHseq_calc_dl2_2 => [q2].
   rewrite !in_cons //= => /orP [/eqP h2 | h2] IH22 /orP[/eqP h1 | h1] IH12.
-  + subst. exists (a `\/ b :: B |- A); first by rewrite mem_head.
+  + subst. exists ((a `\/ b) :: B |- A); first by rewrite mem_head.
     rewrite//= !eval_dl2_cons in IH12 IH22.
     rewrite//= eval_dl2_cons//= !big_cons big_nil /maxr.
     repeat case: ifP; move => /eqP hc;
@@ -269,11 +269,11 @@ intros; rewrite//=. dependent induction H.
   + by exists q1 => //; rewrite !in_cons h1 !orbT.
 - case: IHseq_calc_dl2 => [q + IH2].
   rewrite !in_cons => /predU1P[h |/predU1P [h | h]].
-  + subst. exists (A |- a `\/ b :: B); first by rewrite mem_head.
+  + subst. exists (A |- (a `\/ b) :: B); first by rewrite mem_head.
     rewrite//= !eval_dl2_cons //= in IH2.
     rewrite//= eval_dl2_cons/= !big_cons big_nil//=.
     by rewrite /maxr; repeat case: ifP; move => h1 h2; lra.
-  + subst. exists (A |- a `\/ b :: B); first by rewrite mem_head.
+  + subst. exists (A |- (a `\/ b) :: B); first by rewrite mem_head.
     rewrite//= !eval_dl2_cons //= in IH2.
     rewrite//= eval_dl2_cons/= !big_cons big_nil//=.
     by rewrite /maxr; repeat case: ifP; move => h1 h2; lra.
@@ -312,21 +312,5 @@ rewrite (hxy _  A B) in H.
 rewrite (hxy _  B A).
 exact/exR_dl2/H.
 Qed.
-
-(*Lemma dl2_residuation:
-  forall (a b : formula),
-    seq_calc_dl2 ([:: ([::] |- [::(a `=> b) `\/ (b `=> a)])]).
-Proof.
-intros. 
-apply orR_dl2.
-apply implR_dl2.
-- rewrite -cat1s.
-  apply ew_dl2. apply empty.
-- rewrite -cat1s. apply eex_nil. apply implR_dl2. 
-  + rewrite -cat1s.
-  apply ew_dl2. apply empty.
-  + 
-(*apply comm_hyper_dl2.*)
-Admitted.*)
 
 End dl2_hyperseq_calc.
