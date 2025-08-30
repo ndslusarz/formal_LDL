@@ -8,15 +8,6 @@ From mathcomp Require Import topology derive normedtype sequences
  exp measure lebesgue_measure lebesgue_integral hoelder.
 Require Import mathcomp_extra analysis_extra ldl.
 
-Set Implicit Arguments.
-Unset Strict Implicit.
-Unset Printing Implicit Defensive.
-
-Import Num.Def Num.Theory GRing.Theory.
-Import Order.TTheory.
-Import numFieldTopology.Exports.
-Local Open Scope classical_set_scope.
-
 (**md**************************************************************************)
 (* # Examples                                                                 *)
 (*                                                                            *)
@@ -26,9 +17,18 @@ Local Open Scope classical_set_scope.
 (*    eps_delta_robust == example from the ITP paper                          *)
 (*        ldl_add_real == real addition                                       *)
 (*        ldl_sub_real == real subtraction                                    *)
-(*   group_similiarity == TODO                                                *)
+(*    group_similarity == TODO                                                *)
 (* ```                                                                        *)
 (******************************************************************************)
+
+Set Implicit Arguments.
+Unset Strict Implicit.
+Unset Printing Implicit Defensive.
+
+Import Num.Def Num.Theory GRing.Theory.
+Import Order.TTheory.
+Import numFieldTopology.Exports.
+Local Open Scope classical_set_scope.
 
 Section example_robust.
 Local Open Scope ldl_scope.
