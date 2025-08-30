@@ -138,23 +138,19 @@ Lemma translate_boolT_01 dl f1 f2 f3 (e : expr (boolT_def f1 f2 f3)) :
 Proof.
 dependent induction e using expr_ind'.
 - rewrite /=; case b; lra.
-- move: H. rewrite /=; move=> /List.Forall_forall H.
-  apply/andP; split.
+- apply/andP => /=; split.
   * rewrite /minR big_seq.
-    rewrite le_bigmin// => i /mapP[x xl0 ->].
-    by apply: (andP (@H _ _ _ _ _ _ _ _ _ _)).1 => //; rewrite -In_in.
-  * rewrite /minR big_map big_seq.
-    rewrite bigmin_idl.
+    rewrite le_bigmin => //=i _.
+    exact: (andP (@H _ _ _ _ _ _ _ _ _)).1.
+  * rewrite /minR big_seq bigmin_idl.
     suff : forall (x y : R), minr x y <= x => // x y.
     by rewrite /minr; case: ifPn; lra.
-- move: H. rewrite /=; move=> /List.Forall_forall H.
-  rewrite /maxR big_map big_seq.
-  apply/andP; split.
-  * rewrite bigmax_idl.
+- apply/andP => /=; split.
+  * rewrite /maxR bigmax_idl.
     suff : forall (x y : R), x <= maxr x y => // x y.
     by rewrite /maxr; case: ifPn; lra.
-  * rewrite bigmax_le ?ler01// => i il0.
-    by apply: (andP (H _ _ _ _ _ _ _ _ _ _)).2 => //; rewrite -In_in.
+  * rewrite /maxR bigmax_le ?ler01// => i il0.
+    exact: (andP (H _ _ _ _ _ _ _ _ _)).2.
 - move: IHe => /(_ _ _ _ _ _ e erefl JMeq_refl).
   have h' : forall (x : R), 0 <= x <= 1 ->
            0 <= 1 - x <= 1 by intros; lra.
@@ -190,7 +186,7 @@ dependent induction e using expr_ind'.
     have h' := @h ([[e2]]_productS) (H1 _ p1). 
     have h1' := h1 _ _ h' (H2 _ p1).
     have H := h _ h1'. rewrite//=.
-- move: H. case: dl; rewrite /=; move=> /List.Forall_forall H.
+- move: H; case: dl => /= H.
   + rewrite /maxr. case: ifP.
     * by lra.
     * move=> /negbT; rewrite -leNgt => -> /=.
