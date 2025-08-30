@@ -56,11 +56,29 @@ repeat case: ifP => //=.
 move => _ h. rewrite ltNge leNye in h; by [].
 Qed.
 
+
 Lemma stl_infty_mandC f1 f2 (e1 e2 : expr (boolT_def f1 m_def f2)) :
   [[ e1 `** e2 ]]_stli = [[ e2 `** e1 ]]_stli.
 Proof.
 rewrite /= ?big_cons ?big_nil.
 rewrite /=/mine; repeat case: ifP => //=; move => h1 h2 h3 h4. 
+- have H : [[e2]]_stli < [[e2]]_stli by apply: (lt_trans h2 h4).
+  by rewrite ltexx in H.
+- apply negbT in h1. rewrite ltey in h1. 
+  move /negPn /eqP in h1. rewrite h1 in h4. 
+  have H : [[e2]]_stli < [[e2]]_stli by apply: (lt_trans h2 h4).
+  by rewrite ltexx in H.
+- apply negbT in h1. rewrite ltey in h1. 
+  by move /negPn /eqP in h1.
+- apply negbT in h3. rewrite ltey in h3. 
+  move /negPn /eqP in h3. rewrite h3 in h2.
+  have H : [[e1]]_stli < [[e1]]_stli by apply: (lt_trans h1 h2).
+  by rewrite ltexx in H.
+- admit.
+- apply negbT in h2. rewrite ltey in h2. 
+  by move /negPn /eqP in h2.
+- apply negbT in h3. rewrite ltey in h3. 
+  by move /negPn /eqP in h3.
 
 Admitted.
 
