@@ -20,11 +20,11 @@ From HB Require Import structures.
 (*                                                                            *)
 (* ## Definitions                                                             *)
 (* - `type_translation`: the real-valued translation of ldl_type into the     *)
-(*   corresponding type of the interpretation; maps `Bool_T` to $\mathbb R$   *)
+(*   corresponding type of the interpretation; maps `boolT` to $\mathbb R$    *)
 (* - `ereal_type_translation`: same as before, but maps                       *)
-(*   `Bool_T` to $\bar{\mathbb R}}$                                           *)
+(*   `boolT` to $\bar{\mathbb R}}$                                            *)
 (* - `bool_type_translation`: type translation for the boolean interpretation;*)
-(*   maps `Bool_T` to `bool`                                                  *)
+(*   maps `boolT` to `bool`                                                   *)
 (* - `bool_translation`: maps an LDL-formula to a Boolean formula, with the   *)
 (*   obvious interpretation                                                   *)
 (* - `translation`: maps an LDL-formula to its fuzzy interpretation;          *)
@@ -78,20 +78,20 @@ Inductive flag_monoid := m_def | m_undef.
 Inductive flag_lattice := l_def | l_undef.
 
 Inductive ldl_type :=
-| Bool_T of flag_neg & flag_impl & flag_monoid & flag_lattice
-| Index_T of nat
-| Real_T
-| Vector_T of nat
-| Fun_T of nat & nat
-| Fun2_T of nat & nat & nat.
+| boolT of flag_neg & flag_impl & flag_monoid & flag_lattice
+| indexT of nat
+| realT
+| vectorT of nat
+| funT of nat & nat
+| fun2T of nat & nat & nat.
 
-Definition Bool_T_undef := Bool_T neg_undef.
-Definition Bool_T_def := Bool_T neg_def.
+Definition boolT_undef := boolT neg_undef.
+Definition boolT_def := boolT neg_def.
 
 (*flags of the DLs*)
-Definition Bool_T_fuzzy := Bool_T neg_def impl_def m_def l_def.
-Definition Bool_T_dl2 := Bool_T neg_undef impl_def m_def l_def.
-Definition Bool_T_stl := Bool_T neg_def impl_undef m_undef l_def.
+Definition boolT_fuzzy := boolT neg_def impl_def m_def l_def.
+Definition boolT_dl2 := boolT neg_undef impl_def m_def l_def.
+Definition boolT_stl := boolT neg_def impl_undef m_undef l_def.
 
 Inductive comparison : Type := cmp_le | cmp_eq.
 
@@ -100,26 +100,26 @@ Context {R : realType}.
 
 Inductive expr : ldl_type -> Type :=
   (* base expressions *)
-  | ldl_bool : forall p r s t, bool -> expr (Bool_T p r s t)
-  | ldl_idx : forall n, 'I_n -> expr (Index_T n)
-  | ldl_real : R -> expr Real_T
-  | ldl_vec : forall n, R ^ n -> expr (Vector_T n)
+  | ldl_bool : forall p r s t, bool -> expr (boolT p r s t)
+  | ldl_idx : forall n, 'I_n -> expr (indexT n)
+  | ldl_real : R -> expr realT
+  | ldl_vec : forall n, R ^ n -> expr (vectorT n)
   (* connectives *)
-  | ldl_and : forall fn fi fm, seq (expr (Bool_T fn fi fm l_def)) -> expr (Bool_T fn fi fm l_def)
-  | ldl_or : forall fn fi fm, seq (expr (Bool_T fn fi fm l_def)) -> expr (Bool_T fn fi fm l_def)
-  | ldl_not : forall fi fm fl, expr (Bool_T neg_def fi fm fl) -> expr (Bool_T neg_def  fi fm fl)
-  | ldl_impl :forall fn fm fl, expr (Bool_T fn impl_def fm fl)
-                               -> expr (Bool_T fn impl_def fm fl) -> expr (Bool_T fn impl_def fm fl)
-  | ldl_mand : forall fn fi fl, seq (expr (Bool_T fn fi m_def fl)) -> expr (Bool_T fn fi m_def fl)
-  | ldl_mor : forall fn fi fl, seq (expr (Bool_T fn fi m_def fl)) -> expr (Bool_T fn fi m_def fl)
+  | ldl_and : forall fn fi fm, seq (expr (boolT fn fi fm l_def)) -> expr (boolT fn fi fm l_def)
+  | ldl_or : forall fn fi fm, seq (expr (boolT fn fi fm l_def)) -> expr (boolT fn fi fm l_def)
+  | ldl_not : forall fi fm fl, expr (boolT neg_def fi fm fl) -> expr (boolT neg_def  fi fm fl)
+  | ldl_impl :forall fn fm fl, expr (boolT fn impl_def fm fl)
+                               -> expr (boolT fn impl_def fm fl) -> expr (boolT fn impl_def fm fl)
+  | ldl_mand : forall fn fi fl, seq (expr (boolT fn fi m_def fl)) -> expr (boolT fn fi m_def fl)
+  | ldl_mor : forall fn fi fl, seq (expr (boolT fn fi m_def fl)) -> expr (boolT fn fi m_def fl)
   (* comparisons *)
-  | ldl_cmp : forall fn fi fm fl, comparison -> expr Real_T -> expr Real_T -> expr (Bool_T fn fi fm fl)
+  | ldl_cmp : forall fn fi fm fl, comparison -> expr realT -> expr realT -> expr (boolT fn fi fm fl)
   (* networks and applications *)
-  | ldl_fun : forall n m, (R ^ n -> R ^ m) -> expr (Fun_T n m)
-  | ldl_fun2 : forall n m l, (R ^ n -> R ^ m -> R ^ l) -> expr (Fun2_T n m l)
-  | ldl_app : forall n m, expr (Fun_T n m) -> expr (Vector_T n) -> expr (Vector_T m)
-  | ldl_app2 : forall n m l, expr (Fun2_T n m l) -> expr (Vector_T n) -> expr (Vector_T m) -> expr (Vector_T l)
-  | ldl_lookup : forall n, expr (Vector_T n) -> expr (Index_T n) -> expr Real_T.
+  | ldl_fun : forall n m, (R ^ n -> R ^ m) -> expr (funT n m)
+  | ldl_fun2 : forall n m l, (R ^ n -> R ^ m -> R ^ l) -> expr (fun2T n m l)
+  | ldl_app : forall n m, expr (funT n m) -> expr (vectorT n) -> expr (vectorT m)
+  | ldl_app2 : forall n m l, expr (fun2T n m l) -> expr (vectorT n) -> expr (vectorT m) -> expr (vectorT l)
+  | ldl_lookup : forall n, expr (vectorT n) -> expr (indexT n) -> expr realT.
 
 End expr.
 
@@ -147,35 +147,35 @@ Notation "f '`@2' ( x , y )" := (ldl_app2 f x y) (at level 60) : ldl_scope.
 Lemma expr_ind' (R : realType) :
   forall P : forall l : ldl_type, expr l -> Prop,
        (forall (p : flag_neg) (r : flag_impl) (s : flag_monoid) (t : flag_lattice) (b : bool),
-        P (Bool_T p r s t) (ldl_bool p r s t b)) ->
-       (forall (n : nat) (o : 'I_n), P (Index_T n) (ldl_idx o)) ->
-       (forall s : R, P Real_T (ldl_real s)) ->
-       (forall (n : nat) (t : R ^ n), P (Vector_T n) (ldl_vec t)) ->
-       (forall (x : flag_neg) (y : flag_impl) (z : flag_monoid) (l : seq (expr (Bool_T x y z l_def))),
-          List.Forall (fun a => P (Bool_T x y z l_def) a) l -> P (Bool_T x y z l_def) (ldl_and l)) ->
-       (forall (x : flag_neg) (y : flag_impl) (z : flag_monoid) (l : seq (expr (Bool_T x y z l_def))),
-        List.Forall (fun a => P (Bool_T x y z l_def) a) l -> P (Bool_T x y z l_def) (ldl_or l)) ->
-       (forall (x : flag_impl) (y : flag_monoid) (z : flag_lattice) (e : expr (Bool_T_def x y z)),
-        P (Bool_T_def x y z) e -> P (Bool_T_def x y z) (ldl_not e)) ->
-       (forall (x : flag_neg) (y : flag_monoid) (z : flag_lattice) (e : expr (Bool_T x impl_def y z)),
-        P (Bool_T x impl_def y z) e ->
-        forall e0 : expr (Bool_T x impl_def y z),
-        P (Bool_T x impl_def y z) e0 -> P (Bool_T x impl_def y z) (ldl_impl e e0)) ->
-       (forall (x : flag_neg) (y : flag_impl) (z : flag_lattice) (l : seq (expr (Bool_T x y m_def z))),
-          List.Forall (fun a => P (Bool_T x y m_def z) a) l -> P (Bool_T x y m_def z) (ldl_mand l)) ->
-       (forall (x : flag_neg) (y : flag_impl) (z : flag_lattice) (l : seq (expr (Bool_T x y m_def z))),
-        List.Forall (fun a => P (Bool_T x y m_def z) a) l -> P (Bool_T x y m_def z) (ldl_mor l)) ->
+        P (boolT p r s t) (ldl_bool p r s t b)) ->
+       (forall (n : nat) (o : 'I_n), P (indexT n) (ldl_idx o)) ->
+       (forall s : R, P realT (ldl_real s)) ->
+       (forall (n : nat) (t : R ^ n), P (vectorT n) (ldl_vec t)) ->
+       (forall (x : flag_neg) (y : flag_impl) (z : flag_monoid) (l : seq (expr (boolT x y z l_def))),
+          List.Forall (fun a => P (boolT x y z l_def) a) l -> P (boolT x y z l_def) (ldl_and l)) ->
+       (forall (x : flag_neg) (y : flag_impl) (z : flag_monoid) (l : seq (expr (boolT x y z l_def))),
+        List.Forall (fun a => P (boolT x y z l_def) a) l -> P (boolT x y z l_def) (ldl_or l)) ->
+       (forall (x : flag_impl) (y : flag_monoid) (z : flag_lattice) (e : expr (boolT_def x y z)),
+        P (boolT_def x y z) e -> P (boolT_def x y z) (ldl_not e)) ->
+       (forall (x : flag_neg) (y : flag_monoid) (z : flag_lattice) (e : expr (boolT x impl_def y z)),
+        P (boolT x impl_def y z) e ->
+        forall e0 : expr (boolT x impl_def y z),
+        P (boolT x impl_def y z) e0 -> P (boolT x impl_def y z) (ldl_impl e e0)) ->
+       (forall (x : flag_neg) (y : flag_impl) (z : flag_lattice) (l : seq (expr (boolT x y m_def z))),
+          List.Forall (fun a => P (boolT x y m_def z) a) l -> P (boolT x y m_def z) (ldl_mand l)) ->
+       (forall (x : flag_neg) (y : flag_impl) (z : flag_lattice) (l : seq (expr (boolT x y m_def z))),
+        List.Forall (fun a => P (boolT x y m_def z) a) l -> P (boolT x y m_def z) (ldl_mor l)) ->
        (forall (x : flag_neg) (y : flag_impl) (z : flag_monoid) (v : flag_lattice)
-          (c : comparison) (e : expr Real_T),
-        P Real_T e -> forall e0 : expr Real_T, P Real_T e0 -> P (Bool_T x y z v) (ldl_cmp x y z v c e e0)) ->
-       (forall (n m : nat) (t : R ^ n -> R ^ m), P (Fun_T n m) (ldl_fun t)) ->
-       (forall (n m l : nat) (t : R ^ n -> R ^ m -> R ^ l), P (Fun2_T n m l) (ldl_fun2 t)) ->
-       (forall (n m : nat) (e : expr (Fun_T n m)),
-        P (Fun_T n m) e -> forall e0 : expr (Vector_T n), P (Vector_T n) e0 -> P (Vector_T m) (ldl_app e e0)) ->
-       (forall (n m l : nat) (e : expr (Fun2_T n m l)),
-        P (Fun2_T n m l) e -> forall (e0 : expr (Vector_T n)) (e1 : expr (Vector_T m)), P (Vector_T n) e0 -> P (Vector_T m) e1 -> P (Vector_T l) (ldl_app2 e e0 e1)) ->
-       (forall (n : nat) (e : expr (Vector_T n)),
-        P (Vector_T n) e -> forall e0 : expr (Index_T n), P (Index_T n) e0 -> P Real_T (ldl_lookup e e0)) ->
+          (c : comparison) (e : expr realT),
+        P realT e -> forall e0 : expr realT, P realT e0 -> P (boolT x y z v) (ldl_cmp x y z v c e e0)) ->
+       (forall (n m : nat) (t : R ^ n -> R ^ m), P (funT n m) (ldl_fun t)) ->
+       (forall (n m l : nat) (t : R ^ n -> R ^ m -> R ^ l), P (fun2T n m l) (ldl_fun2 t)) ->
+       (forall (n m : nat) (e : expr (funT n m)),
+        P (funT n m) e -> forall e0 : expr (vectorT n), P (vectorT n) e0 -> P (vectorT m) (ldl_app e e0)) ->
+       (forall (n m l : nat) (e : expr (fun2T n m l)),
+        P (fun2T n m l) e -> forall (e0 : expr (vectorT n)) (e1 : expr (vectorT m)), P (vectorT n) e0 -> P (vectorT m) e1 -> P (vectorT l) (ldl_app2 e e0 e1)) ->
+       (forall (n : nat) (e : expr (vectorT n)),
+        P (vectorT n) e -> forall e0 : expr (indexT n), P (indexT n) e0 -> P realT (ldl_lookup e e0)) ->
        forall (l : ldl_type) (e : expr l), P l e.
 Proof.
 move => P H H0 H1 H2 H3 H4 H7 H11 H12 H13 H14 H15 H16 H17 H18 H19.
@@ -233,32 +233,32 @@ Context {R : realType}.
 
 Definition type_translation (t : ldl_type) : Type:=
   match t with
-  | Bool_T x y z v  => R
-  | Real_T => R
-  | Vector_T n => R ^ n
-  | Index_T n => 'I_n
-  | Fun_T n m => R ^ n -> R ^ m
-  | Fun2_T n m l => R ^ n -> R ^ m -> R ^ l
+  | boolT x y z v  => R
+  | realT => R
+  | vectorT n => R ^ n
+  | indexT n => 'I_n
+  | funT n m => R ^ n -> R ^ m
+  | fun2T n m l => R ^ n -> R ^ m -> R ^ l
 end.
 
 Definition bool_type_translation (t : ldl_type) : Type:=
   match t with
-  | Bool_T x y z v=> bool
-  | Real_T => R
-  | Vector_T n => R ^ n
-  | Index_T n => 'I_n
-  | Fun_T n m => R ^ n -> R ^ m
-  | Fun2_T n m l => R ^ n -> R ^ m -> R ^ l
+  | boolT x y z v=> bool
+  | realT => R
+  | vectorT n => R ^ n
+  | indexT n => 'I_n
+  | funT n m => R ^ n -> R ^ m
+  | fun2T n m l => R ^ n -> R ^ m -> R ^ l
   end.
 
 Definition ereal_type_translation (t : ldl_type) : Type :=
   match t with
-  | Bool_T x y z v=> \bar R
-  | Real_T => R
-  | Vector_T n => R ^ n
-  | Index_T n => 'I_n
-  | Fun_T n m => R ^ n -> R ^ m
-  | Fun2_T n m l => R ^ n -> R ^ m -> R ^ l
+  | boolT x y z v=> \bar R
+  | realT => R
+  | vectorT n => R ^ n
+  | indexT n => 'I_n
+  | funT n m => R ^ n -> R ^ m
+  | fun2T n m l => R ^ n -> R ^ m -> R ^ l
   end.
 
 End type_translation.
@@ -346,8 +346,8 @@ Variables (l : DL) (p : R).
 
 Fixpoint translation {t} (e : @expr R t) {struct e} : type_translation t :=
   match e in expr t return type_translation t with
-   | ldl_bool _ _ _ _ true => (1%R : type_translation (Bool_T _ _ _ _))
-   | ldl_bool _ _ _ _ false => (0%R : type_translation (Bool_T _ _ _ _ ))
+   | ldl_bool _ _ _ _ true => (1%R : type_translation (boolT _ _ _ _))
+   | ldl_bool _ _ _ _ false => (0%R : type_translation (boolT _ _ _ _ ))
    | ldl_idx n i => i
    | ldl_real r => r
    | ldl_vec n t => t
@@ -358,7 +358,7 @@ Fixpoint translation {t} (e : @expr R t) {struct e} : type_translation t :=
        match l with
        | Lukasiewicz => maxr (\sum_(i <- map translation Es) i - (size Es)%:R+1) 0
        | Yager => maxr (1 - (\sum_(i <- map (fun E => (1 - ({[ E ]} :
-                  type_translation (Bool_T _ _ m_def _ )))`^p) Es) i)`^p^-1) 0
+                  type_translation (boolT _ _ m_def _ )))`^p) Es) i)`^p^-1) 0
        | Godel => minR (map translation Es)
        | product => \prod_(i <- map translation Es) i
        | GodelS => minR (map translation Es)
@@ -368,7 +368,7 @@ Fixpoint translation {t} (e : @expr R t) {struct e} : type_translation t :=
        match l with
        | Lukasiewicz => minr (\sum_(i <- map translation Es) i) 1
        | Yager => minr ((\sum_(i <- map (fun E => ({[ E ]} :
-                  type_translation (Bool_T _ _ m_def _))`^p) Es) i)`^p^-1) 1
+                  type_translation (boolT _ _ m_def _))`^p) Es) i)`^p^-1) 1
        | Godel => maxR (map translation Es)
        | product => product_dl_prod (map translation Es)
        | GodelS => maxR (map translation Es)
