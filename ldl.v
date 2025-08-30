@@ -146,6 +146,61 @@ Notation "f '`@2' ( x , y )" := (ldl_app2 f x y) (at level 60) : ldl_scope.
 
 Local Close Scope ldl_scope.
 
+Lemma expr_ind' (R : realType) :
+  forall P : forall l : ldl_type, expr l -> Prop,
+       (forall (p : flag_neg) (r : flag_impl) (s : flag_monoid) (t : flag_lattice) (b : bool),
+        P (boolT p r s t) (ldl_bool p r s t b)) ->
+       (forall (n : nat) (o : 'I_n), P (indexT n) (ldl_idx o)) ->
+       (forall s : R, P realT (ldl_real s)) ->
+       (forall (n : nat) (t : R ^ n), P (vectorT n) (ldl_vec t)) ->
+       (forall (x : flag_neg) (y : flag_impl) (z : flag_monoid) n (l : (expr (boolT x y z l_def)) ^ n),
+          (forall a, P (boolT x y z l_def) (l a)) -> P (boolT x y z l_def) (ldl_and l)) ->
+       (forall (x : flag_neg) (y : flag_impl) (z : flag_monoid) n (l : (expr (boolT x y z l_def)) ^ n),
+        (forall a, P (boolT x y z l_def) (l a)) -> P (boolT x y z l_def) (ldl_or l)) ->
+       (forall (x : flag_impl) (y : flag_monoid) (z : flag_lattice) (e : expr (boolT_def x y z)),
+        P (boolT_def x y z) e -> P (boolT_def x y z) (ldl_not e)) ->
+       (forall (x : flag_neg) (y : flag_monoid) (z : flag_lattice) (e : expr (boolT x impl_def y z)),
+        P (boolT x impl_def y z) e ->
+        forall e0 : expr (boolT x impl_def y z),
+        P (boolT x impl_def y z) e0 -> P (boolT x impl_def y z) (ldl_impl e e0)) ->
+       (forall (x : flag_neg) (y : flag_impl) (z : flag_lattice) n (l : (expr (boolT x y m_def z)) ^ n),
+          (forall a, P (boolT x y m_def z) (l a)) -> P (boolT x y m_def z) (ldl_mand l)) ->
+       (forall (x : flag_neg) (y : flag_impl) (z : flag_lattice) n (l : (expr (boolT x y m_def z)) ^ n),
+        (forall a, P (boolT x y m_def z) (l a)) -> P (boolT x y m_def z) (ldl_mor l)) ->
+       (forall (x : flag_neg) (y : flag_impl) (z : flag_monoid) (v : flag_lattice) 
+          (c : comparison) (e : expr realT),
+        P realT e -> forall e0 : expr realT, P realT e0 -> P (boolT x y z v) (ldl_cmp x y z v c e e0)) ->
+       (forall (n m : nat) (t : R ^ n -> R ^ m), P (funT n m) (ldl_fun t)) ->
+       (forall (n m l : nat) (t : R ^ n -> R ^ m -> R ^ l), P (fun2T n m l) (ldl_fun2 t)) ->
+       (forall (n m : nat) (e : expr (funT n m)),
+        P (funT n m) e -> forall e0 : expr (vectorT n), P (vectorT n) e0 -> P (vectorT m) (ldl_app e e0)) ->
+       (forall (n m l : nat) (e : expr (fun2T n m l)),
+        P (fun2T n m l) e -> forall (e0 : expr (vectorT n)) (e1 : expr (vectorT m)), P (vectorT n) e0 -> P (vectorT m) e1 -> P (vectorT l) (ldl_app2 e e0 e1)) ->
+       (forall (n : nat) (e : expr (vectorT n)),
+        P (vectorT n) e -> forall e0 : expr (indexT n), P (indexT n) e0 -> P realT (ldl_lookup e e0)) ->
+       forall (l : ldl_type) (e : expr l), P l e.
+Proof.
+move => P H H0 H1 H2 H3 H4 H7 H11 H12 H13 H14 H15 H16 H17 H18 H19.
+fix F1 2.
+destruct e.
+  * exact: H.
+  * exact: H0.
+  * exact: H1.
+  * exact: H2.
+  * exact: H3.
+  * exact: H4.
+  * exact: H7; eauto.
+  * exact: H11; eauto.
+  * exact: H12.
+  * exact: H13.
+  * exact: H14; eauto.
+  * exact: H15; eauto.
+  * exact: H16; eauto.
+  * exact: H17; eauto.
+  * exact: H18; eauto.
+  * exact: H19; eauto.
+Qed.
+
 Inductive DL := Lukasiewicz | Yager | Godel | product | GodelS | productS.
 
 Section type_translation.
