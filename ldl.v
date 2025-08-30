@@ -107,11 +107,11 @@ Inductive expr : ldl_type -> Type :=
   (* connectives *)
   | ldl_and : forall fn fi fm, seq (expr (Bool_T fn fi fm l_def)) -> expr (Bool_T fn fi fm l_def)
   | ldl_or : forall fn fi fm, seq (expr (Bool_T fn fi fm l_def)) -> expr (Bool_T fn fi fm l_def)
-  | ldl_not : forall fi fm fl, expr (Bool_T neg_def fi fm fl) -> expr (Bool_T neg_def  fi fm fl) 
-  | ldl_impl :forall fn fm fl, expr (Bool_T fn impl_def fm fl) 
+  | ldl_not : forall fi fm fl, expr (Bool_T neg_def fi fm fl) -> expr (Bool_T neg_def  fi fm fl)
+  | ldl_impl :forall fn fm fl, expr (Bool_T fn impl_def fm fl)
                                -> expr (Bool_T fn impl_def fm fl) -> expr (Bool_T fn impl_def fm fl)
   | ldl_mand : forall fn fi fl, seq (expr (Bool_T fn fi m_def fl)) -> expr (Bool_T fn fi m_def fl)
-  | ldl_mor : forall fn fi fl, seq (expr (Bool_T fn fi m_def fl)) -> expr (Bool_T fn fi m_def fl) 
+  | ldl_mor : forall fn fi fl, seq (expr (Bool_T fn fi m_def fl)) -> expr (Bool_T fn fi m_def fl)
   (* comparisons *)
   | ldl_cmp : forall fn fi fm fl, comparison -> expr Real_T -> expr Real_T -> expr (Bool_T fn fi fm fl)
   (* networks and applications *)
@@ -144,8 +144,6 @@ Notation "a `! b"  := (ldl_lookup a b) : ldl_scope.
 Notation "f '`@' x" := (ldl_app f x) (at level 60) : ldl_scope.
 Notation "f '`@2' ( x , y )" := (ldl_app2 f x y) (at level 60) : ldl_scope.
 
-Check expr_ind.
-
 Lemma expr_ind' (R : realType) :
   forall P : forall l : ldl_type, expr l -> Prop,
        (forall (p : flag_neg) (r : flag_impl) (s : flag_monoid) (t : flag_lattice) (b : bool),
@@ -167,7 +165,7 @@ Lemma expr_ind' (R : realType) :
           List.Forall (fun a => P (Bool_T x y m_def z) a) l -> P (Bool_T x y m_def z) (ldl_mand l)) ->
        (forall (x : flag_neg) (y : flag_impl) (z : flag_lattice) (l : seq (expr (Bool_T x y m_def z))),
         List.Forall (fun a => P (Bool_T x y m_def z) a) l -> P (Bool_T x y m_def z) (ldl_mor l)) ->
-       (forall (x : flag_neg) (y : flag_impl) (z : flag_monoid) (v : flag_lattice) 
+       (forall (x : flag_neg) (y : flag_impl) (z : flag_monoid) (v : flag_lattice)
           (c : comparison) (e : expr Real_T),
         P Real_T e -> forall e0 : expr Real_T, P Real_T e0 -> P (Bool_T x y z v) (ldl_cmp x y z v c e e0)) ->
        (forall (n m : nat) (t : R ^ n -> R ^ m), P (Fun_T n m) (ldl_fun t)) ->
@@ -451,7 +449,6 @@ Fixpoint dl2_ereal_translation {t} (e : @expr R t) {struct e} : ereal_type_trans
         \sum_(i <- map dl2_ereal_translation Es) i
   | ldl_not _ _ _ E1 => +oo (* default value, all lemmas are for negation-free formulas *)
   | ldl_impl _ _ _ E1 E2 =>  (- maxe ({[ E1 ]} - {[ E2 ]}) 0)
-                                
   | E1 `== E2 => (- `| {[ E1 ]} - {[ E2 ]}|)%:E
   | E1 `<= E2 => (- maxr ({[ E1 ]} - {[ E2 ]}) 0)%:E
 
