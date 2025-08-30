@@ -125,12 +125,12 @@ End expr.
 
 Declare Scope ldl_scope.
 
-Notation "a `/\ b" := (ldl_and [:: a; b]) (at level 45) : ldl_scope.
-Notation "a `\/ b" := (ldl_or [:: a; b]) (at level 45) : ldl_scope.
-Notation "a `** b" := (ldl_mand [:: a; b]) (at level 45) : ldl_scope.
-Notation "a `++ b" := (ldl_mor [:: a; b]) (at level 45) : ldl_scope.
-Notation "a `=> b" := (ldl_impl a b) (at level 80) : ldl_scope.
-Notation "`~ a"    := (ldl_not a) (at level 75) : ldl_scope.
+Notation "a `/\ b" := (ldl_and [:: a; b]) (at level 65) : ldl_scope.
+Notation "a `\/ b" := (ldl_or [:: a; b]) (at level 65) : ldl_scope.
+Notation "a `** b" := (ldl_mand [:: a; b]) (at level 65) : ldl_scope.
+Notation "a `++ b" := (ldl_mor [:: a; b]) (at level 65) : ldl_scope.
+Notation "a `=> b" := (ldl_impl a b) (at level 70) : ldl_scope.
+Notation "`~ a"    := (ldl_not a) (at level 61) : ldl_scope.
 
 Local Open Scope ldl_scope.
 
