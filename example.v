@@ -38,12 +38,12 @@ Local Notation expr := (@expr R).
 
 Let ldl_norm_infty n : expr (Fun_T n.+1 1) := ldl_fun
   (fun t : R ^ n.+1 => [ffun x : 'I_1 => \big[maxr/t 0]_(i < n.+1) t i ])%R.
-
 Let idx0 := @ldl_idx R 1 ord0.
 Local Notation "'`|' v '|'" := ((ldl_norm_infty _ `@ v) `! idx0).
 
 Let ldl_vec_sub n :=
   ldl_fun2 (fun (x y : R ^ n) => [ffun i => x i - y i]%R).
+Local Notation "x `- y" := (ldl_vec_sub _ `@2 (x, y)) (at level 42).
 
 Lemma ldl_vec_sub0 n (e : expr (Vector_T n)) :
   [[ (ldl_vec_sub n) `@2 (e, ldl_vec [ffun x => 0%R]) ]]_B = [[ e ]]_B.
@@ -55,8 +55,7 @@ Context {n m : nat} (eps delta : expr Real_T) (f : expr (Fun_T n.+1 m.+1))
   (v : expr (Vector_T n.+1)) (x : expr (Vector_T n.+1)).
 
 Definition eps_delta_robust fn fm fl : expr (Bool_T fn impl_def fm fl) :=
-  `| ldl_vec_sub _ `@2 (x, v) | `<= eps `=>
-    `| ldl_vec_sub _ `@2 (f `@ x, f `@ v) | `<= delta.
+  `| x `- v | `<= eps `=> `| (f `@ x) `- (f `@ v) | `<= delta.
 
 End example_robust.
 
