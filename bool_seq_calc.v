@@ -27,7 +27,7 @@ Import numFieldTopology.Exports.
 Reserved Notation "{[ e ]}" (format "{[  e  ]}").
 
 HB.instance Definition _ (R : realType) x y z v :=
-  @gen_choiceMixin (@expr R (Bool_T x y z v)).
+  @gen_choiceMixin (@expr R (boolT x y z v)).
 
 Reserved Notation "Q |= P" (no associativity, at level 61).
 Reserved Notation "Q |- P" (no associativity, at level 61).
@@ -41,37 +41,37 @@ Context {K : choiceType}.
 Implicit Types  (A : {mset K}) (s : seq K).
 Local Notation "<< e >>" := (@bool_translation R _ e).
 
-Inductive seq_calc_bool_ms : {mset (@expr R (Bool_T_def impl_def m_undef l_def))}
-  -> {mset (@expr R (Bool_T_def impl_def m_undef l_def))} -> Prop :=
-| init : forall (Q P : {mset (@expr R (Bool_T_def impl_def m_undef l_def))}) (a : @expr R (Bool_T_def impl_def m_undef l_def)),
+Inductive seq_calc_bool_ms : {mset (@expr R (boolT_def impl_def m_undef l_def))}
+  -> {mset (@expr R (boolT_def impl_def m_undef l_def))} -> Prop :=
+| init : forall (Q P : {mset (@expr R (boolT_def impl_def m_undef l_def))}) (a : @expr R (boolT_def impl_def m_undef l_def)),
      a +` Q |= a +` P
-| bot : forall (Q P : {mset (@expr R (Bool_T_def impl_def m_undef l_def))}),
+| bot : forall (Q P : {mset (@expr R (boolT_def impl_def m_undef l_def))}),
     (ldl_bool neg_def _ _ _ false) +` Q |= P
-| top : forall (Q P : {mset (@expr R (Bool_T_def impl_def m_undef l_def))}),
+| top : forall (Q P : {mset (@expr R (boolT_def impl_def m_undef l_def))}),
     Q |= (ldl_bool neg_def _ _ _ true) +` P
-| and_R : forall (Q P : {mset (@expr R (Bool_T_def impl_def m_undef l_def))}) (a : @expr R (Bool_T_def impl_def m_undef l_def))
-                 (b : (@expr R (Bool_T_def impl_def m_undef l_def))),
+| and_R : forall (Q P : {mset (@expr R (boolT_def impl_def m_undef l_def))}) (a : @expr R (boolT_def impl_def m_undef l_def))
+                 (b : (@expr R (boolT_def impl_def m_undef l_def))),
     Q |= a +` P  ->  Q |= ( b) +` P ->
       Q |=  (a `/\ b) +` P
-| andL1 :  forall (Q P : {mset (@expr R (Bool_T_def impl_def m_undef l_def))}) (a b : @expr R (Bool_T_def impl_def m_undef l_def)),
+| andL1 :  forall (Q P : {mset (@expr R (boolT_def impl_def m_undef l_def))}) (a b : @expr R (boolT_def impl_def m_undef l_def)),
     a +` Q  |= P ->
       (a `/\ b) +` Q |= P
-| andL2 :  forall (Q P : {mset (@expr R (Bool_T_def impl_def m_undef l_def))}) (a b : @expr R (Bool_T_def impl_def m_undef l_def)),
+| andL2 :  forall (Q P : {mset (@expr R (boolT_def impl_def m_undef l_def))}) (a b : @expr R (boolT_def impl_def m_undef l_def)),
     b +` Q  |= P ->
       (a `/\ b) +` Q |= P
-| orR1 : forall (Q P : {mset (@expr R (Bool_T_def impl_def m_undef l_def))})
-                (a : @expr R (Bool_T_def impl_def m_undef l_def))
-                 (b : (@expr R (Bool_T_def impl_def m_undef l_def))),
+| orR1 : forall (Q P : {mset (@expr R (boolT_def impl_def m_undef l_def))})
+                (a : @expr R (boolT_def impl_def m_undef l_def))
+                 (b : (@expr R (boolT_def impl_def m_undef l_def))),
     Q |=  a +` P ->
       Q |=  (a `\/ b) +` P
-| orR2 : forall (Q P : {mset (@expr R (Bool_T_def impl_def m_undef l_def))})
-                (a : @expr R (Bool_T_def impl_def m_undef l_def))
-                 (b : (@expr R (Bool_T_def impl_def m_undef l_def))),
+| orR2 : forall (Q P : {mset (@expr R (boolT_def impl_def m_undef l_def))})
+                (a : @expr R (boolT_def impl_def m_undef l_def))
+                 (b : (@expr R (boolT_def impl_def m_undef l_def))),
     Q |=  b +` P ->
       Q |=  (a `\/ b) +` P
-| orL :  forall (Q P : {mset (@expr R (Bool_T_def impl_def m_undef l_def))})
-                (a : @expr R (Bool_T_def impl_def m_undef l_def))
-                 (b : (@expr R (Bool_T_def impl_def m_undef l_def))),
+| orL :  forall (Q P : {mset (@expr R (boolT_def impl_def m_undef l_def))})
+                (a : @expr R (boolT_def impl_def m_undef l_def))
+                 (b : (@expr R (boolT_def impl_def m_undef l_def))),
     a+`Q  |= P ->  b +` Q |= P ->
       (a `\/ b)+`Q |= P
 | negL : forall Q P a,
@@ -80,11 +80,12 @@ Inductive seq_calc_bool_ms : {mset (@expr R (Bool_T_def impl_def m_undef l_def))
 where "Q |= P" := (seq_calc_bool_ms Q P).
 
 
-Lemma sound_sc_bool_mseq (Q P : {mset expr (Bool_T_def impl_def m_undef l_def)}) :
-Q |= P ->
-(forall (q : expr (Bool_T_def impl_def m_undef l_def)),
-    (q \in Q) -> <<q>> = <<ldl_bool neg_def _ _ _ true>>) ->
-    exists (p : expr (Bool_T_def impl_def m_undef l_def)) , (p \in P) /\ <<p>> = <<ldl_bool neg_def _ _ _ true>>.
+Lemma sound_sc_bool_mseq (Q P : {mset expr (boolT_def impl_def m_undef l_def)}) :
+  Q |= P ->
+  (forall q : expr (boolT_def impl_def m_undef l_def),
+    q \in Q -> <<q>> = <<ldl_bool neg_def _ _ _ true>>) ->
+  exists p : expr (boolT_def impl_def m_undef l_def),
+    (p \in P) /\ <<p>> = <<ldl_bool neg_def _ _ _ true>>.
 Proof.
  rewrite //=. intros. dependent induction H.
 - exists a. have H := H0 a.

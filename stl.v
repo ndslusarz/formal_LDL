@@ -18,7 +18,7 @@ Import Order.TTheory.
 Import numFieldNormedType.Exports.
 
 HB.instance Definition _ (R : realType)  f1 f2 f3 f4 :=
-  @gen_eqMixin (@expr R (Bool_T f1 f2 f3 f4)).
+  @gen_eqMixin (@expr R (boolT f1 f2 f3 f4)).
 
 Section stl_lemmas.
 Local Open Scope ldl_scope.
@@ -27,7 +27,7 @@ Context {R : realType}.
 Variable nu : R.
 Hypothesis nu0 : 0 < nu.
 
-Lemma andI_stl (e : expr (Bool_T_def impl_undef m_undef l_def)) :
+Lemma andI_stl (e : expr (boolT_def impl_undef m_undef l_def)) :
   nu.-[[e `/\ e]]_stl = nu.-[[e]]_stl.
 Proof.
 rewrite /= /stl_and /stl_and_gt0 /stl_and_lt0 /min_dev.
@@ -48,7 +48,7 @@ case: ifPn => //h2.
 by apply le_anti; rewrite !leNgt; rewrite h1 h2.
 Qed.
 
-Lemma andC_stl (e1 e2 : expr (Bool_T_def impl_undef m_undef l_def)) :
+Lemma andC_stl (e1 e2 : expr (boolT_def impl_undef m_undef l_def)) :
   nu.-[[e1 `/\ e2]]_stl = nu.-[[e2 `/\ e1]]_stl.
 Proof.
 rewrite /= /stl_and /stl_and_gt0 /stl_and_lt0 /min_dev.
@@ -66,7 +66,7 @@ case: ifPn; first by rewrite addrC (addrC (expR (- nu * a1)) (expR (- nu * a2)))
 lra.
 Qed.
 
-Lemma orI_stl (e : expr (Bool_T_def impl_undef m_undef l_def)) :
+Lemma orI_stl (e : expr (boolT_def impl_undef m_undef l_def)) :
   nu.-[[e `\/ e]]_stl = nu.-[[e]]_stl.
 Proof.
 rewrite /= /stl_or /stl_or_gt0 /stl_or_lt0 /max_dev !big_cons !big_nil/= !addr0.
@@ -86,7 +86,7 @@ case: ifPn => //h2.
 by apply le_anti; rewrite !leNgt h1 h2.
 Qed.
 
-Lemma orC_stl (e1 e2 : expr (Bool_T_def impl_undef m_undef l_def)) :
+Lemma orC_stl (e1 e2 : expr (boolT_def impl_undef m_undef l_def)) :
   nu.-[[e1 `\/ e2]]_stl  = nu.-[[e2 `\/ e1]]_stl.
 Proof.
 rewrite /= /stl_or /stl_or_gt0 /stl_or_lt0 /max_dev !big_cons !big_nil/= !addr0.
@@ -103,7 +103,7 @@ by case: ifPn; first by rewrite addrC.
 Qed.
 
 Lemma stl_translations_coincide t (e : @expr R t) n m j :
-  (t = Real_T \/ t = Vector_T n \/ t = Index_T n \/ t = Fun_T n m \/ t = Fun2_T n m j) ->
+  (t = realT \/ t = vectorT n \/ t = indexT n \/ t = funT n m \/ t = fun2T n m j) ->
   nu.-[[ e ]]_stl ~= [[ e ]]_B.
 Proof.
 dependent induction e using expr_ind' => //=; move=> [|[|[|[|]]]]t0//.
@@ -116,25 +116,25 @@ dependent induction e using expr_ind' => //=; move=> [|[|[|[|]]]]t0//.
   by rewrite (JMeq_eq (IHe2 n m j _)); last by (right; right; left).
 Qed.
 
-Lemma stl_translations_Fun_coincide:
-  forall n m (e : expr (Fun_T n m)), nu.-[[ e ]]_stl = [[ e ]]_B.
-Proof.
-by move=> n m e; apply/JMeq_eq/(stl_translations_coincide _ _ n m 0); right;right;right;left.
-Qed.
-
-Lemma stl_translations_Vector_coincide: forall n (e : @expr R (Vector_T n)),
+Lemma stl_translations_Fun_coincide n m (e : expr (funT n m)) :
   nu.-[[ e ]]_stl = [[ e ]]_B.
 Proof.
-by move=> n e; apply/JMeq_eq/(stl_translations_coincide _ _ n 0 0); right;left.
+by apply/JMeq_eq/(stl_translations_coincide _ _ n m 0); right;right;right;left.
 Qed.
 
-Lemma stl_translations_Index_coincide: forall n (e : expr (Index_T n)),
+Lemma stl_translations_Vector_coincide n (e : @expr R (vectorT n)) :
   nu.-[[ e ]]_stl = [[ e ]]_B.
 Proof.
-by move=> n e; apply/JMeq_eq/(stl_translations_coincide _ _ n 0 0); right;right;left.
+by apply/JMeq_eq/(stl_translations_coincide _ _ n 0 0); right;left.
 Qed.
 
-Lemma stl_translations_Real_coincide (e : expr Real_T):
+Lemma stl_translations_Index_coincide n (e : expr (indexT n)) :
+  nu.-[[ e ]]_stl = [[ e ]]_B.
+Proof.
+by apply/JMeq_eq/(stl_translations_coincide _ _ n 0 0); right;right;left.
+Qed.
+
+Lemma stl_translations_Real_coincide (e : expr realT):
   nu.-[[ e ]]_stl = [[ e ]]_B.
 Proof.
 by apply/JMeq_eq/(stl_translations_coincide _ _ 0 0 0); left.
@@ -142,7 +142,7 @@ Qed.
 
 Definition is_stl b (x : R) := if b then x >= 0 else x < 0.
 
-Lemma stl_nary_inversion_andE1 (Es : seq (expr (Bool_T_undef impl_undef m_undef l_def))) :
+Lemma stl_nary_inversion_andE1 (Es : seq (expr (boolT_undef impl_undef m_undef l_def))) :
   is_stl true (nu.-[[ ldl_and Es ]]_stl) ->
   forall i, (i < size Es)%N ->
     is_stl true (nu.-[[ nth (ldl_bool neg_undef _ _ _ false) Es i ]]_stl).
@@ -167,7 +167,7 @@ rewrite -leNgt; move/minrgex => h.
 by case: ifPn => _ _ i isize; rewrite h// mem_nth.
 Qed.
 
-Lemma stl_nary_inversion_andE0 (Es : seq (expr (Bool_T_undef impl_undef m_undef l_def))) :
+Lemma stl_nary_inversion_andE0 (Es : seq (expr (boolT_undef impl_undef m_undef l_def))) :
   is_stl false (nu.-[[ ldl_and Es ]]_stl) ->
   exists2 i, is_stl false (nu.-[[ nth (ldl_bool neg_undef _ _ _ false) Es i ]]_stl) &
              (i < size Es)%N.
@@ -188,7 +188,7 @@ all: move=> i /andP[il _]; rewrite ?mulr_ge0 ?expR_ge0//.
 by apply: (minrgex hminge0); rewrite in_cons il orbT.
 Qed.
 
-Lemma stl_nary_inversion_orE1 (Es : seq (expr (Bool_T_undef impl_undef m_undef l_def))) :
+Lemma stl_nary_inversion_orE1 (Es : seq (expr (boolT_undef impl_undef m_undef l_def))) :
   is_stl true (nu.-[[ ldl_or Es ]]_stl) ->
   exists2 i, is_stl true (nu.-[[ nth (ldl_bool _ _ _ _ false) Es i ]]_stl) &
              (i < size Es)%N.
@@ -222,7 +222,7 @@ exists (index x (a :: l)).
 by rewrite index_mem xmem.
 Qed.
 
-Lemma stl_nary_inversion_orE0 (Es : seq (expr (Bool_T_undef impl_undef m_undef l_def))) :
+Lemma stl_nary_inversion_orE0 (Es : seq (expr (boolT_undef impl_undef m_undef l_def))) :
   is_stl false (nu.-[[ ldl_or Es ]]_stl) ->
   forall i, (i < size Es)%N ->
     is_stl false (nu.-[[ nth (ldl_bool _ _ _ _ false) Es i ]]_stl).
@@ -240,7 +240,7 @@ move => hmaxlt0 _ i isize.
 by apply: (maxrltx hmaxlt0); rewrite mem_nth.
 Qed.
 
-Lemma stl_adequacy (e : expr (Bool_T_undef impl_undef m_undef l_def)) b :
+Lemma stl_adequacy (e : expr (boolT_undef impl_undef m_undef l_def)) b :
   is_stl b (nu.-[[ e ]]_stl) -> [[ e ]]_B = b.
 Proof.
 dependent induction e using expr_ind'.
@@ -280,7 +280,7 @@ dependent induction e using expr_ind'.
     by rewrite oppr_lt0 normr_gt0 subr_eq0 => /negbTE.
 Qed.
 
-Lemma andC_stl_nary (s1 s2 : seq (expr (Bool_T_def impl_undef m_undef l_def))) :
+Lemma andC_stl_nary (s1 s2 : seq (expr (boolT_def impl_undef m_undef l_def))) :
   perm_eq s1 s2 -> nu.-[[ldl_and s1]]_stl = nu.-[[ldl_and s2]]_stl.
 Proof.
 case: s1; first by rewrite perm_sym => /perm_nilP ->.
