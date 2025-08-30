@@ -100,7 +100,6 @@ Lemma translations_coincide t (e : @expr R t) n m j :
   [[ e ]]_l ~= [[ e ]]_B.
 Proof.
 dependent induction e using expr_ind' => //=; move=> [|[|[|[|]]]]t0//.
-- by under eq_ffun => i do (rewrite (H i 0 0 0); last by left).
 - rewrite (JMeq_eq (IHe1 n m j _)); last by (right; right; right; left).
   by rewrite (JMeq_eq (IHe2 n m j _)); last by (right; left).
 - rewrite (JMeq_eq (IHe1 n m l0 _)); last by (right; right; right; right).

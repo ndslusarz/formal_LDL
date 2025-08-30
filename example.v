@@ -43,7 +43,7 @@ Let ldl_vec_sub n :=
   ldl_fun2 (fun (x y : R ^ n) => [ffun i => x i - y i]%R).
 
 Lemma ldl_vec_sub0 n (e : expr (Vector_T n)) :
-  [[ ldl_app2 (ldl_vec_sub n) e (ldl_vec [ffun x => ldl_real 0%R]) ]]_B = [[ e ]]_B.
+  [[ ldl_app2 (ldl_vec_sub n) e (ldl_vec [ffun x => 0%R]) ]]_B = [[ e ]]_B.
 Proof.
 by dependent induction e => /=; apply/ffunP => i; rewrite !ffunE/= subr0.
 Qed.

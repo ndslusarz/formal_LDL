@@ -103,7 +103,7 @@ Inductive expr : ldl_type -> Type :=
   | ldl_bool : forall p r s t, bool -> expr (Bool_T p r s t)
   | ldl_idx : forall n, 'I_n -> expr (Index_T n)
   | ldl_real : R -> expr Real_T
-  | ldl_vec : forall n, expr Real_T ^ n -> expr (Vector_T n)
+  | ldl_vec : forall n, R ^ n -> expr (Vector_T n)
   (* connectives *)
   | ldl_and : forall fn fi fm, seq (expr (Bool_T fn fi fm l_def)) -> expr (Bool_T fn fi fm l_def)
   | ldl_or : forall fn fi fm, seq (expr (Bool_T fn fi fm l_def)) -> expr (Bool_T fn fi fm l_def)
@@ -159,7 +159,7 @@ Lemma expr_ind' (R : realType) :
         P (Bool_T p r s t) (ldl_bool p r s t b)) ->
        (forall (n : nat) (o : 'I_n), P (Index_T n) (ldl_idx o)) ->
        (forall s : R, P Real_T (ldl_real s)) ->
-       (forall (n : nat) (t : (expr Real_T) ^ n), (forall i : 'I_n, P Real_T (t i)) -> P (Vector_T n) (ldl_vec t)) ->
+       (forall (n : nat) (t : R ^ n), P (Vector_T n) (ldl_vec t)) ->
        (forall (x : flag_neg) (y : flag_impl) (z : flag_monoid) (l : seq (expr (Bool_T x y z l_def))),
           List.Forall (fun a => P (Bool_T x y z l_def) a) l -> P (Bool_T x y z l_def) (ldl_and l)) ->
        (forall (x : flag_neg) (y : flag_impl) (z : flag_monoid) (l : seq (expr (Bool_T x y z l_def))),
@@ -282,7 +282,7 @@ Fixpoint bool_translation {t} (e : @expr R t) : bool_type_translation t :=
   | ldl_bool f1 f2 f3 f4 x => x
   | ldl_idx n i => i
   | ldl_real r => r
-  | ldl_vec n t => [ffun i => bool_translation (t i)]
+  | ldl_vec n t => t
 
   | ldl_and f1 f2 f3  Es => \big[andb/true]_(i <- map bool_translation Es) i
   | ldl_or f1 f2 f3  Es => \big[orb/false]_(i <- map bool_translation Es) i
@@ -359,7 +359,7 @@ Fixpoint translation {t} (e : @expr R t) {struct e} : type_translation t :=
    | ldl_bool _ _ _ _ false => (0%R : type_translation (Bool_T _ _ _ _ ))
    | ldl_idx n i => i
    | ldl_real r => r
-   | ldl_vec n t => [ffun i => translation (t i)]
+   | ldl_vec n t => t
 
    | ldl_and _ _ _  Es => minR (map translation Es)
    | ldl_or _ _ _ Es => maxR (map translation Es)
@@ -439,7 +439,7 @@ Fixpoint dl2_ereal_translation {t} (e : @expr R t) {struct e} : ereal_type_trans
   | ldl_bool _ _ _ _ false => -oo
   | ldl_idx n i => i
   | ldl_real r => r
-  | ldl_vec n t => [ffun i => dl2_ereal_translation (t i)]
+  | ldl_vec n t => t
   | ldl_and _ _ _ Es => +oo (* default value, all lemmas are for negation-free formulas *)
   | ldl_or _ _ _ Es => +oo (* default value, all lemmas are for negation-free formulas *)
   | ldl_mand _ _ _ Es =>
@@ -484,7 +484,7 @@ Fixpoint dl2_translation {t} (e : @expr R t) {struct e} : type_translation t :=
   | ldl_bool _ _ _ _ false => -1
   | ldl_idx n i => i
   | ldl_real r => r
-  | ldl_vec n t => [ffun i => dl2_translation (t i)]
+  | ldl_vec n t => t
 
   | ldl_and _ _ _  [::] => 0
   | ldl_and _ _ _  Es  => \big[minr/head``_(map dl2_translation Es)]_(i <- map dl2_translation Es) i
@@ -531,7 +531,7 @@ Fixpoint stl_ereal_translation {t} (e : expr t) : ereal_type_translation t :=
   | ldl_bool _ _ _ _ false => -oo
   | ldl_idx n i => i
   | ldl_real r => r
-  | ldl_vec n t => [ffun i => stl_ereal_translation (t i)]
+  | ldl_vec n t => t
 
   | ldl_and _ _ _ Es =>
       let A := map stl_ereal_translation Es in
@@ -640,7 +640,7 @@ Fixpoint stl_translation {t} (e : expr t) : type_translation t :=
   | ldl_bool _ _ _ _ false => -1
   | ldl_idx n i => i
   | ldl_real r => r
-  | ldl_vec n t => [ffun i => stl_translation (t i)]
+  | ldl_vec n t => t
 
   | ldl_and _ _ _ [::] => 1
   | ldl_and _ _ _ (e0 :: s) =>
