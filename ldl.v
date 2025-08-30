@@ -431,8 +431,8 @@ Fixpoint dl2_ereal_translation {t} (e : @expr R t) {struct e} : ereal_type_trans
   | ldl_idx n i => i
   | ldl_real r => r
   | ldl_vec n t => t
-  | ldl_and _ _ _ Es => +oo (* default value *)
-  | ldl_or _ _ _ Es => +oo (* default value *)
+  | ldl_and _ _ _ Es => \big[mine/0]_(i <- map dl2_ereal_translation Es) i
+  | ldl_or _ _ _ Es =>\big[maxe/-oo]_(i <- map dl2_ereal_translation Es) i
   | ldl_mand _ _ _ Es =>
       if has (pred1 -oo) (map dl2_ereal_translation Es) then
         -oo
