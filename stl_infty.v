@@ -9,12 +9,21 @@ From mathcomp Require Import topology derive normedtype sequences
 Require Import mathcomp_extra analysis_extra ldl.
 
 (**md**************************************************************************)
-(* # Properties of stl_infty                                                        *)
+(* # Properties of stl_infty                                                  *)
 (*                                                                            *)
 (* ## Structural properties                                                   *)
-(* - stl_infty_mandC_nary == n-ary commutativity of conjunction                     *)
-(* - stl_infty_mandC == commutativity of conjunction                                *)
-(* - stl_infty_mandA == associativity of conjunction                                *)
+(* - stl_infty_mandI == commutativity of monoidal conjunction                 *)
+(* - stl_infty_mandC == commutativity of monoidal conjunction                 *)
+(* - stl_infty_mandA == associativity of monoidal conjunction                 *)
+(* - stl_infty_morI == commutativity of monoidal disjunction                  *)
+(* - stl_infty_morC == commutativity of monoidal disjunction                  *)
+(* - stl_infty_morA == associativity of monoidal disjunction                  *)
+(* - stl_infty_andI == commutativity of conjunction                           *)
+(* - stl_infty_andC == commutativity of conjunction                           *)
+(* - stl_infty_andA == associativity of conjunction                           *)
+(* - stl_infty_orI == commutativity of disjunction                            *)
+(* - stl_infty_orC == commutativity of disjunction                            *)
+(* - stl_infty_orA == associativity of disjunction                            *)
 (******************************************************************************)
 
 Import Num.Def Num.Theory GRing.Theory.
@@ -22,84 +31,80 @@ Import Order.TTheory.
 Import numFieldTopology.Exports.
 
 HB.instance Definition _ (R : realType) x y z v :=
-  @gen_eqMixin (@expr R (Bool_T x y z v)).
+  @gen_eqMixin (@expr R (boolT x y z v)).
 
 Section stl_infty_lemmas.
 Local Open Scope ldl_scope.
-Local Open Scope ring_scope.
+Local Open Scope ereal_scope.
 Context {R : realType}.
-Variable p : R.
 
 Local Notation "[[ e ]]_stli" := (@stl_infty_translation R _ e).
 
-Lemma stl_infty_mandI f1 f2 (e : expr (Bool_T_def f1 m_def f2)) : [[ e `** e ]]_stli = [[ e ]]_stli.
+Lemma stl_infty_mandI f1 f2 (e : expr (boolT_def f1 m_def f2)) : [[ e `** e ]]_stli = [[ e ]]_stli.
 Proof.
-rewrite /=/minR ?big_cons ?big_nil.
+rewrite //= ?big_cons ?big_nil.
 set t1 := _ e.
-rewrite /=/minr; repeat case: ifP; lra.
+rewrite /=/mine; repeat case: ifP => //=. 
+move => _ h. apply negbT in h. rewrite ltey in h. 
+move /negPn /eqP in h. by [].
 Qed.
 
-Lemma stl_infty_morI f1 f2 (e : expr (Bool_T_def f1 m_def f2)) : [[ e `++ e ]]_stli = [[ e ]]_stli.
+Lemma stl_infty_morI f1 f2 (e : expr (boolT_def f1 m_def f2)) : [[ e `++ e ]]_stli = [[ e ]]_stli.
 Proof.
-rewrite /= /maxR !big_cons big_nil /maxr.
-repeat case: ifP; lra.
+rewrite /= !big_cons big_nil /maxe.
+repeat case: ifP => //=. 
+move => _ h. rewrite ltNge leNye in h; by [].
 Qed.
 
-Lemma stl_infty_mandC f1 f2 (e1 e2 : expr (Bool_T_def f1 m_def f2)) :
+Lemma stl_infty_mandC f1 f2 (e1 e2 : expr (boolT_def f1 m_def f2)) :
   [[ e1 `** e2 ]]_stli = [[ e2 `** e1 ]]_stli.
 Proof.
-rewrite /=/minR ?big_cons ?big_nil.
-by rewrite /=/minr; repeat case: ifP; lra.
-Qed.
+rewrite /= ?big_cons ?big_nil.
+rewrite /=/mine; repeat case: ifP => //=; move => h1 h2 h3 h4. 
 
-Lemma stl_infty_morC f1 f2 (e1 e2 : expr (Bool_T_def f1 m_def f2)) :
+Admitted.
+
+Lemma stl_infty_morC f1 f2 (e1 e2 : expr (boolT_def f1 m_def f2)) :
   [[ e1 `++ e2 ]]_stli = [[ e2 `++ e1 ]]_stli.
 Proof.
 rewrite /=  /maxR !big_cons !big_nil.
-by rewrite /= /maxr; repeat case: ifP; lra.
-Qed.
+ rewrite /= /maxe; repeat case: ifP => //. 
+Admitted.
 
-Lemma stl_infty_morA f1 f2 (e1 e2 e3 : expr (Bool_T_def f1 m_def f2)) :
+Lemma stl_infty_morA f1 f2 (e1 e2 e3 : expr (boolT_def f1 m_def f2)) :
   [[ (e1 `++ (e2 `++ e3)) ]]_stli = [[ ((e1 `++ e2) `++ e3) ]]_stli.
 Proof.
 rewrite /= /maxR !big_cons !big_nil.
-rewrite /maxr.
-by repeat case: ifPn => //; lra.
-Qed.
+ rewrite /= /maxe; repeat case: ifP; move => h1 h2 h3 h4 h5 h6 h7; rewrite//=. 
+(*some smarter unfolding here, lots of cases are the same case*)
+Admitted.
 
-(*not true unless we use ereal, thinking*)
-(*Theorem stl_infty_mand_unit f1 f2 (e :  (expr (Bool_T_def f1 m_def f2))) :
+Theorem stl_infty_mand_unit f1 f2 (e :  (expr (boolT_def f1 m_def f2))) :
   [[ e `** (ldl_bool _ _ _ _ true) ]]_stli = [[ e ]]_stli.
 Proof.
 rewrite//= /minR !big_cons big_nil.
-rewrite /minr; repeat case: ifP; intros; try lra.
+rewrite /= /mine; case: ifPn; rewrite//=. 
+move => h. 
+rewrite ltey in h.
+by move/negbTE/eqP in h.
 Qed.
 
-Theorem stl_infty_mor_unit f1 f2 (e :  (expr (Bool_T_def f1 m_def f2))) :
+Theorem stl_infty_mor_unit f1 f2 (e :  (expr (boolT_def f1 m_def f2))) :
   [[ e `++ (ldl_bool _ _ _ _ false) ]]_stli = [[ e ]]_stli.
 Proof.
-have := translate_Bool_T_01 p p1 Godel _ _ _ e.
-rewrite//= /maxR !big_cons big_nil.
-rewrite /maxr; repeat case: ifP; intros; try lra.
-Qed.*)
+rewrite//= !big_cons big_nil/= /maxe; case: ifPn; rewrite//=. 
+move => h. 
+rewrite ltNge leNye in h; by [].
+Qed.
 
 (*add implication and then try*)
-(*Lemma stl_infty_prelinearity (e1 e2 e3 : expr Bool_T_fuzzy) :
+(*Lemma stl_infty_residuation (e1 e2 e3 : expr Bool_T_fuzzy) :
   [[e1 `** e2]]_stli <= [[ e3 ]]_stli <-> [[ e2 ]]_stli <= [[e1 `=> e3]]_stli.
 Proof.
 split; rewrite//=/minR; rewrite !big_cons big_nil /minr; repeat case: ifP; intros; try lra.
 Qed.*)
 
-Lemma stl_infty_demorgan_mand  (e1 e2 : expr Bool_T_fuzzy) :
-  [[`~ (e1 `** e2)]]_stli = [[(`~ e1) `++ (`~ e2)]]_stli.
-Proof.
-by rewrite//= /minR /maxR !big_cons !big_nil /maxr /minr; repeat case: ifP; intros; lra.
-Qed.
 
-Lemma stl_infty_demorgan_mor  (e1 e2 : expr Bool_T_fuzzy) :
-  [[`~ (e1 `++ e2)]]_stli = [[(`~ e1) `** (`~ e2)]]_stli.
-Proof.
-by rewrite//= /minR /maxR !big_cons !big_nil /maxr /minr; repeat case: ifP; intros; lra.
-Qed.
+(*add  distrib, prelinear*)
 
 End stl_infty_lemmas.

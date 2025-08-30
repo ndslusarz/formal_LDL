@@ -673,33 +673,33 @@ Definition shadow_lifting {R : realType} n (f : 'rV_n.+1 -> R) :=
 End shadow_lifting.
 
 Section stl_infty_translation.
-Local Open Scope ring_scope.
+Local Open Scope ereal_scope.
 Local Open Scope ldl_scope.
 Context {R : realType}.
 
 (*version of STL where nu tends to \infty, which we prove in stl.v converges*)
-Fixpoint stl_infty_translation {t} (e : @expr R t) {struct e} : type_translation t :=
-  match e in expr t return type_translation t with
-  | ldl_bool _ _ _ _ true => -1
-  | ldl_bool _ _ _ _ false => 1
+Fixpoint stl_infty_translation {t} (e : @expr R t) {struct e} : ereal_type_translation t :=
+  match e in expr t return ereal_type_translation t with
+  | ldl_bool _ _ _ _ true => +oo
+  | ldl_bool _ _ _ _ false => -oo
   | ldl_idx n i => i
   | ldl_real r => r
   | ldl_vec n t => t
 
   | ldl_and _ _ _  [::] => 0
-  | ldl_and _ _ _  Es  => \big[minr/head``_(map stl_infty_translation Es)]_(i <- map stl_infty_translation Es) i
+  | ldl_and _ _ _  Es  => \big[mine/+oo]_(i <- map stl_infty_translation Es) i
   | ldl_or _ _ _  [::] => 0
-  | ldl_or _ _ _  Es  => \big[maxr/head``_(map stl_infty_translation Es)]_(i <- map stl_infty_translation Es) i
+  | ldl_or _ _ _  Es  => \big[maxe/-oo]_(i <- map stl_infty_translation Es) i
   | ldl_mand _ _ _  [::] => 0
-  | ldl_mand _ _ _  Es  => \big[minr/head``_(map stl_infty_translation Es)]_(i <- map stl_infty_translation Es) i
+  | ldl_mand _ _ _  Es  => \big[mine/+oo]_(i <- map stl_infty_translation Es) i
   | ldl_mor _ _ _  [::] => 0
-  | ldl_mor _ _ _  Es  => \big[maxr/head``_(map stl_infty_translation Es)]_(i <- map stl_infty_translation Es) i
+  | ldl_mor _ _ _  Es  => \big[maxe/-oo]_(i <- map stl_infty_translation Es) i
 
   | ldl_not _ _ _ E1 => - {[ E1 ]}
   | ldl_impl _ _ _ E1 E2 => 0 (* default value, all lemmas are for negation-free formulas *)
 
-  | E1 `== E2 => - `| {[ E1 ]} - {[ E2 ]}|
-  | E1 `<= E2 => {[ E2 ]} - {[ E1 ]}
+  | E1 `== E2 => (- `| {[ E1 ]} - {[ E2 ]}|)%:E
+  | E1 `<= E2 => ({[ E2 ]} - {[ E1 ]})%:E
 
   | ldl_fun n m f => f
   | ldl_fun2 n m l f => f
