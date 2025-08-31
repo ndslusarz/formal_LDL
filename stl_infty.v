@@ -65,7 +65,6 @@ repeat case: ifP => //=.
 move => _ h. rewrite ltNge leNye in h; by [].
 Qed.
 
-
 Lemma stl_infty_mandC f1 f2 (e1 e2 : expr (boolT_def f1 m_def f2)) :
   [[ e1 `** e2 ]]_stli = [[ e2 `** e1 ]]_stli.
 Proof.
@@ -158,6 +157,10 @@ rewrite /= /mine; repeat case: ifP; rewrite//= => h1 h2 h3 h4.
   apply: le_anti. by apply/andP; split. 
 Qed.
 
+Lemma stl_infty_involution (e : expr boolT_fuzzy) :
+  [[`~ (`~e)]]_stli = [[ e ]]_stli.
+Proof. by rewrite //= oppeK. Qed.
+
 
 Theorem stl_infty_mand_unit f1 f2 (e :  (expr (boolT_def f1 m_def f2))) :
   [[ e `** (ldl_bool _ _ _ _ true) ]]_stli = [[ e ]]_stli.
@@ -177,14 +180,26 @@ move => h.
 rewrite ltNge leNye in h; by [].
 Qed.
 
-(*add implication and then try*)
-(*Lemma stl_infty_residuation (e1 e2 e3 : expr Bool_T_fuzzy) :
+Lemma stl_infty_residuation (e1 e2 e3 : expr boolT_stli) :
   [[e1 `** e2]]_stli <= [[ e3 ]]_stli <-> [[ e2 ]]_stli <= [[e1 `=> e3]]_stli.
 Proof.
-split; rewrite//=/minR; rewrite !big_cons big_nil /minr; repeat case: ifP; intros; try lra.
-Qed.*)
+split; rewrite//= /minR !big_cons big_nil !miney /mine; case: ifPn => //= h1 h2.
+- case: (ltP ([[e2]]_stli) 0) => Hsign.
+  + rewrite lee_suber_addr//=.
+- 
+-
+-
+- 
+Admitted.
+
+
 Lemma stl_infty_demorgan_mand f1 (e1 e2 : expr (boolT_def f1 m_def l_def)) :
   [[`~ (e1 `** e2)]]_stli = [[(`~ e1) `++ (`~ e2)]]_stli.
+Proof.
+rewrite /= /maxR !big_cons !big_nil !miney !maxeNy.
+rewrite /= /mine /maxe; repeat case: ifP; rewrite//= => h1 h2.
+- have H2' (x y : \bar R): - y < - x.
+
 Admitted.
 
 Lemma stl_infty_demorgan_mor f1 (e1 e2 : expr (boolT_def f1 m_def l_def)) :

@@ -315,6 +315,10 @@ apply: eq_bigr => i _.
 by rewrite /min_dev !map_cons !big_map (perm_big _ pi).
 Qed.
 
+Lemma stl_involution (e : expr boolT_stl) :
+  nu.-[[`~ (`~e)]]_stl = nu.-[[ e ]]_stl.
+Proof. by rewrite //= opprK. Qed.
+
 End stl_lemmas.
 
 Local Open Scope ring_scope.

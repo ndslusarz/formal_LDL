@@ -92,6 +92,7 @@ Definition boolT_def := boolT neg_def.
 Definition boolT_fuzzy := boolT neg_def impl_def m_def l_def.
 Definition boolT_dl2 := boolT neg_undef impl_def m_def l_def.
 Definition boolT_stl := boolT neg_def impl_undef m_undef l_def.
+Definition boolT_stli := boolT neg_def impl_def m_def l_def.
 
 Inductive comparison : Type := cmp_le | cmp_eq.
 
@@ -696,7 +697,7 @@ Fixpoint stl_infty_translation {t} (e : @expr R t) {struct e} : ereal_type_trans
   | ldl_mor _ _ _  Es  => \big[maxe/-oo]_(i <- map stl_infty_translation Es) i
 
   | ldl_not _ _ _ E1 => - {[ E1 ]}
-  | ldl_impl _ _ _ E1 E2 => 0 (* default value, all lemmas are for negation-free formulas *)
+  | ldl_impl _ _ _ E1 E2 => ({[ E2 ]} - {[ E1 ]})
 
   | E1 `== E2 => (- `| {[ E1 ]} - {[ E2 ]}|)%:E
   | E1 `<= E2 => ({[ E2 ]} - {[ E1 ]})%:E
