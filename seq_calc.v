@@ -1845,27 +1845,15 @@ have := @translate_boolT_01 R _ p1 Godel _ _ _  (ldl_and A).
 by rewrite //= /minR => /andP[].
 Qed.
 
-Lemma big_min_cat_godel A B :
+Lemma big_min_cat_godel (A B : seq formula) :
   \big[minr/1]_(j <- A ++ B) [[j]]_Godel =
   minr (\big[minr/1]_(j <- A) [[j]]_Godel) (\big[minr/1]_(j <- B) [[j]]_Godel).
-Proof.
-elim: A => [|x xs IH].
-- have H := big_minr_godel_le1 B.
-  by rewrite /= big_nil//= {2}/minr; case: ifP; intros; lra.
-- simpl; rewrite !big_cons -minA; f_equal.
-  by exact: IH.
-Qed.
+Proof. by apply/big_cat_idem; rewrite /=/minr; case: ifP. Qed.
 
 Lemma big_max_cat_godel A B:
   \big[maxr/0]_(j <- A ++ B) [[j]]_Godel =
   maxr (\big[maxr/0]_(j <- A) [[j]]_Godel) (\big[maxr/0]_(j <- B) [[j]]_Godel).
-Proof.
-elim: A => [|x xs IH].
-- have H := big_maxr_godel_ge0 B.
-  by rewrite /= big_nil//= {2}/maxr; case: ifP; intros; lra.
-- simpl; rewrite !big_cons -maxA; f_equal.
-  by exact IH.
-Qed.
+Proof. by apply/big_cat_idem; rewrite /=/maxr; case: ifP. Qed.
 
 Lemma big_minr_if A B :
   if \big[minr/1]_(j <- A) [[j]]_Godel <= \big[minr/1]_(j <- B) [[j]]_Godel then
@@ -1933,7 +1921,7 @@ case: ifP; move => h' h.
 - by right; rewrite h in H; rewrite H; split; first by []; lra.
 Qed.
 
-Lemma sound_godel Q:
+Lemma sound_godel Q n m:
   seq_calc_godel Q ->
   exists2 q : seq formula * seq formula, q \in Q &
 (minR (map (translation Godel p) (fst q))  <=  maxR (map (translation Godel p) (snd q))).
