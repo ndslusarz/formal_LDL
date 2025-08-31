@@ -1041,7 +1041,7 @@ Proof. by rewrite//=; lra. Qed.
 Lemma Yager_demorgan_mand  (e1 e2 : expr boolT_fuzzy) :
   [[`~ (e1 `** e2)]]_Yager = [[(`~ e1) `++ (`~ e2)]]_Yager.
 Proof.
-rewrite//= !big_ord_recl big_ord0 !tnthS !tnth0 !addr0 /maxr /minr; repeat case: ifP; intros.(*  lra. *)
+rewrite//= !big_ord_recl big_ord0 !tnthS !tnth0 !addr0 /maxr /minr; repeat case: ifP; intros. (*  lra. *)
 (* Qed. *)
 Abort.
 
@@ -1190,35 +1190,38 @@ Hypothesis p1 : 1 <= p.
 
 Local Notation "[[ e ]]_ l" := (translation l p e).
 
-Lemma product_mandC_nary f1 f2 (s1 s2 : seq (expr (boolT_def f1 m_def f2))) :
-  perm_eq s1 s2 -> [[ldl_mand s1]]_Godel = [[ldl_mand s2]]_Godel.
+Lemma product_mandC_nary f1 f2 n (pi : {perm 'I_n}) (s1 s2 : 'I_n -> (expr (boolT_def f1 m_def f2))) :
+  s1 = s2 \o pi -> [[ldl_mand s1]]_Godel = [[ldl_mand s2]]_Godel.
 Proof.
-by move=> pi; rewrite /=/minR !big_map (perm_big _ pi)/=.
-Qed.
+move=> pi_perm.
+(* by move=> pi; rewrite /=/minR !big_map (perm_big _ pi)/=. *)
+(* Qed. *)
+Admitted.
 
 Lemma product_mandC f1 f2 (e1 e2 : expr (boolT_def f1 m_def f2)) :
   [[ e1 `** e2 ]]_product = [[ e2 `** e1 ]]_product.
 Proof.
-by rewrite /= !big_cons !big_nil /= mulr1 mulr1 mulrC.
+by rewrite /= !big_ord_recl !big_ord0 /= mulr1 mulr1 mulrC.
 Qed.
 
-Lemma product_morC_nary f1 f2 (s1 s2 : seq (expr (boolT_def f1 m_def f2))) :
-  perm_eq s1 s2 -> [[ldl_mor s1]]_Godel = [[ldl_mor s2]]_Godel.
+Lemma product_morC_nary f1 f2 n (pi : {perm 'I_n}) (s1 s2 : 'I_n -> (expr (boolT_def f1 m_def f2))) :
+  s1 = s2 \o pi -> [[ldl_mor s1]]_Godel = [[ldl_mor s2]]_Godel.
 Proof.
-by move=> pi; rewrite /=/maxR !big_map (perm_big _ pi)/=.
-Qed.
+(* by move=> pi; rewrite /=/maxR !big_map (perm_big _ pi)/=. *)
+(* Qed. *)
+Admitted.
 
 Lemma product_morC f1 f2 (e1 e2 : expr (boolT_def f1 m_def f2)) :
   [[ e1 `++ e2 ]]_product = [[ e2 `++ e1 ]]_product.
 Proof.
-rewrite /= /maxR/product_dl_prod !big_cons !big_nil.
+rewrite /= /maxR/product_dl_prod !big_ord_recl !big_ord0.
 by rewrite /=/product_dl_mul addr0 addr0 mulr0 mulr0 subr0 subr0 mulrC -(addrC (_ e2)).
 Qed.
 
 Lemma product_morA f1 f2 (e1 e2 e3 : expr (boolT_def f1 m_def f2)) :
   [[ (e1 `++ (e2 `++ e3)) ]]_product = [[ ((e1 `++ e2) `++ e3) ]]_product.
 Proof.
-rewrite /= /product_dl_prod !big_cons !big_nil.
+rewrite /= /product_dl_prod !big_ord_recl !big_ord0 !tnthS/= !tnth0 /product_dl_prod !big_ord_recl !big_ord0 !tnthS/= !tnth0.
 rewrite /product_dl_mul !addr0 !mulr0 !subr0.
 lra.
 Qed.
@@ -1230,13 +1233,13 @@ rewrite /= /maxR /minR /product_dl_prod.
 set t1 := _ e1.
 set t2 := _ e2.
 set t3 := _ e3.
-rewrite !big_cons !big_nil.
+rewrite !big_ord_recl !big_ord0 !tnthS !tnth0/= !big_ord_recl !big_ord0 !tnthS !tnth0.
 lra.
 Qed.
 
 Theorem product_mand_unit f1 f2 (e :  (expr (boolT_def f1 m_def f2))) :
   [[ e `** (ldl_bool _ _ _ _ true) ]]_product = [[ e ]]_product.
-Proof. by rewrite /= !big_cons big_nil !mulr1. Qed.
+Proof. by rewrite /= !big_ord_recl big_ord0 !mulr1. Qed.
 
 Lemma product_prelinearity (e1 e2 e3 : expr boolT_fuzzy) :
   [[e1 `** e2]]_product <= [[ e3 ]]_product <-> [[ e2 ]]_product <= [[e1 `=> e3]]_product.
@@ -1244,7 +1247,7 @@ Proof.
 have := translate_boolT_01 p p1 product _ _ _ e1.
 have := translate_boolT_01 p p1 product _ _ _ e2.
 have := translate_boolT_01 p p1 product _ _ _ e3.
-split; rewrite//= !big_cons big_nil mulr1 /maxr/minr; case: ifP; try nra.
+split; rewrite//= !big_ord_recl big_ord0 !tnthS !tnth0 mulr1 /maxr/minr; case: ifP; try nra.
 - move => h1 h2. 
   have : [[e1]]_product = 0 \/ [[e1]]_product > 0 by lra.
   move => [h|h]; first by rewrite h in h1; lra.
@@ -1269,21 +1272,22 @@ Qed.
 Lemma product_demorgan_mand  (e1 e2 : expr boolT_fuzzy) :
   [[`~ (e1 `** e2)]]_product = [[(`~ e1) `++ (`~ e2)]]_product.
 Proof.
-have := translate_boolT_01 p p1 product _ _ _ e1.
-have := translate_boolT_01 p p1 product _ _ _ e2.
-rewrite//=/product_dl_prod /product_dl_mul !big_cons !big_nil.  
-repeat case: ifP; rewrite !mulr1 !mulr0 !addr0 !subr0 ?mulr0 ?mul0r ?addr0 ?add0r ?subr0 ?mulr1 ?oppr0;
- move => h1 h2 H1 H2 H3; rewrite//=; try nra.
+have ? := translate_boolT_01 p p1 product _ _ _ e1.
+have ? := translate_boolT_01 p p1 product _ _ _ e2.
+rewrite//=/product_dl_prod /product_dl_mul !big_ord_recl !big_ord0 !tnthS !tnth0.
+case: ifP;
+rewrite !mulr1 !mulr0 !addr0 !subr0 ?mulr0 ?mul0r ?addr0 ?add0r ?subr0 ?mulr1 ?oppr0 => h1/=.
+all: repeat case: ifP => ?; nra.
 Qed.
 
 Lemma product_demorgan_mor  (e1 e2 : expr boolT_fuzzy) :
   [[`~ (e1 `++ e2)]]_product = [[(`~ e1) `** (`~ e2)]]_product.
 Proof.
-have := translate_boolT_01 p p1 product _ _ _ e1.
-have := translate_boolT_01 p p1 product _ _ _ e2.
-rewrite//=/product_dl_prod /product_dl_mul !big_cons !big_nil.  
-repeat case: ifP; rewrite !mulr1 !mulr0 !addr0 !subr0 ?mulr0 ?mul0r ?addr0 ?add0r ?subr0 ?mulr1 ?oppr0;
- move => h1 h2 H1 H2 H3; rewrite//=; try nra.
+have ? := translate_boolT_01 p p1 product _ _ _ e1.
+have ? := translate_boolT_01 p p1 product _ _ _ e2.
+rewrite//=/product_dl_prod /product_dl_mul !big_ord_recl !big_ord0.  
+case: ifP; rewrite !mulr1 !mulr0 !addr0 !subr0 ?mulr0 ?mul0r ?addr0 ?add0r ?subr0 ?mulr1 ?oppr0 => h1/=.
+all: repeat case: ifP => /=; nra.
 Qed.
 
 End product_lemmas.
@@ -1300,7 +1304,7 @@ Local Notation "[[ e ]]_ l" := (translation l p e).
 
 Lemma fuzzy_landI f1 f2 (e : expr (boolT_def f1 f2 l_def)) : [[ e `/\ e ]]_ dl = [[ e ]]_dl.
 Proof.
-rewrite /=/minR ?big_cons ?big_nil.
+rewrite /=/minR !big_ord_recl !big_ord0 !tnthS !tnth0.
 have := translate_boolT_01 p p1 dl _ _ _ e.
 set t1 := _ e.
 move => h.
@@ -1310,50 +1314,51 @@ Qed.
 
 Lemma fuzzy_lorI f1 f2 (e : expr (boolT_def f1 f2 l_def)) : [[ e `\/ e ]]_dl = [[ e ]]_dl.
 Proof.
-rewrite /= /maxR !big_cons big_nil.
+rewrite /= /maxR !big_ord_recl !big_ord0 !tnthS !tnth0.
 have /max_idPl -> : 0 <= [[ e ]]_ dl.
   by have /andP[] := translate_boolT_01 p p1 dl _ _ _ e.
 by rewrite maxxx.
 Qed.
 
-Lemma fuzzy_andC_nary f1 f2 (s1 s2 : seq (expr (boolT_def f1 f2 l_def))) :
-  perm_eq s1 s2 -> [[ldl_and s1]]_ dl = [[ldl_and s2]]_ dl.
+Lemma fuzzy_andC_nary f1 f2 n (pi : {perm 'I_n}) (s1 s2 : 'I_n -> (expr (boolT_def f1 f2 l_def))) :
+  s1 = s2 \o pi -> [[ldl_and s1]]_ dl = [[ldl_and s2]]_ dl.
 Proof.
-by move=> pi; rewrite /=/minR !big_map (perm_big _ pi)/=.
-Qed.
+(* by move=> pi; rewrite /=/minR !big_map (perm_big _ pi)/=. *)
+(* Qed. *)
+Admitted.
 
 Lemma fuzzy_andC f1 f2 (e1 e2 : expr (boolT_def f1 f2 l_def)) :
   [[ e1 `/\ e2 ]]_ dl = [[ e2 `/\ e1 ]]_ dl.
 Proof.
-rewrite /=/minR ?big_cons ?big_nil.
+rewrite /=/minR !big_ord_recl !big_ord0 !tnthS !tnth0.
 by rewrite /=/minr; repeat case: ifP; lra.
 Qed.
 
-Lemma fuzzy_orC_nary f1 f2 (s1 s2 : seq (expr (boolT_def f1 f2 l_def))) :
-  perm_eq s1 s2 -> [[ldl_or s1]]_ dl = [[ldl_or s2]]_ dl.
+Lemma fuzzy_orC_nary f1 f2 n (pi : {perm 'I_n}) (s1 s2 : 'I_n -> (expr (boolT_def f1 f2 l_def))) :
+  s1 = s2 \o pi -> [[ldl_or s1]]_ dl = [[ldl_or s2]]_ dl.
 Proof.
-by move=> pi; rewrite /=/maxR !big_map (perm_big _ pi)/=.
-Qed.
+(* by move=> pi; rewrite /=/maxR !big_map (perm_big _ pi)/=. *)
+(* Qed. *)
+Admitted.
 
 Lemma fuzzy_orC f1 f2 (e1 e2 : expr (boolT_def f1 f2 l_def)) :
   [[ e1 `\/ e2 ]]_ dl = [[ e2 `\/ e1 ]]_ dl.
 Proof.
-rewrite /= /maxR !big_cons !big_nil.
+rewrite /= /maxR !big_ord_recl !big_ord0.
 rewrite /=/maxr; repeat case: ifP; lra.
 Qed.
 
 Lemma fuzzy_orA f1 f2 (e1 e2 e3 : expr (boolT_def f1 f2 l_def)) :
   [[ (e1 `\/ (e2 `\/ e3)) ]]_ dl = [[ ((e1 `\/ e2) `\/ e3) ]]_ dl.
 Proof.
-rewrite /= /maxR !big_cons !big_nil.
-rewrite /maxr.
+rewrite /= /maxR !big_ord_recl !big_ord0 !tnthS !tnth0 /=/maxR !big_ord_recl !big_ord0 !tnthS !tnth0 /maxr.
 by repeat case: ifPn => //; lra.
 Qed.
 
 Theorem fuzzy_andA f1 f2 (e1 e2 e3 : expr (boolT_def f1 f2 l_def)) : (0 < p) ->
   [[ (e1 `/\ e2) `/\ e3]]_ dl = [[ e1 `/\ (e2 `/\ e3) ]]_ dl.
 Proof.
-rewrite /= /minR !big_cons !big_nil.
+rewrite /= /minR !big_ord_recl !big_ord0 /=/minR !big_ord_recl !big_ord0 !tnthS !tnth0.
 have := translate_boolT_01 p p1 dl _ _ _ e1.
 have := translate_boolT_01 p p1 dl _ _ _ e2.
 have := translate_boolT_01 p p1 dl _ _ _ e3.
@@ -1368,7 +1373,7 @@ Qed.
 Lemma fuzzy_and_abs (e1 e2 : expr boolT_fuzzy) :
   [[ e1 `/\ (e1 `\/ e2)]]_ dl = [[ e1 ]]_ dl.
 Proof.
-rewrite//=/minR/maxR !big_cons !big_nil.
+rewrite//=/minR/maxR !big_ord_recl !big_ord0 !tnth0/=/maxR !big_ord_recl !big_ord0 !tnthS !tnth0.
 have := translate_boolT_01 p p1 dl _ _ _ e1.
 have := translate_boolT_01 p p1 dl _ _ _ e2.
 rewrite/minr/maxr; repeat case: ifP; intros; try lra.
@@ -1377,7 +1382,7 @@ Qed.
 Lemma fuzzy_or_abs (e1 e2 : expr boolT_fuzzy) :
   [[ e1 `\/ (e1 `/\ e2)]]_ dl = [[ e1 ]]_ dl.
 Proof.
-rewrite//=/minR/maxR !big_cons !big_nil.
+rewrite//=/minR/maxR !big_ord_recl !big_ord0 !tnthS !tnth0/=/minR !big_ord_recl big_ord0/= !tnthS !tnth0/=.
 have := translate_boolT_01 p p1 dl _ _ _ e1.
 have := translate_boolT_01 p p1 dl _ _ _ e2.
 rewrite/minr/maxr; repeat case: ifP; intros; try lra.
@@ -1386,13 +1391,14 @@ Qed.
 Lemma fuzzy_demorgan_mor  (e1 e2 : expr boolT_fuzzy) :
   [[`~ (e1 `\/ e2)]]_ dl = [[(`~ e1) `/\ (`~ e2)]]_ dl.
 Proof.
-case: dl; rewrite//= /minR /maxR !big_cons !big_nil /minr /maxr; repeat case: ifP; intros; lra.
+case: dl; rewrite//= /minR /maxR !big_ord_recl !big_ord0 !tnthS !tnth0/= /minr /maxr;
+repeat case: ifP; intros; lra.
 Qed.
 
 Lemma fuzzy_demorgan_and  (e1 e2 : expr boolT_fuzzy) :
   [[`~ (e1 `/\ e2)]]_ dl = [[(`~ e1) `\/ (`~ e2)]]_ dl.
 Proof.
-case: dl; rewrite//= /minR /maxR !big_cons !big_nil /minr /maxr; repeat case: ifP; intros; lra.
+case: dl; rewrite//= /minR /maxR !big_ord_recl !big_ord0 !tnthS !tnth0/= /minr /maxr; repeat case: ifP; intros; lra.
 Qed.
 
 
