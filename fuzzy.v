@@ -719,9 +719,9 @@ Proof.
 have := translate_boolT_01 p p1 Lukasiewicz _ _ _ e1.
 have := translate_boolT_01 p p1 Lukasiewicz _ _ _ e2.
 have := translate_boolT_01 p p1 Lukasiewicz _ _ _ e3.
-rewrite /=!big_ord_recl !tnthS !tnth0/= /minr.
-repeat case: ifP; set a := [[_]]__; set b := [[_]]__; set c := [[_]]__.
-Abort.
+rewrite /=!big_ord_recl !big_ord0 !tnthS !tnth0/= !big_ord_recl !big_ord0 !tnthS !tnth0/= /minr.
+repeat case: ifP; set a := [[_]]__; set b := [[_]]__; set c := [[_]]__; lra.
+Qed.
 
 Theorem Lukasiewicz_mandA f1 f2 (e1 e2 e3 :  (expr (boolT_def f1 m_def f2))) : (0 < p)%R ->
   [[ (e1 `** e2) `** e3]]_Lukasiewicz = [[ e1 `** (e2 `** e3) ]]_Lukasiewicz.
@@ -729,23 +729,21 @@ Proof.
 have := translate_boolT_01 p p1 Lukasiewicz _ _ _ e1.
 have := translate_boolT_01 p p1 Lukasiewicz _ _ _ e2.
 have := translate_boolT_01 p p1 Lukasiewicz _ _ _ e3.
-(* rewrite /= /maxR /minR /product_dl_prod !big_cons !big_nil. *)
-(* set t1 := _ e1. *)
-(* set t2 := _ e2. *)
-(* set t3 := _ e3. *)
-(* rewrite /maxr. *)
-(* by repeat case: ifP; lra. *)
-(* Qed. *)
-Abort.
+rewrite /= /maxR /minR /product_dl_prod !big_ord_recl !big_ord0 !tnthS !tnth0/= !big_ord_recl !big_ord0 !tnthS !tnth0.
+set t1 := _ e1.
+set t2 := _ e2.
+set t3 := _ e3.
+rewrite /maxr.
+by repeat case: ifP; lra.
+Qed.
 
 Theorem Lukasiewicz_mand_unit f1 f2 (e :  (expr (boolT_def f1 m_def f2))) :
   [[ e `** (ldl_bool _ _ _ _ true) ]]_Lukasiewicz = [[ e ]]_Lukasiewicz.
 Proof.
 have /=h := translate_boolT_01 p p1 Lukasiewicz _ _ _ e.
-rewrite /= !big_ord_recl big_ord0 addr0 addrAC.
-rewrite /maxr; case: ifP; move => he.
-(* lra. *)
-Abort.
+rewrite /= !big_ord_recl big_ord0 !tnthS !tnth0 /= addr0 addrAC.
+rewrite /maxr; case: ifP; move => he; lra.
+Qed.
 
 Theorem Lukasiewicz_mor_unit f1 f2 (e :  (expr (boolT_def f1 m_def f2))) :
   [[ e `++ (ldl_bool _ _ _ _ false) ]]_Lukasiewicz = [[ e ]]_Lukasiewicz.
@@ -772,16 +770,14 @@ Proof. by rewrite//=; lra. Qed.
 Lemma Lukasiewicz_demorgan_mand  (e1 e2 : expr boolT_fuzzy) :
   [[`~ (e1 `** e2)]]_Lukasiewicz = [[(`~ e1) `++ (`~ e2)]]_Lukasiewicz.
 Proof.
-rewrite//= !big_ord_recl big_ord0 !addr0 /maxr /minr; repeat case: ifP; intros.
- (* lra. *)
-Abort.
+rewrite//= !big_ord_recl !big_ord0 !tnthS !tnth0 /= !addr0 /maxr /minr; repeat case: ifP; intros; lra.
+Qed.
 
 Lemma Lukasiewicz_demorgan_mor  (e1 e2 : expr boolT_fuzzy) :
   [[`~ (e1 `++ e2)]]_Lukasiewicz = [[(`~ e1) `** (`~ e2)]]_Lukasiewicz.
 Proof.
-rewrite//= !big_ord_recl big_ord0 !addr0 /maxr /minr; repeat case: ifP; intros.
- (* lra. *)
-Abort.
+rewrite//= !big_ord_recl !big_ord0/= !addr0 /maxr /minr; repeat case: ifP; intros; lra.
+Qed.
 
 End Lukasiewicz_lemmas.
 
@@ -794,11 +790,12 @@ Hypothesis p1 : 1 <= p.
 
 Local Notation "[[ e ]]_ l" := (translation l p e).
 
-(* Lemma Yager_mandC_nary f1 f2 (s1 s2 : seq (expr (boolT_def f1 m_def f2))) : *)
-(*   perm_eq s1 s2 -> [[ldl_mand s1]]_Yager = [[ldl_mand s2]]_Yager. *)
-(* Proof. *)
+Lemma Yager_mandC_nary f1 f2 n (pi : {perm 'I_n}) (s1 s2 : 'I_n -> (expr (boolT_def f1 m_def f2))) :
+  s1 = s2 \o pi -> [[ldl_mand s1]]_Yager = [[ldl_mand s2]]_Yager.
+Proof.
 (* by move=> pi; rewrite /= !big_map (perm_big _ pi)/=. *)
 (* Qed. *)
+Admitted.
 
 Lemma Yager_mandC f1 f2 (e1 e2 : expr (boolT_def f1 m_def f2)) :
   [[ e1 `** e2 ]]_Yager = [[ e2 `** e1 ]]_Yager.
@@ -807,11 +804,12 @@ rewrite /= !big_ord_recl !big_ord0.
 by rewrite /= addr0 addr0 (addrC (_ `^ _)).
 Qed.
 
-(* Lemma Yager_morC_nary f1 f2 (s1 s2 : seq (expr (boolT_def f1 m_def f2))) : *)
-(*   perm_eq s1 s2 -> [[ldl_mor s1]]_Yager = [[ldl_mor s2]]_Yager. *)
-(* Proof. *)
+Lemma Yager_morC_nary f1 f2 n (pi : {perm 'I_n}) (s1 s2 : 'I_n -> (expr (boolT_def f1 m_def f2))) :
+  s1 = s2 \o pi -> [[ldl_mor s1]]_Yager = [[ldl_mor s2]]_Yager.
+Proof.
 (* by move=> pi; rewrite /= !big_map (perm_big _ pi)/=. *)
 (* Qed. *)
+Admitted.
 
 Lemma Yager_morC f1 f2 (e1 e2 : expr (boolT_def f1 m_def f2)) :
   [[ e1 `++ e2 ]]_Yager = [[ e2 `++ e1 ]]_Yager.
@@ -828,61 +826,60 @@ have ? : p != 0 by exact: lt0r_neq0.
 have := translate_boolT_01 p p1 Yager _ _ _  e1.
 have := translate_boolT_01 p p1 Yager _ _ _ e2.
 have := translate_boolT_01 p p1 Yager _ _ _ e3.
-rewrite /= /maxR /minR /product_dl_prod !big_ord_recl !big_ord0 !tnthS !tnth0/=.
-(* rewrite ![in _ + _]addr0 addr0 addr0. *)
-(* set t1 := _ e1. *)
-(* set t2 := _ e2. *)
-(* set t3 := _ e3. *)
-(* have powRpinv : 1 = 1 `^ p^-1. *)
-(*   by rewrite powR1. *)
-(* have powRge1 : forall x, 0 <= x -> 1 <= x `^ p^-1 -> 1 <= x. *)
-(*   move=> x x0; rewrite {1}powRpinv. *)
-(*   move/(@ge0_ler_powR _ p (ltW p0)). *)
-(*   by rewrite -!powRrM !mulVf// powR1 powRr1//; apply; rewrite nnegrE ?powR_ge0. *)
-(* move => ht3 ht2 ht1. *)
-(* rewrite {2}/minr. *)
-(* case: ifPn => [h1|]. *)
-(* - rewrite -powRrM mulVf ?p0 ?powRr1 ?addr_ge0 ?powR_ge0// addrA. *)
-(*   rewrite {3}/minr. *)
-(*   case: ifPn => [h2|]. *)
-(*     by rewrite -powRrM mulVf ?p0 ?powRr1 ?powR_ge0// addr_ge0 ?powR_ge0. *)
-(*   rewrite -leNgt; move/(powRge1 _ (addr_ge0 (powR_ge0 _ _) (powR_ge0 _ _))) => h2. *)
-(*   rewrite {2}/minr. *)
-(*   case: ifPn. *)
-(*     suff : (1 `^ p + t3 `^ p) `^ p^-1 >= 1. *)
-(*       set a := (1 `^ p + t3 `^ p) `^ p^-1; lra. *)
-(*     by rewrite {1}(_: 1 = 1`^p^-1) ?ge0_ler_powR ?powR1 ?invr_ge0 ?(ltW p0) ?nnegrE ?addr_ge0 ?powR_ge0// cprD powR_ge0. *)
-(*   rewrite -leNgt /minr=> h3. *)
-(*   case: ifPn => //. *)
-(*   suff : (t1 `^ p + t2 `^ p + t3 `^ p) `^ p^-1 >= 1. *)
-(*     set a := (t1 `^ p + t2 `^ p + t3 `^ p) `^ p^-1; lra. *)
-(*   rewrite powRpinv ge0_ler_powR ?invr_ge0 ?nnegrE ?(ltW p0) ?addr_ge0 ?powR_ge0//. *)
-(*   apply: le_trans; first exact: h2. *)
-(*   by rewrite lerDl powR_ge0. *)
-(* - rewrite -leNgt {1}/minr. *)
-(*   move/(powRge1 _ (addr_ge0 (powR_ge0 _ _) (powR_ge0 _ _))) => h1. *)
-(*   case: ifPn => [|_]. *)
-(*     suff : (t1 `^ p + 1 `^ p) `^ p^-1 >= 1. *)
-(*       set a := (t1 `^ p + 1 `^ p) `^ p^-1; lra. *)
-(*     by rewrite {1}powRpinv ge0_ler_powR ?invr_ge0 ?(ltW p0) ?nnegrE ?addr_ge0 ?powR_ge0 ?powR1// lerDr powR_ge0. *)
-(*   rewrite {2}/minr. *)
-(*   case: ifPn => [h2|_]. *)
-(*     rewrite -powRrM mulVf// powRr1 ?addr_ge0 ?powR_ge0//. *)
-(*     rewrite /minr. *)
-(*     case: ifPn => //. *)
-(*     suff : (t1 `^ p + t2 `^ p + t3 `^ p) `^ p^-1 >= 1. *)
-(*       set a := (t1 `^ p + t2 `^ p + t3 `^ p) `^ p^-1; lra. *)
-(*     rewrite {1}powRpinv ge0_ler_powR ?invr_ge0 ?(ltW p0) ?nnegrE ?addr_ge0 ?powR_ge0//. *)
-(*     apply: le_trans; first exact: h1. *)
-(*     by rewrite -addrA lerDr powR_ge0. *)
-(*   rewrite /minr. *)
-(*   case: ifPn => //. *)
-(*   suff : (1 `^ p + t3 `^ p) `^ p^-1 >= 1. *)
-(*     set a := (1 `^ p + t3 `^ p) `^ p^-1; lra. *)
-(*   rewrite {1}powRpinv ge0_ler_powR ?invr_ge0 ?(ltW p0) ?nnegrE ?addr_ge0 ?powR_ge0//. *)
-(*   by rewrite powR1 lerDl powR_ge0. *)
-(* Qed. *)
-Abort.
+rewrite /= /maxR /minR /product_dl_prod !big_ord_recl !big_ord0 !tnthS !tnth0/= !big_ord_recl !big_ord0 !tnthS !tnth0/=.
+rewrite ![in _ + _]addr0 addr0 addr0.
+set t1 := _ e1.
+set t2 := _ e2.
+set t3 := _ e3.
+have powRpinv : 1 = 1 `^ p^-1.
+  by rewrite powR1.
+have powRge1 : forall x, 0 <= x -> 1 <= x `^ p^-1 -> 1 <= x.
+  move=> x x0; rewrite {1}powRpinv.
+  move/(@ge0_ler_powR _ p (ltW p0)).
+  by rewrite -!powRrM !mulVf// powR1 powRr1//; apply; rewrite nnegrE ?powR_ge0.
+move => ht3 ht2 ht1.
+rewrite {2}/minr.
+case: ifPn => [h1|].
+- rewrite -powRrM mulVf ?p0 ?powRr1 ?addr_ge0 ?powR_ge0// addrA.
+  rewrite {3}/minr.
+  case: ifPn => [h2|].
+    by rewrite -powRrM mulVf ?p0 ?powRr1 ?powR_ge0// addr_ge0 ?powR_ge0.
+  rewrite -leNgt; move/(powRge1 _ (addr_ge0 (powR_ge0 _ _) (powR_ge0 _ _))) => h2.
+  rewrite {2}/minr.
+  case: ifPn.
+    suff : (1 `^ p + t3 `^ p) `^ p^-1 >= 1.
+      set a := (1 `^ p + t3 `^ p) `^ p^-1; lra.
+    by rewrite {1}(_: 1 = 1`^p^-1) ?ge0_ler_powR ?powR1 ?invr_ge0 ?(ltW p0) ?nnegrE ?addr_ge0 ?powR_ge0// cprD powR_ge0.
+  rewrite -leNgt /minr=> h3.
+  case: ifPn => //.
+  suff : (t1 `^ p + t2 `^ p + t3 `^ p) `^ p^-1 >= 1.
+    set a := (t1 `^ p + t2 `^ p + t3 `^ p) `^ p^-1; lra.
+  rewrite powRpinv ge0_ler_powR ?invr_ge0 ?nnegrE ?(ltW p0) ?addr_ge0 ?powR_ge0//.
+  apply: le_trans; first exact: h2.
+  by rewrite lerDl powR_ge0.
+- rewrite -leNgt {1}/minr.
+  move/(powRge1 _ (addr_ge0 (powR_ge0 _ _) (powR_ge0 _ _))) => h1.
+  case: ifPn => [|_].
+    suff : (t1 `^ p + 1 `^ p) `^ p^-1 >= 1.
+      set a := (t1 `^ p + 1 `^ p) `^ p^-1; lra.
+    by rewrite {1}powRpinv ge0_ler_powR ?invr_ge0 ?(ltW p0) ?nnegrE ?addr_ge0 ?powR_ge0 ?powR1// lerDr powR_ge0.
+  rewrite {2}/minr.
+  case: ifPn => [h2|_].
+    rewrite -powRrM mulVf// powRr1 ?addr_ge0 ?powR_ge0//.
+    rewrite /minr.
+    case: ifPn => //.
+    suff : (t1 `^ p + t2 `^ p + t3 `^ p) `^ p^-1 >= 1.
+      set a := (t1 `^ p + t2 `^ p + t3 `^ p) `^ p^-1; lra.
+    rewrite {1}powRpinv ge0_ler_powR ?invr_ge0 ?(ltW p0) ?nnegrE ?addr_ge0 ?powR_ge0//.
+    apply: le_trans; first exact: h1.
+    by rewrite -addrA lerDr powR_ge0.
+  rewrite /minr.
+  case: ifPn => //.
+  suff : (1 `^ p + t3 `^ p) `^ p^-1 >= 1.
+    set a := (1 `^ p + t3 `^ p) `^ p^-1; lra.
+  rewrite {1}powRpinv ge0_ler_powR ?invr_ge0 ?(ltW p0) ?nnegrE ?addr_ge0 ?powR_ge0//.
+  by rewrite powR1 lerDl powR_ge0.
+Qed.
 
 Theorem Yager_mandA f1 f2 (e1 e2 e3 : expr (boolT_def f1 m_def f2)) : (0 < p) ->
   [[ e1 `** (e2 `** e3)]]_Yager = [[ (e1 `** e2) `** e3 ]]_Yager.
@@ -892,7 +889,7 @@ have pneq0 : p != 0 by exact: lt0r_neq0.
 have := translate_boolT_01 p p1 Yager _ _ _ e1.
 have := translate_boolT_01 p p1 Yager _ _ _ e2.
 have := translate_boolT_01 p p1 Yager _ _ _ e3.
-rewrite /= /maxR /minR /product_dl_prod ?big_cons ?big_nil.
+rewrite /= /maxR /minR /product_dl_prod !big_ord_recl !big_ord0 !tnthS !tnth0/= !big_ord_recl !big_ord0 !tnthS !tnth0.
 set t1 := _ e1.
 set t2 := _ e2.
 set t3 := _ e3.
@@ -914,87 +911,86 @@ have powRgt1 : forall x, 0 <= x -> 1 < x `^ p^-1 -> 1 < x.
   by rewrite -!powRrM !mulVf// powR1 powRr1// !nnegrE; apply => //; exact: powR_ge0.
 have se_ge0 r := @addr_ge0 R _ _ (@powR_ge0 _ _ r) (@powR_ge0 _ _ r).
 rewrite {2}/maxr=> ht3 ht2 ht1.
-(* case: ifPn; rewrite addr0 subr_lt0. *)
-(* - move/(powRgt1 _ (addr_ge0 a1ge0 a2ge0)) => h1. *)
-(*   rewrite subr0 powR1 addr0. *)
-(*   rewrite {3}/maxr; case: ifPn; rewrite addr0. *)
-(*   + rewrite subr0 subr_lt0 => h2. *)
-(*     rewrite {1}/maxr; case: ifPn. *)
-(*     * rewrite subr_lt0 => h3. *)
-(*       rewrite /maxr; case: ifPn => //. *)
-(*       rewrite -leNgt subr_ge0. *)
-(*       move/(powRle1 _ (addr_ge0 (powR_ge0 _ _) (powR_ge0 _ _))). *)
-(*       rewrite powR1 gerDr -/a1 => h4. *)
-(*       have -> : a1 = 0 by lra. *)
-(*       by rewrite add0r powR1 subrr. *)
-(*     * rewrite -leNgt subr_ge0. *)
-(*       move/(powRle1 _ (addr_ge0 ler01 (powR_ge0 _ _))). *)
-(*       rewrite gerDl -/a3 => h3. *)
-(*       have -> : a3 = 0 by lra. *)
-(*       rewrite addr0 powR1 subrr. *)
-(*       rewrite /maxr; case: ifPn => //. *)
-(*       rewrite -leNgt subr_ge0. *)
-(*       move/(powRle1 _ (addr_ge0 (powR_ge0 _ _) ler01)). *)
-(*       rewrite -/a1 gerDr => h5. *)
-(*       have -> : a1 = 0 by lra. *)
-(*       by rewrite add0r powR1 subrr. *)
-(*   + rewrite -leNgt subr_ge0. *)
-(*     move/(powRle1 _ (addr_ge0 (powR_ge0 _ _) (powR_ge0 _ _))). *)
-(*     rewrite -/a2 -/a3 => h2. *)
-(*     rewrite {1}/maxr; case: ifPn. *)
-(*     * rewrite subr_lt0. *)
-(*       move/(powRgt1 _ (addr_ge0 ler01 a3ge0)). *)
-(*       rewrite cprD => h3. *)
-(*       rewrite opprD opprK addrA subrr add0r -powRrM mulVf// powRr1 ?addr_ge0// addrA. *)
-(*       rewrite /maxr; case: ifPn => //. *)
-(*       rewrite -leNgt subr_ge0. *)
-(*       move/(powRle1 _ (addr_ge0 (addr_ge0 a1ge0 a2ge0) a3ge0)). *)
-(*       lra. *)
-(*     * rewrite -leNgt subr_ge0. *)
-(*       move/(powRle1 _ (addr_ge0 ler01 a3ge0)). *)
-(*       rewrite cprD => h3. *)
-(*       have -> : a3 = 0 by lra. *)
-(*       rewrite !addr0 powR1 subrr. *)
-(*       rewrite /maxr; case: ifPn => //. *)
-(*       rewrite -leNgt subr_ge0. *)
-(*       move/(powRle1 _ (addr_ge0 a1ge0 (powR_ge0 _ _))). *)
-(*       rewrite opprB addrCA subrr addr0 -powRrM mulVf// powRr1//. *)
-(*       lra. *)
-(* - rewrite -leNgt. *)
-(*   move/(powRle1 _ (addr_ge0 a1ge0 a2ge0)) => h1. *)
-(*   rewrite {3}/maxr; case: ifPn. *)
-(*   + rewrite !addr0 !subr0 subr_lt0. *)
-(*     move/(powRgt1 _ (addr_ge0 a2ge0 a3ge0)) => h2. *)
-(*     rewrite {2}/maxr; case: ifPn. *)
-(*     * rewrite subr_lt0 powR1. *)
-(*       move/(powRgt1 _ (addr_ge0 a1ge0 ler01)). *)
-(*       rewrite cprD => h3. *)
-(*       rewrite /maxr; case: ifPn => //. *)
-(*       rewrite -leNgt subr_ge0. *)
-(*       move/(powRle1 _ (addr_ge0 (powR_ge0 _ _) a3ge0)). *)
-(*       rewrite opprB addrCA subrr addr0 -powRrM mulVf// powRr1 ?addr_ge0//. *)
-(*       lra. *)
-(*     * rewrite -leNgt subr_ge0 powR1. *)
-(*       move/(powRle1 _ (addr_ge0 a1ge0 ler01)). *)
-(*       rewrite gerDr => h3. *)
-(*       move: h1. *)
-(*       have -> : a1 = 0 by lra. *)
-(*       rewrite add0r => h1. *)
-(*       rewrite add0r powR1 subrr. *)
-(*       rewrite /maxr; case: ifPn => //. *)
-(*       rewrite -leNgt subr_ge0. *)
-(*       move/(powRle1 _ (addr_ge0 (powR_ge0 _ _) a3ge0)). *)
-(*       rewrite opprB addrCA subrr addr0 -powRrM mulVf// powRr1//. *)
-(*       lra. *)
-(*   + rewrite -leNgt subr_ge0 addr0. *)
-(*     move/(powRle1 _ (addr_ge0 a2ge0 a3ge0)) => h2. *)
-(*     rewrite {1}opprB (@addrC _ _ (_ - _)) -addrA (@addrC _ (-1)) subrr addr0. *)
-(*     rewrite -powRrM mulVf// powRr1 ?addr_ge0// addr0. *)
-(*     rewrite {1}opprB (@addrC _ _ (_ - _)). *)
-(*     rewrite -[in RHS]addrA (@addrC _ (-1)) subrr addr0. *)
-(*     by rewrite -powRrM mulVf ?pneq0 ?powRr1 ?addrA ?addr_ge0. *)
-(* Qed. *)
-Abort.
+case: ifPn; rewrite addr0 subr_lt0.
+- move/(powRgt1 _ (addr_ge0 a1ge0 a2ge0)) => h1.
+  rewrite subr0 powR1 addr0.
+  rewrite {3}/maxr; case: ifPn; rewrite addr0.
+  + rewrite subr0 subr_lt0 => h2.
+    rewrite {1}/maxr; case: ifPn.
+    * rewrite subr_lt0 => h3.
+      rewrite /maxr; case: ifPn => //.
+      rewrite -leNgt subr_ge0.
+      move/(powRle1 _ (addr_ge0 (powR_ge0 _ _) (powR_ge0 _ _))).
+      rewrite powR1 gerDr -/a1 => h4.
+      have -> : a1 = 0 by lra.
+      by rewrite add0r powR1 subrr.
+    * rewrite -leNgt subr_ge0.
+      move/(powRle1 _ (addr_ge0 ler01 (powR_ge0 _ _))).
+      rewrite gerDl -/a3 => h3.
+      have -> : a3 = 0 by lra.
+      rewrite addr0 powR1 subrr.
+      rewrite /maxr; case: ifPn => //.
+      rewrite -leNgt subr_ge0.
+      move/(powRle1 _ (addr_ge0 (powR_ge0 _ _) ler01)).
+      rewrite -/a1 gerDr => h5.
+      have -> : a1 = 0 by lra.
+      by rewrite add0r powR1 subrr.
+  + rewrite -leNgt subr_ge0.
+    move/(powRle1 _ (addr_ge0 (powR_ge0 _ _) (powR_ge0 _ _))).
+    rewrite -/a2 -/a3 => h2.
+    rewrite {1}/maxr; case: ifPn.
+    * rewrite subr_lt0.
+      move/(powRgt1 _ (addr_ge0 ler01 a3ge0)).
+      rewrite cprD => h3.
+      rewrite opprD opprK addrA subrr add0r -powRrM mulVf// powRr1 ?addr_ge0// addrA.
+      rewrite /maxr; case: ifPn => //.
+      rewrite -leNgt subr_ge0.
+      move/(powRle1 _ (addr_ge0 (addr_ge0 a1ge0 a2ge0) a3ge0)).
+      lra.
+    * rewrite -leNgt subr_ge0.
+      move/(powRle1 _ (addr_ge0 ler01 a3ge0)).
+      rewrite cprD => h3.
+      have -> : a3 = 0 by lra.
+      rewrite !addr0 powR1 subrr.
+      rewrite /maxr; case: ifPn => //.
+      rewrite -leNgt subr_ge0.
+      move/(powRle1 _ (addr_ge0 a1ge0 (powR_ge0 _ _))).
+      rewrite opprB addrCA subrr addr0 -powRrM mulVf// powRr1//.
+      lra.
+- rewrite -leNgt.
+  move/(powRle1 _ (addr_ge0 a1ge0 a2ge0)) => h1.
+  rewrite {3}/maxr; case: ifPn.
+  + rewrite !addr0 !subr0 subr_lt0.
+    move/(powRgt1 _ (addr_ge0 a2ge0 a3ge0)) => h2.
+    rewrite {2}/maxr; case: ifPn.
+    * rewrite subr_lt0 powR1.
+      move/(powRgt1 _ (addr_ge0 a1ge0 ler01)).
+      rewrite cprD => h3.
+      rewrite /maxr; case: ifPn => //.
+      rewrite -leNgt subr_ge0.
+      move/(powRle1 _ (addr_ge0 (powR_ge0 _ _) a3ge0)).
+      rewrite opprB addrCA subrr addr0 -powRrM mulVf// powRr1 ?addr_ge0//.
+      lra.
+    * rewrite -leNgt subr_ge0 powR1.
+      move/(powRle1 _ (addr_ge0 a1ge0 ler01)).
+      rewrite gerDr => h3.
+      move: h1.
+      have -> : a1 = 0 by lra.
+      rewrite add0r => h1.
+      rewrite add0r powR1 subrr.
+      rewrite /maxr; case: ifPn => //.
+      rewrite -leNgt subr_ge0.
+      move/(powRle1 _ (addr_ge0 (powR_ge0 _ _) a3ge0)).
+      rewrite opprB addrCA subrr addr0 -powRrM mulVf// powRr1//.
+      lra.
+  + rewrite -leNgt subr_ge0 addr0.
+    move/(powRle1 _ (addr_ge0 a2ge0 a3ge0)) => h2.
+    rewrite {1}opprB (@addrC _ _ (_ - _)) -addrA (@addrC _ (-1)) subrr addr0.
+    rewrite -powRrM mulVf// powRr1 ?addr_ge0// addr0.
+    rewrite {1}opprB (@addrC _ _ (_ - _)).
+    rewrite -[in RHS]addrA (@addrC _ (-1)) subrr addr0.
+    by rewrite -powRrM mulVf ?pneq0 ?powRr1 ?addrA ?addr_ge0.
+Qed.
 
 Theorem Yager_mand_unit f1 f2 (e :  (expr (boolT_def f1 m_def f2))) :
   [[ e `** (ldl_bool _ _ _ _ true) ]]_Yager = [[ e ]]_Yager.
@@ -1041,15 +1037,15 @@ Proof. by rewrite//=; lra. Qed.
 Lemma Yager_demorgan_mand  (e1 e2 : expr boolT_fuzzy) :
   [[`~ (e1 `** e2)]]_Yager = [[(`~ e1) `++ (`~ e2)]]_Yager.
 Proof.
-rewrite//= !big_ord_recl big_ord0 !tnthS !tnth0 !addr0 /maxr /minr; repeat case: ifP; intros. (*  lra. *)
-(* Qed. *)
-Abort.
+rewrite//= !big_ord_recl !big_ord0 !tnthS !tnth0/= !addr0 /maxr /minr; repeat case: ifP; intros; lra.
+Qed.
 
 Lemma Yager_demorgan_mor  (e1 e2 : expr boolT_fuzzy) :
   [[`~ (e1 `++ e2)]]_Yager = [[(`~ e1) `** (`~ e2)]]_Yager.
 Proof.
-rewrite//= !big_ord_recl !big_ord0 !addr0 /maxr /minr; repeat case: ifP; intros.
-Admitted.
+have oneone (x : R) : (1 - (1 - x))%R = x by lra.
+rewrite//= !big_ord_recl !big_ord0 !tnthS !tnth0 !addr0 /maxr /minr/= !oneone; repeat case: ifP; lra.
+Qed.
 
 End Yager_lemmas.
 
@@ -1064,13 +1060,12 @@ Local Notation "[[ e ]]_ l" := (translation l p e).
 
 Lemma Godel_mandI f1 f2 (e : expr (boolT_def f1 m_def f2)) : [[ e `** e ]]_Godel = [[ e ]]_Godel.
 Proof.
-rewrite /=/minR ?big_cons ?big_nil.
+rewrite /=/minR !big_ord_recl !big_ord0 /= !tnthS !tnth0.
 have := translate_boolT_01 p p1 Godel _ _ _ e.
 set t1 := _ e.
 move => h.
-rewrite /=/minr; repeat case: ifP. (* lra. *)
-(* Qed. *)
-Abort.
+rewrite /=/minr; repeat case: ifP; lra.
+Qed.
 
 Lemma Godel_morI f1 f2 (e : expr (boolT_def f1 m_def f2)) : [[ e `++ e ]]_Godel = [[ e ]]_Godel.
 Proof.
@@ -1089,10 +1084,9 @@ Qed.
 Lemma Godel_mandC f1 f2 (e1 e2 : expr (boolT_def f1 m_def f2)) :
   [[ e1 `** e2 ]]_Godel = [[ e2 `** e1 ]]_Godel.
 Proof.
-rewrite /=/minR ?big_cons ?big_nil.
-(* by rewrite /=/minr; repeat case: ifP; lra. *)
-(* Qed. *)
-Admitted.
+rewrite /=/minR !big_ord_recl !big_ord0/= !tnthS !tnth0.
+by rewrite /=/minr; repeat case: ifP; lra.
+Qed.
 
 (* Lemma Godel_morC_nary f1 f2 (s1 s2 : seq (expr (boolT_def f1 m_def f2))) : *)
 (*   perm_eq s1 s2 -> [[ldl_mor s1]]_Godel = [[ldl_mor s2]]_Godel. *)
@@ -1110,17 +1104,14 @@ Qed.
 Lemma Godel_morA f1 f2 (e1 e2 e3 : expr (boolT_def f1 m_def f2)) :
   [[ (e1 `++ (e2 `++ e3)) ]]_Godel = [[ ((e1 `++ e2) `++ e3) ]]_Godel.
 Proof.
-rewrite /= /maxR !big_ord_recl !big_ord0.
-rewrite /maxr.
-repeat case: ifPn => //.
-(* lra. *)
-(* Qed. *)
-Abort.
+rewrite /= /maxR !big_ord_recl !big_ord0 /= !tnthS !tnth0/= /maxR !big_ord_recl !big_ord0 !tnthS !tnth0/=/maxr.
+repeat case: ifPn => //; lra.
+Qed.
 
 Theorem Godel_mandA f1 f2 (e1 e2 e3 : expr (boolT_def f1 m_def f2)) : (0 < p) ->
   [[ (e1 `** e2) `** e3]]_Godel = [[ e1 `** (e2 `** e3) ]]_Godel.
 Proof.
-rewrite /= /minR !big_ord_recl !big_ord0.
+rewrite /= /minR !big_ord_recl !big_ord0/=/minR !big_ord_recl !big_ord0 !tnthS !tnth0.
 have := translate_boolT_01 p p1 Godel _ _ _ e1.
 have := translate_boolT_01 p p1 Godel _ _ _ e2.
 have := translate_boolT_01 p p1 Godel _ _ _ e3.
@@ -1129,28 +1120,24 @@ set t1 := _ e1.
   set t3 := _ e3.
 move => h1 h2 h3 p0.
 rewrite /minr.
-repeat case: ifPn => //. (* lra. *)
-(* Qed. *)
-Abort.
+repeat case: ifPn => //; lra.
+Qed.
 
 Theorem Godel_mand_unit f1 f2 (e :  (expr (boolT_def f1 m_def f2))) :
   [[ e `** (ldl_bool _ _ _ _ true) ]]_Godel = [[ e ]]_Godel.
 Proof.
 have := translate_boolT_01 p p1 Godel _ _ _ e.
-rewrite//= /minR !big_ord_recl big_ord0.
-rewrite /minr; repeat case: ifP; intros. (*  lra. *)
-(* Qed. *)
-Abort.
+rewrite//= /minR !big_ord_recl !big_ord0/= !tnth0.
+rewrite /minr; repeat case: ifP; intros; lra.
+Qed.
 
 Theorem Godel_mor_unit f1 f2 (e :  (expr (boolT_def f1 m_def f2))) :
   [[ e `++ (ldl_bool _ _ _ _ false) ]]_Godel = [[ e ]]_Godel.
 Proof.
 have := translate_boolT_01 p p1 Godel _ _ _ e.
-rewrite//= /maxR !big_ord_recl big_ord0.
-rewrite /maxr; repeat case: ifP; intros. (* lra. *)
-(* Qed. *)
-Abort.
-
+rewrite//= /maxR !big_ord_recl !big_ord0/= !tnth0.
+rewrite /maxr; repeat case: ifP; intros; lra.
+Qed.
 
 Lemma Godel_prelinearity (e1 e2 e3 : expr boolT_fuzzy) :
   [[e1 `** e2]]_Godel <= [[ e3 ]]_Godel <-> [[ e2 ]]_Godel <= [[e1 `=> e3]]_Godel.
@@ -1165,19 +1152,16 @@ Lemma Godel_demorgan_mand  (e1 e2 : expr boolT_fuzzy) :
 Proof.
 have := translate_boolT_01 p p1 Godel _ _ _ e1.
 have := translate_boolT_01 p p1 Godel _ _ _ e2.
-(* by rewrite//= /minR /maxR !big_ord_recl big_ord0 /maxr /minr; repeat case: ifP. (* lra. *) *)
-(* Qed. *)
-Abort.
+rewrite//= /minR /maxR !big_ord_recl !big_ord0 !tnthS !tnth0/= /maxr /minr; repeat case: ifP; lra.
+Qed.
 
 Lemma Godel_demorgan_mor  (e1 e2 : expr boolT_fuzzy) :
   [[`~ (e1 `++ e2)]]_Godel = [[(`~ e1) `** (`~ e2)]]_Godel.
 Proof.
 have := translate_boolT_01 p p1 Godel _ _ _ e1.
 have := translate_boolT_01 p p1 Godel _ _ _ e2.
-(* by rewrite//= /minR /maxR !big_ord_recl !big_ord0 /maxr /minr. *)
-(* Qed. *)
-Abort.
-
+rewrite//= /minR /maxR !big_ord_recl !big_ord0 !tnthS !tnth0/= /maxr /minr; repeat case: ifP; lra.
+Qed.
 
 End Godel_lemmas.
 
