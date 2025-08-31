@@ -1106,11 +1106,18 @@ Qed.
 Lemma Yager_prelinearity (e1 e2 e3 : @expr R boolT_fuzzy) :
   [[(e1 `=> e2) `\/ (e2 `=> e1)]]_Yager = [[ldl_bool  _ _ _ _ true]]_Yager.
 Proof.
-have minle1 : forall (x : R), 0 <= x <= 1 -> minr x 1 = x. intros; rewrite /minr; case: ifP; lra.
-have minge0 : forall (x : R), 0 <= x <= 1 -> minr x 0 = 0. intros; rewrite /minr; case: ifP; lra.
-have h1 := translate_boolT_01 p p1 Yager _ _ _ e1.
-have h2 := translate_boolT_01 p p1 Yager _ _ _ e2.
-rewrite//=/maxR !big_cons !big_nil. (*will work but times out /maxr/minr. repeat case: ifP; intros. try nra.*)
+have minle1 : forall (x : R), x <= 1 -> minr x 1 = x. intros; rewrite /minr; case: ifP; lra.
+have minge0 : forall (x : R), 0 <= x -> minr x 0 = 0. intros; rewrite /minr; case: ifP; lra.
+have := translate_boolT_01 p p1 Yager _ _ _ e1.
+have := translate_boolT_01 p p1 Yager _ _ _ e2.
+rewrite//=/maxR !big_cons !big_nil. 
+set x := [[e1]]_Yager; 
+  set y := [[e2]]_Yager. move => hx hy.
+rewrite (minle1 ((((1 - x) `^ p)%R + (y `^ p)%R)%E `^ p^-1)). 
+have maxge0 : forall (x : R), 0 <= x  -> maxr x 0 = x. intros; rewrite /maxr; case: ifP; lra.
+rewrite maxge0 minle1 /maxr//=. case: ifP => h.
+admit.
+ (*repeat case: ifP; intros. try nra.*) (*times out, smarter approach*)
 Admitted.
 
 Lemma Yager_residuation (e1 e2 e3 : expr boolT_fuzzy) :

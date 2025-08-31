@@ -150,6 +150,12 @@ split; move => /= H.
   by move: H; rewrite/maxr;  case: ifP => ? ?; lra.
 Qed.
 
+Lemma dl2_prelinearity (e1 e2 e3 : @expr R boolT_dl2) :
+  [[(e1 `=> e2) `\/ (e2 `=> e1)]]_dl2 = [[ldl_bool  _ _ _ _ true]]_dl2.
+Proof.
+rewrite//= !big_cons big_nil /maxr; repeat case: ifP; lra.
+Qed.
+
 Lemma dl2_andC  (e1 e2 : expr boolT_dl2) :
   [[ e1 `/\ e2 ]]_dl2 = [[ e2 `/\ e1 ]]_dl2.
 Proof.
@@ -213,7 +219,6 @@ Proof.
 rewrite//= /minR /maxR !big_cons !big_nil.
 rewrite{1}/minr/maxr; repeat case: ifP; try lra; repeat rewrite{1}/minr; repeat case: ifP; try lra.
 Qed.
-
 
 Definition is_dl2 b (x : R) := if b then x == 0 else x < 0.
 

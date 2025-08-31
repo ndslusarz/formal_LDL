@@ -40,6 +40,15 @@ Context {R : realType}.
 
 Local Notation "[[ e ]]_stli" := (@stl_infty_translation R _ e).
 
+(*because of their equivalence, lemmas are only proven for mand/mor*)
+Lemma stl_infty_mand_and_eq f1 (e1 e2 : expr (boolT_def f1 m_def l_def)) :
+  [[e1 `** e2]]_stli = [[e1 `/\ e2]]_stli.
+Proof. by rewrite//=. Qed.
+
+Lemma stl_infty_mor_or_eq f1 (e1 e2 : expr (boolT_def f1 m_def l_def)) :
+  [[e1 `++ e2]]_stli = [[e1 `\/ e2]]_stli.
+Proof. by rewrite//=. Qed.
+
 Lemma stl_infty_mandI f1 f2 (e : expr (boolT_def f1 m_def f2)) : [[ e `** e ]]_stli = [[ e ]]_stli.
 Proof.
 rewrite //= ?big_cons ?big_nil.
@@ -74,19 +83,21 @@ rewrite /=/mine; repeat case: ifP => //=; move => h1 h2 h3 h4.
   move /negPn /eqP in h3. rewrite h3 in h2.
   have H : [[e1]]_stli < [[e1]]_stli by apply: (lt_trans h1 h2).
   by rewrite ltexx in H.
-- admit.
+- rewrite  ltNge in h2. move/negbFE in h2.
+  rewrite  ltNge in h4. move/negbFE in h4.
+  apply: le_anti. by apply/andP; split.
 - apply negbT in h2. rewrite ltey in h2. 
   by move /negPn /eqP in h2.
 - apply negbT in h3. rewrite ltey in h3. 
   by move /negPn /eqP in h3.
-
-Admitted.
+Qed.
 
 Lemma stl_infty_morC f1 f2 (e1 e2 : expr (boolT_def f1 m_def f2)) :
   [[ e1 `++ e2 ]]_stli = [[ e2 `++ e1 ]]_stli.
 Proof.
 rewrite /=  /maxR !big_cons !big_nil.
- rewrite /= /maxe; repeat case: ifP => //. 
+ rewrite /= /maxe; repeat case: ifP => //=; move => h1 h2 h3 h4. 
+- 
 Admitted.
 
 Lemma stl_infty_morA f1 f2 (e1 e2 e3 : expr (boolT_def f1 m_def f2)) :
@@ -96,6 +107,13 @@ rewrite /= /maxR !big_cons !big_nil.
  rewrite /= /maxe; repeat case: ifP; move => h1 h2 h3 h4 h5 h6 h7; rewrite//=. 
 (*some smarter unfolding here, lots of cases are the same case*)
 Admitted.
+
+Lemma stl_infty_mandA f1 f2 (e1 e2 e3 : expr (boolT_def f1 m_def f2)) :
+  [[ e1 `** (e2 `** e3) ]]_stli = [[ (e1 `** e2) `** e3 ]]_stli.
+Proof.
+rewrite /= ?big_cons ?big_nil.
+Admitted.
+
 
 Theorem stl_infty_mand_unit f1 f2 (e :  (expr (boolT_def f1 m_def f2))) :
   [[ e `** (ldl_bool _ _ _ _ true) ]]_stli = [[ e ]]_stli.
@@ -121,8 +139,30 @@ Qed.
 Proof.
 split; rewrite//=/minR; rewrite !big_cons big_nil /minr; repeat case: ifP; intros; try lra.
 Qed.*)
+Lemma stl_infty_demorgan_mand f1 (e1 e2 : expr (boolT_def f1 m_def l_def)) :
+  [[`~ (e1 `** e2)]]_stli = [[(`~ e1) `++ (`~ e2)]]_stli.
+Admitted.
 
+Lemma stl_infty_demorgan_mor f1 (e1 e2 : expr (boolT_def f1 m_def l_def)) :
+  [[`~ (e1 `++ e2)]]_stli = [[(`~ e1) `** (`~ e2)]]_stli.
+Admitted.
 
-(*add  distrib, prelinear*)
+Lemma stl_infty_and_distr f1 (e1 e2 e3 :  (expr (boolT_def f1 m_def l_def))) :
+  [[ e1 `/\ (e2 `\/ e3)]]_stli = [[ (e1 `/\ e2) `\/ (e1 `/\ e3)]]_stli.
+Admitted.
+
+Lemma stl_infty_and_abs f1 (e1 e2 : (expr (boolT_def f1 m_def l_def))) :
+  [[ e1 `/\ (e1 `\/ e2)]]_stli = [[ e1 ]]_stli.
+Proof.
+Admitted.
+
+Lemma dl2_or_abs f1 (e1 e2 : (expr (boolT_def f1 m_def l_def))) :
+  [[ e1 `\/ (e1 `/\ e2)]]_stli = [[ e1 ]]_stli.
+Admitted.
+
+(*go back one impl in place*)
+(*Lemma stl_infty_prelinearity (e1 e2 e3 : @expr R (boolT_def impl_def m_def l_def)) :
+  [[(e1 `=> e2) `\/ (e2 `=> e1)]]_stli = [[ldl_bool  _ _ _ _ true]]_stli.
+*)
 
 End stl_infty_lemmas.
