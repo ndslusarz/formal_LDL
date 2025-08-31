@@ -121,18 +121,15 @@ Lemma prod1 {R : realDomainType} (e1 e2 : R) :
   0 <= e1 <= 1 -> 0 <= e2 <= 1 -> (e1 * e2 == 1) = ((e1 == 1) && (e2 == 1)).
 Proof. nra. Qed.
 
-Lemma prod01 {R : realDomainType} [s : seq R] :
-  (forall e, e \in s -> 0 <= e <= 1) -> (0 <= \prod_(j <- s) j <= 1).
+Lemma prod01 {R : realDomainType} n [s : 'I_n -> R] :
+  (forall i, 0 <= s i <= 1) -> (0 <= \prod_(j < n) s j <= 1).
 Proof.
-elim: s => [_|e0].
-- by rewrite big_nil ler01 lexx.
-- move=> s IH es01.
-  rewrite big_cons.
-  have h0 : (0 <= \prod_(j <- s) j <= 1)%R.
-    by apply: IH => e es; apply: es01; rewrite in_cons es orbT.
-  have : (0 <= e0 <= 1)%R.
-    by apply: es01; rewrite in_cons eqxx.
-  nra.
+move: s; elim: n => [s h|n ih s h]; first by rewrite big_ord0 ler01 lexx.
+rewrite big_ord_recl.
+have h0 : forall i, 0 <= s (lift ord0 i) <= 1 by move=> i; apply: h.
+have := ih (s \o lift ord0) h0.
+have := h ord0.
+nra.
 Qed.
 
 Lemma psumr_eqsize {R : realDomainType} :
@@ -145,8 +142,6 @@ move => n ih F h1; split.
 - rewrite big_ord_recl/=.
   have : (\sum_(i < n) F (lift ord0 i) <= n%:R)%R.
     by apply/(@sum_01 _ _ (fun i => F (lift ord0 i))) => i; exact: h1.
-  (* have : (\sum_(i < n) F (widen_ord (leqnSn n) i) <= n%:R)%R. *)
-  (*   by apply/(@sum_01 _ _ (fun i => F (widen_ord (leqnSn n) i))) => i; exact: h1. *)
   rewrite /= le_eqVlt => /predU1P[h|h].
     rewrite -natr1 h addrC.
     move/addrI => h' i.
@@ -166,34 +161,22 @@ exact/ih.
 Qed.
 
 Lemma prod1_01 {R : realDomainType} :
-  forall [s : seq R], (forall e, e \in s -> 0 <= e <= 1) ->
-    (\prod_(j <- s) j = 1 <-> (forall e, e \in s -> e = (1:R))).
+  forall n [s : 'I_n -> R], (forall i, 0 <= s i <= 1) ->
+    (\prod_(j < n) s j = 1 <-> (forall i, s i = (1:R))).
 Proof.
-elim.
-- by rewrite big_nil.
-- move=> e s IH h.
-  rewrite big_cons.
-  split.
-  + move/eqP.
-    rewrite prod1; last 2 first.
-      by apply: h; rewrite in_cons eqxx.
-      by apply: prod01 => e0 e0s; apply: h; rewrite in_cons e0s orbT.
-    move/andP => [/eqP e1] /eqP.
-    rewrite IH; last first.
-      by move=> e0 e0s; apply: h; rewrite in_cons e0s orbT.
-    move=> h' e0.
-    rewrite in_cons => /predU1P[-> //|].
-    apply: h'.
-  + move=> es1.
-    apply /eqP.
-    rewrite prod1; last 2 first.
-    - by apply: h; rewrite in_cons eqxx.
-    - by apply: prod01 => e0 e0s; apply: h; rewrite in_cons e0s orbT.
-    apply/andP; split.
-    - by apply/eqP; apply: es1; rewrite in_cons eqxx.
-    - apply/eqP; rewrite IH => e0 e0s.
-        by apply es1; rewrite in_cons e0s orbT.
-      by apply: h; rewrite in_cons e0s orbT.
+elim => [s h|n ih s h]; first by rewrite big_ord0; split => // _; case.
+rewrite big_ord_recl.
+split.
+  move/eqP.
+  rewrite prod1; last 2 first.
+  - by apply: h; rewrite in_cons eqxx.
+  - by apply: prod01 => i; apply: h.
+  move/andP => [/eqP e1] /eqP.
+  rewrite ih; last first.
+    by move=> i; apply: h.
+  move=> h' i0.
+  by case: (unliftP ord0 i0) => /= [j ->|->].
+by move=> h'; rewrite h' mul1r ih.
 Qed.
 
 Lemma prodrN1 {R : realDomainType} (T : eqType) (l : seq T) (f : T -> R) :

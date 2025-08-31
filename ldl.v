@@ -105,13 +105,13 @@ Inductive expr : ldl_type -> Type :=
   | ldl_real : R -> expr realT
   | ldl_vec : forall n, R ^ n -> expr (vectorT n)
   (* connectives *)
-  | ldl_and : forall fn fi fm n, (expr (boolT fn fi fm l_def)) ^ n -> expr (boolT fn fi fm l_def)
-  | ldl_or : forall fn fi fm n, (expr (boolT fn fi fm l_def)) ^ n -> expr (boolT fn fi fm l_def)
+  | ldl_and : forall fn fi fm n, ('I_n -> expr (boolT fn fi fm l_def)) -> expr (boolT fn fi fm l_def)
+  | ldl_or : forall fn fi fm n, ('I_n -> expr (boolT fn fi fm l_def)) -> expr (boolT fn fi fm l_def)
   | ldl_not : forall fi fm fl, expr (boolT neg_def fi fm fl) -> expr (boolT neg_def  fi fm fl) 
   | ldl_impl :forall fn fm fl, expr (boolT fn impl_def fm fl) 
                                -> expr (boolT fn impl_def fm fl) -> expr (boolT fn impl_def fm fl)
-  | ldl_mand : forall fn fi fl n, (expr (boolT fn fi m_def fl)) ^ n -> expr (boolT fn fi m_def fl)
-  | ldl_mor : forall fn fi fl n, (expr (boolT fn fi m_def fl)) ^ n -> expr (boolT fn fi m_def fl) 
+  | ldl_mand : forall fn fi fl n, ('I_n -> expr (boolT fn fi m_def fl)) -> expr (boolT fn fi m_def fl)
+  | ldl_mor : forall fn fi fl n, ('I_n -> expr (boolT fn fi m_def fl)) -> expr (boolT fn fi m_def fl) 
   (* comparisons *)
   | ldl_cmp : forall fn fi fm fl, comparison -> expr realT -> expr realT -> expr (boolT fn fi fm fl)
   (* networks and applications *)
@@ -125,10 +125,10 @@ End expr.
 
 Declare Scope ldl_scope.
 
-Notation "a `/\ b" := (ldl_and [:: a; b]) (at level 65) : ldl_scope.
-Notation "a `\/ b" := (ldl_or [:: a; b]) (at level 65) : ldl_scope.
-Notation "a `** b" := (ldl_mand [:: a; b]) (at level 65) : ldl_scope.
-Notation "a `++ b" := (ldl_mor [:: a; b]) (at level 65) : ldl_scope.
+Notation "a `/\ b" := (ldl_and (tnth [:: a; b])) (at level 65) : ldl_scope.
+Notation "a `\/ b" := (ldl_or (tnth [:: a; b])) (at level 65) : ldl_scope.
+Notation "a `** b" := (ldl_mand (tnth [:: a; b])) (at level 65) : ldl_scope.
+Notation "a `++ b" := (ldl_mor (tnth [:: a; b])) (at level 65) : ldl_scope.
 Notation "a `=> b" := (ldl_impl a b) (at level 70) : ldl_scope.
 Notation "`~ a"    := (ldl_not a) (at level 61) : ldl_scope.
 
@@ -153,9 +153,9 @@ Lemma expr_ind' (R : realType) :
        (forall (n : nat) (o : 'I_n), P (indexT n) (ldl_idx o)) ->
        (forall s : R, P realT (ldl_real s)) ->
        (forall (n : nat) (t : R ^ n), P (vectorT n) (ldl_vec t)) ->
-       (forall (x : flag_neg) (y : flag_impl) (z : flag_monoid) n (l : (expr (boolT x y z l_def)) ^ n),
+       (forall (x : flag_neg) (y : flag_impl) (z : flag_monoid) n (l : 'I_n -> (expr (boolT x y z l_def))),
           (forall a, P (boolT x y z l_def) (l a)) -> P (boolT x y z l_def) (ldl_and l)) ->
-       (forall (x : flag_neg) (y : flag_impl) (z : flag_monoid) n (l : (expr (boolT x y z l_def)) ^ n),
+       (forall (x : flag_neg) (y : flag_impl) (z : flag_monoid) n (l : 'I_n -> (expr (boolT x y z l_def))),
         (forall a, P (boolT x y z l_def) (l a)) -> P (boolT x y z l_def) (ldl_or l)) ->
        (forall (x : flag_impl) (y : flag_monoid) (z : flag_lattice) (e : expr (boolT_def x y z)),
         P (boolT_def x y z) e -> P (boolT_def x y z) (ldl_not e)) ->
@@ -163,9 +163,9 @@ Lemma expr_ind' (R : realType) :
         P (boolT x impl_def y z) e ->
         forall e0 : expr (boolT x impl_def y z),
         P (boolT x impl_def y z) e0 -> P (boolT x impl_def y z) (ldl_impl e e0)) ->
-       (forall (x : flag_neg) (y : flag_impl) (z : flag_lattice) n (l : (expr (boolT x y m_def z)) ^ n),
+       (forall (x : flag_neg) (y : flag_impl) (z : flag_lattice) n (l : 'I_n -> (expr (boolT x y m_def z))),
           (forall a, P (boolT x y m_def z) (l a)) -> P (boolT x y m_def z) (ldl_mand l)) ->
-       (forall (x : flag_neg) (y : flag_impl) (z : flag_lattice) n (l : (expr (boolT x y m_def z)) ^ n),
+       (forall (x : flag_neg) (y : flag_impl) (z : flag_lattice) n (l : 'I_n -> (expr (boolT x y m_def z))),
         (forall a, P (boolT x y m_def z) (l a)) -> P (boolT x y m_def z) (ldl_mor l)) ->
        (forall (x : flag_neg) (y : flag_impl) (z : flag_monoid) (v : flag_lattice) 
           (c : comparison) (e : expr realT),
