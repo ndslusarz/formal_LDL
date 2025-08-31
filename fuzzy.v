@@ -1305,7 +1305,34 @@ Theorem product_mand_unit f1 f2 (e :  (expr (boolT_def f1 m_def f2))) :
   [[ e `** (ldl_bool _ _ _ _ true) ]]_product = [[ e ]]_product.
 Proof. by rewrite /= !big_cons big_nil !mulr1. Qed.
 
-Lemma product_prelinearity (e1 e2 e3 : expr boolT_fuzzy) :
+Lemma product_prelinearity (e1 e2 e3 : @expr R boolT_fuzzy) :
+  [[(e1 `=> e2) `\/ (e2 `=> e1)]]_product = [[ldl_bool  _ _ _ _ true]]_product.
+Proof.
+have h1 := translate_boolT_01 p p1 product _ _ _ e1.
+have h2 := translate_boolT_01 p p1 product _ _ _ e2.
+rewrite//= /maxR !big_cons big_nil.
+rewrite /maxr; repeat case: ifP; intros; try nra.
+- have : 0 < [[e2]]_product \/ 0 = [[e2]]_product by lra.
+  move => [h | h]. 
+  + have inv_pos : 0 < ([[e2]]_product)^-1.
+    by rewrite invr_gt0 h//=.
+    have H : 1 < [[e1]]_product / [[e2]]_product -> 
+             [[e2]]_product < [[e1]]_product * ([[e2]]_product / [[e2]]_product). intros; nra.
+    apply H in i0.
+    rewrite divff in i0. nra. nra.
+  + rewrite -h in i; nra.
+- have : 0 < [[e1]]_product \/ 0 = [[e1]]_product by lra.
+  move => [h | h]. 
+  + have inv_pos : 0 < ([[e1]]_product)^-1.
+    by rewrite invr_gt0 h//=.
+    have H : ([[e2]]_product / [[e1]]_product < 1) = false -> 
+             [[e2]]_product * ([[e1]]_product / [[e1]]_product) >= [[e1]]_product. intros; nra.
+    apply H in n1.
+    rewrite divff in n1. nra. nra.
+  + rewrite -h in i; nra.
+Qed.
+
+Lemma product_residuation (e1 e2 e3 : expr boolT_fuzzy) :
   [[e1 `** e2]]_product <= [[ e3 ]]_product <-> [[ e2 ]]_product <= [[e1 `=> e3]]_product.
 Proof.
 have := translate_boolT_01 p p1 product _ _ _ e1.
@@ -1430,6 +1457,20 @@ set t1 := _ e1.
 move => h1 h2 h3 p0.
 rewrite /minr.
 by repeat case: ifPn => //; lra.
+Qed.
+
+Lemma fuzzy_and_distr (e1 e2 e3 : expr boolT_fuzzy) :
+  [[ e1 `/\ (e2 `\/ e3)]]_ dl = [[ (e1 `/\ e2) `\/ (e1 `/\ e3)]]_ dl.
+Proof.
+rewrite//= /minR /maxR !big_cons !big_nil.
+rewrite/minr/maxr; repeat case: ifP; intros; try lra.
+Qed.
+
+Lemma fuzzy_and_distr2 (e1 e2 : expr boolT_fuzzy) :
+  [[ e1 `\/ (e2 `/\ e3)]]_ dl = [[ (e1 `\/ e2) `/\ (e1 `\/ e3))]]_ dl.
+Proof.
+rewrite//= /minR /maxR !big_cons !big_nil.
+rewrite/minr/maxr; repeat case: ifP; intros; try lra.
 Qed.
 
 Lemma fuzzy_and_abs (e1 e2 : expr boolT_fuzzy) :
