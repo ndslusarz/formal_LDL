@@ -206,22 +206,56 @@ Lemma stl_infty_demorgan_mor f1 (e1 e2 : expr (boolT_def f1 m_def l_def)) :
   [[`~ (e1 `++ e2)]]_stli = [[(`~ e1) `** (`~ e2)]]_stli.
 Admitted.
 
-Lemma stl_infty_and_distr f1 (e1 e2 e3 :  (expr (boolT_def f1 m_def l_def))) :
+Lemma stl_infty_distr f1 (e1 e2 e3 :  (expr (boolT_def f1 m_def l_def))) :
   [[ e1 `/\ (e2 `\/ e3)]]_stli = [[ (e1 `/\ e2) `\/ (e1 `/\ e3)]]_stli.
-Admitted.
+Proof.
+rewrite /= /maxR !big_cons !big_nil !miney !maxeNy.
+rewrite /= /mine /maxe; repeat case: ifP; rewrite//= => h1 h2 h3 h4 h5.
+- rewrite ltNge in h2; move/negbFE in h2.
+  rewrite ltNge in h3; move/negbFE in h3.
+  apply: le_anti. by apply/andP; split.
+- rewrite ltNge in h1; move/negbFE in h1.
+  apply ltW in h3.
+  apply: le_anti. by apply/andP; split.
+- rewrite ltNge in h1; move/negbFE in h1.
+  apply ltW in h2. apply ltW in h4.
+  have H := le_trans h2 h4.
+  apply: le_anti. by apply/andP; split.
+- rewrite ltNge in h3; move/negbFE in h3.
+  apply ltW in h4.
+  apply: le_anti. by apply/andP; split.
+- rewrite ltNge in h2; move/negbFE in h2.
+  rewrite ltNge in h4; move/negbFE in h4.
+  apply ltW in h3. apply ltW in h1.
+  have H := le_trans h1 h4.
+  apply: le_anti. by apply/andP; split.
+- rewrite ltNge in h4; move/negbFE in h4.
+  apply ltW in h3.
+  apply: le_anti. by apply/andP; split.
+Qed.
 
 Lemma stl_infty_and_abs f1 (e1 e2 : (expr (boolT_def f1 m_def l_def))) :
   [[ e1 `/\ (e1 `\/ e2)]]_stli = [[ e1 ]]_stli.
 Proof.
-Admitted.
+rewrite /= /maxR !big_cons !big_nil !miney !maxeNy.
+rewrite /= /mine /maxe; repeat case: ifP; rewrite//= => h1 h2.
+- apply ltW in h1. 
+  rewrite  ltNge in h2. move/negbFE in h2.
+  apply: le_anti. by apply/andP; split.
+Qed.
 
 Lemma dl2_or_abs f1 (e1 e2 : (expr (boolT_def f1 m_def l_def))) :
   [[ e1 `\/ (e1 `/\ e2)]]_stli = [[ e1 ]]_stli.
-Admitted.
+Proof.
+rewrite /= /maxR !big_cons !big_nil !miney !maxeNy.
+rewrite /= /mine /maxe; repeat case: ifP; rewrite//= => h1 h2.
+- apply ltW in h2. 
+  rewrite  ltNge in h1. move/negbFE in h1.
+  apply: le_anti. by apply/andP; split.
+Qed.
 
-(*go back one impl in place*)
-(*Lemma stl_infty_prelinearity (e1 e2 e3 : @expr R (boolT_def impl_def m_def l_def)) :
+Lemma stl_infty_prelinearity (e1 e2 e3 : @expr R (boolT_def impl_def m_def l_def)) :
   [[(e1 `=> e2) `\/ (e2 `=> e1)]]_stli = [[ldl_bool  _ _ _ _ true]]_stli.
-*)
+Admitted.
 
 End stl_infty_lemmas.
