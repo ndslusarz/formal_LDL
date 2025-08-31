@@ -104,15 +104,69 @@ Lemma stl_infty_morA f1 f2 (e1 e2 e3 : expr (boolT_def f1 m_def f2)) :
   [[ (e1 `++ (e2 `++ e3)) ]]_stli = [[ ((e1 `++ e2) `++ e3) ]]_stli.
 Proof.
 rewrite /= /maxR !big_cons !big_nil.
- rewrite /= /maxe; repeat case: ifP; move => h1 h2 h3 h4 h5 h6 h7; rewrite//=. 
-(*some smarter unfolding here, lots of cases are the same case*)
-Admitted.
+rewrite !maxeNy /= /maxe; repeat case: ifP; rewrite//= => h1 h2 h3 h4.
+- rewrite  ltNge in h2. move/negbFE in h2.
+  apply ltW in h3.
+  apply: le_anti. by apply/andP; split.
+- rewrite  ltNge in h2. move/negbFE in h2.
+  apply ltW in h4.
+  apply: le_anti. by apply/andP; split.
+- rewrite  ltNge in h3. move/negbFE in h3.
+  apply ltW in h2.
+  apply: le_anti. by apply/andP; split.
+- rewrite  ltNge in h4. move/negbFE in h4.
+  have h5:=  lt_trans h1 h2. apply ltW in h5.
+  apply: le_anti. by apply/andP; split.
+- rewrite  ltNge in h4. move/negbFE in h4.
+  apply ltW in h2.
+  apply: le_anti. by apply/andP; split.
+- apply ltW in h1. apply ltW in h3.  
+  rewrite  ltNge in h2; move/negbFE in h2.
+  rewrite  ltNge in h4; move/negbFE in h4.
+  have h5 : [[e2 ]]_stli = [[e3 ]]_stli. by apply: le_anti; apply/andP; split.
+  rewrite  -h5 in h4.
+  by apply: le_anti; apply/andP; split.
+- rewrite  ltNge in h1; move/negbFE in h1.
+  rewrite  ltNge in h3; move/negbFE in h3.
+  have h5 := le_trans h3 h1.
+  rewrite  ltNge in h2. exfalso. 
+  move/negbTE: h2; rewrite h5//=.
+Qed.
 
 Lemma stl_infty_mandA f1 f2 (e1 e2 e3 : expr (boolT_def f1 m_def f2)) :
   [[ e1 `** (e2 `** e3) ]]_stli = [[ (e1 `** e2) `** e3 ]]_stli.
 Proof.
-rewrite /= ?big_cons ?big_nil.
-Admitted.
+rewrite /= /maxR !big_cons !big_nil !miney.
+rewrite /= /mine; repeat case: ifP; rewrite//= => h1 h2 h3 h4.
+- have h5 := lt_trans h1 h3.
+  rewrite  ltNge in h2. move/negbFE in h2.
+  apply ltW in h5.
+  apply: le_anti. by apply/andP; split.
+- rewrite  ltNge in h1; move/negbFE in h1.
+  rewrite  ltNge in h3; move/negbFE in h3.
+  have h5 := le_trans h3 h1.
+  apply ltW in h2.
+  have h6 : [[e2 ]]_stli = [[e3 ]]_stli. by apply: le_anti; apply/andP; split.
+  rewrite -h6 in h4. apply ltW in h4.
+  apply: le_anti. by apply/andP; split.
+- rewrite  ltNge in h2; move/negbFE in h2.
+  apply ltW in h4.
+  apply: le_anti. by apply/andP; split.
+- rewrite  ltNge in h1; move/negbFE in h1.
+  rewrite  ltNge in h3; move/negbFE in h3.
+  have h5 := le_trans h3 h1.
+  apply ltW in h4.
+  apply: le_anti. by apply/andP; split.
+- rewrite  ltNge in h2; move/negbFE in h2.
+  apply ltW in h3.
+  apply: le_anti. by apply/andP; split.
+- rewrite  ltNge in h4; move/negbFE in h4.
+  apply ltW in h2.
+  apply: le_anti. by apply/andP; split.
+- rewrite  ltNge in h3; move/negbFE in h3.
+  apply ltW in h2.
+  apply: le_anti. by apply/andP; split. 
+Qed.
 
 
 Theorem stl_infty_mand_unit f1 f2 (e :  (expr (boolT_def f1 m_def f2))) :
