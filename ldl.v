@@ -697,7 +697,11 @@ Fixpoint stl_infty_translation {t} (e : @expr R t) {struct e} : ereal_type_trans
   | ldl_mor _ _ _  Es  => \big[maxe/-oo]_(i <- map stl_infty_translation Es) i
 
   | ldl_not _ _ _ E1 => - {[ E1 ]}
-  | ldl_impl _ _ _ E1 E2 => ({[ E2 ]} - {[ E1 ]})
+  | ldl_impl _ _ _ E1 E2 => 
+      if ({[ E1 ]} \is a fin_num) && ({[ E2 ]} \is a fin_num) then ({[ E2 ]} - {[ E1 ]})
+      else if ({[ E1 ]} == -oo) then +oo
+      else if ({[ E2 ]} == -oo) then -oo
+      else  +oo
 
   | E1 `== E2 => (- `| {[ E1 ]} - {[ E2 ]}|)%:E
   | E1 `<= E2 => ({[ E2 ]} - {[ E1 ]})%:E

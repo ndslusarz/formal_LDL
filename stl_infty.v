@@ -40,6 +40,8 @@ Context {R : realType}.
 
 Local Notation "[[ e ]]_stli" := (@stl_infty_translation R _ e).
 
+Definition is_stl b (x : \bar R) := if b then x >= 0 else x < 0.
+
 (*because of their equivalence, lemmas are only proven for mand/mor*)
 Lemma stl_infty_mand_and_eq f1 (e1 e2 : expr (boolT_def f1 m_def l_def)) :
   [[e1 `** e2]]_stli = [[e1 `/\ e2]]_stli.
@@ -185,7 +187,6 @@ Lemma stl_infty_residuation (e1 e2 e3 : expr boolT_stli) :
 Proof.
 split; rewrite//= /minR !big_cons big_nil !miney /mine; case: ifPn => //= h1 h2.
 - case: (ltP ([[e2]]_stli) 0) => Hsign.
-  + rewrite lee_suber_addr//=.
 - 
 -
 -
@@ -254,8 +255,43 @@ rewrite /= /mine /maxe; repeat case: ifP; rewrite//= => h1 h2.
   apply: le_anti. by apply/andP; split.
 Qed.
 
+(*Lemma swap_lt_implies_ge0 (e1 e2 : \bar R):
+  e2 \is a fin_num ->
+  (e2 - e1 < e1 - e2)%E -> (0 <= e1 - e2)%E.
+Proof.
+move=> h.
+have /ltW : (0 < (e1 - e2) - (e2 - e1))%E by rewrite sube_gt0//=.
+rewrite oppeB//=.
+rewrite -addrA. addNr addr0 -mul2e => /mulr_ge0_le ?.
+Qed.*)
+
 Lemma stl_infty_prelinearity (e1 e2 e3 : @expr R (boolT_def impl_def m_def l_def)) :
-  [[(e1 `=> e2) `\/ (e2 `=> e1)]]_stli = [[ldl_bool  _ _ _ _ true]]_stli.
+  is_stl true ([[(e1 `=> e2) `\/ (e2 `=> e1)]]_stli).
+Proof.
+rewrite /= /maxR !big_cons !big_nil !maxeNy.
+have Hle : ([[e1 ]]_stli - [[e2 ]]_stli <= +oo)%E by apply: leey. 
+rewrite leNgt in Hle. move /negP in Hle.
+have Hge : (-oo <=[[e2 ]]_stli - [[e1 ]]_stli )%E by apply: leey. 
+rewrite leNgt in Hge. move /negP in Hge.
+rewrite /= /mine /maxe; repeat case: ifP; rewrite//=.
+- admit. (*actual case*)
+- move => /andP [+ h2] H _ _.
+  rewrite fin_numE => /andP [/negP /eqP h h']. 
+  by move: h; rewrite H eq_refl.
+- move => _ /andP [h1 h2]. (*actual case*)
+  admit.
+- move => /eqP H _ /andP [_ +].
+  rewrite fin_numE => /andP [/negP /eqP h h']. 
+  by move: h; rewrite H eq_refl.
+- move => /eqP H _ _ /andP [+ _].
+  rewrite fin_numE => /andP [/negP /eqP h h']. 
+  by move: h; rewrite H eq_refl.
+- move => _ _ _ _ /negP H. 
+  move/negP : H; rewrite ltey; move /negPn/eqP ->.
+  by rewrite le0y//=.
+- move => /andP [+ h2] H _ _.
+  rewrite fin_numE => /andP [/negP /eqP h h']. 
+  by move: h; rewrite H eq_refl.
 Admitted.
 
-End stl_infty_lemmas.
+End stl_infty_lemmas.vrewrite leNgt in Hle.
