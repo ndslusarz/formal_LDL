@@ -1117,7 +1117,6 @@ rewrite (minle1 ((((1 - x) `^ p)%R + (y `^ p)%R)%E `^ p^-1)).
 have maxge0 : forall (x : R), 0 <= x  -> maxr x 0 = x. intros; rewrite /maxr; case: ifP; lra.
 rewrite maxge0 minle1 /maxr//=. case: ifP => h.
 admit.
- (*repeat case: ifP; intros. try nra.*) (*times out, smarter approach*)
 Admitted.
 
 Lemma Yager_residuation (e1 e2 e3 : expr boolT_fuzzy) :
@@ -1149,7 +1148,7 @@ Qed.
 Lemma Yager_demorgan_mor  (e1 e2 : expr boolT_fuzzy) :
   [[`~ (e1 `++ e2)]]_Yager = [[(`~ e1) `** (`~ e2)]]_Yager.
 Proof.
-rewrite//= !big_cons big_nil !addr0 /maxr /minr; repeat case: ifP; intros.
+rewrite//= !big_cons big_nil !addr0 /maxr /minr; repeat case: ifP; intros; try lra.
 Admitted.
 
 End Yager_lemmas.

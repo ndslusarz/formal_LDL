@@ -193,18 +193,31 @@ split; rewrite//= /minR !big_cons big_nil !miney /mine; case: ifPn => //= h1 h2.
 - 
 Admitted.
 
+Lemma neg_swap_ineq (e1 e2 : \bar R) : (- e1 < - e2)%E = (e2 < e1)%E.
+Proof.
+Admitted.
 
 Lemma stl_infty_demorgan_mand f1 (e1 e2 : expr (boolT_def f1 m_def l_def)) :
   [[`~ (e1 `** e2)]]_stli = [[(`~ e1) `++ (`~ e2)]]_stli.
 Proof.
 rewrite /= /maxR !big_cons !big_nil !miney !maxeNy.
 rewrite /= /mine /maxe; repeat case: ifP; rewrite//= => h1 h2.
-- have H2' (x y : \bar R): - y < - x.
+- rewrite neg_swap_ineq in h1. rewrite ltNge in h1. move /negP in h1.
+  apply ltW in h2. by [].
+- move/negP in h1. move/negP in h2.
+  rewrite neg_swap_ineq in h1. rewrite ltNge in h1. move /negP in h1.
+  move/negPn in h1. move/negP in h2.
+  rewrite -leNgt in h2. 
 
 Admitted.
 
 Lemma stl_infty_demorgan_mor f1 (e1 e2 : expr (boolT_def f1 m_def l_def)) :
   [[`~ (e1 `++ e2)]]_stli = [[(`~ e1) `** (`~ e2)]]_stli.
+rewrite /= /maxR !big_cons !big_nil !miney !maxeNy.
+rewrite /= /mine /maxe; repeat case: ifP; rewrite//= => h1 h2.
+- rewrite neg_swap_ineq in h1. rewrite ltNge in h1. move /negP in h1.
+  apply ltW in h2. by [].
+- (*same as above*)
 Admitted.
 
 Lemma stl_infty_distr f1 (e1 e2 e3 :  (expr (boolT_def f1 m_def l_def))) :
@@ -274,7 +287,12 @@ rewrite leNgt in Hle. move /negP in Hle.
 have Hge : (-oo <=[[e2 ]]_stli - [[e1 ]]_stli )%E by apply: leey. 
 rewrite leNgt in Hge. move /negP in Hge.
 rewrite /= /mine /maxe; repeat case: ifP; rewrite//=.
-- admit. (*actual case*)
+- move => /andP [h1 h2] _ h.
+  rewrite -(lteD2rE _ _ h1) -(lteD2rE _ _ h2) in h.
+  apply ltW in h. move: h.
+  set x := [[e1 ]]_stli. set y := [[e2 ]]_stli.
+
+admit. (*actual case*)
 - move => /andP [+ h2] H _ _.
   rewrite fin_numE => /andP [/negP /eqP h h']. 
   by move: h; rewrite H eq_refl.
