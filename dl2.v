@@ -150,39 +150,12 @@ split; move => /= H.
   by move: H; rewrite/maxr;  case: ifP => ? ?; lra.
 Qed.
 
-Lemma dl2_andC_nary (s1 s2 : seq (expr boolT_dl2)) :
-  perm_eq s1 s2 -> [[ldl_and s1]]_dl2 = [[ldl_and s2]]_dl2.
-Proof.
-rewrite//=. case: s1; case: s2 => // s1 s2.
-- move => pi; apply perm_size in pi; by rewrite//= in pi.
-- move => pi; apply perm_size in pi; by rewrite//= in pi.
-- move => a l pi.
-  set x := head``_[seq [[i]]_dl2 | i <- a :: l].
-  set y := head``_[seq [[i]]_dl2 | i <- s1 :: s2].
-  rewrite !big_map (perm_big _ pi)//=.
-  admit. (*may have a lemma for this from the stl proof?
-          if not then provable but annoying*)
-Admitted.
-
 Lemma dl2_andC  (e1 e2 : expr boolT_dl2) :
   [[ e1 `/\ e2 ]]_dl2 = [[ e2 `/\ e1 ]]_dl2.
 Proof.
 rewrite /=/minR ?big_cons ?big_nil.
 by rewrite /=/minr; repeat case: ifP; lra.
 Qed.
-
-Lemma dl2_orC_nary (s1 s2 : seq (expr boolT_dl2)) :
-  perm_eq s1 s2 -> [[ldl_or s1]]_dl2 = [[ldl_or s2]]_dl2.
-Proof.
-rewrite//=. case: s1; case: s2 => // s1 s2.
-- move => pi; apply perm_size in pi; by rewrite//= in pi.
-- move => pi; apply perm_size in pi; by rewrite//= in pi.
-- move => a l pi.
-  set x := head``_[seq [[i]]_dl2 | i <- a :: l].
-  set y := head``_[seq [[i]]_dl2 | i <- s1 :: s2].
-  rewrite !big_map (perm_big _ pi)//=.
-  admit. (*same as above*)
-Admitted.
 
 Lemma dl2_orC (e1 e2 : expr boolT_dl2) :
   [[ e1 `\/ e2 ]]_dl2 = [[ e2 `\/ e1 ]]_dl2.
@@ -234,14 +207,13 @@ have minr_le0 : forall (a : R), a <= 0 -> (minr a 0) = a.
 rewrite/minr/maxr; repeat case: ifPn; intros; try lra.
 Qed.
 
-Lemma dl2_prelinearity (e1 e2 e3 : expr boolT_dl2) :
-  [[e1 `** e2]]_dl2 <= [[ e3 ]]_dl2 <-> [[ e2 ]]_dl2 <= [[e1 `=> e3]]_dl2.
+Lemma dl2_and_distr (e1 e2 e3 : expr boolT_fuzzy) :
+  [[ e1 `/\ (e2 `\/ e3)]]_dl2 = [[ (e1 `/\ e2) `\/ (e1 `/\ e3)]]_dl2.
 Proof.
-have h1 := dl2_translation_le0 e1.
-have h2 := dl2_translation_le0 e2.
-have h3 := dl2_translation_le0 e3.
-split; rewrite//=; rewrite !big_cons big_nil ?addr0 /maxr; repeat case: ifP; intros; lra.
+rewrite//= /minR /maxR !big_cons !big_nil.
+rewrite{1}/minr/maxr; repeat case: ifP; try lra; repeat rewrite{1}/minr; repeat case: ifP; try lra.
 Qed.
+
 
 Definition is_dl2 b (x : R) := if b then x == 0 else x < 0.
 
