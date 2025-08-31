@@ -838,7 +838,13 @@ rewrite /= !big_cons big_nil !addr0.
 by rewrite/minr; case: ifP; intros; lra.
 Qed.
 
-Lemma Lukasiewicz_prelinearity (e1 e2 e3 : expr boolT_fuzzy) :
+Lemma Lukasiewicz_prelinearity (e1 e2 e3 : @expr R boolT_fuzzy) :
+  [[(e1 `=> e2) `\/ (e2 `=> e1)]]_Lukasiewicz = [[ldl_bool  _ _ _ _ true]]_Lukasiewicz.
+Proof.
+rewrite//= /maxR !big_cons !big_nil /maxr /minr; repeat case: ifP; intros; lra.
+Qed.
+
+Lemma Lukasiewicz_residuation (e1 e2 e3 : expr boolT_fuzzy) :
   [[e1 `** e2]]_Lukasiewicz <= [[ e3 ]]_Lukasiewicz <-> [[ e2 ]]_Lukasiewicz <= [[e1 `=> e3]]_Lukasiewicz.
 Proof.
 have h1 := translate_boolT_01 p p1 Lukasiewicz _ _ _ e1.
@@ -1097,7 +1103,17 @@ rewrite -powRrM divff//= ?powRr1 ?p_nq//=; try lra.
 rewrite /minr; case: ifP; move => hy; lra.
 Qed.
 
-Lemma Yager_prelinearity (e1 e2 e3 : expr boolT_fuzzy) :
+Lemma Yager_prelinearity (e1 e2 e3 : @expr R boolT_fuzzy) :
+  [[(e1 `=> e2) `\/ (e2 `=> e1)]]_Yager = [[ldl_bool  _ _ _ _ true]]_Yager.
+Proof.
+have minle1 : forall (x : R), 0 <= x <= 1 -> minr x 1 = x. intros; rewrite /minr; case: ifP; lra.
+have minge0 : forall (x : R), 0 <= x <= 1 -> minr x 0 = 0. intros; rewrite /minr; case: ifP; lra.
+have h1 := translate_boolT_01 p p1 Yager _ _ _ e1.
+have h2 := translate_boolT_01 p p1 Yager _ _ _ e2.
+rewrite//=/maxR !big_cons !big_nil. (*will work but times out /maxr/minr. repeat case: ifP; intros. try nra.*)
+Admitted.
+
+Lemma Yager_residuation (e1 e2 e3 : expr boolT_fuzzy) :
   [[e1 `** e2]]_Yager <= [[ e3 ]]_Yager <-> [[ e2 ]]_Yager <= [[e1 `=> e3]]_Yager.
 Proof.
 have := translate_boolT_01 p p1 Yager _ _ _ e1.
@@ -1222,7 +1238,15 @@ rewrite//= /maxR !big_cons big_nil.
 rewrite /maxr; repeat case: ifP; intros; lra.
 Qed.
 
-Lemma Godel_prelinearity (e1 e2 e3 : expr boolT_fuzzy) :
+Lemma Godel_prelinearity (e1 e2 e3 : @expr R boolT_fuzzy) :
+  [[(e1 `=> e2) `\/ (e2 `=> e1)]]_Godel = [[ldl_bool  _ _ _ _ true]]_Godel.
+Proof.
+have := translate_boolT_01 p p1 Godel _ _ _ e1.
+have := translate_boolT_01 p p1 Godel _ _ _ e2.
+rewrite//=/maxR; rewrite !big_cons big_nil /maxr; repeat case: ifP; intros; try lra.
+Qed.
+
+Lemma Godel_residuation (e1 e2 e3 : expr boolT_fuzzy) :
   [[e1 `** e2]]_Godel <= [[ e3 ]]_Godel <-> [[ e2 ]]_Godel <= [[e1 `=> e3]]_Godel.
 Proof.
 have := translate_boolT_01 p p1 Godel _ _ _ e1.
