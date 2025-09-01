@@ -86,8 +86,12 @@ Inductive seq_calc_stli : hypersequent -> Prop :=
     seq_calc_stli ((a :: A |- [::(ldl_bool _ _ _ _ false)]) :: Q) ->
     seq_calc_stli ((A |- [:: (`~ a)]) :: Q)
 | negL_stli : forall Q A B (a : formula),
-    seq_calc_stli ((A |- a :: B) :: Q) ->
+    seq_calc_stli ((A |- [:: a]) :: Q) ->
+    seq_calc_stli ((A |- B) :: Q) ->
     seq_calc_stli (((`~ a) :: A |- B) :: Q)
+(*| negL_stli : forall Q A B (a : formula),
+    seq_calc_stli ((A |- a :: B) :: Q) ->
+    seq_calc_stli (((`~ a) :: A |- B) :: Q)*)
 | implR_stli : forall Q A (a b : formula),
     seq_calc_stli ((a :: A |- [:: b] ) :: Q) ->
     seq_calc_stli ((A |- [:: (a `=> b)]) :: Q)
@@ -293,34 +297,23 @@ Godel brute forced it with lra*)
     rewrite //= !big_cons big_nil maxNye in IH2.
     rewrite leeNy_eq {1}/mine in IH2; move/eqP in IH2.
     rewrite //=!big_map !big_cons big_nil maxeNy. 
-    move: IH2.
-   (* repeat case: ifP; rewrite !big_map //=.
-     move => h ha. rewrite ha in h. 
-      rewrite ltNye in h. move/eqP in IH; rewrite//=.
-      (*rewrite leeNr.*)
-    * move => /ltW h1 /ltW h2 h3. 
-      admit. (*the mult by -1*)
-    * move => /negP/negP h1 /ltW h2 h3.
-      rewrite !ltNge !Bool.negb_involutive//= in h1.
-    admit. admit.
-  + by exists q => //; rewrite !in_cons IH1 !orbT.*) (*rule wrong theoretically, go back*) admit. admit.
-- move: IHseq_calc_stli => [q + IH2].
-  rewrite !in_cons => /predU1P[|IH1].
+    move: IH2. case: ifP.
+    * move => _ h. rewrite h. 
+      have h_inf : - -oo = +oo. move => t; have hh := (eqe_oppLRP (-oo) (+oo)); by [].
+      by rewrite h_inf leey.
+    * by rewrite big_map => _ h; by rewrite h leNye.
+  + by exists q => //; rewrite !in_cons IH1 !orbT.
+- case IHseq_calc_stli1 => [q1].
+  case IHseq_calc_stli2 => [q2].
+  rewrite !in_cons //= => /orP [/eqP h2 | h2] IH12 /orP[/eqP h1 | h1] IH22.
   + subst.
     exists ((`~ a) :: A |- B); subst; first by rewrite in_cons eq_refl orTb.
-    rewrite //=!big_map !big_cons {1}/maxe in IH2.
-    rewrite //=!big_map !big_cons {1}/mine. move: IH2.
-    repeat case: ifP; rewrite !big_map//=.
-    * move => /ltW h1 /ltW h2 h3. 
-      by rewrite (le_trans h1 h3).
-    * move => /ltW h1 /negP/negP h2 h3. 
-      rewrite !ltNge !Bool.negb_involutive//= in h2.
-      rewrite leeNl. (*no, also rethink this rule on paper*)
-      admit. (*need to multiply both sides by -1)*)
-    * move => /negP/negP h1 /negP/negP h2 h3.
-      rewrite !ltNge !Bool.negb_involutive//= in h1 h2.
-      admit. (*but provable*)
-  + by exists q => //; rewrite !in_cons IH1 !orbT.
+    rewrite //=!big_map !big_cons ?big_nil ?maxeNy ?minNye in IH12 IH22.
+    rewrite //=!big_map !big_cons {1}/mine; case: ifP; rewrite !big_map//=.
+    by move => /ltW h; rewrite (le_trans h IH12).
+  + by exists q1 => //; rewrite !in_cons h1 !orbT.
+  + by exists q2 => //; rewrite !in_cons h2 !orbT.
+  + by exists q1 => //; rewrite !in_cons h1 !orbT.
 - move: IHseq_calc_stli => [q + IH2].
   rewrite !in_cons => /predU1P[|IH1].
   + exists (A |- [:: (a `=> b)]); subst; first by rewrite in_cons eq_refl orTb.
