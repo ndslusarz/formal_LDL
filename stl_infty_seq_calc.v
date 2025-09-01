@@ -129,6 +129,15 @@ move => H. rewrite /mine. repeat case: ifPn; rewrite//=.
   by rewrite (le_trans h2 H).
 Qed. 
 
+Lemma maxe_gexy (a b c : \bar R):
+  a <= b -> maxe a c <= maxe b c.
+Proof.
+move => H. rewrite /maxe. repeat case: ifPn; rewrite//=.
+- move => h1 /ltW h2. by rewrite ltNge Bool.negb_involutive in h1.
+- move => /ltW h1 _. 
+  by rewrite (le_trans H h1).
+Qed. 
+
 Lemma sound_stli Q:
   seq_calc_stli Q ->
   exists2 q : seq formula * seq formula, q \in Q &
@@ -234,9 +243,9 @@ for 30 cases manually*)
     exists ((a `/\ b) :: B |- A); subst; first by rewrite in_cons eq_refl orTb.
     rewrite //= !big_cons big_nil !big_map miney.
     rewrite //= !big_cons !big_map in IH2.
-    rewrite {2}/mine; case: ifP.
+    rewrite {2}/mine; case: ifP; rewrite//=.
     move => /ltW h.
-    apply (mine_gexy (\big[mine/+oo]_(j <- B) [[j ]]_stli)) in h.
+     apply (mine_gexy (\big[mine/+oo]_(j <- B) [[j ]]_stli)) in h.
     by rewrite (le_trans h IH2).
   + by exists q => //; rewrite !in_cons IH1 !orbT.
 - case IHseq_calc_stli1 => [q1].
@@ -269,7 +278,21 @@ for 30 cases manually*)
     rewrite //=!big_map big_cons in IH2.
     rewrite //=!big_map !big_cons big_nil maxeNy.
     rewrite {2}/maxe. case: ifP; rewrite//=.
-    move => /ltW h. (*another helper this time that 
+    move => /ltW h. 
+    apply (maxe_gexy (\big[maxe/-oo]_(j <- [seq [[i ]]_stli | i <- B]) j)) in h.
+    by rewrite (le_trans IH2 h).
+  + move/predU1P : IH1 => [|IH1].
+    exists (A |- (a `\/ b) :: B); subst; first by rewrite in_cons eq_refl orTb.
+    rewrite //=!big_map big_cons in IH2.
+    rewrite //=!big_map !big_cons big_nil maxeNy.
+    rewrite {2}/maxe. case: ifP; rewrite//=.
+    move => /negP/negP h. rewrite  ltNge Bool.negb_involutive in h.
+    apply (maxe_gexy (\big[maxe/-oo]_(j <- [seq [[i ]]_stli | i <- B]) j)) in h.
+    by rewrite (le_trans IH2 h).
+  + by exists q => //; rewrite !in_cons IH1 !orbT.
+
+
+(*another helper this time that 
 Admitted.
 
 End stl_hypersequent_calc.
