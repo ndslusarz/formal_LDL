@@ -82,9 +82,9 @@ Inductive seq_calc_stli : hypersequent -> Prop :=
 | orR_stli : forall Q A B (a b : formula),
     seq_calc_stli ((A |- a :: B ) :: ( A |- b :: B) :: Q ) ->
     seq_calc_stli ((A |- (a `\/ b) :: B ) :: Q)
-| negR_stli : forall Q A B (a : formula),
-    seq_calc_stli ((a :: A |- (ldl_bool _ _ _ _ false) :: B) :: Q) ->
-    seq_calc_stli ((A |-  (`~ a) :: B) :: Q)
+| negR_stli : forall Q A (a : formula),
+    seq_calc_stli ((a :: A |- [::(ldl_bool _ _ _ _ false)]) :: Q) ->
+    seq_calc_stli ((A |- [:: (`~ a)]) :: Q)
 | negL_stli : forall Q A B (a : formula),
     seq_calc_stli ((A |- a :: B) :: Q) ->
     seq_calc_stli (((`~ a) :: A |- B) :: Q)
@@ -167,27 +167,17 @@ intros; rewrite//=. dependent induction H.
   rewrite !in_cons //= => /orP [/eqP h2 | h2] IH12 /orP[/eqP h1 | h1] IH22.
   + subst.
     rewrite //= !big_map !big_min_cat in IH12 IH22.
-    rewrite //=.
- (*   have helper : forall (a b : R), a < b <-> ~(b <= a) by intros; lra.
-          have contr_comp : forall (a b : R), a < b -> b <= a -> false by intros; lra.*)
-    have hq : exists q : seq formula * seq formula,
-        q = (A1 ++ A2 |- C) \/ q = B1 ++ B2 |- D
-        by exists (A1 ++ A2 |- C); auto.
-    (*have h:  ~(exists2 q : seq formula * seq formula,
-    q \in [:: A1 ++ A2 |- C, B1 ++ B2 |- D & Q] & \big[mine/+oo]_(i <- [seq [[i]]_stli | i <- q.1]) i <=
-               \big[maxe/-oo]_(i <- [seq [[i]]_stli | i <- q.2]) i) -> false.*)
-        (*move/minr_maxr_le_godel : IH12 => -[ [h1 h1'] | [h1 h1']];
-        move/minr_maxr_le_godel : IH22 => -[ [h2 h2'] | [h2 h2']];
-        intro;
-        rewrite -forallPNP in H1;
-        have := H1 (A1 ++ A2 |- C); rewrite mem_head //= !big_map; try move/(_ isT) => H11; try move => H11;
-        have := H1 (B1 ++ B2 |- D); rewrite in_cons  //= !big_map; try move/(_ isT) => H22;
-                                                                                       try move => H22; auto;
-        rewrite -helper in H11; rewrite -?helper in H22;
-        rewrite -minr_maxr_lt_godel in H11; rewrite -minr_maxr_lt_godel in H22;
-        destruct H11 as [H11 H11']; destruct H22 as [H22 H22']; try lra;
-     rewrite ?in_cons ?eq_refl ?orTb ?orbT//=.
-   apply contrapT. auto.*) admit.
+    rewrite //=. 
+    (*have := le_total_ereal (\big[mine/+oo]_(j <- A2) [[j ]]_stli) (\big[mine/+oo]_(j <- B1) [[j ]]_stli).*)
+    (*rewrite {1}/mine in IH12; move: IH12; case: ifP => h1 h2;
+    rewrite {1}/mine in IH22; move: IH22; case: ifP => h3 h4.*) (*need a smarter solution to this, 
+Godel brute forced it with lra*)
+
+    (*move => /orP [HAB | HAB].
+    * exists (A1 ++ A2 |- C); subst; first by rewrite in_cons eq_refl orTb.
+      rewrite//= !big_map !big_min_cat. 
+      apply (leeD2l (\big[mine/+oo]_(j <- A1) [[j ]]_stli)) in HAB.*) (*no, need minimums.*)
+ admit.
   + by exists q1 => //; rewrite !in_cons h1 !orbT.
   + by exists q2 => //; rewrite !in_cons h2 !orbT.
   + by exists q1 => //; rewrite !in_cons h1 !orbT.
@@ -294,16 +284,21 @@ intros; rewrite//=. dependent induction H.
   + by exists q => //; rewrite !in_cons IH1 !orbT.
 - move: IHseq_calc_stli => [q + IH2].
   rewrite !in_cons => /predU1P[|IH1].
-  + exists (A |- (`~ a) :: B); subst; first by rewrite in_cons eq_refl orTb.
-    rewrite //= !big_cons maxNye {1}/mine in IH2.
-    rewrite //=!big_map !big_cons {1}/maxe. move: IH2.
-    repeat case: ifP; rewrite !big_map //=.
+  + exists (A |- [:: (`~ a)]); subst; first by rewrite in_cons eq_refl orTb.
+    rewrite //= !big_cons big_nil maxNye in IH2.
+    rewrite leeNy_eq {1}/mine in IH2; move/eqP in IH2.
+    rewrite //=!big_map !big_cons big_nil maxeNy. 
+    move: IH2.
+   (* repeat case: ifP; rewrite !big_map //=.
+     move => h ha. rewrite ha in h. 
+      rewrite ltNye in h. move/eqP in IH; rewrite//=.
+      (*rewrite leeNr.*)
     * move => /ltW h1 /ltW h2 h3. 
       admit. (*the mult by -1*)
     * move => /negP/negP h1 /ltW h2 h3.
       rewrite !ltNge !Bool.negb_involutive//= in h1.
-    admit. admit. (*rule wrong theoretically, go back*)
-  + by exists q => //; rewrite !in_cons IH1 !orbT.
+    admit. admit.
+  + by exists q => //; rewrite !in_cons IH1 !orbT.*) (*rule wrong theoretically, go back*) admit. admit.
 - move: IHseq_calc_stli => [q + IH2].
   rewrite !in_cons => /predU1P[|IH1].
   + subst.
@@ -315,6 +310,7 @@ intros; rewrite//=. dependent induction H.
       by rewrite (le_trans h1 h3).
     * move => /ltW h1 /negP/negP h2 h3. 
       rewrite !ltNge !Bool.negb_involutive//= in h2.
+      rewrite leeNl. (*no, also rethink this rule on paper*)
       admit. (*need to multiply both sides by -1)*)
     * move => /negP/negP h1 /negP/negP h2 h3.
       rewrite !ltNge !Bool.negb_involutive//= in h1 h2.
@@ -325,7 +321,11 @@ intros; rewrite//=. dependent induction H.
   + exists (A |- (a `=> b) :: B); subst; first by rewrite in_cons eq_refl orTb.
     rewrite //= !big_cons in IH2.
     rewrite //=!big_map !big_cons; repeat case: ifP.
-    * move => /andP [ha hb]. (*actual case, come back *) admit.
+    * (*move => /andP [ha hb]. 
+      rewrite {1}/maxe; case: ifPn.
+      + move => h1. rewrite {1}/mine {1}/maxe in IH2. move: IH2.
+        repeat case: ifPn; rewrite//=.*)
+(*actual case, come back *) admit.
     * by rewrite maxye leey.
     * admit. (*doable, midlly painful*)
     * by rewrite maxye leey.
