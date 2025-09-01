@@ -85,10 +85,9 @@ Inductive seq_calc_stli : hypersequent -> Prop :=
 | negR_stli : forall Q A B (a : formula),
     seq_calc_stli ((a :: A |- (ldl_bool _ _ _ _ false) :: B) :: Q) ->
     seq_calc_stli ((A |-  (`~ a) :: B) :: Q)
-| negL_stli : forall Q A1 A2 B (a : formula),
-    seq_calc_stli ((A1 |- [:: a]) :: Q) ->
-    seq_calc_stli (((ldl_bool _ _ _ _ false) :: A2 |- B) :: Q) ->
-    seq_calc_stli (((`~ a) :: A1 ++ A2 |- B) :: Q)
+| negL_stli : forall Q A B (a : formula),
+    seq_calc_stli ((A |- a :: B) :: Q) ->
+    seq_calc_stli (((`~ a) :: A |- B) :: Q)
 | implR_stli : forall Q A B (a b : formula),
     seq_calc_stli ((a :: A |- b :: B) :: Q) ->
     seq_calc_stli ((A |- (a `=> b) :: B) :: Q)
@@ -295,15 +294,22 @@ for 30 cases manually*)
   + exists (A |- (`~ a) :: B); subst; first by rewrite in_cons eq_refl orTb.
     rewrite //= !big_cons maxNye in IH2.
     rewrite //=!big_map !big_cons. admit. admit. (*rule wrong theoretically, go back*)
-- (*case IHseq_calc_stli1 => [q1].
-  case IHseq_calc_stli2 => [q2].
-  rewrite !in_cons //= => /orP [/eqP h2 | h2] IH12 /orP[/eqP h1 | h1] IH22.
+- move: IHseq_calc_stli => [q + IH2].
+  rewrite !in_cons => /predU1P[|IH1].
   + subst.
-    exists ((`~ a) :: A1 ++ A2 |- B); subst; first by rewrite in_cons eq_refl orTb.
-    rewrite //=!big_map !big_cons in IH12.
-    rewrite //= !big_map big_cons in IH22.
-    rewrite //=!big_map !big_cons. big_nil. maxeNy.
-    rewrite {1}/maxe. case: ifP; rewrite//=.*) admit. (*rule wrong theoretically, go back*)
+    exists ((`~ a) :: A |- B); subst; first by rewrite in_cons eq_refl orTb.
+    rewrite //=!big_map !big_cons {1}/maxe in IH2.
+    rewrite //=!big_map !big_cons {1}/mine. move: IH2.
+    repeat case: ifP; rewrite !big_map//=.
+    * move => /ltW h1 /ltW h2 h3. 
+      by rewrite (le_trans h1 h3).
+    * move => /ltW h1 /negP/negP h2 h3. 
+      rewrite !ltNge !Bool.negb_involutive//= in h2.
+      admit. (*need to multiply both sides by -1)*)
+    * move => /negP/negP h1 /negP/negP h2 h3.
+      rewrite !ltNge !Bool.negb_involutive//= in h1 h2.
+      admit. (*but provable*)
+  + by exists q => //; rewrite !in_cons IH1 !orbT.
 - move: IHseq_calc_stli => [q + IH2].
   rewrite !in_cons => /predU1P[|IH1].
   + exists (A |- (a `=> b) :: B); subst; first by rewrite in_cons eq_refl orTb.
