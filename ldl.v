@@ -124,6 +124,44 @@ Inductive expr : ldl_type -> Type :=
   | ldl_app2 : forall n m l, expr (fun2T n m l) -> expr (vectorT n) -> expr (vectorT m) -> expr (vectorT l)
   | ldl_lookup : forall n, expr (vectorT n) -> expr (indexT n) -> expr realT.
 
+Inductive negation_free : expr boolT -> Prop :=
+  | nf_bool : forall b, negation_free (ldl_bool b)
+  | nf_and : forall n f, negation_free (@ldl_and n f)
+  | nf_or : forall n f, negation_free (@ldl_or n f)
+  | nf_impl : forall x y, negation_free (ldl_impl x y)
+  | nf_mand : forall n f, negation_free (@ldl_mand n f)
+  | nf_mor : forall n f, negation_free (@ldl_mor n f)
+  | nf_cmp : forall c x y, negation_free (ldl_cmp c x y)
+.
+
+Inductive implication_free : expr boolT -> Prop :=
+  | if_bool : forall b, implication_free (ldl_bool b)
+  | if_and : forall n f, implication_free (@ldl_and n f)
+  | if_or : forall n f, implication_free (@ldl_or n f)
+  | if_not : forall x, implication_free (ldl_not x)
+  | if_mand : forall n f, implication_free (@ldl_mand n f)
+  | if_mor : forall n f, implication_free (@ldl_mor n f)
+  | if_cmp : forall c x y, implication_free (ldl_cmp c x y)
+.
+
+Inductive monoid_free : expr boolT -> Prop :=
+  | mf_bool : forall b, monoid_free (ldl_bool b)
+  | mf_and : forall n f, monoid_free (@ldl_and n f)
+  | mf_or : forall n f, monoid_free (@ldl_or n f)
+  | mf_not : forall x, monoid_free (ldl_not x)
+  | mf_impl : forall x y, monoid_free (ldl_impl x y)
+  | mf_cmp : forall c x y, monoid_free (ldl_cmp c x y)
+.
+
+Inductive lattice_free : expr boolT -> Prop :=
+  | lf_bool : forall b, lattice_free (ldl_bool b)
+  | lf_not : forall x, lattice_free (ldl_not x)
+  | lf_impl : forall x y, lattice_free (ldl_impl x y)
+  | lf_mand : forall n f, lattice_free (@ldl_mand n f)
+  | lf_mor : forall n f, lattice_free (@ldl_mor n f)
+  | lf_cmp : forall c x y, lattice_free (ldl_cmp c x y)
+.
+
 End expr.
 
 Declare Scope ldl_scope.
