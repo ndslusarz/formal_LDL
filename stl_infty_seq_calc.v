@@ -82,16 +82,16 @@ Inductive seq_calc_stli : hypersequent -> Prop :=
 | orR_stli : forall Q A B (a b : formula),
     seq_calc_stli ((A |- a :: B ) :: ( A |- b :: B) :: Q ) ->
     seq_calc_stli ((A |- (a `\/ b) :: B ) :: Q)
-| negR_stli : forall Q A (a : formula),
-    seq_calc_stli ((a :: A |- [:: ldl_bool _ _ _ _ false]) :: Q) ->
-    seq_calc_stli ((A |- [:: (`~ a)]) :: Q)
+| negR_stli : forall Q A B (a : formula),
+    seq_calc_stli ((a :: A |- (ldl_bool _ _ _ _ false) :: B) :: Q) ->
+    seq_calc_stli ((A |-  (`~ a) :: B) :: Q)
 | negL_stli : forall Q A1 A2 B (a : formula),
     seq_calc_stli ((A1 |- [:: a]) :: Q) ->
     seq_calc_stli (((ldl_bool _ _ _ _ false) :: A2 |- B) :: Q) ->
     seq_calc_stli (((`~ a) :: A1 ++ A2 |- B) :: Q)
 | implR_stli : forall Q A B (a b : formula),
-    seq_calc_stli ((a :: A |- [::b]) :: Q) ->
-    seq_calc_stli ((A |- [:: (a `=> b)]) :: Q)
+    seq_calc_stli ((a :: A |- b :: B) :: Q) ->
+    seq_calc_stli ((A |- (a `=> b) :: B) :: Q)
 | implL_stli : forall Q A1 A2 B (a b: formula),
     seq_calc_stli ((A1 |- [:: a]) :: Q) ->
     seq_calc_stli ((b :: A2 |- B) :: Q) ->
@@ -290,9 +290,43 @@ for 30 cases manually*)
     apply (maxe_gexy (\big[maxe/-oo]_(j <- [seq [[i ]]_stli | i <- B]) j)) in h.
     by rewrite (le_trans IH2 h).
   + by exists q => //; rewrite !in_cons IH1 !orbT.
-
-
-(*another helper this time that 
+- move: IHseq_calc_stli => [q + IH2].
+  rewrite !in_cons => /predU1P[|IH1].
+  + exists (A |- (`~ a) :: B); subst; first by rewrite in_cons eq_refl orTb.
+    rewrite //= !big_cons maxNye in IH2.
+    rewrite //=!big_map !big_cons. admit. admit. (*rule wrong theoretically, go back*)
+- (*case IHseq_calc_stli1 => [q1].
+  case IHseq_calc_stli2 => [q2].
+  rewrite !in_cons //= => /orP [/eqP h2 | h2] IH12 /orP[/eqP h1 | h1] IH22.
+  + subst.
+    exists ((`~ a) :: A1 ++ A2 |- B); subst; first by rewrite in_cons eq_refl orTb.
+    rewrite //=!big_map !big_cons in IH12.
+    rewrite //= !big_map big_cons in IH22.
+    rewrite //=!big_map !big_cons. big_nil. maxeNy.
+    rewrite {1}/maxe. case: ifP; rewrite//=.*) admit. (*rule wrong theoretically, go back*)
+- move: IHseq_calc_stli => [q + IH2].
+  rewrite !in_cons => /predU1P[|IH1].
+  + exists (A |- (a `=> b) :: B); subst; first by rewrite in_cons eq_refl orTb.
+    rewrite //= !big_cons in IH2.
+    rewrite //=!big_map !big_cons; repeat case: ifP.
+    * move => /andP [ha hb]. (*actual case, come back *) admit.
+    * by rewrite maxye leey.
+    * admit. (*doable, midlly painful*)
+    * by rewrite maxye leey.
+  + by exists q => //; rewrite !in_cons IH1 !orbT.
+- case IHseq_calc_stli1 => [q1].
+  case IHseq_calc_stli2 => [q2].
+  rewrite !in_cons //= => /orP [/eqP h2 | h2] IH12 /orP[/eqP h1 | h1] IH22.
+  + subst.
+    exists ((a `=> b) :: A1 ++ A2 |- B); subst; first by rewrite in_cons eq_refl orTb.
+    rewrite //=!big_map big_cons in IH12.
+    rewrite //= !big_map big_cons big_nil maxeNy in IH22.
+    rewrite //=!big_map !big_cons.
+    case: ifP; rewrite//=.
+    admit. admit. admit. admit. (*double check on paper*)
+  + by exists q1 => //; rewrite !in_cons h1 !orbT.
+  + by exists q2 => //; rewrite !in_cons h2 !orbT.
+  + by exists q1 => //; rewrite !in_cons h1 !orbT.
 Admitted.
 
 End stl_hypersequent_calc.
