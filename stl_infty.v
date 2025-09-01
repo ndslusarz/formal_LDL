@@ -268,16 +268,6 @@ rewrite /= /mine /maxe; repeat case: ifP; rewrite//= => h1 h2.
   apply: le_anti. by apply/andP; split.
 Qed.
 
-(*Lemma swap_lt_implies_ge0 (e1 e2 : \bar R):
-  e2 \is a fin_num ->
-  (e2 - e1 < e1 - e2)%E -> (0 <= e1 - e2)%E.
-Proof.
-move=> h.
-have /ltW : (0 < (e1 - e2) - (e2 - e1))%E by rewrite sube_gt0//=.
-rewrite oppeB//=.
-rewrite -addrA. addNr addr0 -mul2e => /mulr_ge0_le ?.
-Qed.*)
-
 Lemma stl_infty_prelinearity (e1 e2 e3 : @expr R (boolT_def impl_def m_def l_def)) :
   is_stl true ([[(e1 `=> e2) `\/ (e2 `=> e1)]]_stli).
 Proof.
@@ -312,4 +302,4 @@ admit. (*actual case*)
   by move: h; rewrite H eq_refl.
 Admitted.
 
-End stl_infty_lemmas.vrewrite leNgt in Hle.
+

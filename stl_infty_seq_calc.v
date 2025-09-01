@@ -102,7 +102,7 @@ elim: A => [|x xs IH].
   by exact: IH.
 Admitted.
 
-Lemma big_max_cat_godel A B:
+Lemma big_max_cat A B:
   \big[maxe/-oo]_(j <- A ++ B) [[j]]_stli =
   maxe (\big[maxe/-oo]_(j <- A) [[j]]_stli) (\big[maxe/-oo]_(j <- B) [[j]]_stli).
 Proof.
@@ -164,17 +164,17 @@ intros; rewrite//=. dependent induction H.
   case IHseq_calc_stli2 => [q2].
   rewrite !in_cons //= => /orP [/eqP h2 | h2] IH12 /orP[/eqP h1 | h1] IH22.
   + subst.
-    rewrite //=/minR/maxR !big_map in IH12 IH22.
-    rewrite //=/maxR/minR.
+    rewrite //= !big_map !big_min_cat in IH12 IH22.
+    rewrite //=.
  (*   have helper : forall (a b : R), a < b <-> ~(b <= a) by intros; lra.
-          have contr_comp : forall (a b : R), a < b -> b <= a -> false by intros; lra.
+          have contr_comp : forall (a b : R), a < b -> b <= a -> false by intros; lra.*)
     have hq : exists q : seq formula * seq formula,
         q = (A1 ++ A2 |- C) \/ q = B1 ++ B2 |- D
         by exists (A1 ++ A2 |- C); auto.
-    have h:  ~(exists2 q : seq formula * seq formula,
-    q \in [:: A1 ++ A2 |- C, B1 ++ B2 |- D & Q] & \big[minr/1]_(i <- [seq [[i]]_Godel | i <- q.1]) i <=
-               \big[maxr/0]_(i <- [seq [[i]]_Godel | i <- q.2]) i) -> false.
-        move/minr_maxr_le_godel : IH12 => -[ [h1 h1'] | [h1 h1']];
+    (*have h:  ~(exists2 q : seq formula * seq formula,
+    q \in [:: A1 ++ A2 |- C, B1 ++ B2 |- D & Q] & \big[mine/+oo]_(i <- [seq [[i]]_stli | i <- q.1]) i <=
+               \big[maxe/-oo]_(i <- [seq [[i]]_stli | i <- q.2]) i) -> false.*)
+        (*move/minr_maxr_le_godel : IH12 => -[ [h1 h1'] | [h1 h1']];
         move/minr_maxr_le_godel : IH22 => -[ [h2 h2'] | [h2 h2']];
         intro;
         rewrite -forallPNP in H1;
@@ -196,30 +196,37 @@ intros; rewrite//=. dependent induction H.
     rewrite //= /minR !big_map.
     suff : \big[mine/+oo]_(j <- A ++ B ++ B) [[j]]_stli =
            \big[mine/+oo]_(j <- A ++ B) [[j]]_stli by move=> ->.
-(*    rewrite !big_min_cat_godel {1}/minr {2}/minr {7}/minr {11}/minr; repeat case: ifP; 
-    intros; rewrite//=; lra.*) admit.
+    rewrite !big_min_cat {1}/mine {2}/mine {7}/mine {11}/mine; repeat case: ifP; rewrite//=.
   + by exists q => //; rewrite !in_cons IH1 !orbT.
 - move: IHseq_calc_stli => [q + IH2].
   rewrite in_cons => /predU1P[|IH1].
   + exists (A ++ B |- C); subst; first by rewrite in_cons eq_refl orTb.
     rewrite //= !big_map.
     rewrite //= !big_map in IH2.
-(*    have := big_minr_if A B.
-    case: ifPn; intros.
-    * by rewrite -H0 in IH2; exact IH2.
-    * by rewrite H0 (le_trans _ IH2)// ltW// ltNge.*) admit.
+    have := le_total_ereal (\big[mine/+oo]_(j <- A) [[j ]]_stli) (\big[mine/+oo]_(j <- B) [[j ]]_stli).
+    move => /orP [h|h]; rewrite !big_min_cat {1}/mine; case: ifPn; rewrite//=.
+    -  rewrite ltNge. move => /negPn h'. by rewrite (le_trans h' IH2).
+    -  rewrite ltNge. move => /negPn h'. by rewrite (le_trans h' IH2).
   + by exists q => //; rewrite !in_cons IH1 !orbT.
 - move: IHseq_calc_stli => [q + IH2].
   rewrite in_cons => /predU1P[|IH1].
   + exists (X ++ B ++ A ++ Y |- C); subst; first by rewrite in_cons eq_refl orTb.
     rewrite //= /minR/maxR !big_map.
     rewrite //= /minR/maxR !big_map in IH2.
-    (*rewrite !big_min_cat_stli {1}/minr {2}/minr {3}/minr {8}/minr {13}/minr {14}/minr {19}/minr.
-    rewrite !big_min_cat_godel {1}/minr {2}/minr {3}/minr {8}/minr {13}/minr {14}/minr {19}/minr in IH2.
+    (*rewrite !big_min_cat {1}/mine {2}/mine {3}/mine {8}/mine {13}/mine {14}/mine {19}/mine.
+    rewrite !big_min_cat {1}/mine {2}/mine {3}/mine {8}/mine {13}/mine {14}/mine {19}/mine in IH2.
     move: IH2.
-    repeat case: ifPn; intros; rewrite//=; try lra.*) admit.
+    repeat case: ifPn; rewrite//=. !ltNge !Bool.negb_involutive//=.
+    rewrite (le_trans.    rewrite negPn. try lra.*) admit. (*need a sarter way or will be doing le_trans 
+for 30 cases manually*)
   + by exists q => //; rewrite !in_cons IH1 !orbT.
-- admit. 
+- move: IHseq_calc_stli => [q + IH2].
+  rewrite in_cons => /predU1P[|IH1].
+  + exists (C |- X ++ B ++ A ++ Y); subst; first rewrite in_cons eq_refl orTb.
+    rewrite //= !big_map.
+    rewrite //=  !big_map in IH2.
+    admit. (*exactly the same problem as above*)
+  + by exists q => //; rewrite !in_cons IH1 !orbT.
 - exists (ldl_bool _ _ _ _ false :: A |- B); first by rewrite in_cons eq_refl orTb.
   by rewrite /minR/maxR//= !big_cons !big_map ge_min leNye orTb.
 - exists (A |- ldl_bool neg_def impl_def m_def l_def true :: B); first by rewrite in_cons eq_refl orTb.
@@ -229,7 +236,10 @@ intros; rewrite//=. dependent induction H.
   + exists ((a `/\ b) :: B |- A); subst; first by rewrite in_cons eq_refl orTb.
     rewrite //= !big_cons big_nil !big_map.
     rewrite //= !big_cons !big_map in IH2.
-    rewrite miney. admit.
+    rewrite miney. rewrite {1}/mine {3}/mine {1}/mine. move: IH2. rewrite {1}/mine. 
+    repeat case: ifP; rewrite//=.
+    - move => /negP h.
+admit.
   + move/predU1P : IH1 => [|IH1].
     exists ((a `/\ b) :: B |- A); subst; first by rewrite in_cons eq_refl orTb.
     rewrite //= !big_cons big_nil !big_map.
