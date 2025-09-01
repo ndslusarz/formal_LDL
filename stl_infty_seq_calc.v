@@ -213,21 +213,20 @@ intros; rewrite//=. dependent induction H.
 - move: IHseq_calc_stli => [q + IH2].
   rewrite in_cons => /predU1P[|IH1].
   + exists (X ++ B ++ A ++ Y |- C); subst; first by rewrite in_cons eq_refl orTb.
-    rewrite //= /minR/maxR !big_map.
-    rewrite //= /minR/maxR !big_map in IH2.
-    (*rewrite !big_min_cat {1}/mine {2}/mine {3}/mine {8}/mine {13}/mine {14}/mine {19}/mine.
-    rewrite !big_min_cat {1}/mine {2}/mine {3}/mine {8}/mine {13}/mine {14}/mine {19}/mine in IH2.
-    move: IH2.
-    repeat case: ifPn; rewrite//=. !ltNge !Bool.negb_involutive//=.
-    rewrite (le_trans.    rewrite negPn. try lra.*) admit. (*need a sarter way or will be doing le_trans 
-for 30 cases manually*)
+    rewrite //= !big_map !big_min_cat.
+    rewrite //= !big_map !big_min_cat in IH2.
+    rewrite (mineA (\big[mine/+oo]_(j <- A) [[j ]]_stli)) in IH2.
+    rewrite (mineC (\big[mine/+oo]_(j <- A) [[j ]]_stli)) in IH2.
+    by rewrite (mineA (\big[mine/+oo]_(j <- B) [[j ]]_stli))//=.
   + by exists q => //; rewrite !in_cons IH1 !orbT.
 - move: IHseq_calc_stli => [q + IH2].
   rewrite in_cons => /predU1P[|IH1].
-  + exists (C |- X ++ B ++ A ++ Y); subst; first rewrite in_cons eq_refl orTb.
-    rewrite //= !big_map.
-    rewrite //=  !big_map in IH2.
-    admit. (*exactly the same problem as above*)
+  + exists (C |- X ++ B ++ A ++ Y); subst; first by rewrite in_cons eq_refl orTb.
+    rewrite //= !big_map !big_max_cat.
+    rewrite //= !big_map !big_max_cat in IH2.
+    rewrite (maxA (\big[maxe/-oo]_(j <- A) [[j ]]_stli)) in IH2.
+    rewrite (maxC (\big[maxe/-oo]_(j <- A) [[j ]]_stli)) in IH2.
+    by rewrite (maxA (\big[maxe/-oo]_(j <- B) [[j ]]_stli))//=.
   + by exists q => //; rewrite !in_cons IH1 !orbT.
 - exists (ldl_bool _ _ _ _ false :: A |- B); first by rewrite in_cons eq_refl orTb.
   by rewrite /minR/maxR//= !big_cons !big_map ge_min leNye orTb.
