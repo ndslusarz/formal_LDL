@@ -698,10 +698,16 @@ Fixpoint stl_infty_translation {t} (e : @expr R t) {struct e} : ereal_type_trans
 
   | ldl_not _ _ _ E1 => - {[ E1 ]}
   | ldl_impl _ _ _ E1 E2 => 
-      if ({[ E1 ]} \is a fin_num) && ({[ E2 ]} \is a fin_num) then ({[ E2 ]} - {[ E1 ]})
+      if {[ E1 ]} <= {[ E2 ]} then +oo
+      else {[ E2 ]}
+ (*     if ({[ E1 ]} \is a fin_num) && ({[ E2 ]} \is a fin_num) then
+        if {[ E1 ]} <= {[ E2 ]} then +oo
+        else {[ E2 ]}
       else if ({[ E1 ]} == -oo) then +oo
       else if ({[ E2 ]} == -oo) then -oo
-      else  +oo
+      else if ({[ E2 ]} == +oo) then +oo
+      else if ({[ E1 ]} == +oo) then -oo
+      else  +oo*)
 
   | E1 `== E2 => (- `| {[ E1 ]} - {[ E2 ]}|)%:E
   | E1 `<= E2 => ({[ E2 ]} - {[ E1 ]})%:E

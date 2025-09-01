@@ -185,13 +185,13 @@ Qed.
 Lemma stl_infty_residuation (e1 e2 e3 : expr boolT_stli) :
   [[e1 `** e2]]_stli <= [[ e3 ]]_stli <-> [[ e2 ]]_stli <= [[e1 `=> e3]]_stli.
 Proof.
-split; rewrite//= /minR !big_cons big_nil !miney /mine; repeat case: ifPn; rewrite//=. 
-- move => H h1 h2. 
-- 
--
--
-- 
-Admitted.
+split; rewrite//= /minR !big_cons big_nil !miney /mine; repeat case: ifPn; rewrite ?leey//=. 
+- move => h1 h2 _.
+  rewrite ltNge Bool.negb_involutive in h1.
+  by rewrite (le_trans h1 h2).
+- move => /ltW h1 _ h3.
+  by rewrite (le_trans h1 h3).
+Qed.
 
 Lemma neg_swap_ineq (e1 e2 : \bar R) : (- e1 <= - e2)%E = (e2 <= e1)%E.
 Proof.
@@ -278,36 +278,17 @@ Qed.
 Lemma stl_infty_prelinearity (e1 e2 e3 : @expr R (boolT_def impl_def m_def l_def)) :
   is_stl true ([[(e1 `=> e2) `\/ (e2 `=> e1)]]_stli).
 Proof.
-rewrite /= /maxR !big_cons !big_nil !maxeNy.
-have Hle : ([[e1 ]]_stli - [[e2 ]]_stli <= +oo)%E by apply: leey. 
-rewrite leNgt in Hle. move /negP in Hle.
-have Hge : (-oo <=[[e2 ]]_stli - [[e1 ]]_stli )%E by apply: leey. 
-rewrite leNgt in Hge. move /negP in Hge.
-rewrite /= /mine /maxe; repeat case: ifP; rewrite//=.
-- move => /andP [h1 h2] _ h.
-  rewrite -(lteD2rE _ _ h1) -(lteD2rE _ _ h2) in h.
-  apply ltW in h. move: h.
-  set x := [[e1 ]]_stli. set y := [[e2 ]]_stli.
-
-admit. (*actual case*)
-- move => /andP [+ h2] H _ _.
-  rewrite fin_numE => /andP [/negP /eqP h h']. 
-  by move: h; rewrite H eq_refl.
-- move => _ /andP [h1 h2]. (*actual case*)
-  admit.
-- move => /eqP H _ /andP [_ +].
-  rewrite fin_numE => /andP [/negP /eqP h h']. 
-  by move: h; rewrite H eq_refl.
-- move => /eqP H _ _ /andP [+ _].
-  rewrite fin_numE => /andP [/negP /eqP h h']. 
-  by move: h; rewrite H eq_refl.
-- move => _ _ _ _ /negP H. 
-  move/negP : H; rewrite ltey; move /negPn/eqP ->.
-  by rewrite le0y//=.
-- move => /andP [+ h2] H _ _.
-  rewrite fin_numE => /andP [/negP /eqP h h']. 
-  by move: h; rewrite H eq_refl.
-Admitted.
+rewrite /= !big_cons !big_nil !maxeNy /maxe.
+repeat case: ifP; rewrite//=.
+- move => _ _  h3.
+  by rewrite ltNge leey in h3.
+- move => /negP h1 _ /ltW h3. by [].
+- move => h1 h2 /negP/negP h. 
+  rewrite ltNge Bool.negb_involutive leye_eq in h. move /eqP in h.
+  by rewrite h le0y.
+- move => _ /negP h2 /negP/negP h3. 
+  rewrite ltNge Bool.negb_involutive in h3. rewrite//=.
+Qed.
 
 
 
