@@ -88,9 +88,9 @@ Inductive seq_calc_stli : hypersequent -> Prop :=
 | negL_stli : forall Q A B (a : formula),
     seq_calc_stli ((A |- a :: B) :: Q) ->
     seq_calc_stli (((`~ a) :: A |- B) :: Q)
-| implR_stli : forall Q A B (a b : formula),
-    seq_calc_stli ((a :: A |- b :: B) :: Q) ->
-    seq_calc_stli ((A |- (a `=> b) :: B) :: Q)
+| implR_stli : forall Q A (a b : formula),
+    seq_calc_stli ((a :: A |- [:: b] ) :: Q) ->
+    seq_calc_stli ((A |- [:: (a `=> b)]) :: Q)
 | implL_stli : forall Q A1 A2 B (a b: formula),
     seq_calc_stli ((A1 |- [:: a]) :: Q) ->
     seq_calc_stli ((b :: A2 |- B) :: Q) ->
@@ -140,6 +140,11 @@ move => H. rewrite /maxe. repeat case: ifPn; rewrite//=.
 - move => /ltW h1 _. 
   by rewrite (le_trans H h1).
 Qed. 
+
+Lemma neg_swap_ineq (e1 e2 : \bar R) : (- e1 <= - e2)%E = (e2 <= e1)%E.
+Proof.
+rewrite leeNr oppeK//=.
+Qed.
 
 Lemma sound_stli Q:
   seq_calc_stli Q ->
@@ -318,9 +323,9 @@ Godel brute forced it with lra*)
   + by exists q => //; rewrite !in_cons IH1 !orbT.
 - move: IHseq_calc_stli => [q + IH2].
   rewrite !in_cons => /predU1P[|IH1].
-  + exists (A |- (a `=> b) :: B); subst; first by rewrite in_cons eq_refl orTb.
-    rewrite //= !big_cons in IH2.
-    rewrite //=!big_map !big_cons; repeat case: ifP.
+  + exists (A |- [:: (a `=> b)]); subst; first by rewrite in_cons eq_refl orTb.
+    rewrite //= !big_cons big_nil maxeNy in IH2.
+    rewrite //=!big_map !big_cons big_nil maxeNy; repeat case: ifP.
     * (*move => /andP [ha hb]. 
       rewrite {1}/maxe; case: ifPn.
       + move => h1. rewrite {1}/mine {1}/maxe in IH2. move: IH2.

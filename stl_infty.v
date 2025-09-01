@@ -185,40 +185,47 @@ Qed.
 Lemma stl_infty_residuation (e1 e2 e3 : expr boolT_stli) :
   [[e1 `** e2]]_stli <= [[ e3 ]]_stli <-> [[ e2 ]]_stli <= [[e1 `=> e3]]_stli.
 Proof.
-split; rewrite//= /minR !big_cons big_nil !miney /mine; case: ifPn => //= h1 h2.
-- case: (ltP ([[e2]]_stli) 0) => Hsign.
+split; rewrite//= /minR !big_cons big_nil !miney /mine; repeat case: ifPn; rewrite//=. 
+- move => H h1 h2. 
 - 
 -
 -
 - 
 Admitted.
 
-Lemma neg_swap_ineq (e1 e2 : \bar R) : (- e1 < - e2)%E = (e2 < e1)%E.
+Lemma neg_swap_ineq (e1 e2 : \bar R) : (- e1 <= - e2)%E = (e2 <= e1)%E.
 Proof.
-Admitted.
+rewrite leeNr oppeK//=.
+Qed.
 
 Lemma stl_infty_demorgan_mand f1 (e1 e2 : expr (boolT_def f1 m_def l_def)) :
   [[`~ (e1 `** e2)]]_stli = [[(`~ e1) `++ (`~ e2)]]_stli.
 Proof.
 rewrite /= /maxR !big_cons !big_nil !miney !maxeNy.
-rewrite /= /mine /maxe; repeat case: ifP; rewrite//= => h1 h2.
-- rewrite neg_swap_ineq in h1. rewrite ltNge in h1. move /negP in h1.
-  apply ltW in h2. by [].
-- move/negP in h1. move/negP in h2.
-  rewrite neg_swap_ineq in h1. rewrite ltNge in h1. move /negP in h1.
-  move/negPn in h1. move/negP in h2.
-  rewrite -leNgt in h2. 
-
-Admitted.
+rewrite /= /mine /maxe; repeat case: ifP; rewrite//= => h1 h2. move/ltW in h1.
+- rewrite neg_swap_ineq in h1. apply ltW in h2. 
+  have Heq : [[e1]]_stli = [[e2]]_stli.  apply le_anti; by rewrite h1 h2//=.
+  by rewrite eqe_oppP Heq.
+- move/negP/negP in h1. move/negP/negP in h2.
+  rewrite ltNge Bool.negb_involutive neg_swap_ineq in h1.
+  rewrite ltNge Bool.negb_involutive in h2.
+  have Heq : [[e1]]_stli = [[e2]]_stli.  apply le_anti; by rewrite h1 h2//=.
+  by rewrite eqe_oppP Heq.
+Qed.
 
 Lemma stl_infty_demorgan_mor f1 (e1 e2 : expr (boolT_def f1 m_def l_def)) :
   [[`~ (e1 `++ e2)]]_stli = [[(`~ e1) `** (`~ e2)]]_stli.
 rewrite /= /maxR !big_cons !big_nil !miney !maxeNy.
-rewrite /= /mine /maxe; repeat case: ifP; rewrite//= => h1 h2.
-- rewrite neg_swap_ineq in h1. rewrite ltNge in h1. move /negP in h1.
-  apply ltW in h2. by [].
-- (*same as above*)
-Admitted.
+rewrite /= /mine /maxe; repeat case: ifP; rewrite//= => h1 h2. move/ltW in h1.
+- rewrite neg_swap_ineq in h1. apply ltW in h2. 
+  have Heq : [[e1]]_stli = [[e2]]_stli.  apply le_anti; by rewrite h1 h2//=.
+  by rewrite eqe_oppP Heq.
+- move/negP/negP in h1. move/negP/negP in h2.
+  rewrite ltNge Bool.negb_involutive neg_swap_ineq in h1.
+  rewrite ltNge Bool.negb_involutive in h2.
+  have Heq : [[e1]]_stli = [[e2]]_stli.  apply le_anti; by rewrite h1 h2//=.
+  by rewrite eqe_oppP Heq.
+Qed.
 
 Lemma stl_infty_distr f1 (e1 e2 e3 :  (expr (boolT_def f1 m_def l_def))) :
   [[ e1 `/\ (e2 `\/ e3)]]_stli = [[ (e1 `/\ e2) `\/ (e1 `/\ e3)]]_stli.
@@ -303,3 +310,5 @@ admit. (*actual case*)
 Admitted.
 
 
+
+End stl_infty_lemmas.
