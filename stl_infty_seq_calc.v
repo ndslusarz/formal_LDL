@@ -103,20 +103,24 @@ Lemma big_min_cat A B :
   mine (\big[mine/+oo]_(j <- A) [[j]]_stli) (\big[mine/+oo]_(j <- B) [[j]]_stli).
 Proof.
 elim: A => [|x xs IH].
-- rewrite /= big_nil//= {2}/mine; case: ifP; intros; rewrite//=. admit.
+- rewrite /= big_nil//= {2}/mine; case: ifP; intros; rewrite//=.
+  case: B i. rewrite big_nil//=. 
+  move => a l IH. rewrite ltNge leey in IH; rewrite//=. 
 - simpl; rewrite !big_cons -minA; f_equal.
   by exact: IH.
-Admitted.
+Qed.
 
 Lemma big_max_cat A B:
   \big[maxe/-oo]_(j <- A ++ B) [[j]]_stli =
   maxe (\big[maxe/-oo]_(j <- A) [[j]]_stli) (\big[maxe/-oo]_(j <- B) [[j]]_stli).
 Proof.
 elim: A => [|x xs IH].
-- rewrite /= big_nil//= {2}/maxe; case: ifP; intros; rewrite//=. admit.
+- rewrite /= big_nil//= {2}/maxe; case: ifP; intros; rewrite//=. 
+  case: B n. rewrite big_nil//=. 
+  move => a l /negP/negP IH. rewrite ltNye negbK in IH. move/eqP in IH; rewrite//=.
 - simpl; rewrite !big_cons -maxA; f_equal.
   by exact IH.
-Admitted.
+Qed.
 
 Lemma mine_gexy (a b c : \bar R):
   a <= b -> mine a c <= mine b c.
@@ -292,8 +296,15 @@ for 30 cases manually*)
 - move: IHseq_calc_stli => [q + IH2].
   rewrite !in_cons => /predU1P[|IH1].
   + exists (A |- (`~ a) :: B); subst; first by rewrite in_cons eq_refl orTb.
-    rewrite //= !big_cons maxNye in IH2.
-    rewrite //=!big_map !big_cons. admit. admit. (*rule wrong theoretically, go back*)
+    rewrite //= !big_cons maxNye {1}/mine in IH2.
+    rewrite //=!big_map !big_cons {1}/maxe. move: IH2.
+    repeat case: ifP; rewrite !big_map //=.
+    * move => /ltW h1 /ltW h2 h3. 
+      admit. (*the mult by -1*)
+    * move => /negP/negP h1 /ltW h2 h3.
+      rewrite !ltNge !Bool.negb_involutive//= in h1.
+    admit. admit. (*rule wrong theoretically, go back*)
+  + by exists q => //; rewrite !in_cons IH1 !orbT.
 - move: IHseq_calc_stli => [q + IH2].
   rewrite !in_cons => /predU1P[|IH1].
   + subst.
