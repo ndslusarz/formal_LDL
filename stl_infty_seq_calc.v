@@ -150,6 +150,7 @@ Proof.
 rewrite leeNr oppeK//=.
 Qed.
 
+
 Lemma sound_stli Q:
   seq_calc_stli Q ->
   exists2 q : seq formula * seq formula, q \in Q &
@@ -177,16 +178,18 @@ intros; rewrite//=. dependent induction H.
   + subst.
     rewrite //= !big_map !big_min_cat in IH12 IH22.
     rewrite //=. 
-    (*have := le_total_ereal (\big[mine/+oo]_(j <- A2) [[j ]]_stli) (\big[mine/+oo]_(j <- B1) [[j ]]_stli).*)
-    (*rewrite {1}/mine in IH12; move: IH12; case: ifP => h1 h2;
-    rewrite {1}/mine in IH22; move: IH22; case: ifP => h3 h4.*) (*need a smarter solution to this, 
-Godel brute forced it with lra*)
-
-    (*move => /orP [HAB | HAB].
-    * exists (A1 ++ A2 |- C); subst; first by rewrite in_cons eq_refl orTb.
-      rewrite//= !big_map !big_min_cat. 
-      apply (leeD2l (\big[mine/+oo]_(j <- A1) [[j ]]_stli)) in HAB.*) (*no, need minimums.*)
- admit.
+    have := le_total_ereal (\big[mine/+oo]_(j <- A2) [[j ]]_stli) (\big[mine/+oo]_(j <- B1) [[j ]]_stli).
+    move => /orP [h | h].
+    * apply (mine_gexy (\big[mine/+oo]_(j <- A1) [[j ]]_stli)) in h.
+      rewrite (mineC (\big[mine/+oo]_(j <- A2) [[j ]]_stli)) (mineC (\big[mine/+oo]_(j <- B1) [[j ]]_stli))
+        in h.
+      exists (A1 ++ A2 |- C); subst; first by rewrite in_cons eq_refl orTb.
+      rewrite//= !big_map big_min_cat.
+      by rewrite (le_trans h IH22).
+    * apply (mine_gexy (\big[mine/+oo]_(j <- B2) [[j ]]_stli)) in h.
+      exists (B1 ++ B2 |- D); subst; first by rewrite !in_cons eq_refl orTb orbT.
+      rewrite//= !big_map big_min_cat.
+      by rewrite (le_trans h IH12).
   + by exists q1 => //; rewrite !in_cons h1 !orbT.
   + by exists q2 => //; rewrite !in_cons h2 !orbT.
   + by exists q1 => //; rewrite !in_cons h1 !orbT.
@@ -349,7 +352,7 @@ Godel brute forced it with lra*)
   + by exists q1 => //; rewrite !in_cons h1 !orbT.
   + by exists q2 => //; rewrite !in_cons h2 !orbT.
   + by exists q1 => //; rewrite !in_cons h1 !orbT.
-Admitted.
+Qed.
 
 End stl_hypersequent_calc.
 
