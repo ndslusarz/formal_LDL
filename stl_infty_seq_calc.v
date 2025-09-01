@@ -326,25 +326,33 @@ Godel brute forced it with lra*)
   + exists (A |- [:: (a `=> b)]); subst; first by rewrite in_cons eq_refl orTb.
     rewrite //= !big_cons big_nil maxeNy in IH2.
     rewrite //=!big_map !big_cons big_nil maxeNy; repeat case: ifP.
-    * (*move => /andP [ha hb]. 
-      rewrite {1}/maxe; case: ifPn.
-      + move => h1. rewrite {1}/mine {1}/maxe in IH2. move: IH2.
-        repeat case: ifPn; rewrite//=.*)
-(*actual case, come back *) admit.
-    * by rewrite maxye leey.
-    * admit. (*doable, midlly painful*)
-    * by rewrite maxye leey.
+    - by rewrite leey.
+    - move => /negP h.
+      rewrite {1}/mine big_map in IH2. move: IH2. case: ifPn; rewrite//=.
   + by exists q => //; rewrite !in_cons IH1 !orbT.
 - case IHseq_calc_stli1 => [q1].
   case IHseq_calc_stli2 => [q2].
   rewrite !in_cons //= => /orP [/eqP h2 | h2] IH12 /orP[/eqP h1 | h1] IH22.
   + subst.
     exists ((a `=> b) :: A1 ++ A2 |- B); subst; first by rewrite in_cons eq_refl orTb.
-    rewrite //=!big_map big_cons in IH12.
+    rewrite //=!big_map big_cons {1}/mine in IH12.
     rewrite //= !big_map big_cons big_nil maxeNy in IH22.
-    rewrite //=!big_map !big_cons.
-    case: ifP; rewrite//=.
-    admit. admit. admit. admit. (*double check on paper*)
+    rewrite //=!big_map !big_cons. move: IH12.
+    repeat case: ifP; rewrite ?minye !big_map ?big_min_cat//=; move => h1 h2 h3; 
+    rewrite {1}/mine; case: ifP; rewrite//= => h4.
+    * move /ltW in h2. have h5 := (le_trans IH22 h1).
+      by rewrite (le_trans h5 h3).
+    * move /negP/negP in h4. rewrite ltNge !Bool.negb_involutive in h4.
+      by rewrite (le_trans (le_trans (le_trans h4 IH22) h1) h3).
+    * rewrite {1}/mine; case: ifP; move: h4; rewrite {1}/mine; case: ifP; rewrite//=;
+      move => _ /negP/negP h5 _; rewrite ltNge !Bool.negb_involutive in h5;
+      by rewrite (le_trans h5 h3).
+    * by move /ltW in h4; rewrite (le_trans h4 h3).
+    * move: h4; rewrite {1}/mine; case: ifP; rewrite//= =>  h4 /ltW h5.
+      - move /ltW in h4. by rewrite (le_trans (le_trans h5 h4) h3).
+      - by rewrite (le_trans h5 h3).
+    * rewrite {1}/mine; case: ifP; rewrite//= => /ltW h5.
+      by rewrite (le_trans h5 h3).
   + by exists q1 => //; rewrite !in_cons h1 !orbT.
   + by exists q2 => //; rewrite !in_cons h2 !orbT.
   + by exists q1 => //; rewrite !in_cons h1 !orbT.
