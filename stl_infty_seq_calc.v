@@ -82,13 +82,20 @@ Inductive seq_calc_stli : hypersequent -> Prop :=
 | orR_stli : forall Q A B (a b : formula),
     seq_calc_stli ((A |- a :: B ) :: ( A |- b :: B) :: Q ) ->
     seq_calc_stli ((A |- (a `\/ b) :: B ) :: Q)
-| negR_g : forall Q A (a : formula),
+| negR_stli : forall Q A (a : formula),
     seq_calc_stli ((a :: A |- [:: ldl_bool _ _ _ _ false]) :: Q) ->
     seq_calc_stli ((A |- [:: (`~ a)]) :: Q)
-| negL_g : forall Q A1 A2 B (a : formula),
+| negL_stli : forall Q A1 A2 B (a : formula),
     seq_calc_stli ((A1 |- [:: a]) :: Q) ->
     seq_calc_stli (((ldl_bool _ _ _ _ false) :: A2 |- B) :: Q) ->
-    seq_calc_stli (((`~ a) :: A1 ++ A2 |- B) :: Q).
+    seq_calc_stli (((`~ a) :: A1 ++ A2 |- B) :: Q)
+| implR_stli : forall Q A B (a b : formula),
+    seq_calc_stli ((a :: A |- [::b]) :: Q) ->
+    seq_calc_stli ((A |- [:: (a `=> b)]) :: Q)
+| implL_stli : forall Q A1 A2 B (a b: formula),
+    seq_calc_stli ((A1 |- [:: a]) :: Q) ->
+    seq_calc_stli ((b :: A2 |- B) :: Q) ->
+    seq_calc_stli (( (a `=> b) :: A1 ++ A2 |- B) :: Q).
 
 
 
@@ -111,32 +118,6 @@ elim: A => [|x xs IH].
 - simpl; rewrite !big_cons -maxA; f_equal.
   by exact IH.
 Admitted.
-
-(*Lemma big_minr_if A B :
-  if \big[minr/1]_(j <- A) [[j]]_Godel <= \big[minr/1]_(j <- B) [[j]]_Godel then
-    \big[minr/1]_(j <- A ++ B) [[j]]_Godel = \big[minr/1]_(j <- A) [[j]]_Godel
-  else
-    \big[minr/1]_(j <- A ++ B) [[j]]_Godel = \big[minr/1]_(j <- B) [[j]]_Godel.
-Proof.
-have H := big_min_cat_godel A B.
-rewrite {2}/minr in H. rewrite//=.
-move: H. case: ifP;
-case: ifPn; intros; rewrite//=; lra.
-Qed.
-
-Lemma minr_lt_godel A B C :
-  \big[minr/1]_(j <- C) [[j]]_Godel < \big[minr/1]_(j <- A) [[j]]_Godel /\
-    \big[minr/1]_(j <- C) [[j]]_Godel < \big[minr/1]_(j <- B) [[j]]_Godel <->
- (\big[minr/1]_(j <- C) [[j]]_Godel < \big[minr/1]_(j <- A ++ B) [[j]]_Godel).
-Proof.
-split.
-- move => [h1 h2].
-  have := big_minr_if A B. 
-  by case: ifP; move => _ ->.
-- move => h.
-  have := big_minr_if A B.
-  by case: ifP; move => H' H; rewrite H in h; rewrite h; split; first by []; lra.
-Qed.*)
 
 
 Lemma sound_stli Q:
@@ -234,25 +215,50 @@ for 30 cases manually*)
 - move: IHseq_calc_stli => [q + IH2].
   rewrite !in_cons => /predU1P[|IH1].
   + exists ((a `/\ b) :: B |- A); subst; first by rewrite in_cons eq_refl orTb.
-    rewrite //= !big_cons big_nil !big_map.
+    rewrite //= !big_cons big_nil !big_map miney.
     rewrite //= !big_cons !big_map in IH2.
-    rewrite miney. rewrite {1}/mine {3}/mine {1}/mine. move: IH2. rewrite {1}/mine. 
+    rewrite {2}/mine; case: ifP; rewrite//=.
+    move => /negP/negP h. rewrite  ltNge Bool.negb_involutive in h. admit.
+(*smart way (repeat in case below) - add lemma that min a b <= min c b if c <= a*)
+ (*   rewrite {1}/mine {3}/mine {1}/mine. move: IH2. rewrite {1}/mine. 
     repeat case: ifP; rewrite//=.
-    - move => /negP h.
-admit.
+    * move => /negP/negP h. rewrite  ltNge Bool.negb_involutive in h. move => _ _ h'.
+      by rewrite (le_trans h h'). 
+    * move => _ h _ h'.
+      rewrite  ltNge in h. move/negbFE in h.
+      by rewrite (le_trans h h').
+    * admit. admit. admit. (*more of the same, simple, go back to it*)*)
   + move/predU1P : IH1 => [|IH1].
     exists ((a `/\ b) :: B |- A); subst; first by rewrite in_cons eq_refl orTb.
-    rewrite //= !big_cons big_nil !big_map.
+    rewrite //= !big_cons big_nil !big_map miney.
     rewrite //= !big_cons !big_map in IH2.
-    admit.
+    rewrite {1}/mine {3}/mine {1}/mine. move: IH2. rewrite {1}/mine. 
+    repeat case: ifP; rewrite//=.
+    * admit.
+    * admit.
+    * admit. admit. admit. (*same as above, very manual*)
   + by exists q => //; rewrite !in_cons IH1 !orbT.
 - case IHseq_calc_stli1 => [q1].
   case IHseq_calc_stli2 => [q2].
   rewrite !in_cons //= => /orP [/eqP h2 | h2] IH12 /orP[/eqP h1 | h1] IH22.
   + subst.
+    exists (A |- (a `/\ b) :: B); subst; first by rewrite in_cons eq_refl orTb.
     rewrite //=!big_map big_cons in IH12.
     rewrite //= !big_map big_cons in IH22.
-    admit.
+    rewrite //=!big_map !big_cons big_nil miney.
+    rewrite {2}/mine. case: ifP; rewrite//=.
+  + by exists q1 => //; rewrite !in_cons h1 !orbT.
+  + by exists q2 => //; rewrite !in_cons h2 !orbT.
+  + by exists q1 => //; rewrite !in_cons h1 !orbT.
+- case IHseq_calc_stli1 => [q1].
+  case IHseq_calc_stli2 => [q2].
+  rewrite !in_cons //= => /orP [/eqP h2 | h2] IH12 /orP[/eqP h1 | h1] IH22.
+  + subst.
+    exists ((a `\/ b) :: B |- A); subst; first by rewrite in_cons eq_refl orTb.
+    rewrite //=!big_map big_cons in IH12.
+    rewrite //= !big_map big_cons in IH22.
+    rewrite //=!big_map !big_cons big_nil maxeNy.
+    rewrite {1}/maxe. case: ifP; rewrite//=.
   + by exists q1 => //; rewrite !in_cons h1 !orbT.
   + by exists q2 => //; rewrite !in_cons h2 !orbT.
   + by exists q1 => //; rewrite !in_cons h1 !orbT.
