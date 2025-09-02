@@ -33,13 +33,19 @@ Require Import mathcomp_extra analysis_extra ldl.
 (* - adequacy == final adequacy result for Godel and product                  *)
 (*                                                                            *)
 (* ## Structural properties for Lukasiewicz                                   *)
-(* - Lukasiewicz_mandC_nary == n-ary commutativity of conjunction             *)
-(* - Lukasiewicz_mandC == commutativity of conjunction                        *)
-(* - Lukasiewicz_morC_nary == n-ary commutativity of disjunction              *)
-(* - Lukasiewicz_morC_ == commutativity of disjunction                        *)
-(* - Lukasiewicz_morA == associativity of disjunction                         *)
-(* - Lukasiewicz_mandA == associativity of conjunction                        *)
-(* - Lukasiewicz_mand_unit == unit element conjunction                        *)
+(* - Lukasiewicz_mandC_nary == n-ary commutativity of monoidal conjunction    *)
+(* - Lukasiewicz_mandC == commutativity of monoidal conjunction               *)
+(* - Lukasiewicz_morC_nary == n-ary commutativity of monoidal disjunction     *)
+(* - Lukasiewicz_morC_ == commutativity of monoidal disjunction               *)
+(* - Lukasiewicz_morA == associativity of monoidal disjunction                *)
+(* - Lukasiewicz_mandA == associativity of monoidal conjunction               *)
+(* - Lukasiewicz_mand_unit == unit element monoidal conjunction               *)
+(* - Lukasiewicz_mor_unit == unit element monoidal disjunction                *)
+(* - Lukasiewicz_residuation == residuation                                   *)
+(* - Lukasiewicz_prelinearity == prealineartiy                                *)
+(* - Lukasiewicz_involution == involution of negation                         *)
+(* - Lukasiewicz_demorgan_mand == de Morgan 1, monoidal connectives           *)
+(* - Lukasiewicz_demorgan_mord == de Morgan 1, monoidal connectives           *)
 (*                                                                            *)
 (* ## Structural properties for Yager                                         *)
 (* - Yager_mandC_nary == n-ary commutativity of conjunction                   *)
@@ -49,6 +55,8 @@ Require Import mathcomp_extra analysis_extra ldl.
 (* - Yager_morA == associativity of disjunction                               *)
 (* - Yager_mandA == associativity of conjunction                              *)
 (* - Yager_mand_unit == unit element conjunction                              *)
+(* - Yager_mor_unit == unit element monoidal disjunction                      *)
+(* - Yager_involution == involution of negation                               *)
 (*                                                                            *)
 (* ## Structural properties for Godel                                         *)
 (* - Godel_mandI == idempotence of conjunction                                *)
@@ -60,6 +68,11 @@ Require Import mathcomp_extra analysis_extra ldl.
 (* - Godel_morA == associativity of disjunction                               *)
 (* - Godel_mandA == associativity of conjunction                              *)
 (* - Godel_mand_unit == unit element conjunction                              *)
+(* - Godel_mor_unit == unit element monoidal disjunction                      *)
+(* - Godel_residuation == residuation                                         *)
+(* - Godel_prelinearity == prealineartiy                                      *)
+(* - Godel_demorgan_mand == de Morgan 1, monoidal connectives                 *)
+(* - Godel_demorgan_mord == de Morgan 1, monoidal connectives                 *)
 (*                                                                            *)
 (* ## Structural properties for product                                       *)
 (* - product_mandC_nary == n-ary commutativity of conjunction                 *)
@@ -69,10 +82,25 @@ Require Import mathcomp_extra analysis_extra ldl.
 (* - product_morA == associativity of disjunction                             *)
 (* - product_mandA == associativity of conjunction                            *)
 (* - product_mand_unit == unit element conjunction                            *)
+(* - product_mor_unit == unit element monoidal disjunction                    *)
+(* - product_residuation == residuation                                       *)
+(* - product_prelinearity == prealineartiy                                    *)
+(* - product_demorgan_mand == de Morgan 1, monoidal connectives               *)
+(* - product_demorgan_mord == de Morgan 1, monoidal connectives               *)
 (*                                                                            *)
 (* ## Shared structural properties                                            *)
 (* - fuzzy_and_abs == absorption of lattice conjunction                       *)
 (* - fuzzy_or_abs == absorption of lattice disjunction                        *)
+(* - fuzzy_landI == idempotence of lattice conjunction                        *)
+(* - fuzzy_lorI == aidempotencebsorption of lattice disjunction               *)
+(* - fuzzy_orC_nary == n-ary commutativity of lattice disjunction             *)
+(* - fuzzy_orC_ == commutativity of lattice disjunction                       *)
+(* - fuzzy_orA == associativity of lattice disjunction                        *)
+(* - fuzzy_andA == associativity of lattice conjunction                       *)
+(* - fuzzy_and_distr == distributivity                                        *)
+(* - fuzzy_and_distr2 == distributivity                                       *)
+(* - fuzzy_demorgan_mand == de Morgan 1, lattice connectives                  *)
+(* - fuzzy_demorgan_mord == de Morgan 1, lattice connectives                  *)
 (*                                                                            *)
 (* ## Shadow-lifting                                                          *)
 (* - product_and v == $\product_{i < n} v_i$                                  *)
@@ -1103,38 +1131,6 @@ rewrite -powRrM divff//= ?powRr1 ?p_nq//=; try lra.
 rewrite /minr; case: ifP; move => hy; lra.
 Qed.
 
-Lemma Yager_prelinearity (e1 e2 e3 : @expr R boolT_fuzzy) :
-  [[(e1 `=> e2) `\/ (e2 `=> e1)]]_Yager = [[ldl_bool  _ _ _ _ true]]_Yager.
-Proof.
-have minle1 : forall (x : R), x <= 1 -> minr x 1 = x. intros; rewrite /minr; case: ifP; lra.
-have minge0 : forall (x : R), 0 <= x -> minr x 0 = 0. intros; rewrite /minr; case: ifP; lra.
-have := translate_boolT_01 p p1 Yager _ _ _ e1.
-have := translate_boolT_01 p p1 Yager _ _ _ e2.
-rewrite//=/maxR !big_cons !big_nil. 
-set x := [[e1]]_Yager; 
-  set y := [[e2]]_Yager. move => hx hy.
-rewrite (minle1 ((((1 - x) `^ p)%R + (y `^ p)%R)%E `^ p^-1)). 
-have maxge0 : forall (x : R), 0 <= x  -> maxr x 0 = x. intros; rewrite /maxr; case: ifP; lra.
-rewrite maxge0 minle1 /maxr//=. case: ifP => h.
-admit.
-Admitted.
-
-Lemma Yager_residuation (e1 e2 e3 : expr boolT_fuzzy) :
-  [[e1 `** e2]]_Yager <= [[ e3 ]]_Yager <-> [[ e2 ]]_Yager <= [[e1 `=> e3]]_Yager.
-Proof.
-have := translate_boolT_01 p p1 Yager _ _ _ e1.
-have := translate_boolT_01 p p1 Yager _ _ _ e2.
-have := translate_boolT_01 p p1 Yager _ _ _ e3.
-split; rewrite//= !big_cons big_nil !addr0 /maxr/minr; case: ifP;
-  set x := (1 - [[e1]]_Yager) `^ p; 
-  set y := (1 - [[e2]]_Yager) `^ p;
-  set z := [[e3]]_Yager; intros; case: ifP => H'.
-- move: H'. set xx := (x + (z `^ p)%R)%E `^ p^-1.
-  have h : forall (a b : R), 0 <= b <= 1 ->
-                             a < 1 ->
-                             b <= a. 
-Admitted.
-
 Lemma Yager_involution (e : expr boolT_fuzzy) :
   [[`~ (`~e)]]_Yager = [[ e ]]_Yager.
 Proof. by rewrite//=; lra. Qed.
@@ -1144,12 +1140,6 @@ Lemma Yager_demorgan_mand  (e1 e2 : expr boolT_fuzzy) :
 Proof.
 rewrite//= !big_cons big_nil !addr0 /maxr /minr; repeat case: ifP; intros; lra.
 Qed.
-
-Lemma Yager_demorgan_mor  (e1 e2 : expr boolT_fuzzy) :
-  [[`~ (e1 `++ e2)]]_Yager = [[(`~ e1) `** (`~ e2)]]_Yager.
-Proof.
-rewrite//= !big_cons big_nil !addr0 /maxr /minr; repeat case: ifP; intros; try lra.
-Admitted.
 
 End Yager_lemmas.
 

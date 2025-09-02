@@ -240,7 +240,7 @@ move => hmaxlt0 _ i isize.
 by apply: (maxrltx hmaxlt0); rewrite mem_nth.
 Qed.
 
-Lemma stl_adequacy (e : expr (boolT_undef impl_undef m_undef l_def)) b :
+Lemma stl_adequacy (e : expr (boolT neg_undef impl_undef m_undef l_def)) b :
   is_stl b (nu.-[[ e ]]_stl) -> [[ e ]]_B = b.
 Proof.
 dependent induction e using expr_ind'.
