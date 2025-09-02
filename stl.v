@@ -142,7 +142,7 @@ Qed.
 
 Definition is_stl b (x : R) := if b then x >= 0 else x < 0.
 
-Lemma stl_nary_inversion_andE1 (Es : seq (expr (boolT_undef impl_undef m_undef l_def))) :
+Lemma stl_nary_inversion_andE1 (Es : seq (expr (boolT neg_undef impl_undef m_undef l_def))) :
   is_stl true (nu.-[[ ldl_and Es ]]_stl) ->
   forall i, (i < size Es)%N ->
     is_stl true (nu.-[[ nth (ldl_bool neg_undef _ _ _ false) Es i ]]_stl).
@@ -167,7 +167,7 @@ rewrite -leNgt; move/minrgex => h.
 by case: ifPn => _ _ i isize; rewrite h// mem_nth.
 Qed.
 
-Lemma stl_nary_inversion_andE0 (Es : seq (expr (boolT_undef impl_undef m_undef l_def))) :
+Lemma stl_nary_inversion_andE0 (Es : seq (expr (boolT neg_undef impl_undef m_undef l_def))) :
   is_stl false (nu.-[[ ldl_and Es ]]_stl) ->
   exists2 i, is_stl false (nu.-[[ nth (ldl_bool neg_undef _ _ _ false) Es i ]]_stl) &
              (i < size Es)%N.
@@ -188,7 +188,7 @@ all: move=> i /andP[il _]; rewrite ?mulr_ge0 ?expR_ge0//.
 by apply: (minrgex hminge0); rewrite in_cons il orbT.
 Qed.
 
-Lemma stl_nary_inversion_orE1 (Es : seq (expr (boolT_undef impl_undef m_undef l_def))) :
+Lemma stl_nary_inversion_orE1 (Es : seq (expr (boolT neg_undef impl_undef m_undef l_def))) :
   is_stl true (nu.-[[ ldl_or Es ]]_stl) ->
   exists2 i, is_stl true (nu.-[[ nth (ldl_bool _ _ _ _ false) Es i ]]_stl) &
              (i < size Es)%N.
@@ -222,7 +222,7 @@ exists (index x (a :: l)).
 by rewrite index_mem xmem.
 Qed.
 
-Lemma stl_nary_inversion_orE0 (Es : seq (expr (boolT_undef impl_undef m_undef l_def))) :
+Lemma stl_nary_inversion_orE0 (Es : seq (expr (boolT neg_undef impl_undef m_undef l_def))) :
   is_stl false (nu.-[[ ldl_or Es ]]_stl) ->
   forall i, (i < size Es)%N ->
     is_stl false (nu.-[[ nth (ldl_bool _ _ _ _ false) Es i ]]_stl).
