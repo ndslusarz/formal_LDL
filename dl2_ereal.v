@@ -114,13 +114,11 @@ by rewrite (muleC ([[e1]]_dl2e) _).
 Qed.
 
 Lemma dl2_ereal_translation_le0 e :
-  ([[ e ]]_dl2e <= 0 :> ereal_type_translation (boolT_undef impl_def m_def l_def))%E.
+  ([[ e ]]_dl2e <= 0 :> ereal_type_translation (boolT_undef impl_def m_def l_undef))%E.
 Proof.
 dependent induction e using expr_ind' => /=.
 - by case: b.
 - rewrite big_map big_seq. 
- admit.
-- admit.
 - rewrite /maxe; case: ifPn => h //=.
   by rewrite leeNl oppe0 leNgt h.
 - case: ifPn => //.
@@ -154,7 +152,7 @@ dependent induction e using expr_ind' => /=.
   by move/List.Forall_forall : H => /(_ e); apply => //; exact/In_in.
 - case: c => //=.
   by rewrite lee_fin oppr_le0 le_max lexx orbT.
-Admitted.
+Qed.
 
 Lemma dl2_morA (e1 e2 e3 : expr (boolT_undef impl_def m_def l_def)) :
   [[ e1 `++ (e2 `++ e3) ]]_dl2e = [[ (e1 `++ e2) `++ e3 ]]_dl2e.

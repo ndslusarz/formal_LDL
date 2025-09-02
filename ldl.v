@@ -38,6 +38,8 @@ From HB Require Import structures.
 (*   mapping true to $1$ and false to $-1$                                    *)
 (* - `stl_ereal_translation`: maps an LDL-formula to its interpretation in    *)
 (*   STL on extended reals, mapping true to $\infty$ and false to $-\infty$   *)
+(* - `stl_infty_translation`: maps an LDL-formula to its interpretation in    *)
+(*   STLinfty, STL where parameter nu tends to infinity$                      *)
 (*                                                                            *)
 (* ## Mathematical definitions:                                               *)
 (* `shadow_lifting f` with `f : rV[R]_n.+1 -> R`                              *)
@@ -700,14 +702,6 @@ Fixpoint stl_infty_translation {t} (e : @expr R t) {struct e} : ereal_type_trans
   | ldl_impl _ _ _ E1 E2 => 
       if {[ E1 ]} <= {[ E2 ]} then +oo
       else {[ E2 ]}
- (*     if ({[ E1 ]} \is a fin_num) && ({[ E2 ]} \is a fin_num) then
-        if {[ E1 ]} <= {[ E2 ]} then +oo
-        else {[ E2 ]}
-      else if ({[ E1 ]} == -oo) then +oo
-      else if ({[ E2 ]} == -oo) then -oo
-      else if ({[ E2 ]} == +oo) then +oo
-      else if ({[ E1 ]} == +oo) then -oo
-      else  +oo*)
 
   | E1 `== E2 => (- `| {[ E1 ]} - {[ E2 ]}|)%:E
   | E1 `<= E2 => ({[ E2 ]} - {[ E1 ]})%:E
