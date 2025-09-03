@@ -1131,6 +1131,32 @@ rewrite -powRrM divff//= ?powRr1 ?p_nq//=; try lra.
 rewrite /minr; case: ifP; move => hy; lra.
 Qed.
 
+Lemma Yager_residuation (e1 e2 e3 : expr boolT_fuzzy) :
+  [[e1 `** e2]]_Yager <= [[ e3 ]]_Yager <-> [[ e2 ]]_Yager <= [[e1 `=> e3]]_Yager.
+Proof.
+have := translate_boolT_01 p p1 Yager _ _ _ e1.
+have := translate_boolT_01 p p1 Yager _ _ _ e2.
+have := translate_boolT_01 p p1 Yager _ _ _ e3.
+split; rewrite//= !big_cons big_nil !addr0 /maxr/minr; case: ifP;
+  set x := [[e1]]_Yager; 
+  set y := [[e2]]_Yager;
+  set z := [[e3]]_Yager; case: ifP => //=; rewrite//=.
+- move => h1 h2 _. 
+
+admit.
+- move => _ _ _. subst y. lra.
+- move => h1 /negP/negP h2 h3. rewrite ltNge Bool.negb_involutive in h2. 
+  admit.
+- move => _ _ _. subst y. lra.
+- move => _ _ _. subst z. lra.
+- move => /negP/negP h1 h2 h3. rewrite ltNge Bool.negb_involutive in h1. 
+  admit.
+- move => _ _ _. subst z. lra.
+- move => /negP/negP h1 /negP/negP h2 _. 
+  rewrite ltNge Bool.negb_involutive in h1. 
+  rewrite ltNge Bool.negb_involutive in h2.
+Admitted.
+
 Lemma Yager_involution (e : expr boolT_fuzzy) :
   [[`~ (`~e)]]_Yager = [[ e ]]_Yager.
 Proof. by rewrite//=; lra. Qed.
