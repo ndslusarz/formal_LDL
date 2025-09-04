@@ -1238,10 +1238,38 @@ split; case: ifP; case: ifP; rewrite//=; try lra.
     + by rewrite lerBlDl h3.
     + by rewrite addr_ge0 ?powR_ge0//=.
     + lra.
-- 
-
-
-Admitted.
+- move => /negP/negP h1 h2 h3. 
+  rewrite ltNge Bool.negb_involutive in h1.
+  rewrite lerBlDr -(lerBlDl _ t3).
+  rewrite powRgt//=.
+  + by rewrite addr_ge0 ?powR_ge0//=.
+  + lra.
+  + have he12 : 1 - t1 >= 1 - t3 by lra.
+    apply (ge0_ler_powR (ltW p0)) in he12; rewrite ?nnegrE//=.
+    * have HH : forall (a b c : R), a <= b -> b <= c -> a <= c. intros; lra.
+      rewrite (HH _ _ _ he12)//=. 
+      by rewrite lerDl powR_ge0.
+    * lra.
+    * lra.
+- move => /negP/negP h1 /negP/negP h2 h3.
+  rewrite !ltNge !Bool.negb_involutive in h1 h2.
+  rewrite lerBlDr -(lerBlDl _ t3).
+  rewrite powRgt//=.
+  + by rewrite addr_ge0 ?powR_ge0//=.
+  + lra.
+  + rewrite lerBrDl -(lerBrDr _ _ t2) in  h3.
+    have powR' : forall x y, 0 <= x -> 0 <= y  -> x `^ p^-1 <= y -> x <= y `^ p .
+      move=> x y x0 y0 hp.
+      have h := @ge0_ler_powR  _ (p) _ (x `^ p^-1) (y).
+      rewrite -(powRselfxN x)//=. rewrite h ?nnegrE//=.
+    - by rewrite (ltW p0).
+    - by rewrite powR_ge0.
+    apply powR' in h3.
+    * by rewrite lerBlDl in h3.
+    * have he12 : 1 - t3 >= 1 - t1 by lra.
+      apply (ge0_ler_powR (ltW p0)) in he12; rewrite ?nnegrE//=; lra.
+    * lra.
+Qed.
 
 Lemma Yager_involution (e : expr boolT_fuzzy) :
   [[`~ (`~e)]]_Yager = [[ e ]]_Yager.
