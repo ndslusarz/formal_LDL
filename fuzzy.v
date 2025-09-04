@@ -1131,27 +1131,46 @@ rewrite -powRrM divff//= ?powRr1 ?p_nq//=; try lra.
 rewrite /minr; case: ifP; move => hy; lra.
 Qed.
 
-Lemma Yager_residuation (e1 e2 e3 : expr boolT_fuzzy) :
+Lemma Yager_residuation (e1 e2 e3 : expr boolT_fuzzy) : (0 < p) ->
   [[e1 `** e2]]_Yager <= [[ e3 ]]_Yager <-> [[ e2 ]]_Yager <= [[e1 `=> e3]]_Yager.
 Proof.
+move => p0.
+have pneq0 : p != 0 by exact: lt0r_neq0.
 have := translate_boolT_01 p p1 Yager _ _ _ e1.
 have := translate_boolT_01 p p1 Yager _ _ _ e2.
 have := translate_boolT_01 p p1 Yager _ _ _ e3.
-split; rewrite//= !big_cons big_nil !addr0 /maxr/minr; case: ifP;
-  set x := [[e1]]_Yager; 
-  set y := [[e2]]_Yager;
-  set z := [[e3]]_Yager; case: ifP => //=; rewrite//=.
-- move => h1 h2 _. 
-
+rewrite//= !big_cons big_nil !addr0 /maxr/minr.
+set t1 := _ e1.
+set t2 := _ e2.
+set t3 := _ e3.
+set a1 := (1 - t1)`^p.
+set a2 := (1 - t2)`^p.
+set a3 := (1 - t3)`^p.
+have a1ge0 : 0 <= a1 by rewrite powR_ge0.
+have a2ge0 : 0 <= a2 by rewrite powR_ge0.
+have a3ge0 : 0 <= a3 by rewrite powR_ge0.
+split; case: ifP; case: ifP; rewrite//=.
+have powRpinv : 1 = 1 `^ p^-1.
+  by rewrite powR1.
+have powRle1 : forall x, 0 <= x -> x `^ p^-1 <= 1 -> x <= 1.
+  move=> x x0; rewrite {1}powRpinv.
+  move/(@ge0_ler_powR _ p (ltW p0)).
+  by rewrite -!powRrM !mulVf// powR1 powRr1//; apply; rewrite nnegrE ?powR_ge0.
+have powRgt1 : forall x, 0 <= x -> 1 < x `^ p^-1 -> 1 < x.
+  move=> x x0; rewrite {1}powRpinv.
+  move/(@gt0_ltr_powR _ p p0).
+  by rewrite -!powRrM !mulVf// powR1 powRr1// !nnegrE; apply => //; exact: powR_ge0.
+- move => /ltW h1 h2 _. 
+  apply powRle1 in h1; rewrite//=.
 admit.
-- move => _ _ _. subst y. lra.
+- move => _ _ _. lra.
 - move => h1 /negP/negP h2 h3. rewrite ltNge Bool.negb_involutive in h2. 
   admit.
-- move => _ _ _. subst y. lra.
-- move => _ _ _. subst z. lra.
+- move => _ _ _.  lra.
+- move => _ _ _. lra.
 - move => /negP/negP h1 h2 h3. rewrite ltNge Bool.negb_involutive in h1. 
   admit.
-- move => _ _ _. subst z. lra.
+- move => _ _ _. lra.
 - move => /negP/negP h1 /negP/negP h2 _. 
   rewrite ltNge Bool.negb_involutive in h1. 
   rewrite ltNge Bool.negb_involutive in h2.
