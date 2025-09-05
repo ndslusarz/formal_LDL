@@ -2,7 +2,6 @@ Require Import Coq.Program.Equality.
 From mathcomp Require Import all_ssreflect all_algebra.
 From mathcomp Require Import lra.
 
-
 (**md**************************************************************************)
 (* # Additions to MathComp                                                    *)
 (*                                                                            *)
@@ -84,8 +83,8 @@ Section alias_for_bigops.
 Context {R : numDomainType}.
 Implicit Types s : seq R.
 
-Definition sumR s := \sum_(i <- s) i.
-Definition prodR s := \prod_(i <- s) i.
+(*Definition sumR s := \sum_(i <- s) i.*)
+(*Definition prodR s := \prod_(i <- s) i.*)
 Definition minR s : R := \big[minr/1]_(i <- s) i.
 Definition maxR s : R := \big[maxr/0]_(i <- s) i.
 
@@ -274,25 +273,41 @@ elim: k p p' => //= -[_ /= p p' _ p'p|n ih p p' _ p'p].
 by rewrite ih// /minr ltNge p'p.
 Qed.
 
-Section big_order_maxmin.
-Local Open Scope order_scope.
-Context {d} {R : orderType d}.
-
-Let big_min_helper (T : eqType) (f : T -> R) a l :
+Lemma big_min_def_cons {d} {R : orderType d} (T : Type) (f : T -> R) a l :
   \big[Order.min/f a]_(j <- a :: l) f j =
-    \big[Order.min/f a]_(j <- l) f j.
+  \big[Order.min/f a]_(j <- l) f j.
 Proof.
 elim: l; first by rewrite big_cons big_nil minxx.
 by move=> a0 l; rewrite !big_cons => IH; rewrite minCA IH.
 Qed.
 
-Let big_min_helper2 (T : eqType) (f : T -> R) a a0 l :
-  Order.min (f a) (\big[Order.min/f a0]_(j <- l) f j) =
-  Order.min (f a0) (\big[Order.min/f a]_(j <- l) f j).
+Lemma big_max_def_cons {d} {R : orderType d} (T : Type) (f : T -> R) a l :
+  \big[Order.max/f a]_(j <- a :: l) f j =
+  \big[Order.max/f a]_(j <- l) f j.
+Proof.
+elim: l; first by rewrite big_cons big_nil maxxx.
+by move=> a0 l; rewrite !big_cons => IH; rewrite maxCA IH.
+Qed.
+
+Lemma big_min_def_swap {d} {R : orderType d} (T : Type) (f : T -> R) a a0 l :
+  Order.min a (\big[Order.min/a0]_(j <- l) f j) =
+  Order.min a0 (\big[Order.min/a]_(j <- l) f j).
 Proof.
 elim: l; first by rewrite !big_nil minC.
 by move=> a1 l ih; rewrite !big_cons minCA ih minCA.
 Qed.
+
+Lemma big_max_def_swap {d} {R : orderType d} (T : Type) (f : T -> R) a a0 l :
+  Order.max a (\big[Order.max/a0]_(j <- l) f j) =
+  Order.max a0 (\big[Order.max/a]_(j <- l) f j).
+Proof.
+elim: l; first by rewrite !big_nil maxC.
+by move=> a1 l ih; rewrite !big_cons maxCA ih maxCA.
+Qed.
+
+Section big_order_maxmin.
+Local Open Scope order_scope.
+Context {d} {R : orderType d}.
 
 Lemma big_min_cons (T : eqType) (f : T -> R) (a : T) l :
   forall i, i \in a :: l ->
@@ -306,25 +321,9 @@ have h a' : Order.min (f a') (\big[Order.min/f a']_(j <- l) f j) =
             \big[Order.min/f a']_(j <- a' :: l) f j by rewrite big_cons.
 have h' : Order.min (f a) (\big[Order.min/f i]_(j <- l) f j) =
           \big[Order.min/f i]_(j <- a :: l) f j by rewrite big_cons.
-rewrite in_cons => /predU1P[->|]; first by rewrite big_min_helper.
-rewrite in_cons => /predU1P[->|il]; first by rewrite !big_cons h big_min_helper big_min_helper2.
+rewrite in_cons => /predU1P[->|]; first by rewrite big_min_def_cons.
+rewrite in_cons => /predU1P[->|il]; first by rewrite !big_cons h big_min_def_cons big_min_def_swap.
 by rewrite !big_cons minCA h' ih// in_cons il orbT.
-Qed.
-
-Let big_max_helper (T : eqType) (f : T -> R) a l :
-  \big[Order.max/f a]_(j <- a :: l) f j =
-  \big[Order.max/f a]_(j <- l) f j.
-Proof.
-elim: l; first by rewrite big_cons big_nil maxxx.
-by move=> a0 l; rewrite !big_cons => IH; rewrite maxCA IH.
-Qed.
-
-Let big_max_helper2 (T : eqType) (f : T -> R) a a0 l :
-  Order.max (f a) (\big[Order.max/f a0]_(j <- l) f j) =
-  Order.max (f a0) (\big[Order.max/f a]_(j <- l) f j).
-Proof.
-elim: l; first by rewrite !big_nil maxC.
-by move=> a1 l ih; rewrite !big_cons maxCA ih maxCA.
 Qed.
 
 Lemma big_max_cons (T : eqType) (f : T -> R) (a : T) l :
@@ -339,12 +338,13 @@ have h a' : Order.max (f a') (\big[Order.max/f a']_(j <- l) f j) =
             \big[Order.max/f a']_(j <- a' :: l) f j by rewrite big_cons.
 have h' : Order.max (f a) (\big[Order.max/f i]_(j <- l) f j) =
           (\big[Order.max/f i]_(j <- a :: l) f j) by rewrite big_cons.
-rewrite in_cons => /predU1P[->|]; first by rewrite big_max_helper.
-rewrite in_cons => /predU1P[->|il]; first by rewrite !big_cons h big_max_helper big_max_helper2.
+rewrite in_cons => /predU1P[->|]; first by rewrite big_max_def_cons.
+rewrite in_cons => /predU1P[->|il]; first by rewrite !big_cons h big_max_def_cons big_max_def_swap.
 by rewrite !big_cons maxCA h' ih// in_cons il orbT.
 Qed.
 
 (* TODO: rename, this is not on minr anymore but Order.min *)
+(* NB: shouldn7t this be a consequence of bigmin_le_cond? *)
 Lemma minrgex [I : eqType] x (f : I -> R) a l:
   x <= \big[Order.min/f a]_(j <- l) f j -> forall i, i \in a :: l -> x <= f i.
 Proof.
@@ -430,7 +430,7 @@ by exists i => //; rewrite !in_cons orbCA -in_cons ial orbT.
 Qed.
 
 Lemma bigmin_eqP (x : R) [I : eqType] (s : seq I) (F : I -> R) :
-  reflect (forall i : I, i \in s -> (x <= F i))
+  reflect (forall i : I, i \in s -> x <= F i)
           (\big[Order.min/x]_(i <- s) F i == x).
 Proof.
 apply: (iffP eqP) => [<- i|].
@@ -486,88 +486,43 @@ Qed.
 
 End big_order_maxmin.
 
-Section perm_big_minr.
-Context {d} {R : orderType d}.
-
-Lemma perm_big_minr_helper0 (a : R) (s : seq R) :
-  \big[Order.min/a]_(i <- a::s) i = \big[Order.min/a]_(i <- s) i.
-Proof.
-elim: s; first by rewrite big_cons big_nil minxx.
-move=> a1 l.
-by rewrite !big_cons minCA => ->.
-Qed.
-
-Lemma perm_big_minr_helper (a : R) (s : seq R) :
+Lemma min_big_min {d} {R : orderType d} (a : R) (s : seq R) :
   Order.min a (\big[Order.min/a]_(i <- s) i) = \big[Order.min/a]_(i <- s) i.
 Proof.
-have := perm_big_minr_helper0 a s.
+have := big_min_def_cons idfun a s.
 by rewrite big_cons.
 Qed.
 
-Lemma perm_big_minr_helper2 (a1 a2 : R) (s : seq R) :
-  \big[Order.min/a1]_(i <- a2 :: s) i = \big[Order.min/a2]_(i <- a1 :: s) i.
-Proof.
-elim: s; first by rewrite !big_cons !big_nil minC.
-move=> a3 l.
-rewrite !big_cons => ih.
-by rewrite minCA ih minCA.
-Qed.
-
-Lemma perm_big_minr_helper3 (a1 a2 : R) (s : seq R) :
+Lemma mem_min_big_min {d} {R : orderType d} (a1 a2 : R) (s : seq R) :
   a1 \in s ->
   Order.min a1 (\big[Order.min/a2]_(i <- s) i) = \big[Order.min/a2]_(i <- s) i.
 Proof.
-elim: s; first by rewrite in_nil.
-move=> a3 l ih.
+elim: s => [|a3 l ih]; first by rewrite in_nil.
 rewrite inE => /predU1P[-> | a1l].
   by rewrite !big_cons minA minxx.
 by rewrite !big_cons minCA ih.
 Qed.
 
-Lemma perm_big_minr_helper4 (a1 a2 : R) (s : seq R) :
+Lemma big_min_def {d} {R : orderType d} (a1 a2 : R) (s : seq R) :
   a1 \in s -> a2 \in s ->
-    \big[Order.min/a1]_(i <- s) i = \big[Order.min/a2]_(i <- s) i.
+  \big[Order.min/a1]_(i <- s) i = \big[Order.min/a2]_(i <- s) i.
 Proof.
-elim: s; first by rewrite in_nil.
-move=> a l ih.
+elim: s => [|a l ih]; first by rewrite in_nil.
 rewrite inE => /predU1P[-> |a1l].
   rewrite inE => /predU1P[-> //|a2l].
-  rewrite big_cons.
-  rewrite perm_big_minr_helper.
-  rewrite perm_big_minr_helper2.
-  rewrite big_cons.
-  by rewrite perm_big_minr_helper3.
+  by rewrite big_cons min_big_min big_cons big_min_def_swap mem_min_big_min.
 rewrite inE => /predU1P[-> |a2l].
-  rewrite perm_big_minr_helper2.
-  rewrite big_cons.
-  rewrite perm_big_minr_helper3//.
-  rewrite big_cons.
-  by rewrite perm_big_minr_helper.
-rewrite !big_cons.
-by rewrite ih.
+  by rewrite big_cons big_min_def_swap big_cons mem_min_big_min// min_big_min.
+by rewrite !big_cons ih.
 Qed.
 
-Lemma perm_big_minr2 (a1 a2 : R) (s1 s2 : seq R) :
-  a1 \in s2 -> a2 \in s1 -> perm_eq s1 s2 ->
-    \big[Order.min/a1]_(i <- s1) i = \big[Order.min/a2]_(i <- s2) i.
-Proof.
-move=> a1s2 a2s1 pi.
-rewrite (@perm_big_minr_helper4 _ a2)//.
-  by rewrite (perm_big _ pi).
-by rewrite (@perm_mem _ s1 s2).
-Qed.
-
-Lemma perm_big_minr3 (a1 a2 : R) (l1 l2 : seq R) :
+Lemma perm_eq_big_min {d} {R : orderType d}  (a1 a2 : R) (l1 l2 : seq R) :
   perm_eq (a1 :: l1) (a2 :: l2) ->
   \big[Order.min/a1]_(i <- l1) i = \big[Order.min/a2]_(i <- l2) i.
 Proof.
 move=> pi.
-rewrite -perm_big_minr_helper0.
-rewrite (perm_big _ pi)/=.
-rewrite (@perm_big_minr_helper4 a1 a2).
-- by rewrite perm_big_minr_helper0.
+rewrite -big_min_def_cons (perm_big _ pi)/= (@big_min_def _ _ a1 a2).
+- by rewrite big_min_def_cons.
 - by rewrite -(perm_mem pi) inE eqxx.
-- by rewrite inE eqxx.
+- by rewrite mem_head.
 Qed.
-
-End perm_big_minr.

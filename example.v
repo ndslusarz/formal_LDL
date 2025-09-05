@@ -6,7 +6,20 @@ From mathcomp Require Import all_classical.
 From mathcomp Require Import reals ereal interval_inference.
 From mathcomp Require Import topology derive normedtype sequences
  exp measure lebesgue_measure lebesgue_integral hoelder.
-Require Import mathcomp_extra analysis_extra.
+Require Import mathcomp_extra analysis_extra ldl.
+
+(**md**************************************************************************)
+(* # Examples                                                                 *)
+(*                                                                            *)
+(* ```                                                                        *)
+(*      ldl_norm_infty == infinity norm                                       *)
+(*         lbl_vec_sub == vector subtraction                                  *)
+(*    eps_delta_robust == example from the ITP paper                          *)
+(*        ldl_add_real == real addition                                       *)
+(*        ldl_sub_real == real subtraction                                    *)
+(*    group_similarity == TODO                                                *)
+(* ```                                                                        *)
+(******************************************************************************)
 
 Set Implicit Arguments.
 Unset Strict Implicit.
@@ -17,52 +30,31 @@ Import Order.TTheory.
 Import numFieldTopology.Exports.
 Local Open Scope classical_set_scope.
 
-Require Import ldl.
-
 Section example_robust.
 Local Open Scope ldl_scope.
 Context {R : realType}.
 
-Let ldl_norm_infty (n : nat) : @expr R (Fun_T n.+1 1) := ldl_fun (fun (t : (n.+1).-tuple R) =>
-   [tuple \big[maxr/[tnth t 0] ]_(i <- t) i ])%R.
+Local Notation expr := (@expr R).
 
-Let ldl_vec_sub (n : nat) : @expr R (Vector_T n) -> @expr R (Vector_T n) -> @expr R (Vector_T n).
+Let ldl_norm_infty n : expr (funT n.+1 1) := ldl_fun
+  (fun t : R ^ n.+1 => [ffun x : 'I_1 => \big[maxr/t 0]_(i < n.+1) t i ])%R.
+Let idx0 := @ldl_idx R 1 ord0.
+Local Notation "'`|' v '|'" := ((ldl_norm_infty _ `@ v) `! idx0).
+
+Let ldl_vec_sub n :=
+  ldl_fun2 (fun (x y : R ^ n) => [ffun i => x i - y i]%R).
+Local Notation "x `- y" := (ldl_vec_sub _ `@2 (x, y)) (at level 42).
+
+Lemma ldl_vec_sub0 n (e : expr (vectorT n)) :
+  [[ (ldl_vec_sub n) `@2 (e, ldl_vec [ffun x => 0%R]) ]]_B = [[ e ]]_B.
 Proof.
-elim.
-- move=> r. apply.
-- move=> p b. apply.
-- move=> m i. apply.
-- move=> m t1.
-  elim.
-  + move=> r. exact: (ldl_real 0).
-  + move=> p b. exact: (ldl_bool _ true).
-  + move=> l i. exact: (ldl_idx i).
-  + move=> l t2. exact: (ldl_vec [tuple nth 0 t1 i - nth 0 t2 i | i < l])%R.
-  + move=> p s. exact: (ldl_bool _ true).
-  + move=> p s. exact: (ldl_bool _ true).
-  + move=> e1 e2. exact: e1.
-  + move=> e1 e2 e3 e4 e5. exact: e2.
-  + move=> p c e1 e2 e3 e4. exact: (ldl_bool _ true).
-  + move=> l k f. exact: ldl_fun f.
-  + move=> l k e1 e2 v1 v2. exact: (ldl_vec [tuple 0 | i < k])%R.
-  + move=> l v1 v2 i1 i2. exact: (ldl_real 0).
-- move=> p s e. exact: e.
-- move=> p s e. exact: e.
-- move=> p s e. exact: e.
-- move=> p c e f1 e1. exact: e1.
-- move=> p c e f1 e1 f2 e2. exact: e2.
-- move=> m l f e. exact: e.
-- move=> m l e1 f1 e2 f2. exact.
-- move=> m e1 f1 e2 f2. exact.
-Defined.
+by dependent induction e => /=; apply/ffunP => i; rewrite !ffunE/= subr0.
+Qed.
+Context {n m : nat} (eps delta : expr realT) (f : expr (funT n.+1 m.+1))
+  (v : expr (vectorT n.+1)) (x : expr (vectorT n.+1)).
 
-Context (n m : nat) (eps delta : @expr R Real_T) (f : @expr R (Fun_T (n.+1) (m.+1)))
-  (v : @expr R (Vector_T (n.+1))) (x : @expr R (Vector_T (n.+1))).
-
-Definition eps_delta_robust (fl : @flag) :=
-    (@ldl_impl _ fl ((ldl_lookup (ldl_app (ldl_norm_infty n) (ldl_vec_sub x v)) (ldl_idx ord0)) `<= eps)
-        ((ldl_lookup (ldl_app (ldl_norm_infty m) (ldl_vec_sub (ldl_app f x) (ldl_app f v))) (ldl_idx ord0))
-       `<= delta)).
+Definition eps_delta_robust fn fm fl : expr (boolT fn impl_def fm fl) :=
+  `| x `- v | `<= eps `=> `| (f `@ x) `- (f `@ v) | `<= delta.
 
 End example_robust.
 
@@ -70,91 +62,12 @@ Section example_hierarchical.
 Local Open Scope ldl_scope.
 Context {R : realType}.
 
-Let ldl_sum_real : @expr R Real_T -> @expr R Real_T -> @expr R Real_T.
-Proof.
-elim.
-- move=> r. apply.
-- move=> p b. apply.
-- move=> m i. apply.
-- move=> m t1.
-  elim.
-  + move=> r. exact: (ldl_real 0).
-  + move=> p b. exact: (ldl_bool _ true).
-  + move=> l i. exact: (ldl_idx i).
-  + move=> l t2. exact: (ldl_vec [tuple nth 0 t1 i - nth 0 t2 i | i < l])%R.
-  + move=> p s. exact: (ldl_bool _ true).
-  + move=> p s. exact: (ldl_bool _ true).
-  + move=> e1 e2. exact: e1.
-  + move=> f e1 e2 e3 e4. exact: e1.
-  + move=> p c e1 e2 e3 e4. exact: (ldl_bool _ true).
-  + move=> l k f. exact: ldl_fun f.
-  + move=> l k e1 e2 v1 v2. exact: (ldl_vec [tuple 0 | i < k])%R.
-  + move=> l v1 v2 i1 i2. exact: (ldl_real 0).
-- move=> p s e. exact: e.
-- move=> p s e. exact: e.
-- move=> p s e. exact: e.
-- move=> p c e f1 e1. exact: e1.
-- move=> p c e f1 e1 f2 e2. exact: e2.
-- move=> m l f e. exact: e.
-- move=> m l e1 f1 e2 f2. exact.
-- move=> m e1 f1 e2 f2. exact.
-Defined.
-
-Let ldl_real_sub : @expr R Real_T -> @expr R Real_T -> @expr R Real_T.
-Proof.
-elim.
-- move=> r. apply.
-- move=> p b. apply.
-- move=> m i. apply.
-- move=> m t1.
-  elim.
-  + move=> r. exact: (ldl_real 0).
-  + move=> p b. exact: (ldl_bool _ true).
-  + move=> l i. exact: (ldl_idx i).
-  + move=> l t2. exact: (ldl_vec [tuple nth 0 t1 i - nth 0 t2 i | i < l])%R.
-  + move=> p s. exact: (ldl_bool _ true).
-  + move=> p s. exact: (ldl_bool _ true).
-  + move=> e1 e2. exact: e1.
-  + move=> f e1 e2 e3 e4. exact: e1.
-  + move=> p c e1 e2 e3 e4. exact: (ldl_bool _ true).
-  + move=> l k f. exact: ldl_fun f.
-  + move=> l k e1 e2 v1 v2. exact: (ldl_vec [tuple 0 | i < k])%R.
-  + move=> l v1 v2 i1 i2. exact: (ldl_real 0).
-- move=> p s e. exact: e.
-- move=> p s e. exact: e.
-- move=> p s e. exact: e.
-- move=> p c e f1 e1. exact: e1.
-- move=> p c e f1 e1 f2 e2. exact: e2.
-- move=> m l f e. exact: e.
-- move=> m l e1 f1 e2 f2. exact.
-- move=> m e1 f1 e2 f2. exact.
-Defined.
-
-(*Notes:
-- does not say groups need to cover ALL indices*)
-
-Fixpoint ldl_sum_vec (x : seq (@expr R Real_T)) :=
-  match x with
-  | nil => ldl_real 0
-  | a::l => ldl_sum_real a (ldl_sum_vec l)
-end.
-
-Definition prob_group (n m : nat)
-  (f : @expr R (Fun_T (n.+1) (m.+1)))
-  (x : @expr R (Vector_T (n.+1)))
-  (gs : seq (@expr R (Index_T (m.+1)))) :=
-  ldl_sum_vec (map (ldl_lookup (ldl_app f x)) gs).
-
-Context (n m : nat) (eps : @expr R Real_T) (f : @expr R (Fun_T (n.+1) (m.+1)))
-  (x : @expr R (Vector_T (n.+1))) (Gs : seq (seq (@expr R (Index_T (m.+1)))))
-  (r : flag).
-
-Let fancy_or (r : @flag) (eps p: @expr R Real_T) :=
- (ldl_cmp r cmp_le p eps) `\/ (ldl_cmp r cmp_le (ldl_real_sub (ldl_real 1%R) p) eps).
-
-
-Definition group_similiarity :=
-  ldl_and (map (fancy_or r eps) (map (prob_group f x) Gs)).
-
+Definition group_confidence n m x y z eps
+    (f : expr (funT n.+1 m.+1)) (v : expr (vectorT n.+1))
+    (idxs : seq (expr (indexT m.+1))) :=
+  @ldl_and R x y z
+    [seq (((ldl_app f v) `! idx) `<= ldl_real eps) `/\
+           ((ldl_real (1-eps)) `<= (ldl_app f v) `! idx)
+    | idx <- idxs].
 
 End example_hierarchical.
