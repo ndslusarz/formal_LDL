@@ -393,9 +393,6 @@ Fixpoint translation {t} (e : @expr R t) {struct e} : type_translation t :=
       | Lukasiewicz => minr (1 - {[ E1 ]} + {[ E2 ]}) 1
       | Yager => if {[ E1 ]} < {[ E2 ]} then 1
                  else 1 - ((1 - {[ E2 ]})`^p - (1 - {[ E1 ]})`^p)`^p^-1
-
-
-(*minr (((1 - {[ E1 ]})`^p + ({[ E2 ]})`^p )`^p^-1) 1*)
       | Godel => if {[ E2 ]} < {[ E1 ]} then {[ E2 ]} else 1
       | product => if {[ E2 ]} < {[ E1 ]} then
                      {[ E2 ]} / {[ E1 ]}
@@ -563,7 +560,7 @@ Fixpoint stl_ereal_translation {t} (e : expr t) : ereal_type_translation t :=
 
   (*comparisons*)
   | E1 `== E2 => (- `| {[ E1 ]} - {[ E2 ]}|)%:E
-  | E1 `<= E2 => ({[ E2 ]} - {[ E1 ]})%:E(* (- maxr ({[ E1 ]} - {[ E2 ]}) 0)%:E *)
+  | E1 `<= E2 => ({[ E2 ]} - {[ E1 ]})%:E
 
   | ldl_fun n m f => f
   | ldl_fun2 n m l f => f
@@ -651,10 +648,10 @@ Fixpoint stl_translation {t} (e : expr t) : type_translation t :=
       let a0 := stl_translation e0 in
       let a_max: R := \big[maxr/a0]_(i <- A) i in
       stl_or a_max a0 A
-  | ldl_mand _ _ _ Es => 0 (* default value, all lemmas are for negation-free formulas *)
-  | ldl_mor _ _ _ Es => 0 (* default value, all lemmas are for negation-free formulas *)
+  | ldl_mand _ _ _ Es => 0 (* default value, all lemmas are for monoid free formulas *)
+  | ldl_mor _ _ _ Es => 0 (* default value, all lemmas are for monoid-free formulas *)
   | `~ E1 => - {[ E1 ]}
-  | E1 `=> E2 => 0 (* default value, all lemmas are for negation-free formulas *)
+  | E1 `=> E2 => 0 (* default value, all lemmas are for implication-free formulas *)
 
   | E1 `== E2 => - `| {[ E1 ]} - {[ E2 ]}|
   | E1 `<= E2 => {[ E2 ]} - {[ E1 ]}
