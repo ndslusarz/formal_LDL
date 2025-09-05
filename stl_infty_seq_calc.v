@@ -15,6 +15,16 @@ Unset Printing Implicit Defensive.
 Import Num.Def Num.Theory GRing.Theory Order.TTheory.
 Import numFieldTopology.Exports.
 
+(**md**************************************************************************)
+(* # Hypersequent calculi for STLinfty - a version of STL where               *)
+(*     nu tends to infinity - using ereals                                    *)
+(*                                                                            *)
+(*                                                                            *)
+(* - seq_calc_stli == hypersequent calculus STLinfty                          *)
+(* - sound_stli == soundness of seq_calc_stli                                 *)
+(*                                                                            *)
+(******************************************************************************)
+
 Section stl_hypersequent_calc.
 Local Open Scope ereal_scope.
 Local Open Scope ldl_scope.

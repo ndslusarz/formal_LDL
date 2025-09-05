@@ -391,7 +391,11 @@ Fixpoint translation {t} (e : @expr R t) {struct e} : type_translation t :=
   | ldl_impl _ _ _ E1 E2 =>
       match l with
       | Lukasiewicz => minr (1 - {[ E1 ]} + {[ E2 ]}) 1
-      | Yager => minr (((1 - {[ E1 ]})`^p + ({[ E2 ]})`^p )`^p^-1) 1
+      | Yager => if {[ E1 ]} < {[ E2 ]} then 1
+                 else 1 - ((1 - {[ E2 ]})`^p - (1 - {[ E1 ]})`^p)`^p^-1
+
+
+(*minr (((1 - {[ E1 ]})`^p + ({[ E2 ]})`^p )`^p^-1) 1*)
       | Godel => if {[ E2 ]} < {[ E1 ]} then {[ E2 ]} else 1
       | product => if {[ E2 ]} < {[ E1 ]} then
                      {[ E2 ]} / {[ E1 ]}
