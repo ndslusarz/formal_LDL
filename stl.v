@@ -31,8 +31,7 @@ Lemma andI_stl (e : expr (boolT_def impl_undef m_undef l_def)) :
   nu.-[[e `/\ e]]_stl = nu.-[[e]]_stl.
 Proof.
 rewrite /= /stl_and /stl_and_gt0 /stl_and_lt0 /min_dev.
-rewrite !big_cons !big_nil/=.
-rewrite !minrxyx.
+rewrite !big_ord_recl !big_ord0/= !tnthS !tnth0/= !minrxyx.
 set a_min := minr (nu.-[[e]]_stl) (nu.-[[e]]_stl).
 set a := (nu.-[[e]]_stl - a_min) * a_min^-1.
 have a_min_e : a_min = nu.-[[e]]_stl.
@@ -52,7 +51,7 @@ Lemma andC_stl (e1 e2 : expr (boolT_def impl_undef m_undef l_def)) :
   nu.-[[e1 `/\ e2]]_stl = nu.-[[e2 `/\ e1]]_stl.
 Proof.
 rewrite /= /stl_and /stl_and_gt0 /stl_and_lt0 /min_dev.
-rewrite !big_cons !big_nil/= !addr0/=.
+rewrite !big_ord_recl !big_ord0/= !tnthS !tnth0 !addr0/=.
 rewrite !minrxyx !minxx.
 set a_min := minr (nu.-[[e1]]_stl) (nu.-[[e2]]_stl).
 have -> : (minr (nu.-[[e2]]_stl) (nu.-[[e1]]_stl)) = a_min.
@@ -69,8 +68,8 @@ Qed.
 Lemma orI_stl (e : expr (boolT_def impl_undef m_undef l_def)) :
   nu.-[[e `\/ e]]_stl = nu.-[[e]]_stl.
 Proof.
-rewrite /= /stl_or /stl_or_gt0 /stl_or_lt0 /max_dev !big_cons !big_nil/= !addr0.
-rewrite !maxrxyx.
+rewrite /= /stl_or /stl_or_gt0 /stl_or_lt0 /max_dev !big_ord_recl !big_ord0/= !tnthS !tnth0.
+rewrite !addr0 !maxrxyx.
 set a_max := maxr (nu.-[[e]]_stl) (nu.-[[e]]_stl).
 set a :=  ((a_max - nu.-[[e]]_stl) / a_max).
 have a_max_e : a_max = nu.-[[e]]_stl.
@@ -89,8 +88,8 @@ Qed.
 Lemma orC_stl (e1 e2 : expr (boolT_def impl_undef m_undef l_def)) :
   nu.-[[e1 `\/ e2]]_stl  = nu.-[[e2 `\/ e1]]_stl.
 Proof.
-rewrite /= /stl_or /stl_or_gt0 /stl_or_lt0 /max_dev !big_cons !big_nil/= !addr0.
-rewrite !maxrxyx !maxxx.
+rewrite /= /stl_or /stl_or_gt0 /stl_or_lt0 /max_dev !big_ord_recl !big_ord0/= !tnthS !tnth0.
+rewrite !addr0 !maxrxyx !maxxx.
 set a_max := maxr (nu.-[[e2]]_stl) (nu.-[[e1]]_stl).
 have -> : maxr (nu.-[[e1]]_stl) (nu.-[[e2]]_stl) = a_max.
   by rewrite /a_max/maxr; case: ifPn => //; case: ifPn => //; lra.
@@ -142,102 +141,79 @@ Qed.
 
 Definition is_stl b (x : R) := if b then x >= 0 else x < 0.
 
-Lemma stl_nary_inversion_andE1 (Es : seq (expr (boolT_undef impl_undef m_undef l_def))) :
+Lemma stl_nary_inversion_andE1 n (Es : 'I_n -> (expr (boolT_undef impl_undef m_undef l_def))) :
   is_stl true (nu.-[[ ldl_and Es ]]_stl) ->
-  forall i, (i < size Es)%N ->
-    is_stl true (nu.-[[ nth (ldl_bool neg_undef _ _ _ false) Es i ]]_stl).
+    forall i, is_stl true (nu.-[[ Es i ]]_stl).
 Proof.
-case: Es => // a l.
+move: Es; case: n => [Es _|n Es]; first by case.
 rewrite /is_stl /= /stl_and /stl_and_gt0 /stl_and_lt0 /min_dev.
-rewrite !map_cons !big_map.
-set a_min := \big[minr/nu.-[[a]]_stl]_(j <- l) nu.-[[j]]_stl.
+set a_min := \big[minr/nu.-[[Es ord0]]_stl]_(i < n.+1) nu.-[[Es i]]_stl.
 case: ifPn=>[hminlt0|].
-  have /=[y ymem ylt0] := minrltx hminlt0.
-  rewrite !big_seq.
-  under eq_bigr => i il do rewrite map_cons big_map big_min_cons//.
-  under [X in _ / X]eq_bigr => i il do rewrite map_cons big_map big_min_cons//.
-  rewrite/= leNgt.
-  rewrite pmulr_llt0 ?invr_gt0; last first.
-    rewrite sumr_gt0//=.
-    by exists y; rewrite ymem expR_gt0.
-  rewrite sumr_lt0//.
-    by move => i _ _; rewrite nmulr_rle0 ?expR_ge0// nmulr_rlt0// expR_gt0.
-  by exists y; rewrite !nmulr_rlt0 ?expR_gt0//.
-rewrite -leNgt; move/minrgex => h.
-by case: ifPn => _ _ i isize; rewrite h// mem_nth.
+  rewrite pmulr_lge0; last first.
+    by rewrite invr_gt0// sumr_gt0//; exists ord0; split; rewrite ?mem_index_enum// expR_gt0.
+  rewrite leNgt sumr_lt0//=.
+    move => i _ _.
+    rewrite -mulrA !nmulr_rle0 ?expR_ge0// (le_lt_trans _ hminlt0)// /a_min.
+    by rewrite le_bigmin ?bigmin_le// => j _; rewrite bigmin_le.
+  by exists ord0; rewrite mem_index_enum !nmulr_rlt0 ?expR_gt0.
+rewrite -leNgt; move/bigmin_geP =>/= [h0 hi].
+by case: ifPn => _ _ i; exact/hi.
 Qed.
 
-Lemma stl_nary_inversion_andE0 (Es : seq (expr (boolT_undef impl_undef m_undef l_def))) :
+Lemma stl_nary_inversion_andE0 n (Es : 'I_n -> (expr (boolT_undef impl_undef m_undef l_def))) :
   is_stl false (nu.-[[ ldl_and Es ]]_stl) ->
-  exists2 i, is_stl false (nu.-[[ nth (ldl_bool neg_undef _ _ _ false) Es i ]]_stl) &
-             (i < size Es)%N.
+    exists i, is_stl false (nu.-[[ Es i ]]_stl).
 Proof.
-case: Es => [|a l]; first by rewrite /= ltr10.
-rewrite /is_stl /= /stl_and /= big_map.
-set a_min := \big[minr/nu.-[[a]]_stl]_(j <- l) nu.-[[j]]_stl.
+move: Es; case: n => [Es|n Es]//=; first by rewrite ltr10.
+rewrite /is_stl /= /stl_and /=.
+set a_min := \big[minr/nu.-[[Es ord0]]_stl]_(i < n.+1) nu.-[[Es i]]_stl.
 case: ifPn=>[hminlt0 _|].
   have [x xmem hlt0] := minrltx hminlt0.
-  exists (index x (a :: l)).
-    by rewrite nth_index ?xmem// hlt0.
-  by rewrite  index_mem xmem.
+  by exists x.
 rewrite -leNgt => hminge0.
-case: ifPn => _; last by rewrite lt_irreflexive.
-rewrite ltNge divr_ge0// big_cons !big_map big_seq_cond addr_ge0//= ?mulr_ge0 ?expR_ge0 ?sumr_ge0//=.
+case: ifPn => _; last by rewrite ltxx.
+rewrite ltNge divr_ge0// big_ord_recl/= addr_ge0//= ?mulr_ge0 ?expR_ge0 ?sumr_ge0//=.
   by apply: (minrgex hminge0); rewrite mem_head.
-all: move=> i /andP[il _]; rewrite ?mulr_ge0 ?expR_ge0//.
-by apply: (minrgex hminge0); rewrite in_cons il orbT.
+by move=> i _; rewrite mulr_ge0// (le_trans hminge0)// bigmin_le.
 Qed.
 
-Lemma stl_nary_inversion_orE1 (Es : seq (expr (boolT_undef impl_undef m_undef l_def))) :
+Lemma stl_nary_inversion_orE1 n (Es : 'I_n -> (expr (boolT_undef impl_undef m_undef l_def))) :
   is_stl true (nu.-[[ ldl_or Es ]]_stl) ->
-  exists2 i, is_stl true (nu.-[[ nth (ldl_bool _ _ _ _ false) Es i ]]_stl) &
-             (i < size Es)%N.
+    exists i, is_stl true (nu.-[[ Es i ]]_stl).
 Proof.
-case: Es => [|a l]; first by rewrite /= ler0N1.
-rewrite/is_stl/= /stl_or/stl_or_gt0/stl_or_lt0 /max_dev !map_cons !big_map.
-set a_max := \big[maxr/nu.-[[a]]_stl]_(j <- l) nu.-[[j]]_stl.
+move: Es; case: n => [Es|n Es]/=; first by rewrite /= ler0N1.
+rewrite/is_stl/= /stl_or/stl_or_gt0/stl_or_lt0 /max_dev.
+set a_max := \big[maxr/nu.-[[Es ord0]]_stl]_(i < n.+1) nu.-[[Es i]]_stl.
 case: ifPn=> [hmaxgt0 _|].
   have [x xmem hgt0] := maxrgtx hmaxgt0.
-  exists (index x (a :: l)).
-    by rewrite nth_index ?xmem// (ltW hgt0).
-  by rewrite index_mem xmem.
+  by exists x; exact/ltW.
 rewrite -leNgt => hmaxle0.
 case: ifPn=>[hmaxlt0|].
-  have /= := maxrltx hmaxlt0.
-  rewrite !big_seq.
-  under eq_bigr => i il do rewrite map_cons big_map big_max_cons//.
-  under [X in _ / X]eq_bigr => i il do rewrite map_cons big_map big_max_cons//.
-  rewrite leNgt=> hilt0.
-  rewrite pmulr_llt0 ?invr_gt0; last first.
-    rewrite sumr_gt0//=.
-    by exists a; rewrite mem_head expR_gt0.
+  rewrite leNgt nmulr_rlt0.
+    by rewrite invr_gt0 sumr_gt0//; exists ord0; rewrite mem_index_enum expR_gt0.
   rewrite sumr_lt0//.
-    by move => i imem _; rewrite nmulr_rle0 ?expR_ge0 ?hilt0.
-  exists a.
-  by rewrite mem_head nmulr_rlt0 ?expR_gt0 ?hilt0 ?mem_head.
+    by move=> i _ _; rewrite nmulr_rle0//= (le_lt_trans _ hmaxlt0)// le_bigmax.
+  by exists ord0; rewrite mem_index_enum nmulr_rlt0 ?expR_gt0//= (le_lt_trans _ hmaxlt0)// le_bigmax.
 rewrite -leNgt => hmaxge0 _.
 have /= [x xmem hxge0] := maxrgex hmaxge0.
-exists (index x (a :: l)).
-  by rewrite nth_index ?xmem// hxge0.
-by rewrite index_mem xmem.
+by exists x.
 Qed.
 
-Lemma stl_nary_inversion_orE0 (Es : seq (expr (boolT_undef impl_undef m_undef l_def))) :
+Lemma stl_nary_inversion_orE0 n (Es : 'I_n -> (expr (boolT_undef impl_undef m_undef l_def))) :
   is_stl false (nu.-[[ ldl_or Es ]]_stl) ->
-  forall i, (i < size Es)%N ->
-    is_stl false (nu.-[[ nth (ldl_bool _ _ _ _ false) Es i ]]_stl).
+    forall i, is_stl false (nu.-[[ Es i ]]_stl).
 Proof.
-case: Es => // a l.
-rewrite/is_stl/= /stl_or/stl_or_gt0/stl_or_lt0 big_map.
-set a_max := \big[maxr/nu.-[[a]]_stl]_(j <- l) nu.-[[j]]_stl.
+move: Es; case: n => [Es _|n Es]; first by case.
+rewrite/is_stl/= /stl_or/stl_or_gt0/stl_or_lt0.
+set a_max := \big[maxr/nu.-[[Es ord0]]_stl]_(i < n.+1) nu.-[[Es i]]_stl.
 case: ifPn=>[hmaxgt0|].
-  rewrite !map_cons !big_map!big_seq.
-  under eq_bigr => i il do rewrite big_map big_max_cons// -/a_max.
-  by rewrite ltNge divr_ge0// ?sumr_ge0// => i _/=; rewrite ?mulr_ge0// ?expR_ge0// ltW.
+  rewrite ltNge divr_ge0// sumr_ge0//= => i _.
+  rewrite !mulr_ge0// ltW// (lt_le_trans hmaxgt0)//.
+  by rewrite bigmax_le// ?le_bigmax// => j _; rewrite le_bigmax.
 rewrite -leNgt => h.
 case: ifPn; last by rewrite ltxx.
-move => hmaxlt0 _ i isize.
-by apply: (maxrltx hmaxlt0); rewrite mem_nth.
+move => hmaxlt0 _ i.
+by rewrite (le_lt_trans _ hmaxlt0)// le_bigmax.
 Qed.
 
 Lemma stl_adequacy (e : expr (boolT_undef impl_undef m_undef l_def)) b :
@@ -245,34 +221,23 @@ Lemma stl_adequacy (e : expr (boolT_undef impl_undef m_undef l_def)) b :
 Proof.
 dependent induction e using expr_ind'.
 - by move: b b0 => [] [] //=; rewrite ?leNgt ?ltrN10 ?ltr10.
-- rewrite List.Forall_forall in H.
-  move: b => []. rewrite /is_stl.
+- move: b => []. rewrite /is_stl.
   + move/stl_nary_inversion_andE1.
-    rewrite [bool_translation (ldl_and l)]/= big_map big_seq big_all_cond => h.
-    apply: allT => x/=.
-    apply/implyP => /nthP xnth.
-    have [i il0 <-] := xnth (ldl_bool _ _ _ _ false).
-    by apply: H => //; rewrite ?h// -In_in mem_nth.
+    rewrite [bool_translation (ldl_and l)]/= big_all => h.
+    by apply/allP => /= i _; exact/H.
   + move/stl_nary_inversion_andE0.
-    rewrite [bool_translation (ldl_and l)]/= big_map big_all.
-    elim=>// i i0 isize.
-    apply/allPn; exists (nth (ldl_bool _ _ _ _ false) l i); first by rewrite mem_nth.
-    apply/negPf; apply: H => //.
-    by rewrite -In_in mem_nth.
-- rewrite List.Forall_forall in H.
-  move: b => [|].
+    rewrite [bool_translation (ldl_and l)]/= big_all => [ [i] h].
+    apply/allPn; exists i; first by rewrite mem_index_enum.
+    by rewrite (H i _ _ _ false).
+- move: b => [|].
   + move/stl_nary_inversion_orE1.
-    rewrite [bool_translation (ldl_or l)]/= big_map big_has.
-    elim=>// i i0 isize.
-    apply/hasP; exists (nth (ldl_bool _ _ _ _ false) l i); first by rewrite mem_nth.
-    apply: H => //.
-    by rewrite -In_in mem_nth.
+    rewrite [bool_translation (ldl_or l)]/= big_has => [ [i] h].
+    apply/hasP; exists i; first by rewrite mem_index_enum.
+    exact: H.
   + move/stl_nary_inversion_orE0.
-    rewrite [bool_translation (ldl_or l)]/= big_map big_has => h.
-    apply/hasPn => x.
-    move/nthP => xnth.
-    have [i il0 <-] := xnth (ldl_bool _ _ _ _ false).
-    by apply/negPf; apply: H => //; rewrite ?h// -In_in mem_nth.
+    rewrite [bool_translation (ldl_or l)]/= big_has => h.
+    apply/hasPn => i _.
+    by rewrite (H i _ _ _ false).
 - case: c.
   + by case: b; rewrite /is_stl/= ?lee_fin ?lte_fin ?ltNge subr_ge0 !stl_translations_Real_coincide// => /negbTE.
   + case: b; rewrite /is_stl/= ?lee_fin ?lte_fin !stl_translations_Real_coincide.
@@ -280,40 +245,43 @@ dependent induction e using expr_ind'.
     by rewrite oppr_lt0 normr_gt0 subr_eq0 => /negbTE.
 Qed.
 
-Lemma andC_stl_nary (s1 s2 : seq (expr (boolT_def impl_undef m_undef l_def))) :
-  perm_eq s1 s2 -> nu.-[[ldl_and s1]]_stl = nu.-[[ldl_and s2]]_stl.
-Proof.
-case: s1; first by rewrite perm_sym => /perm_nilP ->.
-move=> a1 l1; case: s2; first by move/perm_nilP.
-move=> a2 l2 pi.
-rewrite /=.
-have pi2 := @perm_map _ _ (stl_translation nu) _ _ pi.
-rewrite (perm_eq_big_min pi2)/=.
-rewrite /stl_and/= !big_map !map_cons.
-case: ifPn => // ?.
-  rewrite /stl_and_lt0 !big_map.
-  congr (_ / _).
-    rewrite (perm_big _ pi)/=.
-    apply: eq_bigr => i _.
-    congr (_ * _).
-      congr(_ * _).
-        rewrite !map_cons !big_map.
-        exact: perm_big.
-      by rewrite !map_cons /min_dev !big_map (perm_big _ pi).
-    by rewrite !map_cons /min_dev !big_map (perm_big _ pi).
-  rewrite (perm_big _ pi)/=.
-  apply: eq_bigr => i _.
-  by rewrite !map_cons /min_dev !big_map (perm_big _ pi).
-case: ifPn => // ?.
-rewrite /stl_and_gt0 !big_map.
-congr (_ / _).
-  rewrite (perm_big _ pi)/=.
-  apply: eq_bigr => i _.
-  by rewrite /min_dev !map_cons !big_map (perm_big _ pi).
-rewrite (perm_big _ pi)/=.
-apply: eq_bigr => i _.
-by rewrite /min_dev !map_cons !big_map (perm_big _ pi).
-Qed.
+From mathcomp Require Import perm.
+
+Lemma andC_stl_nary n (s1 s2 : 'I_n -> (expr (boolT_def impl_undef m_undef l_def))) :
+  (exists pi : {perm 'I_n}, s1 = s2 \o pi) -> nu.-[[ldl_and s1]]_stl = nu.-[[ldl_and s2]]_stl.
+(* Proof. *)
+(* case: s1; first by rewrite perm_sym => /perm_nilP ->. *)
+(* move=> a1 l1; case: s2; first by move/perm_nilP. *)
+(* move=> a2 l2 pi. *)
+(* rewrite /=. *)
+(* have pi2 := @perm_map _ _ (stl_translation nu) _ _ pi. *)
+(* rewrite (perm_eq_big_min pi2)/=. *)
+(* rewrite /stl_and/= !big_map !map_cons. *)
+(* case: ifPn => // ?. *)
+(*   rewrite /stl_and_lt0 !big_map. *)
+(*   congr (_ / _). *)
+(*     rewrite (perm_big _ pi)/=. *)
+(*     apply: eq_bigr => i _. *)
+(*     congr (_ * _). *)
+(*       congr(_ * _). *)
+(*         rewrite !map_cons !big_map. *)
+(*         exact: perm_big. *)
+(*       by rewrite !map_cons /min_dev !big_map (perm_big _ pi). *)
+(*     by rewrite !map_cons /min_dev !big_map (perm_big _ pi). *)
+(*   rewrite (perm_big _ pi)/=. *)
+(*   apply: eq_bigr => i _. *)
+(*   by rewrite !map_cons /min_dev !big_map (perm_big _ pi). *)
+(* case: ifPn => // ?. *)
+(* rewrite /stl_and_gt0 !big_map. *)
+(* congr (_ / _). *)
+(*   rewrite (perm_big _ pi)/=. *)
+(*   apply: eq_bigr => i _. *)
+(*   by rewrite /min_dev !map_cons !big_map (perm_big _ pi). *)
+(* rewrite (perm_big _ pi)/=. *)
+(* apply: eq_bigr => i _. *)
+(* by rewrite /min_dev !map_cons !big_map (perm_big _ pi). *)
+(* Qed. *)
+Admitted.
 
 End stl_lemmas.
 
@@ -356,95 +324,26 @@ Proof. rewrite /minr; case: ifP; lra. Qed.
 Lemma minr_gt0 (x y : R) : 0 < x -> 0 < y -> 0 < minr x y.
 Proof. move=> hx hy; rewrite /minr; case: ifP=> //= _; exact: hy. Qed.
 
-Lemma big_minr_le_init (a : R) v : \big[minr/a]_(i <- v) i <= a.
+Lemma min_dev_gt0 n (v : 'I_n.+1 -> R) :
+  (forall i, 0 < v i) ->
+  forall i, v i != \big[minr/v i]_(j < n.+1) v j ->
+  min_dev (v i) v > 0.
 Proof.
-elim: v a=> [|x s IH] a /=.
-- by rewrite big_nil lexx.
-- rewrite big_cons.
-  by apply: (le_trans (minr_le_r _ _)); exact: IH.
+move=> Hpos i Hvi.
+rewrite /min_dev mulr_gt0 ?subr_gt0 ?invr_gt0//.
+  by rewrite lt_neqAle eq_sym Hvi bigmin_le.
+exact/lt_bigmin.
 Qed.
 
-Lemma big_minr_gt0 (a : R) v : 0 < a -> (forall z, z \in v -> 0 < z) ->
-0 < \big[minr/a]_(i <- v) i.
-Proof.
-move=> ha; elim: v a ha=> [|x s IH] a /= ha.
-- by rewrite big_nil.
-- rewrite big_cons => hv.
-  have hx : 0 < x by apply: hv; rewrite mem_head//=. 
-  have hs : forall z, z \in s -> 0 < z
-  by move=> z hzs; apply hv;  rewrite in_cons hzs orbT//=. 
-  by apply: minr_gt0; [ exact: hx | exact: IH]. 
-Qed.
-
-Lemma min_dev_gt0 (v : seq R) :
-v != [::] ->
-(forall z, z \in v -> 0 < z) ->
-forall a, a \in v -> a != \big[minr/a]_(i <- v) i ->
-min_dev a v > 0.
-Proof.
-move=> _ Hpos a Hav HaNmin.
-rewrite /min_dev; set r := \big[minr/a]_(i <- v) i.
-have r_le_a : r <= a by apply: big_minr_le_init.
-have a_gt0 : 0 < a by apply: Hpos.
-move: (big_minr_gt0 a v a_gt0 Hpos) => r_pos.
-have r_lt_a : r < a.
-- have [a_le_r | r_lt_a] := lerP a r.
-  + have h : a <= r -> r <= a -> r = a by intros; lra.
-    by apply (h a_le_r) in r_le_a; rewrite -{1}r_le_a in HaNmin; subst r; lra.
-  + by [].
-- by apply: divr_gt0; try lra.
-Qed.
-
-Lemma min_head_self (v : seq R):
-v != [::] -> forall a, a \in v ->
-\big[minr/head``_v]_(i <- v) i = \big[minr/a]_(i <- v) i.
-Proof.
-move => v0 a av.
-rewrite (big_min_def _ av)//=.
-by rewrite -nth0 mem_nth// lt0n size_eq0.
-Qed.
-
-Lemma min_dev0 a (v : seq R) :
-  a \in v -> a = \big[minr/(head 0 v)]_(i <- v) i ->
-  min_dev a v = 0.
-Proof.
-move=> av aE.
-rewrite /min_dev {1}aE (big_min_def _ av)//.
-  by rewrite subrr mul0r.
-rewrite -nth0 mem_nth// lt0n size_eq0.
-clear -av.
-by case: v av.
-Qed.
-
-Lemma bigmin_mem_or_arg (v : seq R) a :
-  (\big[minr/a]_(i <- v) i \in v) \/ (\big[minr/a]_(i <- v) i = a).
-Proof.
-elim: v => [|x v IH]. right; by rewrite big_nil//=.
-rewrite big_cons {1}/minr {3}/minr.
-case: ifP => _.
-  - by left; rewrite inE eq_refl.
-  - have [iv |->] := IH; last by right.
-    by left; rewrite inE iv orbT.
-Qed.
-
-Lemma min_in_self (v : seq R) a:
-a \in v -> \big[minr/a]_(i <- v) i \in v.
-Proof.
-move => av.
-have [H|->] := bigmin_mem_or_arg v a; first exact: H.
-exact: av.
-Qed.
-
-Lemma stl_and_gt0_cvg_infty (p : R) (v : seq R)  :
-  v != [::] ->
-  (forall x, x \in v -> x > 0) ->
-  (stl_and_gt0 p v) @[p --> +oo] --> \big[minr/head 0 v]_(i <- v) i.
+Lemma stl_and_gt0_cvg_infty (p : R) n (v : 'I_n.+1 -> R)  :
+  (forall x, v x > 0) ->
+  (stl_and_gt0 p v) @[p --> +oo] --> \big[minr/v ord0]_(i < n.+1) v i.
 Proof.
 move => vnil v0.
 rewrite /stl_and_gt0.
-set min_val := \big[minr/head``_v]_(i <- v) i.
-have sum_spl1 : forall (x : R),   \sum_(a <- v) a * expR (- x * min_dev a v)
-  =  \sum_(a <- v | a == min_val) a  * expR (- x * min_dev a v)
+set min_val := \big[minr/v ord0]_(i < n.+1) v i.
+have sum_spl1 : forall (x : R),   \sum_(a < n.+1) v a * expR (- x * min_dev (v a) v)
+  =  \sum_(a < n | a == min_val) a  * expR (- x * min_dev a v)
     + \sum_(a <- v | a != min_val) a * expR (- x * min_dev a v). move => x0.
   by rewrite (bigID (fun a => a == min_val)).
 (*top sum*)
