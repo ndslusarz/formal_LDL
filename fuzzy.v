@@ -1623,45 +1623,63 @@ Lemma fuzzy_and_distr (e1 e2 e3 : expr boolT_fuzzy) :
   [[ e1 `/\ (e2 `\/ e3)]]_ dl = [[ (e1 `/\ e2) `\/ (e1 `/\ e3)]]_ dl.
 Proof.
 rewrite//= /minR /maxR !big_cons !big_nil.
-rewrite/minr/maxr; repeat case: ifP; intros; try lra.
+have e101 := translate_boolT_01 _ p1 dl _ _ _ e1.
+have e201 := translate_boolT_01 _ p1 dl _ _ _ e2.
+have e301 := translate_boolT_01 _ p1 dl _ _ _ e3.
+(*Time rewrite /minr /maxr; repeat case: ifP => //; intros; try lra.
+Finished transaction in 205.419 secs (204.099u,1.173s) (successful)*)
+rewrite [in RHS]maxA.
+rewrite -(min_maxr ([[e1]]_dl)).
+rewrite -(min_maxl _ _ 1).
+Time rewrite /minr /maxr; repeat case: ifP => //; intros; try lra.
+(* Finished transaction in 17.673 secs (17.434u,0.22s) (successful) *)
 Qed.
 
-Lemma fuzzy_and_distr2 (e1 e2 : expr boolT_fuzzy) :
-  [[ e1 `\/ (e2 `/\ e3)]]_ dl = [[ (e1 `\/ e2) `/\ (e1 `\/ e3))]]_ dl.
+Lemma fuzzy_and_distr2 (e1 e2 e3 : expr boolT_fuzzy) :
+  [[ e1 `\/ (e2 `/\ e3)]]_ dl = [[ (e1 `\/ e2) `/\ (e1 `\/ e3)]]_ dl.
 Proof.
 rewrite//= /minR /maxR !big_cons !big_nil.
-rewrite/minr/maxr; repeat case: ifP; intros; try lra.
+have e101 := translate_boolT_01 _ p1 dl _ _ _ e1.
+have e201 := translate_boolT_01 _ p1 dl _ _ _ e2.
+have e301 := translate_boolT_01 _ p1 dl _ _ _ e3.
+(*Time rewrite /minr /maxr; repeat case: ifP; intros; try lra. <- too long *)
+rewrite [in RHS]minA.
+rewrite -(max_minr ([[e1]]_dl)).
+rewrite -(max_minl _ _ 0).
+Time rewrite /minr /maxr; repeat case: ifP => //; intros; try lra.
+(* Finished transaction in 18.3 secs (17.851u,0.361s) (successful) *)
 Qed.
 
 Lemma fuzzy_and_abs (e1 e2 : expr boolT_fuzzy) :
   [[ e1 `/\ (e1 `\/ e2)]]_ dl = [[ e1 ]]_ dl.
 Proof.
-rewrite//=/minR/maxR !big_cons !big_nil.
+rewrite /= /minR/maxR !big_cons !big_nil.
 have := translate_boolT_01 p p1 dl _ _ _ e1.
 have := translate_boolT_01 p p1 dl _ _ _ e2.
-rewrite/minr/maxr; repeat case: ifP; intros; try lra.
+by rewrite /minr /maxr; repeat case: ifP; intros; try lra.
 Qed.
 
 Lemma fuzzy_or_abs (e1 e2 : expr boolT_fuzzy) :
   [[ e1 `\/ (e1 `/\ e2)]]_ dl = [[ e1 ]]_ dl.
 Proof.
-rewrite//=/minR/maxR !big_cons !big_nil.
+rewrite /= /minR /maxR !big_cons !big_nil.
 have := translate_boolT_01 p p1 dl _ _ _ e1.
 have := translate_boolT_01 p p1 dl _ _ _ e2.
-rewrite/minr/maxr; repeat case: ifP; intros; try lra.
+by rewrite /minr /maxr; repeat case: ifP; intros; try lra.
 Qed.
 
 Lemma fuzzy_demorgan_mor  (e1 e2 : expr boolT_fuzzy) :
   [[`~ (e1 `\/ e2)]]_ dl = [[(`~ e1) `/\ (`~ e2)]]_ dl.
 Proof.
-case: dl; rewrite//= /minR /maxR !big_cons !big_nil /minr /maxr; repeat case: ifP; intros; lra.
+by case: dl; rewrite /= /minR /maxR !big_cons !big_nil/=;
+  rewrite /minr /maxr; repeat case: ifP; intros; lra.
 Qed.
 
 Lemma fuzzy_demorgan_and  (e1 e2 : expr boolT_fuzzy) :
   [[`~ (e1 `/\ e2)]]_ dl = [[(`~ e1) `\/ (`~ e2)]]_ dl.
 Proof.
-case: dl; rewrite//= /minR /maxR !big_cons !big_nil /minr /maxr; repeat case: ifP; intros; lra.
+by case: dl; rewrite//= /minR /maxR !big_cons !big_nil;
+  rewrite /minr /maxr; repeat case: ifP; intros; lra.
 Qed.
-
 
 End lattice_fuzzy_lemmas.
