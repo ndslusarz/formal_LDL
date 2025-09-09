@@ -54,7 +54,7 @@ Variable p : R.
 
 Local Notation "[[ e ]]_dl2e" := (@dl2_ereal_translation R _ e).
 
-Lemma dl2_mandC_nary (s1 s2 : seq (expr (boolT_def impl_def m_def l_undef))) :
+Lemma dl2_mandC_nary (s1 s2 : seq (expr (boolT_def impl_def m_def l_def))) :
   perm_eq s1 s2 -> [[ldl_mand s1]]_dl2e = [[ldl_mand s2]]_dl2e.
 Proof.
 move=> s12/=.
@@ -66,7 +66,7 @@ rewrite !big_map.
 exact: perm_big.
 Qed.
 
-Lemma dl2_mandC (e1 e2 : expr (boolT_def impl_def m_def l_undef)) :
+Lemma dl2_mandC (e1 e2 : expr (boolT_def impl_def m_def l_def)) :
  [[ e1 `** e2 ]]_dl2e = [[ e2 `** e1 ]]_dl2e.
 Proof.
 rewrite /= !orbF !big_cons !big_nil !adde0.
@@ -74,7 +74,7 @@ rewrite !(orbC ([[e2]]_dl2e == _)).
 by rewrite addeC.
 Qed.
 
-Lemma dl2_mandA (e1 e2 e3 : expr (boolT_undef impl_def m_def l_undef)) :
+Lemma dl2_mandA (e1 e2 e3 : expr (boolT_undef impl_def m_def l_def)) :
   [[ e1 `** (e2 `** e3) ]]_dl2e = [[ (e1 `** e2) `** e3 ]]_dl2e.
 Proof.
 rewrite /= !orbF !big_cons !big_nil !adde0.
@@ -94,7 +94,7 @@ rewrite !adde_eq_ninfty !orbF H1 H2 H3/=.
 by rewrite !adde_eq_pinfty H1 H2 H3 K1 K2 K3/= addeA.
 Qed.
 
-Lemma dl2_morC_nary (s1 s2 : seq (expr (boolT_def impl_def m_def l_undef))) :
+Lemma dl2_morC_nary (s1 s2 : seq (expr (boolT_def impl_def m_def l_def))) :
   perm_eq s1 s2 -> [[ldl_mor s1]]_dl2e = [[ldl_mor s2]]_dl2e.
 Proof.
 move=> s12/=.
@@ -118,9 +118,24 @@ Lemma dl2_ereal_translation_le0 e :
 Proof.
 dependent induction e using expr_ind' => /=.
 - by case: b.
-- rewrite big_map big_seq. 
- admit.
-- admit.
+- case: l H; first by rewrite big_nil.
+  move => a l.
+  rewrite /=; move=> /List.Forall_forall H.
+  rewrite !big_seq bigmin_idl.
+  + rewrite {1}/mine; case: ifPn =>  h; first by rewrite//=.
+    rewrite ltNge Bool.negb_involutive in h.
+    by rewrite h.
+- case: l H; first by rewrite big_nil.
+  move => a l.
+  rewrite /=; move=> /List.Forall_forall H.
+  rewrite big_seq.
+  rewrite bigmax_le//=.
+  + rewrite ?ler01// => i il0.
+    rewrite in_cons in il0. move/orP: il0.
+    move => [/eqP i0 | i0].
+    * subst. by apply: H => //; rewrite -In_in mem_head//.
+    * have /mapP [x Hx ->] := i0.
+    by apply: H => //; rewrite -In_in in_cons Hx orbT.
 - rewrite /maxe; case: ifPn => h //=.
   by rewrite leeNl oppe0 leNgt h.
 - case: ifPn => //.
@@ -154,7 +169,7 @@ dependent induction e using expr_ind' => /=.
   by move/List.Forall_forall : H => /(_ e); apply => //; exact/In_in.
 - case: c => //=.
   by rewrite lee_fin oppr_le0 le_max lexx orbT.
-Admitted.
+Qed.
 
 Lemma dl2_morA (e1 e2 e3 : expr (boolT_undef impl_def m_def l_def)) :
   [[ e1 `++ (e2 `++ e3) ]]_dl2e = [[ (e1 `++ e2) `++ e3 ]]_dl2e.
@@ -179,7 +194,7 @@ rewrite !mule_eq_ninfty !orbF H1 H2 H3 K1 K2 K3 !andbF.
 rewrite !mule_eq_pinfty H1 H2 H3 K1 K2 K3/=//= !andbF.
 rewrite !mule_eq_ninfty !orbF H1 H2 H3 K1 K2 K3 !andbF/=.
 rewrite !muleA.
-rewrite (muleC (((-1) ^+ 3)%:E * [[e1]]_dl2e) _) muleA//=.
+by rewrite (muleC (((-1) ^+ 3)%:E * [[e1]]_dl2e) _) muleA//=.
 Qed.
 
 Theorem dl2_mand_unit (e : expr (boolT_undef impl_def m_def l_def)) :

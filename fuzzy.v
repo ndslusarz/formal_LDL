@@ -33,13 +33,19 @@ Require Import mathcomp_extra analysis_extra ldl.
 (* - adequacy == final adequacy result for Godel and product                  *)
 (*                                                                            *)
 (* ## Structural properties for Lukasiewicz                                   *)
-(* - Lukasiewicz_mandC_nary == n-ary commutativity of conjunction             *)
-(* - Lukasiewicz_mandC == commutativity of conjunction                        *)
-(* - Lukasiewicz_morC_nary == n-ary commutativity of disjunction              *)
-(* - Lukasiewicz_morC_ == commutativity of disjunction                        *)
-(* - Lukasiewicz_morA == associativity of disjunction                         *)
-(* - Lukasiewicz_mandA == associativity of conjunction                        *)
-(* - Lukasiewicz_mand_unit == unit element conjunction                        *)
+(* - Lukasiewicz_mandC_nary == n-ary commutativity of monoidal conjunction    *)
+(* - Lukasiewicz_mandC == commutativity of monoidal conjunction               *)
+(* - Lukasiewicz_morC_nary == n-ary commutativity of monoidal disjunction     *)
+(* - Lukasiewicz_morC_ == commutativity of monoidal disjunction               *)
+(* - Lukasiewicz_morA == associativity of monoidal disjunction                *)
+(* - Lukasiewicz_mandA == associativity of monoidal conjunction               *)
+(* - Lukasiewicz_mand_unit == unit element monoidal conjunction               *)
+(* - Lukasiewicz_mor_unit == unit element monoidal disjunction                *)
+(* - Lukasiewicz_residuation == residuation                                   *)
+(* - Lukasiewicz_prelinearity == prealineartiy                                *)
+(* - Lukasiewicz_involution == involution of negation                         *)
+(* - Lukasiewicz_demorgan_mand == de Morgan 1, monoidal connectives           *)
+(* - Lukasiewicz_demorgan_mord == de Morgan 1, monoidal connectives           *)
 (*                                                                            *)
 (* ## Structural properties for Yager                                         *)
 (* - Yager_mandC_nary == n-ary commutativity of conjunction                   *)
@@ -49,6 +55,8 @@ Require Import mathcomp_extra analysis_extra ldl.
 (* - Yager_morA == associativity of disjunction                               *)
 (* - Yager_mandA == associativity of conjunction                              *)
 (* - Yager_mand_unit == unit element conjunction                              *)
+(* - Yager_mor_unit == unit element monoidal disjunction                      *)
+(* - Yager_involution == involution of negation                               *)
 (*                                                                            *)
 (* ## Structural properties for Godel                                         *)
 (* - Godel_mandI == idempotence of conjunction                                *)
@@ -60,6 +68,11 @@ Require Import mathcomp_extra analysis_extra ldl.
 (* - Godel_morA == associativity of disjunction                               *)
 (* - Godel_mandA == associativity of conjunction                              *)
 (* - Godel_mand_unit == unit element conjunction                              *)
+(* - Godel_mor_unit == unit element monoidal disjunction                      *)
+(* - Godel_residuation == residuation                                         *)
+(* - Godel_prelinearity == prealineartiy                                      *)
+(* - Godel_demorgan_mand == de Morgan 1, monoidal connectives                 *)
+(* - Godel_demorgan_mord == de Morgan 1, monoidal connectives                 *)
 (*                                                                            *)
 (* ## Structural properties for product                                       *)
 (* - product_mandC_nary == n-ary commutativity of conjunction                 *)
@@ -69,10 +82,25 @@ Require Import mathcomp_extra analysis_extra ldl.
 (* - product_morA == associativity of disjunction                             *)
 (* - product_mandA == associativity of conjunction                            *)
 (* - product_mand_unit == unit element conjunction                            *)
+(* - product_mor_unit == unit element monoidal disjunction                    *)
+(* - product_residuation == residuation                                       *)
+(* - product_prelinearity == prealineartiy                                    *)
+(* - product_demorgan_mand == de Morgan 1, monoidal connectives               *)
+(* - product_demorgan_mord == de Morgan 1, monoidal connectives               *)
 (*                                                                            *)
 (* ## Shared structural properties                                            *)
 (* - fuzzy_and_abs == absorption of lattice conjunction                       *)
 (* - fuzzy_or_abs == absorption of lattice disjunction                        *)
+(* - fuzzy_landI == idempotence of lattice conjunction                        *)
+(* - fuzzy_lorI == aidempotencebsorption of lattice disjunction               *)
+(* - fuzzy_orC_nary == n-ary commutativity of lattice disjunction             *)
+(* - fuzzy_orC_ == commutativity of lattice disjunction                       *)
+(* - fuzzy_orA == associativity of lattice disjunction                        *)
+(* - fuzzy_andA == associativity of lattice conjunction                       *)
+(* - fuzzy_and_distr == distributivity                                        *)
+(* - fuzzy_and_distr2 == distributivity                                       *)
+(* - fuzzy_demorgan_mand == de Morgan 1, lattice connectives                  *)
+(* - fuzzy_demorgan_mord == de Morgan 1, lattice connectives                  *)
 (*                                                                            *)
 (* ## Shadow-lifting                                                          *)
 (* - product_and v == $\product_{i < n} v_i$                                  *)
@@ -133,6 +161,23 @@ Proof.
 by apply/JMeq_eq/(translations_coincide _ _ 0 0 0); left.
 Qed.
 
+(*move to analysis/mathcomp*)
+Lemma powRpinv (r : R) :r > 0 -> 1 = 1 `^ r.
+Proof. by rewrite powR1. Qed.
+
+Lemma powR_le1 (x r : R) : r > 0 -> 0 <= x ->  x <= 1 -> x `^ r <= 1.
+Proof.
+move=> r0 x0 x1. rewrite (powRpinv r)//=.
+apply ge0_ler_powR; rewrite ?nnegrE ?invr_ge0//=. lra.
+Qed.
+
+Lemma pow_le01 (x r : R) : r > 0 -> 0 <= x <= 1 -> 0 <= x `^ r <= 1.
+Proof.
+move => r0 H.
+apply /andP; split; first by rewrite powR_ge0.
+apply powR_le1; rewrite//=; lra.
+Qed.
+
 Lemma translate_boolT_01 dl f1 f2 f3 (e : expr (boolT_def f1 f2 f3)) :
   0 <= [[ e ]]_ dl <= 1.
 Proof.
@@ -167,9 +212,31 @@ dependent induction e using expr_ind'.
                               0 <= b <= 1 ->
                               0 <= ((1 - a)%R + b)%E. intros. lra.
     have h' := @h ([[e1]]_Lukasiewicz) ([[e2]]_Lukasiewicz) (H2 _ p1) (H1 _ p1). lra.
-  + rewrite /minr. case: ifP; last by lra. 
-    move=> /ltW ->.
-    by rewrite andbT powR_ge0.
+  + rewrite /minr. repeat case: ifP; first by lra.
+    have p0 : 0 <= p by rewrite (le_trans ler01 p1).
+    move => /negP/negP h. rewrite ltNge Bool.negb_involutive in h.
+    have powRpinv : 1 = 1 `^ p^-1.
+      by rewrite powR1.
+    have powRle1 : forall x, 0 <= x ->  x <= 1 -> x `^ p^-1 <= 1.
+      move=> x x0; rewrite {2}powRpinv.
+      move => hh.
+      apply ge0_ler_powR; rewrite ?nnegrE ?invr_ge0//=. 
+    apply /andP; split.
+    * have H2' := H2 p p1. 
+      have H1' := H1 p p1.
+      rewrite subr_gte0 powRle1 ?powR_ge0//=.
+      - have he12 : 1 - [[e2]]_Yager >= 1 - [[e1]]_Yager by lra.
+        rewrite subr_ge0; apply ge0_ler_powR; rewrite ?nnegrE//=. 
+        + lra.
+        + lra.
+      - have H1e : 0 <= (1 - [[e1]]_Yager) <= 1. lra.
+        have H2e : 0 <= (1 - [[e2]]_Yager) <= 1. lra.
+        have p0' : p > 0. clear -p1. 
+          have ltr_le_trans : forall (x y z : R), x < y -> y <= z -> x < z. intros; lra.
+          by rewrite (ltr_le_trans _ 1)//=.
+        apply (pow_le01 _ p p0') in H2e.
+        apply (pow_le01 _ p p0') in H1e. lra.
+    *  by rewrite gerBl powR_ge0.
   + case: ifP; intros; apply H1 in p1; rewrite ?(H2 _ p1)//=; lra.
   + case: ifPn; have H1' := (H2 _ p1); have H2' := (H1 _ p1); intros; 
     rewrite ?divr_ge0 ?ler_pdivrMr //= ?mul1r; try lra. 
@@ -753,7 +820,16 @@ rewrite /= !big_ord_recl big_ord0 !addr0.
 by rewrite/minr; case: ifP; intros; lra.
 Qed.
 
-Lemma Lukasiewicz_prelinearity (e1 e2 e3 : expr boolT_fuzzy) :
+Lemma Lukasiewicz_prelinearity (e1 e2 e3 : @expr R boolT_fuzzy) :
+  [[(e1 `=> e2) `\/ (e2 `=> e1)]]_Lukasiewicz = [[ldl_bool  _ _ _ _ true]]_Lukasiewicz.
+Proof.
+have H1 := translate_boolT_01 p p1 Lukasiewicz _ _ _ (e1 `=> e2).
+have H2 := translate_boolT_01 p p1 Lukasiewicz _ _ _ (e2 `=> e1).
+rewrite//= /maxR !big_ord_recl big_ord0 !tnthS !tnth0 /maxr /minr; repeat case: ifPn; intros. lra.
+admit.
+admit. Admitted.
+
+Lemma Lukasiewicz_residuation (e1 e2 e3 : expr boolT_fuzzy) :
   [[e1 `** e2]]_Lukasiewicz <= [[ e3 ]]_Lukasiewicz <-> [[ e2 ]]_Lukasiewicz <= [[e1 `=> e3]]_Lukasiewicz.
 Proof.
 have h1 := translate_boolT_01 p p1 Lukasiewicz _ _ _ e1.
@@ -1014,20 +1090,105 @@ rewrite -powRrM divff//= ?powRr1 ?p_nq//=; try lra.
 rewrite /minr; case: ifP; move => hy; lra.
 Qed.
 
-Lemma Yager_prelinearity (e1 e2 e3 : expr boolT_fuzzy) :
+Lemma Yager_residuation (e1 e2 e3 : expr boolT_fuzzy) : (0 < p) ->
   [[e1 `** e2]]_Yager <= [[ e3 ]]_Yager <-> [[ e2 ]]_Yager <= [[e1 `=> e3]]_Yager.
 Proof.
+move => p0.
+have pneq0 : p != 0 by exact: lt0r_neq0.
 have := translate_boolT_01 p p1 Yager _ _ _ e1.
 have := translate_boolT_01 p p1 Yager _ _ _ e2.
 have := translate_boolT_01 p p1 Yager _ _ _ e3.
-split; rewrite//= !big_ord_recl big_ord0 !addr0 /maxr/minr; case: ifP;
-  set x := (1 - [[e1]]_Yager) `^ p; 
-  set y := (1 - [[e2]]_Yager) `^ p;
-  set z := [[e3]]_Yager; intros; case: ifP => H'.
-- move: H'. set xx := (x + (z `^ p)%R)%E `^ p^-1.
-  have h : forall (a b : R), 0 <= b <= 1 ->
-                             a < 1 ->
-                             b <= a. 
+have powRpinv : 1 = 1 `^ p^-1.
+  by rewrite powR1.
+have powRgt1 : forall x, 0 <= x -> 1 < x `^ p^-1 -> 1 < x.
+  move=> x x0; rewrite {1}powRpinv.
+  move/(@gt0_ltr_powR _ p p0).
+  by rewrite -!powRrM !mulVf// powR1 powRr1// !nnegrE; apply => //; exact: powR_ge0.
+have powRselfNx : forall x, 0 <= x -> (x `^ p) `^ p^-1 = x.
+  move => x x0. rewrite -powRrM divff ?powRr1//=.
+have powRgt : forall x y, 0 <= x -> 0 <= y -> y `^ p <= x -> y <= x `^ p^-1.
+  move=> x y x0 y0 hp.
+  have h := @ge0_ler_powR  _ (p^-1) _ (y `^ p) x  .
+  rewrite -(powRselfNx y)//=. rewrite h ?nnegrE ?powR_ge0//=.   
+  rewrite -div1r divr_ge0//=. lra.
+have powRle1 : forall x, 0 <= x -> x `^ p^-1 <= 1 -> x <= 1.
+  move=> x x0; rewrite {1}powRpinv.
+  move/(@ge0_ler_powR _ p (ltW p0)).
+  by rewrite -!powRrM !mulVf// powR1 powRr1//; apply; rewrite nnegrE ?powR_ge0.
+have powRselfxN : forall x, 0 <= x -> (x `^ p^-1) `^ p = x.
+  move => x x0. rewrite -powRrM mulVf ?powRr1//=. 
+have powRgtxy : forall x y, 0 <= x -> 0 <= y -> y <= x `^ p^-1 -> y `^ p <= x.
+  move=> x y x0 y0 hp.
+  have h := @ge0_ler_powR  _ p (ltW p0) y (x `^ p^-1) .
+  rewrite -(powRselfxN x)//=. rewrite h ?nnegrE//=.
+  by rewrite powR_ge0.
+have powRge1 : forall x y, 0 <= x -> 0 <= y  -> x <= y `^ p -> x `^ p^-1 <= y .
+  move=> x y x0 y0 hp.
+  have h := @ge0_ler_powR  _ (p^-1) _ (x) (y `^ p).
+  rewrite -(powRselfNx y)//=. rewrite h ?nnegrE//=.
+  - by rewrite invr_ge0 (ltW p0).
+  - by rewrite (le_trans x0 hp).
+(*rewrite//= !big_cons big_nil !addr0 /maxr/minr.
+set t1 := _ e1.
+set t2 := _ e2.
+set t3 := _ e3.
+split; case: ifP; case: ifP; rewrite//=; try lra.
+- move => /negP/negP h1 h2 _. rewrite ltNge Bool.negb_involutive in h1. 
+  rewrite subr_lt0 //= in h2. apply powRgt1 in h2.
+  + rewrite lerBrDl -(lerBrDr _ _ t2).
+    rewrite powRge1//=. 
+    * have he12 : 1 - t3 >= 1 - t1 by lra.
+        rewrite subr_ge0; apply ge0_ler_powR; rewrite ?nnegrE//=; lra. 
+    * lra.
+    * rewrite lerBlDl. move /ltW in h2.
+      have H' : 0 <= (1 - t3) <= 1. lra.
+      apply (pow_le01 _ p p0) in H'. move/andP in H'. destruct H' as [_ H'].
+      by apply (le_trans H'  h2).
+    * rewrite addr_ge0 ?powR_ge0//=.
+- move => /negP/negP h1 /negP/negP h2 h3. 
+  rewrite ltNge Bool.negb_involutive in h1.
+  rewrite ltNge Bool.negb_involutive in h2.
+  rewrite lerBrDl -(lerBrDr _ _ t2).
+  rewrite powRge1//=.
+  * have he12 : 1 - t3 >= 1 - t1 by lra.
+    rewrite subr_ge0; apply ge0_ler_powR; rewrite ?nnegrE//=; lra. 
+  * lra.
+  * rewrite subr_ge0 in h2. apply (powRle1 _) in h2; last by rewrite addr_ge0 ?powR_ge0//=.
+    rewrite lerBlDr -(lerBlDl _ t3) in h3. apply powRgtxy in h3.
+    + by rewrite lerBlDl h3.
+    + by rewrite addr_ge0 ?powR_ge0//=.
+    + lra.
+- move => /negP/negP h1 h2 h3. 
+  rewrite ltNge Bool.negb_involutive in h1.
+  rewrite lerBlDr -(lerBlDl _ t3).
+  rewrite powRgt//=.
+  + by rewrite addr_ge0 ?powR_ge0//=.
+  + lra.
+  + have he12 : 1 - t1 >= 1 - t3 by lra.
+    apply (ge0_ler_powR (ltW p0)) in he12; rewrite ?nnegrE//=.
+    * have HH : forall (a b c : R), a <= b -> b <= c -> a <= c. intros; lra.
+      rewrite (HH _ _ _ he12)//=. 
+      by rewrite lerDl powR_ge0.
+    * lra.
+    * lra.
+- move => /negP/negP h1 /negP/negP h2 h3.
+  rewrite !ltNge !Bool.negb_involutive in h1 h2.
+  rewrite lerBlDr -(lerBlDl _ t3).
+  rewrite powRgt//=.
+  + by rewrite addr_ge0 ?powR_ge0//=.
+  + lra.
+  + rewrite lerBrDl -(lerBrDr _ _ t2) in  h3.
+    have powR' : forall x y, 0 <= x -> 0 <= y  -> x `^ p^-1 <= y -> x <= y `^ p .
+      move=> x y x0 y0 hp.
+      have h := @ge0_ler_powR  _ (p) _ (x `^ p^-1) (y).
+      rewrite -(powRselfxN x)//=. rewrite h ?nnegrE//=.
+    - by rewrite (ltW p0).
+    - by rewrite powR_ge0.
+    apply powR' in h3.
+    * by rewrite lerBlDl in h3.
+    * have he12 : 1 - t3 >= 1 - t1 by lra.
+      apply (ge0_ler_powR (ltW p0)) in he12; rewrite ?nnegrE//=; lra.
+    * lra.*)
 Admitted.
 
 Lemma Yager_involution (e : expr boolT_fuzzy) :
@@ -1139,7 +1300,15 @@ rewrite//= /maxR !big_ord_recl !big_ord0/= !tnth0.
 rewrite /maxr; repeat case: ifP; intros; lra.
 Qed.
 
-Lemma Godel_prelinearity (e1 e2 e3 : expr boolT_fuzzy) :
+Lemma Godel_prelinearity (e1 e2 e3 : @expr R boolT_fuzzy) :
+  [[(e1 `=> e2) `\/ (e2 `=> e1)]]_Godel = [[ldl_bool  _ _ _ _ true]]_Godel.
+Proof.
+have := translate_boolT_01 p p1 Godel _ _ _ e1.
+have := translate_boolT_01 p p1 Godel _ _ _ e2.
+rewrite//=/maxR; rewrite !big_ord_recl !big_ord0 !tnth0 /maxr; repeat case: ifP; intros; try lra.
+Admitted.
+
+Lemma Godel_residuation (e1 e2 e3 : expr boolT_fuzzy) :
   [[e1 `** e2]]_Godel <= [[ e3 ]]_Godel <-> [[ e2 ]]_Godel <= [[e1 `=> e3]]_Godel.
 Proof.
 have := translate_boolT_01 p p1 Godel _ _ _ e1.
@@ -1225,7 +1394,34 @@ Theorem product_mand_unit f1 f2 (e :  (expr (boolT_def f1 m_def f2))) :
   [[ e `** (ldl_bool _ _ _ _ true) ]]_product = [[ e ]]_product.
 Proof. by rewrite /= !big_ord_recl big_ord0 !mulr1. Qed.
 
-Lemma product_prelinearity (e1 e2 e3 : expr boolT_fuzzy) :
+Lemma product_prelinearity (e1 e2 e3 : @expr R boolT_fuzzy) :
+  [[(e1 `=> e2) `\/ (e2 `=> e1)]]_product = [[ldl_bool  _ _ _ _ true]]_product.
+Proof.
+have h1 := translate_boolT_01 p p1 product _ _ _ e1.
+have h2 := translate_boolT_01 p p1 product _ _ _ e2.
+(*rewrite//= /maxR !big_cons big_nil.
+rewrite /maxr; repeat case: ifP; intros; try nra.
+- have : 0 < [[e2]]_product \/ 0 = [[e2]]_product by lra.
+  move => [h | h]. 
+  + have inv_pos : 0 < ([[e2]]_product)^-1.
+    by rewrite invr_gt0 h//=.
+    have H : 1 < [[e1]]_product / [[e2]]_product -> 
+             [[e2]]_product < [[e1]]_product * ([[e2]]_product / [[e2]]_product). intros; nra.
+    apply H in i0.
+    rewrite divff in i0. nra. nra.
+  + rewrite -h in i; nra.
+- have : 0 < [[e1]]_product \/ 0 = [[e1]]_product by lra.
+  move => [h | h]. 
+  + have inv_pos : 0 < ([[e1]]_product)^-1.
+    by rewrite invr_gt0 h//=.
+    have H : ([[e2]]_product / [[e1]]_product < 1) = false -> 
+             [[e2]]_product * ([[e1]]_product / [[e1]]_product) >= [[e1]]_product. intros; nra.
+    apply H in n1.
+    rewrite divff in n1. nra. nra.
+  + rewrite -h in i; nra.*)
+Admitted.
+
+Lemma product_residuation (e1 e2 e3 : expr boolT_fuzzy) :
   [[e1 `** e2]]_product <= [[ e3 ]]_product <-> [[ e2 ]]_product <= [[e1 `=> e3]]_product.
 Proof.
 have := translate_boolT_01 p p1 product _ _ _ e1.
@@ -1354,13 +1550,44 @@ rewrite /minr.
 by repeat case: ifPn => //; lra.
 Qed.
 
+Lemma fuzzy_and_distr (e1 e2 e3 : expr boolT_fuzzy) :
+  [[ e1 `/\ (e2 `\/ e3)]]_ dl = [[ (e1 `/\ e2) `\/ (e1 `/\ e3)]]_ dl.
+Proof.
+(*rewrite//= /minR /maxR !big_cons !big_nil.
+have e101 := translate_boolT_01 _ p1 dl _ _ _ e1.
+have e201 := translate_boolT_01 _ p1 dl _ _ _ e2.
+have e301 := translate_boolT_01 _ p1 dl _ _ _ e3.
+(*Time rewrite /minr /maxr; repeat case: ifP => //; intros; try lra.
+Finished transaction in 205.419 secs (204.099u,1.173s) (successful)*)
+rewrite [in RHS]maxA.
+rewrite -(min_maxr ([[e1]]_dl)).
+rewrite -(min_maxl _ _ 1).
+Time rewrite /minr /maxr; repeat case: ifP => //; intros; try lra.
+(* Finished transaction in 17.673 secs (17.434u,0.22s) (successful) *)*)
+Admitted.
+
+Lemma fuzzy_and_distr2 (e1 e2 e3 : expr boolT_fuzzy) :
+  [[ e1 `\/ (e2 `/\ e3)]]_ dl = [[ (e1 `\/ e2) `/\ (e1 `\/ e3)]]_ dl.
+Proof.
+(*rewrite//= /minR /maxR !big_cons !big_nil.
+have e101 := translate_boolT_01 _ p1 dl _ _ _ e1.
+have e201 := translate_boolT_01 _ p1 dl _ _ _ e2.
+have e301 := translate_boolT_01 _ p1 dl _ _ _ e3.
+(*Time rewrite /minr /maxr; repeat case: ifP; intros; try lra. <- too long *)
+rewrite [in RHS]minA.
+rewrite -(max_minr ([[e1]]_dl)).
+rewrite -(max_minl _ _ 0).
+Time rewrite /minr /maxr; repeat case: ifP => //; intros; try lra.
+(* Finished transaction in 18.3 secs (17.851u,0.361s) (successful) *)
+Qed.*) Admitted.
+
 Lemma fuzzy_and_abs (e1 e2 : expr boolT_fuzzy) :
   [[ e1 `/\ (e1 `\/ e2)]]_ dl = [[ e1 ]]_ dl.
 Proof.
 rewrite//=/minR/maxR !big_ord_recl !big_ord0 !tnth0/=/maxR !big_ord_recl !big_ord0 !tnthS !tnth0.
 have := translate_boolT_01 p p1 dl _ _ _ e1.
 have := translate_boolT_01 p p1 dl _ _ _ e2.
-rewrite/minr/maxr; repeat case: ifP; intros; try lra.
+by rewrite /minr /maxr; repeat case: ifP; intros; try lra.
 Qed.
 
 Lemma fuzzy_or_abs (e1 e2 : expr boolT_fuzzy) :
@@ -1369,7 +1596,7 @@ Proof.
 rewrite//=/minR/maxR !big_ord_recl !big_ord0 !tnthS !tnth0/=/minR !big_ord_recl big_ord0/= !tnthS !tnth0/=.
 have := translate_boolT_01 p p1 dl _ _ _ e1.
 have := translate_boolT_01 p p1 dl _ _ _ e2.
-rewrite/minr/maxr; repeat case: ifP; intros; try lra.
+by rewrite /minr /maxr; repeat case: ifP; intros; try lra.
 Qed.
 
 Lemma fuzzy_demorgan_mor  (e1 e2 : expr boolT_fuzzy) :
@@ -1384,6 +1611,5 @@ Lemma fuzzy_demorgan_and  (e1 e2 : expr boolT_fuzzy) :
 Proof.
 case: dl; rewrite//= /minR /maxR !big_ord_recl !big_ord0 !tnthS !tnth0/= /minr /maxr; repeat case: ifP; intros; lra.
 Qed.
-
 
 End lattice_fuzzy_lemmas.

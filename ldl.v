@@ -38,6 +38,8 @@ From HB Require Import structures.
 (*   mapping true to $1$ and false to $-1$                                    *)
 (* - `stl_ereal_translation`: maps an LDL-formula to its interpretation in    *)
 (*   STL on extended reals, mapping true to $\infty$ and false to $-\infty$   *)
+(* - `stl_infty_translation`: maps an LDL-formula to its interpretation in    *)
+(*   STLinfty, STL where parameter nu tends to infinity$                      *)
 (*                                                                            *)
 (* ## Mathematical definitions:                                               *)
 (* `shadow_lifting f` with `f : rV[R]_n.+1 -> R`                              *)
@@ -92,6 +94,7 @@ Definition boolT_def := boolT neg_def.
 Definition boolT_fuzzy := boolT neg_def impl_def m_def l_def.
 Definition boolT_dl2 := boolT neg_undef impl_def m_def l_def.
 Definition boolT_stl := boolT neg_def impl_undef m_undef l_def.
+Definition boolT_stli := boolT neg_def impl_def m_def l_def.
 
 Inductive comparison : Type := cmp_le | cmp_eq.
 
@@ -363,7 +366,8 @@ Fixpoint translation {t} (e : @expr R t) {struct e} : type_translation t :=
   | ldl_impl _ _ _ E1 E2 =>
       match l with
       | Lukasiewicz => minr (1 - {[ E1 ]} + {[ E2 ]}) 1
-      | Yager => minr (((1 - {[ E1 ]})`^p + ({[ E2 ]})`^p )`^p^-1) 1
+      | Yager => if {[ E1 ]} < {[ E2 ]} then 1
+                 else 1 - ((1 - {[ E2 ]})`^p - (1 - {[ E1 ]})`^p)`^p^-1
       | Godel => if {[ E2 ]} < {[ E1 ]} then {[ E2 ]} else 1
       | product => if {[ E2 ]} < {[ E1 ]} then
                      {[ E2 ]} / {[ E1 ]}
@@ -527,7 +531,7 @@ Fixpoint stl_ereal_translation {t} (e : expr t) : ereal_type_translation t :=
 
   (*comparisons*)
   | E1 `== E2 => (- `| {[ E1 ]} - {[ E2 ]}|)%:E
-  | E1 `<= E2 => ({[ E2 ]} - {[ E1 ]})%:E(* (- maxr ({[ E1 ]} - {[ E2 ]}) 0)%:E *)
+  | E1 `<= E2 => ({[ E2 ]} - {[ E1 ]})%:E
 
   | ldl_fun n m f => f
   | ldl_fun2 n m l f => f
@@ -607,10 +611,10 @@ Fixpoint stl_translation {t} (e : expr t) : type_translation t :=
       let A := stl_translation \o s in
       let a_max: R := \big[maxr/A ord0]_(i < n.+1) A i in
       stl_or a_max A
-  | ldl_mand _ _ _ _ _ => 0 (* default value, all lemmas are for negation-free formulas *)
-  | ldl_mor _ _ _ _ _ => 0 (* default value, all lemmas are for negation-free formulas *)
+  | ldl_mand _ _ _ _ _ => 0 (* default value, all lemmas are for monoid-free formulas *)
+  | ldl_mor _ _ _ _ _ => 0 (* default value, all lemmas are for monoid-free formulas *)
   | `~ E1 => - {[ E1 ]}
-  | E1 `=> E2 => 0 (* default value, all lemmas are for negation-free formulas *)
+  | E1 `=> E2 => 0 (* default value, all lemmas are for implication-free formulas *)
 
   | E1 `== E2 => - `| {[ E1 ]} - {[ E2 ]}|
   | E1 `<= E2 => {[ E2 ]} - {[ E1 ]}
@@ -636,33 +640,35 @@ Definition shadow_lifting {R : realType} n (f : 'rV_n.+1 -> R) :=
 End shadow_lifting.
 
 Section stl_infty_translation.
-Local Open Scope ring_scope.
+Local Open Scope ereal_scope.
 Local Open Scope ldl_scope.
 Context {R : realType}.
 
 (*version of STL where nu tends to \infty, which we prove in stl.v converges*)
-Fixpoint stl_infty_translation {t} (e : @expr R t) {struct e} : type_translation t :=
-  match e in expr t return type_translation t with
-  | ldl_bool _ _ _ _ true => -1
-  | ldl_bool _ _ _ _ false => 1
+Fixpoint stl_infty_translation {t} (e : @expr R t) {struct e} : ereal_type_translation t :=
+  match e in expr t return ereal_type_translation t with
+  | ldl_bool _ _ _ _ true => +oo
+  | ldl_bool _ _ _ _ false => -oo
   | ldl_idx n i => i
   | ldl_real r => r
   | ldl_vec n t => t
 
   | ldl_and _ _ _ 0 _ => 0
-  | ldl_and _ _ _ n.+1 Es  => \big[minr/stl_infty_translation (Es ord0)]_(i < n.+1) stl_infty_translation (Es i)
+  | ldl_and _ _ _ n.+1 Es  => \big[mine/stl_infty_translation (Es ord0)]_(i < n.+1) stl_infty_translation (Es i)
   | ldl_or _ _ _ 0 _ => 0
-  | ldl_or _ _ _ n.+1 Es  => \big[maxr/stl_infty_translation (Es ord0)]_(i < n.+1) stl_infty_translation (Es i)
+  | ldl_or _ _ _ n.+1 Es  => \big[maxe/stl_infty_translation (Es ord0)]_(i < n.+1) stl_infty_translation (Es i)
   | ldl_mand _ _ _ 0 _ => 0
-  | ldl_mand _ _ _ n.+1 Es  => \big[minr/stl_infty_translation (Es ord0)]_(i < n.+1) stl_infty_translation (Es i)
+  | ldl_mand _ _ _ n.+1 Es  => \big[mine/stl_infty_translation (Es ord0)]_(i < n.+1) stl_infty_translation (Es i)
   | ldl_mor _ _ _ 0 _ => 0
-  | ldl_mor _ _ _ n.+1 Es => \big[maxr/stl_infty_translation (Es ord0)]_(i < n.+1) stl_infty_translation (Es i)
+  | ldl_mor _ _ _ n.+1 Es => \big[maxe/stl_infty_translation (Es ord0)]_(i < n.+1) stl_infty_translation (Es i)
 
   | ldl_not _ _ _ E1 => - {[ E1 ]}
-  | ldl_impl _ _ _ E1 E2 => 0 (* default value, all lemmas are for negation-free formulas *)
+  | ldl_impl _ _ _ E1 E2 => 
+      if {[ E1 ]} <= {[ E2 ]} then +oo
+      else {[ E2 ]}
 
-  | E1 `== E2 => - `| {[ E1 ]} - {[ E2 ]}|
-  | E1 `<= E2 => {[ E2 ]} - {[ E1 ]}
+  | E1 `== E2 => (- `| {[ E1 ]} - {[ E2 ]}|)%:E
+  | E1 `<= E2 => ({[ E2 ]} - {[ E1 ]})%:E
 
   | ldl_fun n m f => f
   | ldl_fun2 n m l f => f

@@ -15,22 +15,25 @@ Follow the instructions on https://github.com/coq-community/templates to regener
 This repository contains the formalization of the Logic of
 Differentiable Logics (LDL) using the Coq proof-assistant and the
 Mathematical Components library.
-The LDL language is defined in `ldl.v`, along with its fuzzy, DL2, STL
+The LDL language is defined in `ldl.v`, along with its fuzzy, DL2, STL, STLinfty
 and Boolean interpretations.  The files `fuzzy.v`, `dl2.v`,
-`dl2_ereal.v`, `stl.v` and `stl_ereal.v` contain the relevant theorems
-that hold for each interpretation: structural properties (idempotence,
-commutativity and associativity of operators), adequacy, and shadow-lifting.
+`dl2_ereal.v`, `stl.v`, `stl_ereal.v` and `stl_infty.v` contain the relevant theorems
+that hold for each interpretation: structural properties based on
+residuated lattices (idempotence,
+commutativity and associativity of operators, residuation, prelinearity etc.),
+ adequacy, and shadow-lifting.
 
 The formalisation of soundness of hypersequent calculi for fuzzy logics can
-be found in file `seq_calc.v` and for DL2 in `dl2_seq_calc.v`.
+be found in file `seq_calc.v`, for DL2 in `dl2_seq_calc.v` and for STLinfty
+in `stl_infty_seq_calc.v`.
 
 ## Meta
 
 - Author(s):
   - Reynald Affeldt (initial)
   - Alessandro Bruni (initial)
-  - Natalia Slusarz (initial)
-  - Katrhin Stark (initial)
+  - Natalia Ślusarz (initial)
+  - Kathrin Stark (initial)
   - Ekaterina Komendantskaya (initial)
 - License: [MIT License](LICENSE)
 - Compatible Rocq/Coq versions: 8.20 or later

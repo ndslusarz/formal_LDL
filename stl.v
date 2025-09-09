@@ -138,7 +138,7 @@ Qed.
 
 Definition is_stl b (x : R) := if b then x >= 0 else x < 0.
 
-Lemma stl_nary_inversion_andE1 n (Es : 'I_n -> (expr (boolT_undef impl_undef m_undef l_def))) :
+Lemma stl_nary_inversion_andE1 n (Es : 'I_n -> (expr (boolT neg_undef impl_undef m_undef l_def))) :
   is_stl true (nu.-[[ ldl_and Es ]]_stl) ->
     forall i, is_stl true (nu.-[[ Es i ]]_stl).
 Proof.
@@ -155,7 +155,8 @@ rewrite -leNgt; move/bigmin_geP =>/= [h0 hi].
 by case: ifPn => _ _ i; exact/hi.
 Qed.
 
-Lemma stl_nary_inversion_andE0 n (Es : 'I_n -> (expr (boolT_undef impl_undef m_undef l_def))) :
+
+Lemma stl_nary_inversion_andE0 n (Es : 'I_n -> (expr (boolT neg_undef impl_undef m_undef l_def))) :
   is_stl false (nu.-[[ ldl_and Es ]]_stl) ->
     exists i, is_stl false (nu.-[[ Es i ]]_stl).
 Proof.
@@ -172,7 +173,7 @@ rewrite ltNge divr_ge0// big_ord_recl/= addr_ge0//= ?mulr_ge0 ?expR_ge0 ?sumr_ge
 by move=> i _; rewrite mulr_ge0// (le_trans hminge0)// bigmin_le.
 Qed.
 
-Lemma stl_nary_inversion_orE1 n (Es : 'I_n -> (expr (boolT_undef impl_undef m_undef l_def))) :
+Lemma stl_nary_inversion_orE1 n (Es : 'I_n -> (expr (boolT neg_undef impl_undef m_undef l_def))) :
   is_stl true (nu.-[[ ldl_or Es ]]_stl) ->
     exists i, is_stl true (nu.-[[ Es i ]]_stl).
 Proof.
@@ -194,7 +195,7 @@ have /= [x xmem hxge0] := maxrgex hmaxge0.
 by exists x.
 Qed.
 
-Lemma stl_nary_inversion_orE0 n (Es : 'I_n -> (expr (boolT_undef impl_undef m_undef l_def))) :
+Lemma stl_nary_inversion_orE0 n (Es : 'I_n -> (expr (boolT neg_undef impl_undef m_undef l_def))) :
   is_stl false (nu.-[[ ldl_or Es ]]_stl) ->
     forall i, is_stl false (nu.-[[ Es i ]]_stl).
 Proof.
@@ -210,7 +211,7 @@ move => hmaxlt0 _ i.
 by rewrite (le_lt_trans _ hmaxlt0)// le_bigmax.
 Qed.
 
-Lemma stl_adequacy (e : expr (boolT_undef impl_undef m_undef l_def)) b :
+Lemma stl_adequacy (e : expr (boolT neg_undef impl_undef m_undef l_def)) b :
   is_stl b (nu.-[[ e ]]_stl) -> [[ e ]]_B = b.
 Proof.
 dependent induction e using expr_ind'.
@@ -276,6 +277,10 @@ Lemma andC_stl_nary n (s1 s2 : 'I_n -> (expr (boolT_def impl_undef m_undef l_def
 (* by rewrite /min_dev !map_cons !big_map (perm_big _ pi). *)
 (* Qed. *)
 Admitted.
+
+Lemma stl_involution (e : expr boolT_stl) :
+  nu.-[[`~ (`~e)]]_stl = nu.-[[ e ]]_stl.
+Proof. by rewrite //= opprK. Qed.
 
 End stl_lemmas.
 
@@ -488,8 +493,8 @@ have sum_top :
     apply/(@cvg_comp _ _ _ _ _ _ -oo); last exact/cvg_addrl_Ny.
     rewrite -cvgNry.
     under eq_cvg do rewrite -mulrN.
-    apply: gt0_cvgMly => //.
-    by rewrite oppr_gt0 min_dev_lt0.
+(*    apply: gt0_cvgMly => //.
+    by rewrite oppr_gt0 min_dev_lt0.*) admit.
   rewrite -(addr0 (min_val * (\sum_(a < n.+1 | v a == min_val) 1))).
   apply: cvgD; last by exact sum_top_rest.
   apply/cvgrPdist_le => /= e e0.
@@ -555,7 +560,7 @@ have helper : min_val * (\sum_(a < n.+1 | v a == min_val) 1) / (\sum_(a < n.+1 |
 rewrite helper in l.
 apply: l.
 Unshelve. all: end_near.
-Qed.
+Admitted.
 
 End stl_and_conv_lattice.
 

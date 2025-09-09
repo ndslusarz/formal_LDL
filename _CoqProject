@@ -11,6 +11,7 @@
 mathcomp_extra.v
 analysis_extra.v
 ldl.v
+stl_infty.v
 fuzzy.v
 dl2.v
 dl2_ereal.v
