@@ -545,14 +545,11 @@ Section min_max_dev.
 Context {R : realType}.
 Local Open Scope ring_scope.
 
-Definition min_dev (x : R) n (f : 'I_n -> R) : R :=
-  let r := \big[minr/x]_(i < n) f i in (x - r) / r.
+Definition min_dev n i (f : 'I_n.+1 -> R) : R :=
+  let r := \big[minr/f ord0]_(j < n.+1) f j in (f i - r) / r.
 
-Lemma min_dev_nseq (p : R) n : min_dev p (fun i : 'I_n.+1 => p) = 0%R.
-Admitted.
-
-Definition max_dev {R : realType} (x : R) n (f : 'I_n -> R) : R :=
-  let r := \big[maxr/x]_(i < n) f i in (r - x) / r.
+Definition max_dev {R : realType} n i (f : 'I_n.+1 -> R) : R :=
+  let r := \big[maxr/f ord0]_(i < n.+1) f i in (r - f i) / r.
 
 End min_max_dev.
 
@@ -564,30 +561,30 @@ Variables (p : R) (nu : R).
 Hypothesis p1 : 1 <= p.
 Hypothesis nu0 : 0 < nu.
 
-Definition stl_and_gt0 n (v : 'I_n -> R) :=
-  (\sum_(a < n) v a * expR (- nu * min_dev (v a) v)) /
-    \sum_(a < n) expR (-nu * min_dev (v a) v).
+Definition stl_and_gt0 n (v : 'I_n.+1 -> R) :=
+  (\sum_(a < n.+1) v a * expR (- nu * min_dev a v)) /
+    \sum_(a < n.+1) expR (-nu * min_dev a v).
 
-Definition stl_and_lt0 n (v : 'I_n -> R) :=
-  (\sum_(a < n)
-    (\big[minr/v a]_(i < n) v i) * expR (min_dev (v a) v) * expR (nu * min_dev (v a) v)) /
-      \sum_(a < n) expR (nu * min_dev (v a) v).
+Definition stl_and_lt0 n (v : 'I_n.+1 -> R) :=
+  (\sum_(a < n.+1)
+    (\big[minr/v ord0]_(i < n.+1) v i) * expR (min_dev a v) * expR (nu * min_dev a v)) /
+      \sum_(a < n.+1) expR (nu * min_dev a v).
 
-Definition stl_or_gt0 n (v : 'I_n -> R) :=
-  (\sum_(a < n)
-    (\big[maxr/v a]_(i < n) v i) * expR (max_dev (v a) v) * expR (nu * max_dev (v a) v)) /
-    (\sum_(a < n) expR (nu * max_dev (v a) v)).
+Definition stl_or_gt0 n (v : 'I_n.+1 -> R) :=
+  (\sum_(a < n.+1)
+    (\big[maxr/v ord0]_(i < n.+1) v i) * expR (max_dev a v) * expR (nu * max_dev a v)) /
+    (\sum_(a < n.+1) expR (nu * max_dev a v)).
 
-Definition stl_or_lt0 n (v : 'I_n -> R) :=
-  (\sum_(a < n) v a * expR (-nu * max_dev (v a) v)) /
-    (\sum_(a < n) expR (nu * max_dev (v a) v)).
+Definition stl_or_lt0 n (v : 'I_n.+1 -> R) :=
+  (\sum_(a < n.+1) v a * expR (-nu * max_dev a v)) /
+    (\sum_(a < n.+1) expR (nu * max_dev a v)).
 
-Definition stl_and (a_min : R) n (t : 'I_n -> R) : R :=
+Definition stl_and (a_min : R) n (t : 'I_n.+1 -> R) : R :=
   if a_min < 0 then stl_and_lt0 t
   else if a_min > 0 then stl_and_gt0 t
   else 0.
 
-Definition stl_or (a_max : R) n (t : 'I_n -> R) : R :=
+Definition stl_or (a_max : R) n (t : 'I_n.+1 -> R) : R :=
   if a_max > 0 then stl_or_gt0 t
   else if a_max < 0 then stl_or_lt0 t
   else 0.
