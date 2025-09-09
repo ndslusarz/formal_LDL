@@ -1,6 +1,7 @@
 Require Import Coq.Program.Equality.
 From mathcomp Require Import all_ssreflect all_algebra.
 From mathcomp Require Import lra.
+From mathcomp Require Import perm.
 
 (**md**************************************************************************)
 (* # Additions to MathComp                                                    *)
@@ -505,4 +506,20 @@ rewrite -big_min_def_cons (perm_big _ pi)/= (@big_min_def _ _ a1 a2).
 - by rewrite big_min_def_cons.
 - by rewrite -(perm_mem pi) inE eqxx.
 - by rewrite mem_head.
+Qed.
+
+Lemma perm_eq_fun (n : nat) (pi : {perm 'I_n}) :
+  perm_eq (index_enum 'I_n) [seq pi i | i <- index_enum 'I_n].
+Proof.
+apply/allP => i/=.
+rewrite mem_cat => /orP[ hi | hi ].
+  rewrite !count_uniq_mem//.
+  - rewrite hi (_ : i \in map pi (index_enum 'I_n))//.
+    by apply/mapP; exists ((perm_inv pi) i); [ exact/mem_index_enum | rewrite permKV].
+  - by rewrite map_inj_uniq ?index_enum_uniq//; exact/perm_inj.
+  - by rewrite index_enum_uniq.
+rewrite !count_uniq_mem.
+- by rewrite hi mem_index_enum.
+- by rewrite map_inj_uniq ?index_enum_uniq//; exact/perm_inj.
+- by rewrite index_enum_uniq.
 Qed.

@@ -11,12 +11,12 @@
 mathcomp_extra.v
 analysis_extra.v
 ldl.v
-stl_infty.v
 fuzzy.v
 dl2.v
 dl2_ereal.v
 stl.v
 stl_ereal.v
+stl_infty.v
 example.v
 seq_calc.v
 bool_seq_calc.v

@@ -757,31 +757,11 @@ Hypothesis p1 : 1 <= p.
 
 Local Notation "[[ e ]]_ l" := (translation l p e).
 
-(* Ale: not sure how to properly reformulate the original *)
-Lemma Lukasiewicz_mandC_nary f1 f2 n (pi : {perm 'I_n}) (s1 s2 : 'I_n -> (expr (boolT_def f1 m_def f2))) :
-  (s1 = s2 \o pi) -> [[ldl_mand s1]]_Lukasiewicz = [[ldl_mand s2]]_Lukasiewicz.
+Lemma Lukasiewicz_mandC_nary f1 f2 n (pi : {perm 'I_n}) (s : 'I_n -> (expr (boolT_def f1 m_def f2))) :
+  [[ldl_mand s]]_Lukasiewicz = [[ldl_mand (s \o pi)]]_Lukasiewicz.
 Proof.
-move=> -> /=.
-have hp := @perm_big R +%R 0 'I_n (index_enum 'I_n) (map pi (index_enum 'I_n)) xpredT (fun i => [[s2 i ]]_Lukasiewicz). 
-congr (_ _). congr maxr. congr (_ + _). congr (_ - _).
-rewrite hp/=.
-  by rewrite big_map.
-rewrite /perm_eq.
-apply/allP => i/=.
-rewrite mem_cat => /orP[ hi | hi ].
-- rewrite !count_uniq_mem//.
-  - rewrite hi (_ : i \in map pi (index_enum 'I_n))//.
-    apply/mapP.
-    Open Scope group_scope.
-    exists ((perm_inv pi) i).
-    - by rewrite mem_index_enum.
-    by rewrite permKV.
-  - rewrite map_inj_uniq// ?index_enum_uniq//. exact/perm_inj.
-  - by rewrite index_enum_uniq.
-- rewrite !count_uniq_mem//.
-  - by rewrite hi mem_index_enum.
-  - rewrite map_inj_uniq// ?index_enum_uniq//. exact/perm_inj.
-  - by rewrite index_enum_uniq.
+rewrite /=; congr maxr; congr +%R; congr +%R.
+by rewrite (perm_big (map pi (index_enum 'I_n))) ?big_map//= perm_eq_fun.
 Qed.
 
 Lemma Lukasiewicz_mandC f1 f2 (e1 e2 : (expr (boolT_def f1 m_def f2))) :
@@ -790,10 +770,12 @@ Proof.
 by rewrite /=!big_ord_recl !big_ord0 !tnthS !tnth0 !addr0 (addrC (_ e1)).
 Qed.
 
-Lemma Lukasiewicz_morC_nary f1 f2 n (pi : {perm 'I_n}) (s1 s2 : 'I_n -> (expr (boolT_def f1 m_def f2))) :
-  (s1 = s2 \o pi) -> [[ldl_mor s1]]_Lukasiewicz = [[ldl_mor s2]]_Lukasiewicz.
+Lemma Lukasiewicz_morC_nary f1 f2 n (pi : {perm 'I_n}) (s : 'I_n -> (expr (boolT_def f1 m_def f2))) :
+  [[ldl_mor s]]_Lukasiewicz = [[ldl_mor (s \o pi)]]_Lukasiewicz.
 Proof.
-Abort.
+rewrite /=; congr minr.
+by rewrite (perm_big (map pi (index_enum 'I_n))) ?big_map//= perm_eq_fun.
+Qed.
 
 Lemma Lukasiewicz_morC f1 f2 (e1 e2 :(expr (boolT_def f1 m_def f2))) :
   [[ e1 `++ e2 ]]_Lukasiewicz = [[ e2 `++ e1 ]]_Lukasiewicz.
@@ -887,12 +869,12 @@ Hypothesis p1 : 1 <= p.
 
 Local Notation "[[ e ]]_ l" := (translation l p e).
 
-Lemma Yager_mandC_nary f1 f2 n (pi : {perm 'I_n}) (s1 s2 : 'I_n -> (expr (boolT_def f1 m_def f2))) :
-  s1 = s2 \o pi -> [[ldl_mand s1]]_Yager = [[ldl_mand s2]]_Yager.
+Lemma Yager_mandC_nary f1 f2 n (pi : {perm 'I_n}) (s : 'I_n -> (expr (boolT_def f1 m_def f2))) :
+  [[ldl_mand s]]_Yager = [[ldl_mand (s \o pi)]]_Yager.
 Proof.
-(* by move=> pi; rewrite /= !big_map (perm_big _ pi)/=. *)
-(* Qed. *)
-Admitted.
+rewrite /= (_ : \sum_(i < n) (1 - [[s i]]_Yager) `^ p = \sum_(i < n) (1 - [[s (pi i)]]_Yager) `^ p)//.
+by rewrite (perm_big (map pi (index_enum 'I_n))) ?big_map//= perm_eq_fun.
+Qed.
 
 Lemma Yager_mandC f1 f2 (e1 e2 : expr (boolT_def f1 m_def f2)) :
   [[ e1 `** e2 ]]_Yager = [[ e2 `** e1 ]]_Yager.
@@ -901,12 +883,12 @@ rewrite /= !big_ord_recl !big_ord0.
 by rewrite /= addr0 addr0 (addrC (_ `^ _)).
 Qed.
 
-Lemma Yager_morC_nary f1 f2 n (pi : {perm 'I_n}) (s1 s2 : 'I_n -> (expr (boolT_def f1 m_def f2))) :
-  s1 = s2 \o pi -> [[ldl_mor s1]]_Yager = [[ldl_mor s2]]_Yager.
+Lemma Yager_morC_nary f1 f2 n (pi : {perm 'I_n}) (s : 'I_n -> (expr (boolT_def f1 m_def f2))) :
+  [[ldl_mor s]]_Yager = [[ldl_mor (s \o pi)]]_Yager.
 Proof.
-(* by move=> pi; rewrite /= !big_map (perm_big _ pi)/=. *)
-(* Qed. *)
-Admitted.
+rewrite /= (_ : \sum_(i < n) [[s i]]_Yager `^ p = \sum_(i < n) [[s (pi i)]]_Yager `^ p)//.
+by rewrite (perm_big (map pi (index_enum 'I_n))) ?big_map//= perm_eq_fun.
+Qed.
 
 Lemma Yager_morC f1 f2 (e1 e2 : expr (boolT_def f1 m_def f2)) :
   [[ e1 `++ e2 ]]_Yager = [[ e2 `++ e1 ]]_Yager.
@@ -1257,11 +1239,11 @@ have /max_idPl -> : 0 <= [[ e ]]_Godel.
 by rewrite maxxx.
 Qed.
 
-(* Lemma Godel_mandC_nary f1 f2 (s1 s2 : seq (expr (boolT_def f1 m_def f2))) : *)
-(*   perm_eq s1 s2 -> [[ldl_mand s1]]_Godel = [[ldl_mand s2]]_Godel. *)
-(* Proof. *)
-(* by move=> pi; rewrite /=/minR !big_map (perm_big _ pi)/=. *)
-(* Qed. *)
+Lemma Godel_mandC_nary f1 f2 n (pi : {perm 'I_n}) (s : 'I_n -> (expr (boolT_def f1 m_def f2))) :
+  [[ldl_mand s]]_Godel = [[ldl_mand (s \o pi)]]_Godel.
+Proof.
+by rewrite /= /minR (perm_big (map pi (index_enum 'I_n))) ?big_map//= perm_eq_fun.
+Qed.
 
 Lemma Godel_mandC f1 f2 (e1 e2 : expr (boolT_def f1 m_def f2)) :
   [[ e1 `** e2 ]]_Godel = [[ e2 `** e1 ]]_Godel.
@@ -1270,11 +1252,11 @@ rewrite /=/minR !big_ord_recl !big_ord0/= !tnthS !tnth0.
 by rewrite /=/minr; repeat case: ifP; lra.
 Qed.
 
-(* Lemma Godel_morC_nary f1 f2 (s1 s2 : seq (expr (boolT_def f1 m_def f2))) : *)
-(*   perm_eq s1 s2 -> [[ldl_mor s1]]_Godel = [[ldl_mor s2]]_Godel. *)
-(* Proof. *)
-(* by move=> pi; rewrite /=/maxR !big_map (perm_big _ pi)/=. *)
-(* Qed. *)
+Lemma Godel_morC_nary f1 f2 n (pi : {perm 'I_n}) (s : 'I_n -> (expr (boolT_def f1 m_def f2))) :
+  [[ldl_mor s]]_Godel = [[ldl_mor (s \o pi)]]_Godel.
+Proof.
+by rewrite /= /maxR (perm_big (map pi (index_enum 'I_n))) ?big_map//= perm_eq_fun.
+Qed.
 
 Lemma Godel_morC f1 f2 (e1 e2 : expr (boolT_def f1 m_def f2)) :
   [[ e1 `++ e2 ]]_Godel = [[ e2 `++ e1 ]]_Godel.
@@ -1364,13 +1346,11 @@ Hypothesis p1 : 1 <= p.
 
 Local Notation "[[ e ]]_ l" := (translation l p e).
 
-Lemma product_mandC_nary f1 f2 n (pi : {perm 'I_n}) (s1 s2 : 'I_n -> (expr (boolT_def f1 m_def f2))) :
-  s1 = s2 \o pi -> [[ldl_mand s1]]_Godel = [[ldl_mand s2]]_Godel.
+Lemma product_mandC_nary f1 f2 n (pi : {perm 'I_n}) (s : 'I_n -> (expr (boolT_def f1 m_def f2))) :
+  [[ldl_mand s]]_Godel = [[ldl_mand (s \o pi)]]_Godel.
 Proof.
-move=> pi_perm.
-(* by move=> pi; rewrite /=/minR !big_map (perm_big _ pi)/=. *)
-(* Qed. *)
-Admitted.
+by rewrite /= /minR (perm_big (map pi (index_enum 'I_n))) ?big_map//= perm_eq_fun.
+Qed.
 
 Lemma product_mandC f1 f2 (e1 e2 : expr (boolT_def f1 m_def f2)) :
   [[ e1 `** e2 ]]_product = [[ e2 `** e1 ]]_product.
@@ -1378,12 +1358,11 @@ Proof.
 by rewrite /= !big_ord_recl !big_ord0 /= mulr1 mulr1 mulrC.
 Qed.
 
-Lemma product_morC_nary f1 f2 n (pi : {perm 'I_n}) (s1 s2 : 'I_n -> (expr (boolT_def f1 m_def f2))) :
-  s1 = s2 \o pi -> [[ldl_mor s1]]_Godel = [[ldl_mor s2]]_Godel.
+Lemma product_morC_nary f1 f2 n (pi : {perm 'I_n}) (s : 'I_n -> (expr (boolT_def f1 m_def f2))) :
+  [[ldl_mor s]]_Godel = [[ldl_mor (s \o pi)]]_Godel.
 Proof.
-(* by move=> pi; rewrite /=/maxR !big_map (perm_big _ pi)/=. *)
-(* Qed. *)
-Admitted.
+by rewrite /= /maxR (perm_big (map pi (index_enum 'I_n))) ?big_map//= perm_eq_fun.
+Qed.
 
 Lemma product_morC f1 f2 (e1 e2 : expr (boolT_def f1 m_def f2)) :
   [[ e1 `++ e2 ]]_product = [[ e2 `++ e1 ]]_product.
@@ -1521,12 +1500,11 @@ have /max_idPl -> : 0 <= [[ e ]]_ dl.
 by rewrite maxxx.
 Qed.
 
-Lemma fuzzy_andC_nary f1 f2 n (pi : {perm 'I_n}) (s1 s2 : 'I_n -> (expr (boolT_def f1 f2 l_def))) :
-  s1 = s2 \o pi -> [[ldl_and s1]]_ dl = [[ldl_and s2]]_ dl.
+Lemma fuzzy_andC_nary f1 f2 n (pi : {perm 'I_n}) (s : 'I_n -> (expr (boolT_def f1 f2 l_def))) :
+  [[ldl_and s]]_ dl = [[ldl_and (s \o pi)]]_ dl.
 Proof.
-(* by move=> pi; rewrite /=/minR !big_map (perm_big _ pi)/=. *)
-(* Qed. *)
-Admitted.
+by rewrite /= /minR (perm_big (map pi (index_enum 'I_n))) ?big_map//= perm_eq_fun.
+Qed.
 
 Lemma fuzzy_andC f1 f2 (e1 e2 : expr (boolT_def f1 f2 l_def)) :
   [[ e1 `/\ e2 ]]_ dl = [[ e2 `/\ e1 ]]_ dl.
@@ -1535,12 +1513,11 @@ rewrite /=/minR !big_ord_recl !big_ord0 !tnthS !tnth0.
 by rewrite /=/minr; repeat case: ifP; lra.
 Qed.
 
-Lemma fuzzy_orC_nary f1 f2 n (pi : {perm 'I_n}) (s1 s2 : 'I_n -> (expr (boolT_def f1 f2 l_def))) :
-  s1 = s2 \o pi -> [[ldl_or s1]]_ dl = [[ldl_or s2]]_ dl.
+Lemma fuzzy_orC_nary f1 f2 n (pi : {perm 'I_n}) (s : 'I_n -> (expr (boolT_def f1 f2 l_def))) :
+  [[ldl_or s]]_ dl = [[ldl_or (s \o pi)]]_ dl.
 Proof.
-(* by move=> pi; rewrite /=/maxR !big_map (perm_big _ pi)/=. *)
-(* Qed. *)
-Admitted.
+by rewrite /= /maxR (perm_big (map pi (index_enum 'I_n))) ?big_map//= perm_eq_fun.
+Qed.
 
 Lemma fuzzy_orC f1 f2 (e1 e2 : expr (boolT_def f1 f2 l_def)) :
   [[ e1 `\/ e2 ]]_ dl = [[ e2 `\/ e1 ]]_ dl.
@@ -1574,7 +1551,7 @@ Qed.
 Lemma fuzzy_and_distr (e1 e2 e3 : expr boolT_fuzzy) :
   [[ e1 `/\ (e2 `\/ e3)]]_ dl = [[ (e1 `/\ e2) `\/ (e1 `/\ e3)]]_ dl.
 Proof.
-(*rewrite//= /minR /maxR !big_cons !big_nil.
+rewrite//= /minR/maxR !big_ord_recl !big_ord0/= /minR/maxR !big_ord_recl !big_ord0 !tnthS !tnth0/=.
 have e101 := translate_boolT_01 _ p1 dl _ _ _ e1.
 have e201 := translate_boolT_01 _ p1 dl _ _ _ e2.
 have e301 := translate_boolT_01 _ p1 dl _ _ _ e3.
@@ -1583,14 +1560,14 @@ Finished transaction in 205.419 secs (204.099u,1.173s) (successful)*)
 rewrite [in RHS]maxA.
 rewrite -(min_maxr ([[e1]]_dl)).
 rewrite -(min_maxl _ _ 1).
-Time rewrite /minr /maxr; repeat case: ifP => //; intros; try lra.
-(* Finished transaction in 17.673 secs (17.434u,0.22s) (successful) *)*)
-Admitted.
+Time rewrite /minr /maxr; repeat case: ifP => //; lra.
+(* Finished transaction in 17.673 secs (17.434u,0.22s) (successful) *)
+Qed.
 
 Lemma fuzzy_and_distr2 (e1 e2 e3 : expr boolT_fuzzy) :
   [[ e1 `\/ (e2 `/\ e3)]]_ dl = [[ (e1 `\/ e2) `/\ (e1 `\/ e3)]]_ dl.
 Proof.
-(*rewrite//= /minR /maxR !big_cons !big_nil.
+rewrite//= /minR/maxR !big_ord_recl !big_ord0/= /minR/maxR !big_ord_recl !big_ord0 !tnthS !tnth0/=.
 have e101 := translate_boolT_01 _ p1 dl _ _ _ e1.
 have e201 := translate_boolT_01 _ p1 dl _ _ _ e2.
 have e301 := translate_boolT_01 _ p1 dl _ _ _ e3.
@@ -1598,9 +1575,9 @@ have e301 := translate_boolT_01 _ p1 dl _ _ _ e3.
 rewrite [in RHS]minA.
 rewrite -(max_minr ([[e1]]_dl)).
 rewrite -(max_minl _ _ 0).
-Time rewrite /minr /maxr; repeat case: ifP => //; intros; try lra.
+Time rewrite /minr /maxr; repeat case: ifP => //; lra.
 (* Finished transaction in 18.3 secs (17.851u,0.361s) (successful) *)
-Qed.*) Admitted.
+Qed.
 
 Lemma fuzzy_and_abs (e1 e2 : expr boolT_fuzzy) :
   [[ e1 `/\ (e1 `\/ e2)]]_ dl = [[ e1 ]]_ dl.
