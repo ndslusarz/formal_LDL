@@ -761,7 +761,28 @@ Local Notation "[[ e ]]_ l" := (translation l p e).
 Lemma Lukasiewicz_mandC_nary f1 f2 n (pi : {perm 'I_n}) (s1 s2 : 'I_n -> (expr (boolT_def f1 m_def f2))) :
   (s1 = s2 \o pi) -> [[ldl_mand s1]]_Lukasiewicz = [[ldl_mand s2]]_Lukasiewicz.
 Proof.
-Abort.
+move=> -> /=.
+have hp := @perm_big R +%R 0 'I_n (index_enum 'I_n) (map pi (index_enum 'I_n)) xpredT (fun i => [[s2 i ]]_Lukasiewicz). 
+congr (_ _). congr maxr. congr (_ + _). congr (_ - _).
+rewrite hp/=.
+  by rewrite big_map.
+rewrite /perm_eq.
+apply/allP => i/=.
+rewrite mem_cat => /orP[ hi | hi ].
+- rewrite !count_uniq_mem//.
+  - rewrite hi (_ : i \in map pi (index_enum 'I_n))//.
+    apply/mapP.
+    Open Scope group_scope.
+    exists ((perm_inv pi) i).
+    - by rewrite mem_index_enum.
+    by rewrite permKV.
+  - rewrite map_inj_uniq// ?index_enum_uniq//. exact/perm_inj.
+  - by rewrite index_enum_uniq.
+- rewrite !count_uniq_mem//.
+  - by rewrite hi mem_index_enum.
+  - rewrite map_inj_uniq// ?index_enum_uniq//. exact/perm_inj.
+  - by rewrite index_enum_uniq.
+Qed.
 
 Lemma Lukasiewicz_mandC f1 f2 (e1 e2 : (expr (boolT_def f1 m_def f2))) :
   [[ e1 `** e2 ]]_Lukasiewicz = [[ e2 `** e1 ]]_Lukasiewicz.
