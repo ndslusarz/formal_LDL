@@ -415,19 +415,17 @@ case: ifPn => [hlt0|].
   rewrite !big_seq.
   rewrite leNgt nmule_rlt0.
     rewrite inve_gt0; last 2 first.
-      rewrite psume_eq0; last 2 first.
-        apply/allPn.
-        have [h hEs nuhoo] : exists h, nu.-[[Es h]]_stle != -oo%E.
-          apply/not_exists2P => abs.
+    - rewrite psume_eq0; last 2 first.
+      - apply/allPn.
+        have [h nuhoo] : exists h, nu.-[[Es h]]_stle != -oo%E.
+          apply/not_existsP => abs.
           move/eqP : hnoo; apply.
           apply/big_maxeNy => x xEs.
-          have [//|] := abs x.
-          move/negP.
+          move: (abs x) => /negP.
           by rewrite negbK => /eqP.
-        exists h => //.
-        rewrite hEs implyTb.
-        rewrite expeR_eq0.
-        rewrite mule_eq_ninfty//.
+        exists h; first exact/mem_index_enum.
+        rewrite negb_imply mem_index_enum/=.
+        rewrite expeR_eq0 mule_eq_ninfty//.
         rewrite lte_fin nu0/= orbF ltNge lee_fin (ltW nu0)/= orbF.
         rewrite /mine_dev mule_eq_ninfty//=.
         rewrite inve_eqNy -big_seq (negbTE hnoo) andbF/=.
@@ -440,13 +438,11 @@ case: ifPn => [hlt0|].
         apply/eqP.
         apply: big_maxey.
         apply/mapP.
-        by exists h => //.
-        move=> /= i _.
+        by exists h; first exact: mem_index_enum.
+      - move=> /= i _.
         by rewrite expeR_ge0.
-      rewrite -ltey.
-      rewrite lte_sum_pinfty// => i iEs.
-      rewrite expeR_lty//.
-      rewrite lteey mule_eq_pinfty !negb_or !negb_and !lte_fin nu0 -!leNgt (ltW nu0)//= andbT.
+      rewrite -ltey lte_sum_pinfty// => i iEs.
+      rewrite expeR_lty// lteey mule_eq_pinfty !negb_or !negb_and !lte_fin nu0 -!leNgt (ltW nu0)//= andbT -big_seq.
       exact: h1.
     move=> /negP abs; exfalso; apply: abs.
     rewrite sume_gt0//.
@@ -474,27 +470,24 @@ case: ifPn => [hlt0|].
     move=> i iEs; rewrite nmule_rle0 ?expeR_ge0//.
       by move: hlt0 => /maxe_lt ->.
     exists j; rewrite jEs ?nmule_rlt0 ?expeR_gt0//.
-      rewrite ltNye mule_eq_ninfty !lte_fin ltrNl ltrNr oppr0 nu0 !negb_or !negb_and -leNgt (ltW nu0) andbT/=.
+      rewrite ltNye mule_eq_ninfty !lte_fin ltrNl ltrNr oppr0 nu0 !negb_or !negb_and -leNgt (ltW nu0) andbT/= -big_seq.
       exact: h1.
     by move: hlt0 => /maxe_lt ->.
 rewrite -leNgt => hge0 _.
 move: hge0 => /maxe_ge'.
 rewrite gt_eqF//=.
 move=> /(_ isT)[i [iEs _ hige0 ] ].
-exists (index i Es).
-by rewrite nth_index// hige0 index_mem.
+by exists i; rewrite hige0.
 Qed.
 
-Lemma stl_nary_inversion_orE0 f (Es : seq (expr (boolT_undef f m_undef l_def))) :
-  is_stl false (nu.-[[ ldl_or Es ]]_stle) ->
-    forall i, (i < size Es)%N ->
-      is_stl false (nu.-[[ nth (ldl_bool _ _ _ _ false) Es i ]]_stle).
+Lemma stl_nary_inversion_orE0 f n (Es : 'I_n -> (expr (boolT_undef f m_undef l_def))) :
+  is_stl false (nu.-[[ ldl_or Es ]]_stle) -> forall i, is_stl false (nu.-[[ Es i ]]_stle).
 Proof.
-rewrite/is_stl/= !big_map.
+rewrite/is_stl/=.
 case: ifPn => [/eqP hnoo _|hnoo].
-  move=> i isize.
+  move=> i.
   move: hnoo => /maxe_eqyP ->//.
-  exact: mem_nth.
+  exact: mem_index_enum.
 case: ifPn => [/eqP hpoo//|hpoo].
 case: ifPn => [hgt0|].
   rewrite !big_seq ltNge.
@@ -506,9 +499,9 @@ case: ifPn => [hgt0|].
   by rewrite -big_seq ltW.
 rewrite -leNgt => hle0.
 case: ifPn => [hlt0 _|].
-  move=> i isize.
+  move=> i.
   move: hlt0 => /maxe_lt ->//.
-  exact: mem_nth.
+  exact: mem_index_enum.
 by rewrite ltxx.
 Qed.
 
@@ -517,34 +510,18 @@ Lemma stl_ereal_adequacy (e : expr (boolT_undef impl_undef m_undef l_def)) b :
 Proof.
 dependent induction e using expr_ind'.
 - move: b b0 => [] [] //=.
-- rewrite List.Forall_forall in H.
-  move: b => []. rewrite /is_stl.
-  + move/stl_nary_inversion_andE1.
-    rewrite [bool_translation (ldl_and l)]/= big_map big_seq big_all_cond => h.
-    apply: allT => x/=.
-    apply/implyP => /nthP xnth.
-    have [i il0 <-] := xnth (ldl_bool _ _ _ _ false).
-    by apply: H => //; rewrite ?h// -In_in mem_nth.
-  + move/stl_nary_inversion_andE0.
-    rewrite [bool_translation (ldl_and l)]/= big_map big_all.
-    elim=>// i /andP[i0 isize].
-    apply/allPn; exists (nth (ldl_bool _ _ _ _ false) l i); first by rewrite mem_nth.
-    apply/negPf; apply: H => //.
-    by rewrite -In_in mem_nth.
-- rewrite List.Forall_forall in H.
-  move: b => [].
-  + move/stl_nary_inversion_orE1.
-    rewrite [bool_translation (ldl_or l)]/= big_map big_has.
-    elim=>// i /andP[i0 isize].
-    apply/hasP; exists (nth (ldl_bool _ _ _ _ false) l i); first by rewrite mem_nth.
-    apply: H => //.
-    by rewrite -In_in mem_nth.
-  + move/stl_nary_inversion_orE0.
-    rewrite [bool_translation (ldl_or l)]/= big_map big_has => h.
-    apply/hasPn => x.
-    move/nthP => xnth.
-    have [i il0 <-] := xnth (ldl_bool _ _ _ _ false).
-    by apply/negPf; apply: H => //; rewrite ?h// -In_in mem_nth.
+- move: b => []. rewrite /is_stl.
+  + move/stl_nary_inversion_andE1 => h/=.
+    by rewrite big_all; apply/allP => i _; exact/(@H i _ _ _ true (h i)).
+  + move/stl_nary_inversion_andE0 => [i h]/=.
+    rewrite big_all; apply/allPn.
+    by exists i; rewrite ?mem_index_enum// (@H i _ _ _ false).
+- move: b => [].
+  + move/stl_nary_inversion_orE1 => [i h]/=.
+    rewrite big_has; apply/hasP.
+    by exists i; rewrite ?mem_index_enum// (@H i _ _ _ true).
+  + move/stl_nary_inversion_orE0 => h/=.
+    by rewrite big_has; apply/hasPn => i _; rewrite (@H i _ _ _ false).
 - case: c.
   + by case: b; rewrite /is_stl/= ?lee_fin ?lte_fin ?ltNge subr_ge0 !stl_ereal_translations_Real_coincide// => /negbTE.
   + case: b; rewrite /is_stl/= ?lee_fin ?lte_fin !stl_ereal_translations_Real_coincide.
