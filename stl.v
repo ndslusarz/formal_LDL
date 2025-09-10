@@ -492,10 +492,11 @@ have sum_top :
     apply: cvgM => //; first exact: cvg_cst.
     apply/(@cvg_comp _ _ _ _ _ _ -oo); last exact/cvgNy_compNP/cvgr_expR.
     apply/(@cvg_comp _ _ _ _ _ _ -oo); last exact/cvg_addrl_Ny.
+    (*rewrite -cvgNry.*)
+    (*under eq_cvg do rewrite -(opprK (min_dev a v)) mulrN.*)
     rewrite -cvgNry.
-    under eq_cvg do rewrite -mulrN.
-    apply: gt0_cvgMry => //.
-    by rewrite oppr_gt0 min_dev_lt0. admit.
+    (*apply: gt0_cvgMry => //.
+    by rewrite oppr_gt0 min_dev_lt0.*) admit.
   rewrite -(addr0 (min_val * (\sum_(a < n.+1 | v a == min_val) 1))).
   apply: cvgD; last by exact sum_top_rest.
   apply/cvgrPdist_le => /= e e0.
