@@ -114,14 +114,14 @@ Proof.
         exists (x `/\ y).
         simpl; split; eauto.
         - by rewrite in_mset1D eq_refl orTb.
-        - rewrite big_cons big_seq1.
+        - rewrite !big_ord_recl big_ord0 !tnthS !tnth0.
           by rewrite IH12 IH22.
       * exists y. rewrite IH22 in_mset1D H2 orbT. eauto.
     +  exists x.  rewrite IH12 in_mset1D H2 orbT. eauto.
 - have H1 := (H0 (a `/\ b)).
   rewrite in_mset1D eq_refl orTb in H1.
   simpl in H1.
-  rewrite big_cons big_seq1 in H1.
+  rewrite !big_ord_recl big_ord0 !tnthS !tnth0 in H1.
   apply  IHseq_calc_bool_ms.
   intros. rewrite in_mset1D in H2. move/orP: H2.
       move => H2. destruct H2.
@@ -134,13 +134,14 @@ Proof.
 - have H1 := (H0 (a `/\ b)).
   rewrite in_mset1D eq_refl orTb in H1.
   simpl in H1.
-  rewrite big_cons big_seq1 in H1.
+  rewrite !big_ord_recl big_ord0 !tnthS !tnth0 in H1.
   apply  IHseq_calc_bool_ms.
   intros. rewrite in_mset1D in H2. move/orP: H2.
       move => H2. destruct H2.
       * move/eqP: H2. move => H2.
         subst. apply andb_prop in H1.
         + destruct H1 as [ha hb].
+          rewrite andbT in hb.
           by apply hb.
         + by [].
       * apply H0. by rewrite in_mset1D H2 orbT.
@@ -150,7 +151,7 @@ Proof.
   destruct IH1.
     + move/eqP: H1. move => H1. subst.
       exists (a `\/ b).
-      rewrite in_mset1D eq_refl orTb//= big_cons big_seq1 IH2.
+      rewrite in_mset1D eq_refl orTb//= !big_ord_recl big_ord0 !tnthS !tnth0 IH2.
       by rewrite orTb//.
     + exists x.
       by rewrite IH2 in_mset1D H1 orbT//.
@@ -160,14 +161,14 @@ Proof.
   destruct IH1.
     + move/eqP: H1. move => H1. subst.
       exists (a `\/ b).
-      rewrite in_mset1D eq_refl orTb//= big_cons big_seq1 IH2.
+      rewrite in_mset1D eq_refl orTb//= !big_ord_recl big_ord0 !tnthS !tnth0 IH2.
       by rewrite orbT//.
     + exists x.
       by rewrite IH2 in_mset1D H1 orbT//.
 - have H2 := (H1 (a `\/ b)).
   rewrite in_mset1D eq_refl orTb in H2.
   simpl in H2.
-  rewrite big_cons big_seq1 in H2.
+  rewrite !big_ord_recl big_ord0 !tnthS !tnth0 in H2.
   apply Bool.orb_prop in H2; rewrite//=.
   destruct H2 as [ha | hb].
   + apply  IHseq_calc_bool_ms1.
@@ -180,7 +181,7 @@ Proof.
     intros. rewrite in_mset1D in H2. move/orP: H2.
     move => H2. destruct H2.
     * move/eqP: H2. move => H2.
-      subst. by apply hb.
+      subst. rewrite orbF in hb. by apply hb.
     * apply H1. by rewrite in_mset1D H2 orbT.
 - have H1 := H0 (`~ a).
   rewrite in_mset1D eq_refl orTb in H1.
