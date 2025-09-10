@@ -243,41 +243,31 @@ Qed.
 From mathcomp Require Import perm.
 
 Lemma andC_stl_nary n (pi : {perm 'I_n}) (s : 'I_n -> (expr (boolT_def impl_undef m_undef l_def))) :
-  (*(exists pi : {perm 'I_n}, s1 = s2 \o pi) -> nu.-[[ldl_and s1]]_stl = nu.-[[ldl_and s2]]_stl.*)
-nu.-[[ldl_and s]]_stl = nu.-[[ldl_and (s \o pi)]]_stl.
-(* Proof. *)
-(* case: s1; first by rewrite perm_sym => /perm_nilP ->. *)
-(* move=> a1 l1; case: s2; first by move/perm_nilP. *)
-(* move=> a2 l2 pi. *)
-(* rewrite /=. *)
-(* have pi2 := @perm_map _ _ (stl_translation nu) _ _ pi. *)
-(* rewrite (perm_eq_big_min pi2)/=. *)
-(* rewrite /stl_and/= !big_map !map_cons. *)
-(* case: ifPn => // ?. *)
-(*   rewrite /stl_and_lt0 !big_map. *)
-(*   congr (_ / _). *)
-(*     rewrite (perm_big _ pi)/=. *)
-(*     apply: eq_bigr => i _. *)
-(*     congr (_ * _). *)
-(*       congr(_ * _). *)
-(*         rewrite !map_cons !big_map. *)
-(*         exact: perm_big. *)
-(*       by rewrite !map_cons /min_dev !big_map (perm_big _ pi). *)
-(*     by rewrite !map_cons /min_dev !big_map (perm_big _ pi). *)
-(*   rewrite (perm_big _ pi)/=. *)
-(*   apply: eq_bigr => i _. *)
-(*   by rewrite !map_cons /min_dev !big_map (perm_big _ pi). *)
-(* case: ifPn => // ?. *)
-(* rewrite /stl_and_gt0 !big_map. *)
-(* congr (_ / _). *)
-(*   rewrite (perm_big _ pi)/=. *)
-(*   apply: eq_bigr => i _. *)
-(*   by rewrite /min_dev !map_cons !big_map (perm_big _ pi). *)
-(* rewrite (perm_big _ pi)/=. *)
-(* apply: eq_bigr => i _. *)
-(* by rewrite /min_dev !map_cons !big_map (perm_big _ pi). *)
-(* Qed. *)
-Admitted.
+  nu.-[[ldl_and s]]_stl = nu.-[[ldl_and (s \o pi)]]_stl.
+Proof.
+case: n pi s => [pi s|n pi s]//=.
+rewrite /stl_and.
+set a := \big[minr/nu.-[[s ord0]]_stl]_(i < n.+1) nu.-[[s i]]_stl.
+have ha : a = \big[minr/nu.-[[s (pi ord0)]]_stl]_(i < n.+1) nu.-[[s (pi i)]]_stl.
+  rewrite /a/= (perm_big (map pi (index_enum 'I_n.+1)))/= ?big_map ?perm_eq_fun//.
+  apply/le_anti/andP; split.
+    by rewrite le_bigmin ?bigmin_le// => i _; exact/bigmin_le.
+  rewrite le_bigmin//.
+    rewrite (perm_big (map (perm_inv pi) (index_enum _)))/= ?big_map ?perm_eq_fun//.
+    under eq_bigr => i _ do rewrite permKV.
+    exact/bigmin_le.
+  by move=> i _; exact/bigmin_le.
+rewrite -ha.
+repeat case: ifPn => [?|?//].
+all:
+  by rewrite /stl_and_lt0/stl_and_gt0/min_dev/=;
+  under [X in X / _]eq_bigr => i _ do rewrite -/a;
+  under [X in _ / X]eq_bigr => i _ do rewrite -/a;
+  under [X in _ = X / _]eq_bigr => i _ do rewrite -ha;
+  under [X in _ = _ / X]eq_bigr => i _ do rewrite -ha;
+  rewrite [X in X / _](perm_big (map pi (index_enum 'I_n.+1)))/= ?big_map ?perm_eq_fun//;
+  rewrite [X in _ / X](perm_big (map pi (index_enum 'I_n.+1)))/= ?big_map ?perm_eq_fun.
+Qed.
 
 Lemma stl_involution (e : expr boolT_stl) :
   nu.-[[`~ (`~e)]]_stl = nu.-[[ e ]]_stl.
@@ -492,11 +482,10 @@ have sum_top :
     apply: cvgM => //; first exact: cvg_cst.
     apply/(@cvg_comp _ _ _ _ _ _ -oo); last exact/cvgNy_compNP/cvgr_expR.
     apply/(@cvg_comp _ _ _ _ _ _ -oo); last exact/cvg_addrl_Ny.
-    (*rewrite -cvgNry.*)
-    (*under eq_cvg do rewrite -(opprK (min_dev a v)) mulrN.*)
-    rewrite -cvgNry.
-    (*apply: gt0_cvgMry => //.
-    by rewrite oppr_gt0 min_dev_lt0.*) admit.
+    under eq_cvg do rewrite -(opprK (min_dev a v)) mulrN -mulNr.
+    apply: gt0_cvgMlNy => //.
+      by rewrite oppr_gt0 min_dev_lt0.
+    exact/cvgNrNy.
   rewrite -(addr0 (min_val * (\sum_(a < n.+1 | v a == min_val) 1))).
   apply: cvgD; last by exact sum_top_rest.
   apply/cvgrPdist_le => /= e e0.
@@ -562,7 +551,7 @@ have helper : min_val * (\sum_(a < n.+1 | v a == min_val) 1) / (\sum_(a < n.+1 |
 rewrite helper in l.
 apply: l.
 Unshelve. all: end_near.
-Admitted.
+Qed.
 
 End stl_and_conv_lattice.
 
