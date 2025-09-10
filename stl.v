@@ -242,8 +242,9 @@ Qed.
 
 From mathcomp Require Import perm.
 
-Lemma andC_stl_nary n (s1 s2 : 'I_n -> (expr (boolT_def impl_undef m_undef l_def))) :
-  (exists pi : {perm 'I_n}, s1 = s2 \o pi) -> nu.-[[ldl_and s1]]_stl = nu.-[[ldl_and s2]]_stl.
+Lemma andC_stl_nary n (pi : {perm 'I_n}) (s : 'I_n -> (expr (boolT_def impl_undef m_undef l_def))) :
+  (*(exists pi : {perm 'I_n}, s1 = s2 \o pi) -> nu.-[[ldl_and s1]]_stl = nu.-[[ldl_and s2]]_stl.*)
+nu.-[[ldl_and s]]_stl = nu.-[[ldl_and (s \o pi)]]_stl.
 (* Proof. *)
 (* case: s1; first by rewrite perm_sym => /perm_nilP ->. *)
 (* move=> a1 l1; case: s2; first by move/perm_nilP. *)
@@ -493,8 +494,8 @@ have sum_top :
     apply/(@cvg_comp _ _ _ _ _ _ -oo); last exact/cvg_addrl_Ny.
     rewrite -cvgNry.
     under eq_cvg do rewrite -mulrN.
-(*    apply: gt0_cvgMly => //.
-    by rewrite oppr_gt0 min_dev_lt0.*) admit.
+    apply: gt0_cvgMry => //.
+    by rewrite oppr_gt0 min_dev_lt0. admit.
   rewrite -(addr0 (min_val * (\sum_(a < n.+1 | v a == min_val) 1))).
   apply: cvgD; last by exact sum_top_rest.
   apply/cvgrPdist_le => /= e e0.
