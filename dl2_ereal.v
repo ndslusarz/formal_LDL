@@ -168,61 +168,49 @@ Qed.
 
 Definition is_dl2 b (x : \bar R) := (if b then x == 0 else x < 0)%E.
 
-Lemma dl2_nary_inversion_andE1 (s : seq (expr (boolT_undef impl_def m_def l_def))) :
-  is_dl2 true ([[ ldl_mand s ]]_dl2e) ->
-  (forall i, (i < size s)%N -> is_dl2 true ([[ nth (ldl_bool _ _ _ _ false) s i ]]_dl2e)).
+Lemma nsume_eq0 (I : eqType) (r : seq I) (P : pred I) (F : I -> \bar R) :
+    (forall i, P i -> 0 >= F i)%E ->
+  (\sum_(i <- r | P i) (F i) == 0)%E = (all (fun i => (P i) ==> (F i == 0)) r)%E.
 Proof.
-rewrite/is_dl2//=.
-case: ifPn => //; case: ifPn => //.
-elim: s => //= a l IH + + + i size.
-rewrite !negb_or => /andP [hap lp] /andP [han ln].
-rewrite big_cons nadde_eq0//=.
-- move => /andP [ha hl].
-  case: i size => [_|i ih].
-  + by rewrite nth0//=.
-  + rewrite -nth_behead//=. apply IH => //=.
-- exact: dl2_ereal_translation_le0.
-- rewrite big_seq_cond; apply: sume_le0 => /= x.
-    by rewrite andbT => /mapP[/= e et] ->; exact: dl2_ereal_translation_le0.
+elim: r=> [|a r ihr hr] /=; rewrite (big_nil, big_cons); first by rewrite eqxx.
+by case: ifP=> pa /=; rewrite ?nadde_eq0 ?ihr ?hr // sume_le0.
 Qed.
 
-Lemma dl2_nary_inversion_andE0 (s : seq (expr (boolT_undef impl_def m_def l_def))) :
-  is_dl2 false ([[ ldl_mand s ]]_dl2e) ->
-  (exists i, (is_dl2 false ([[ nth (ldl_bool _ _ _ _ false) s i ]]_dl2e)) && (i < size s)%nat) \/
-  (exists i, ([[ nth (ldl_bool _ _ _ _ false) s i ]]_dl2e == +oo%E) && (i < size s)%nat).
+Lemma dl2_nary_inversion_andE1 n (s : 'I_n -> (expr (boolT_undef impl_def m_def l_def))) :
+  is_dl2 true ([[ ldl_mand s ]]_dl2e) -> (forall i, is_dl2 true ([[ s i ]]_dl2e)).
 Proof.
-rewrite/is_dl2//=.
-case: ifPn => //=.
-- move => hs _. left.
-  have /hasP [y /mapP [x xin ->] /eqP hx] := hs.
-  set i := index x s.
-  exists i; apply/andP; split.
-  + have -> : nth (ldl_bool neg_undef impl_def m_def l_def false) s i = x;
-      first by rewrite /i nth_index.
-    by rewrite hx.
-  + by rewrite /i index_mem.
-- case: ifPn => // h1 h.
-  + right. have /hasP [y /mapP [x xin ->] /eqP hx] := h1.
-  set i := index x s.
-  exists i; apply/andP; split.
-  + have -> : nth (ldl_bool neg_undef impl_def m_def l_def false) s i = x;
-      first by rewrite /i nth_index.
-    by rewrite hx.
-  + by rewrite /i index_mem.
-  + left.
-    elim: s h1 h H => [ |h t ih] //=; first by rewrite big_nil ltxx.
-    rewrite !negb_or => /andP [hap lp] /andP [han ln].
-    rewrite big_cons => /nadde_lt0 => /(_ (dl2_ereal_translation_le0 _)).
-    have : (\sum_(j <- [seq [[i]]_dl2e | i <- t]) j <= 0)%E.
-      rewrite big_seq_cond; apply: sume_le0 => /= z.
-      by rewrite andbT => /mapP[/= e et ->]; exact: dl2_ereal_translation_le0.
-    move=> /[swap] /[apply] /orP[H|H];
-           first by exists 0%N; rewrite /= H.
-    have [i /andP [H1 H2]] := ih lp ln H.
-    exists i.+1; apply/andP; split.
-    * case: i H1 H2 => [H1 H2|i H1 H2]; by rewrite -nth_behead//=.
-    * have Hi_le : (i.+1 <= size t)%N by [].
-      exact: (leq_ltn_trans Hi_le (ltnSn _)).
+rewrite/is_dl2/= nsume_eq0/=; last by move=> i _; exact/dl2_ereal_translation_le0.
+by move=> /allP/= h i; rewrite h ?mem_index_enum.
+Qed.
+
+
+Lemma nadde_lt0 (x y : \bar R) :
+  (x + y < 0 -> (x < 0) || (y < 0))%E.
+Proof.
+move: x y => [x| |] [y| |]//; rewrite ?lee_fin ?lte_fin.
+- rewrite !ltNge -negb_and; apply: contra.
+  by move=> /andP[x0' y0']; rewrite addr_ge0.
+- by move=> _; rewrite ltNyr orbT.
+- by move=> _; rewrite ltNyr.
+- by move=> _; rewrite ltNy0.
+- by rewrite ltNy0.
+Qed.
+
+Lemma fsume_lt0 (I : choiceType) (s : seq I) (F : I -> \bar R) :
+  (\sum_(i <- s) F i < 0 -> exists2 i, i \in s & F i < 0)%E.
+Proof.
+elim: s; first by rewrite big_nil ltxx.
+move=> a l ih. rewrite big_cons => /nadde_lt0 /orP [fa0 | /ih[i il fi0]].
+  by exists a; rewrite ?fa0 ?mem_head.
+by exists i; rewrite ?fi0// mem_behead.
+Qed.
+
+Lemma dl2_nary_inversion_andE0 n (s : 'I_n -> (expr (boolT_undef impl_def m_def l_def))) :
+  is_dl2 false ([[ ldl_mand s ]]_dl2e) -> (exists i, (is_dl2 false ([[ s i ]]_dl2e))).
+Proof.
+rewrite /is_dl2/=.
+move=> /fsume_lt0 [/=i _ si0].
+by exists i.
 Qed.
 
 End dl2_lemmas.
