@@ -120,57 +120,12 @@ Theorem dl2_residuation (e1 e2 e3 : expr (boolT_undef impl_def m_def l_def)) :
    [[ e2 ]]_dl2e <= [[ e1 `=> e3 ]]_dl2e)%E.
 Proof.
 rewrite /= !big_ord_recl !big_ord0 !tnthS !tnth0 adde0 /maxe.
-case: ifPn.
-
-xxx here xxx
-
-have [H1//=|/negbTE H1/=] := eqVneq ([[e1]]_dl2e) -oo%E.
-  rewrite H1 leNye; split => // _.
-  rewrite (le_trans (dl2_ereal_translation_le0 e2))//.
-  by rewrite -leeNr oppe0 addNye maxNye.
-case: ifPn => //= H2.
-  rewrite leNye; split => // _.
-  by rewrite (eqP H2) leNye.
-split.
-- rewrite !big_cons big_nil adde0 => H.
-  rewrite /maxe; case: ifPn => h.
-  + by rewrite oppe0; exact: dl2_ereal_translation_le0.
-  + rewrite oppeB; last first.
-      rewrite /adde_def H1/= andbT.
-      apply/negP => /andP[/eqP e1oo].
-      rewrite eqe_oppLR/= => /eqP e3oo.
-      by rewrite e1oo e3oo/= ltNyr in h.
-    move: H.
-    rewrite -leeBlDl; last first.
-      rewrite fin_numN fin_numE H1/=.
-      by rewrite -leye_eq -ltNge (le_lt_trans (dl2_ereal_translation_le0 e1)).
-    rewrite orbF.
-    rewrite ifF; last first.
-      apply/negbTE.
-      rewrite negb_or.
-      rewrite -leye_eq -ltNge (le_lt_trans (dl2_ereal_translation_le0 e1))//=.
-      by rewrite -leye_eq -ltNge (le_lt_trans (dl2_ereal_translation_le0 e2))//=.
-    by rewrite oppeK addeC.
-- rewrite !big_cons big_nil adde0 => H.
-  rewrite /maxe; case: ifPn => [h|].
-  + by rewrite leNye.
-  + rewrite orbF negb_or => /andP[e1oo e2oo].
-    move: H.
-    rewrite /maxe.
-    case: ifPn.
-      rewrite oppe0 => e1e3 e20.
-      rewrite sube_lt0 in e1e3; last first.
-        by rewrite !fin_numE H1/= e1oo.
-      rewrite (le_trans _ (ltW e1e3))//.
-      rewrite -[leRHS]adde0.
-      by rewrite leeD2l.
-    move=> e1e3.
-    rewrite oppeB; last first.
-      by rewrite /adde_def H1/= andbT (negbTE e1oo)/=.
-    rewrite addeC.
-    rewrite -leeBlDr; last first.
-      by rewrite fin_numN fin_numE e1oo H1.
-    by rewrite oppeK addeC.
+case: ifPn => [/ltW|_].
+  rewrite oppe0 dl2_ereal_translation_le0.
+  rewrite sube_le0=> /(leeD (dl2_ereal_translation_le0 e2)).
+  by rewrite add0e addeC.
+case: ([[e1]]_dl2e) => [x||]; case: ([[e2]]_dl2e) => [y||]; case: ([[e3]]_dl2e) => [z||] //=.
+all: try rewrite ?leey ?addeNy ?addNye ?leNye// -EFinD !lee_fin; lra.
 Qed.
 
 Lemma dl2_ereal_translations_coincide t (e : @expr R t) n m j :
