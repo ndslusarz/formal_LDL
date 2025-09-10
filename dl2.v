@@ -55,10 +55,11 @@ Local Notation "[[ e ]]_dl2" := (@dl2_translation R _ e).
 
 From mathcomp Require Import perm.
 
-Lemma dl2_mandC_nary f1 f2 n (s1 s2 : 'I_n -> (expr (boolT_def f1 m_def f2))) :
-  (exists pi : {perm 'I_n}, s1 = s2 \o pi) -> [[ldl_mand s1]]_dl2 = [[ldl_mand s2]]_dl2.
-(* Proof. by move=> pi; rewrite /= !big_map (perm_big _ pi). Qed. *)
-Admitted.
+Lemma dl2_mandC_nary f1 f2 n (pi : {perm 'I_n}) (s : 'I_n -> (expr (boolT_def f1 m_def f2))) :
+  [[ldl_mand s]]_dl2 = [[ldl_mand (s \o pi)]]_dl2.
+Proof.
+by rewrite/= (perm_big (map pi (index_enum 'I_n))) ?big_map//= perm_eq_fun.
+Qed.
 
 Lemma dl2_mandC f1 f2 (e1 e2 : expr (boolT_def f1 m_def f2)) :
   [[ e1 `** e2 ]]_dl2 = [[ e2 `** e1 ]]_dl2.
@@ -68,10 +69,11 @@ Lemma dl2_mandA f1 f2 (e1 e2 e3 : expr (boolT_def f1 m_def f2)) :
   [[ e1 `** (e2 `** e3) ]]_dl2 = [[ (e1 `** e2) `** e3 ]]_dl2.
 Proof. by rewrite /= !big_ord_recl /= !big_ord_recl !big_ord0 !addr0 addrA. Qed.
 
-Lemma dl2_morC_nary f1 f2 n (s1 s2 : 'I_n -> (expr (boolT_def f1 m_def f2))) :
-  (exists pi : {perm 'I_n}, s1 = s2 \o pi) -> [[ldl_mor s1]]_dl2 = [[ldl_mor s2]]_dl2.
-(* Proof. by move=> pi; rewrite /= !big_map (perm_big _ pi)/= (perm_size pi). Qed. *)
-Admitted.
+Lemma dl2_morC_nary f1 f2 n (pi : {perm 'I_n}) (s : 'I_n -> (expr (boolT_def f1 m_def f2))) :
+  [[ldl_mor s]]_dl2 = [[ldl_mor (s \o pi)]]_dl2.
+Proof.
+by rewrite/= (perm_big (map pi (index_enum 'I_n))) ?big_map//= perm_eq_fun.
+Qed.
 
 Lemma dl2_morC f1 f2 (e1 e2 : expr (boolT_def f1 m_def f2)) :
   [[ e1 `++ e2 ]]_dl2 = [[ e2 `++ e1 ]]_dl2.
@@ -118,9 +120,8 @@ Qed.
 Lemma dl2_prelinearity (e1 e2 e3 : @expr R boolT_dl2) :
   [[(e1 `=> e2) `\/ (e2 `=> e1)]]_dl2 = [[ldl_bool  _ _ _ _ true]]_dl2.
 Proof.
-rewrite//= !big_ord_recl big_ord0 /maxr; repeat case: ifP; try lra.
-Admitted.
-
+by rewrite /= !big_ord_recl !big_ord0 /= /maxr; repeat case: ifP; lra.
+Qed.
 
 Lemma dl2_andC  (e1 e2 : expr boolT_dl2) :
   [[ e1 `/\ e2 ]]_dl2 = [[ e2 `/\ e1 ]]_dl2.
@@ -179,14 +180,12 @@ Qed.
 Lemma dl2_and_distr (e1 e2 e3 : expr boolT_dl2) :
   [[ e1 `/\ (e2 `\/ e3)]]_dl2 = [[ (e1 `/\ e2) `\/ (e1 `/\ e3)]]_dl2.
 Proof.
-(*have h1 := dl2_translation_le0 e1.
+have h1 := dl2_translation_le0 e1.
 have h2 := dl2_translation_le0 e2.
 have h3 := dl2_translation_le0 e3.
-split; rewrite//=; rewrite !big_ord_recl big_ord0 ?addr0 /maxr; repeat case: ifP; intros; lra.
-=======
-rewrite//= /minR /maxR !big_cons !big_nil.
-rewrite{1}/minr/maxr; repeat case: ifP; try lra; repeat rewrite{1}/minr; repeat case: ifP; try lra.*)
-Admitted.
+rewrite /= !big_ord_recl !big_ord0 /= !big_ord_recl !big_ord0 !tnthS !tnth0/= ?addr0 /maxr /minr.
+by repeat (case: ifP; try lra).
+Qed.
 
 Definition is_dl2 b (x : R) := if b then x == 0 else x < 0.
 
