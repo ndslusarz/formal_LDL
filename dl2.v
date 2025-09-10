@@ -42,8 +42,8 @@ Import Num.Def Num.Theory GRing.Theory.
 Import Order.TTheory.
 Import numFieldTopology.Exports.
 
-HB.instance Definition _ (R : realType) x y z v :=
-  @gen_eqMixin (@expr R (boolT x y z v)).
+HB.instance Definition _ (R : realType) :=
+  @gen_eqMixin (@expr R boolT).
 
 Section dl2_lemmas.
 Local Open Scope ldl_scope.
@@ -55,35 +55,36 @@ Local Notation "[[ e ]]_dl2" := (@dl2_translation R _ e).
 
 From mathcomp Require Import perm.
 
-Lemma dl2_mandC_nary f1 f2 n (pi : {perm 'I_n}) (s : 'I_n -> (expr (boolT_def f1 m_def f2))) :
+Lemma dl2_mandC_nary n (pi : {perm 'I_n}) (s : 'I_n -> expr boolT) :
   [[ldl_mand s]]_dl2 = [[ldl_mand (s \o pi)]]_dl2.
 Proof.
 by rewrite/= (perm_big (map pi (index_enum 'I_n))) ?big_map//= perm_eq_fun.
 Qed.
 
-Lemma dl2_mandC f1 f2 (e1 e2 : expr (boolT_def f1 m_def f2)) :
+Lemma dl2_mandC (e1 e2 : expr boolT) :
   [[ e1 `** e2 ]]_dl2 = [[ e2 `** e1 ]]_dl2.
 Proof. by rewrite /= !big_ord_recl !big_ord0 /= addr0 addr0 addrC. Qed.
 
-Lemma dl2_mandA f1 f2 (e1 e2 e3 : expr (boolT_def f1 m_def f2)) :
+Lemma dl2_mandA (e1 e2 e3 : expr boolT) :
   [[ e1 `** (e2 `** e3) ]]_dl2 = [[ (e1 `** e2) `** e3 ]]_dl2.
 Proof. by rewrite /= !big_ord_recl /= !big_ord_recl !big_ord0 !addr0 addrA. Qed.
 
-Lemma dl2_morC_nary f1 f2 n (pi : {perm 'I_n}) (s : 'I_n -> (expr (boolT_def f1 m_def f2))) :
+Lemma dl2_morC_nary n (pi : {perm 'I_n}) (s : 'I_n -> (expr boolT)) :
   [[ldl_mor s]]_dl2 = [[ldl_mor (s \o pi)]]_dl2.
 Proof.
 by rewrite/= (perm_big (map pi (index_enum 'I_n))) ?big_map//= perm_eq_fun.
 Qed.
 
-Lemma dl2_morC f1 f2 (e1 e2 : expr (boolT_def f1 m_def f2)) :
+Lemma dl2_morC (e1 e2 : expr boolT) :
   [[ e1 `++ e2 ]]_dl2 = [[ e2 `++ e1 ]]_dl2.
 Proof.
 by rewrite /= !big_ord_recl !big_ord0 /= !mulr1 [X in _ * X]mulrC.
 Qed.
 
-Lemma dl2_translation_le0 e : [[ e ]]_dl2 <= 0 :> type_translation (boolT_dl2).
+Lemma dl2_translation_le0 e :
+  [[ e ]]_dl2 <= 0 :> type_translation boolT.
 Proof.
-dependent induction e using expr_ind' => /=.
+dependent induction e using expr_ind' => //=.
 - by case: b.
 - move: l H; case: n => // n l H.
   rewrite bigmin_idl {1}/minr; case: ifPn => h; first exact/H.
@@ -100,11 +101,11 @@ dependent induction e using expr_ind' => /=.
 - by case: c; rewrite //= oppr_le0 le_max lexx orbT.
 Qed.
 
-Theorem dl2_mand_unit f1 f2 (e : (expr (boolT_def f1 m_def f2))) :
-  [[ e `** (ldl_bool _ _ _ _ true) ]]_dl2 = [[ e ]]_dl2.
+Theorem dl2_mand_unit (e : (expr boolT)) :
+  [[ e `** (ldl_bool true) ]]_dl2 = [[ e ]]_dl2.
 Proof. by rewrite /= !big_ord_recl big_ord0 !addr0. Qed.
 
-Theorem dl2_residuation (e1 e2 e3 : expr boolT_dl2) :
+Theorem dl2_residuation (e1 e2 e3 : expr boolT) :
   [[ e1 `** e2 ]]_dl2 <= [[ e3 ]]_dl2 <->
     [[ e2 ]]_dl2 <= [[ e1 `=> e3 ]]_dl2.
 Proof.
@@ -117,32 +118,32 @@ split; move => /= H.
   by move: H; rewrite/maxr;  case: ifP => ? ?; lra.
 Qed.
 
-Lemma dl2_prelinearity (e1 e2 e3 : @expr R boolT_dl2) :
-  [[(e1 `=> e2) `\/ (e2 `=> e1)]]_dl2 = [[ldl_bool  _ _ _ _ true]]_dl2.
+Lemma dl2_prelinearity (e1 e2 e3 : @expr R boolT) :
+  [[(e1 `=> e2) `\/ (e2 `=> e1)]]_dl2 = [[ldl_bool true]]_dl2.
 Proof.
 by rewrite /= !big_ord_recl !big_ord0 /= /maxr; repeat case: ifP; lra.
 Qed.
 
-Lemma dl2_andC  (e1 e2 : expr boolT_dl2) :
+Lemma dl2_andC  (e1 e2 : expr boolT) :
   [[ e1 `/\ e2 ]]_dl2 = [[ e2 `/\ e1 ]]_dl2.
 Proof.
 by rewrite /=!big_ord_recl !big_ord0 /minr; repeat case: ifP; lra.
 Qed.
 
-Lemma dl2_orC (e1 e2 : expr boolT_dl2) :
+Lemma dl2_orC (e1 e2 : expr boolT) :
   [[ e1 `\/ e2 ]]_dl2 = [[ e2 `\/ e1 ]]_dl2.
 Proof.
 by rewrite /=!big_ord_recl !big_ord0 /maxr; repeat case: ifP; lra.
 Qed.
 
-Lemma dl2_orA (e1 e2 e3 : expr boolT_dl2) :
+Lemma dl2_orA (e1 e2 e3 : expr boolT) :
   [[ (e1 `\/ (e2 `\/ e3)) ]]_dl2 = [[ ((e1 `\/ e2) `\/ e3) ]]_dl2.
 Proof.
 rewrite /= !big_ord_recl !big_ord0 /= !big_ord_recl !big_ord0 /maxr !tnthS !tnth0.
 by repeat case: ifPn => //; lra.
 Qed.
 
-Theorem dl2_andA (e1 e2 e3 : expr boolT_dl2) : (0 < p) ->
+Theorem dl2_andA (e1 e2 e3 : expr boolT) : (0 < p) ->
   [[ (e1 `/\ e2) `/\ e3]]_dl2 = [[ e1 `/\ (e2 `/\ e3) ]]_dl2.
 Proof.
 rewrite /= !big_ord_recl !big_ord0 /= !big_ord_recl !big_ord0.
@@ -157,7 +158,7 @@ rewrite /minr.
 by repeat case: ifPn => //; lra.
 Qed.
 
-Lemma dl2_and_abs (e1 e2 : expr boolT_dl2) :
+Lemma dl2_and_abs (e1 e2 : expr boolT) :
   [[ e1 `/\ (e1 `\/ e2)]]_dl2 = [[ e1 ]]_dl2.
 Proof.
 rewrite/= !big_ord_recl !big_ord0 /= !big_ord_recl big_ord0.
@@ -166,7 +167,7 @@ have := dl2_translation_le0 e2.
 rewrite/minr/maxr; repeat case: ifP; intros; try lra.
 Qed.
 
-Lemma dl2_or_abs (e1 e2 : expr boolT_dl2) :
+Lemma dl2_or_abs (e1 e2 : expr boolT) :
   [[ e1 `\/ (e1 `/\ e2)]]_dl2 = [[ e1 ]]_dl2.
 Proof.
 rewrite//= !big_ord_recl !big_ord0 /= !big_ord_recl big_ord0.
@@ -177,7 +178,7 @@ have minr_le0 : forall (a : R), a <= 0 -> (minr a 0) = a.
 rewrite/minr/maxr; repeat case: ifPn; intros; try lra.
 Qed.
 
-Lemma dl2_and_distr (e1 e2 e3 : expr boolT_dl2) :
+Lemma dl2_and_distr (e1 e2 e3 : expr boolT) :
   [[ e1 `/\ (e2 `\/ e3)]]_dl2 = [[ (e1 `/\ e2) `\/ (e1 `/\ e3)]]_dl2.
 Proof.
 have h1 := dl2_translation_le0 e1.
@@ -206,7 +207,7 @@ move=> F_ge0 /eqP; rewrite nsumr_eq0 // -big_all big_andE => /forallP hF i Pi.
 by move: (hF i); rewrite implyTb Pi /= => /eqP.
 Qed.
 
-Lemma dl2_nary_inversion_mandE1 n (s : 'I_n -> (expr (boolT_dl2))) :
+Lemma dl2_nary_inversion_mandE1 n (s : 'I_n -> expr boolT) :
   is_dl2 true ([[ ldl_mand s ]]_dl2) -> (forall i, is_dl2 true ([[ s i ]]_dl2)).
 Proof.
 move: s; case: n => [s _|n s/=]; first by case.
@@ -214,7 +215,7 @@ rewrite nsumr_eq0//=; last by move=> i _; exact/dl2_translation_le0.
 by move/allP => h i; exact/h/mem_index_enum.
 Qed.
 
-Lemma dl2_nary_inversion_mandE0 n (s : 'I_n -> (expr boolT_dl2)) :
+Lemma dl2_nary_inversion_mandE0 n (s : 'I_n -> (expr boolT)) :
   is_dl2 false ([[ ldl_mand s ]]_dl2) ->
   (exists i, is_dl2 false ([[ s i ]]_dl2)).
 Proof.
@@ -225,7 +226,7 @@ move/(_ (dl2_translation_le0 _) (sumr_le0 _ (fun i _ => dl2_translation_le0 _)))
 by move/ih => [i ?]; exists (lift ord0 i).
 Qed.
 
-Lemma dl2_inversion_implE1 (E1 E2 : expr boolT_dl2) :
+Lemma dl2_inversion_implE1 (E1 E2 : expr boolT) :
   is_dl2 true ([[  E1 `=> E2 ]]_dl2) ->
      is_dl2 false ([[ E1 ]]_dl2) || is_dl2 true ([[ E2 ]]_dl2).
 Proof.
