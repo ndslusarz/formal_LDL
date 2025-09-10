@@ -67,10 +67,9 @@ Context {R : realType}.
 
 Definition group_confidence n m x y z eps
     (f : expr (funT n.+1 m.+1)) (v : expr (vectorT n.+1))
-    (idxs : seq (expr (indexT m.+1))) :=
-  @ldl_and R x y z
-    [seq (((ldl_app f v) `! idx) `<= ldl_real eps) `/\
-           ((ldl_real (1-eps)) `<= (ldl_app f v) `! idx)
-    | idx <- idxs].
+    (idx_ : (expr (indexT m.+1)) ^ n) :=
+  @ldl_and R x y z _
+    (fun i => (((ldl_app f v) `! (idx_ i)) `<= ldl_real eps) `/\
+           ((ldl_real (1-eps)) `<= (ldl_app f v) `! (idx_ i))).
 
 End example_hierarchical.
