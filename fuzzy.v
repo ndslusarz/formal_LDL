@@ -826,11 +826,10 @@ Qed.
 Lemma Lukasiewicz_prelinearity (e1 e2 e3 : @expr R boolT_fuzzy) :
   [[(e1 `=> e2) `\/ (e2 `=> e1)]]_Lukasiewicz = [[ldl_bool  _ _ _ _ true]]_Lukasiewicz.
 Proof.
-have H1 := translate_boolT_01 p p1 Lukasiewicz _ _ _ (e1 `=> e2).
-have H2 := translate_boolT_01 p p1 Lukasiewicz _ _ _ (e2 `=> e1).
-rewrite//= /maxR !big_ord_recl big_ord0 !tnthS !tnth0 /maxr /minr; repeat case: ifPn; intros. lra.
-admit.
-admit. Admitted.
+have := translate_boolT_01 p p1 Lukasiewicz _ _ _ (e1 `=> e2).
+have := translate_boolT_01 p p1 Lukasiewicz _ _ _ (e2 `=> e1).
+rewrite//= /maxR !big_ord_recl big_ord0 tnthS !tnth0 //= /maxr /minr; repeat case: ifPn; intros; lra.
+Qed.
 
 Lemma Lukasiewicz_residuation (e1 e2 e3 : expr boolT_fuzzy) :
   [[e1 `** e2]]_Lukasiewicz <= [[ e3 ]]_Lukasiewicz <-> [[ e2 ]]_Lukasiewicz <= [[e1 `=> e3]]_Lukasiewicz.
@@ -1131,7 +1130,7 @@ have powRge1 : forall x y, 0 <= x -> 0 <= y  -> x <= y `^ p -> x `^ p^-1 <= y .
   rewrite -(powRselfNx y)//=. rewrite h ?nnegrE//=.
   - by rewrite invr_ge0 (ltW p0).
   - by rewrite (le_trans x0 hp).
-(*rewrite//= !big_cons big_nil !addr0 /maxr/minr.
+rewrite//= !big_ord_recl big_ord0 tnthS !tnth0 !addr0 //= /maxr/minr.
 set t1 := _ e1.
 set t2 := _ e2.
 set t3 := _ e3.
@@ -1191,8 +1190,8 @@ split; case: ifP; case: ifP; rewrite//=; try lra.
     * by rewrite lerBlDl in h3.
     * have he12 : 1 - t3 >= 1 - t1 by lra.
       apply (ge0_ler_powR (ltW p0)) in he12; rewrite ?nnegrE//=; lra.
-    * lra.*)
-Admitted.
+    * lra.
+Qed.
 
 Lemma Yager_involution (e : expr boolT_fuzzy) :
   [[`~ (`~e)]]_Yager = [[ e ]]_Yager.
@@ -1308,8 +1307,8 @@ Lemma Godel_prelinearity (e1 e2 e3 : @expr R boolT_fuzzy) :
 Proof.
 have := translate_boolT_01 p p1 Godel _ _ _ e1.
 have := translate_boolT_01 p p1 Godel _ _ _ e2.
-rewrite//=/maxR; rewrite !big_ord_recl !big_ord0 !tnth0 /maxr; repeat case: ifP; intros; try lra.
-Admitted.
+rewrite//=/maxR; rewrite !big_ord_recl big_ord0 tnthS !tnth0//= /maxr; repeat case: ifP; intros; lra.
+Qed.
 
 Lemma Godel_residuation (e1 e2 e3 : expr boolT_fuzzy) :
   [[e1 `** e2]]_Godel <= [[ e3 ]]_Godel <-> [[ e2 ]]_Godel <= [[e1 `=> e3]]_Godel.
@@ -1399,7 +1398,7 @@ Lemma product_prelinearity (e1 e2 e3 : @expr R boolT_fuzzy) :
 Proof.
 have h1 := translate_boolT_01 p p1 product _ _ _ e1.
 have h2 := translate_boolT_01 p p1 product _ _ _ e2.
-(*rewrite//= /maxR !big_cons big_nil.
+rewrite//= /maxR !big_ord_recl big_ord0 tnthS !tnth0//=.
 rewrite /maxr; repeat case: ifP; intros; try nra.
 - have : 0 < [[e2]]_product \/ 0 = [[e2]]_product by lra.
   move => [h | h]. 
@@ -1408,7 +1407,7 @@ rewrite /maxr; repeat case: ifP; intros; try nra.
     have H : 1 < [[e1]]_product / [[e2]]_product -> 
              [[e2]]_product < [[e1]]_product * ([[e2]]_product / [[e2]]_product). intros; nra.
     apply H in i0.
-    rewrite divff in i0. nra. nra.
+    rewrite divff in i0; nra.
   + rewrite -h in i; nra.
 - have : 0 < [[e1]]_product \/ 0 = [[e1]]_product by lra.
   move => [h | h]. 
@@ -1417,9 +1416,9 @@ rewrite /maxr; repeat case: ifP; intros; try nra.
     have H : ([[e2]]_product / [[e1]]_product < 1) = false -> 
              [[e2]]_product * ([[e1]]_product / [[e1]]_product) >= [[e1]]_product. intros; nra.
     apply H in n1.
-    rewrite divff in n1. nra. nra.
-  + rewrite -h in i; nra.*)
-Admitted.
+    rewrite divff in n1; nra.
+  + rewrite -h in i; nra.
+Qed.
 
 Lemma product_residuation (e1 e2 e3 : expr boolT_fuzzy) :
   [[e1 `** e2]]_product <= [[ e3 ]]_product <-> [[ e2 ]]_product <= [[e1 `=> e3]]_product.
