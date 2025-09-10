@@ -65,16 +65,16 @@ Proof. by rewrite//=. Qed.
 
 Lemma stl_infty_mandI f1 f2 (e : expr (boolT_def f1 m_def f2)) : [[ e `** e ]]_stli = [[ e ]]_stli.
 Proof.
-rewrite //= ?big_cons ?big_nil.
+rewrite //= !big_ord_recl !big_ord0 !tnthS !tnth0.
 set t1 := _ e.
 rewrite /=/mine; repeat case: ifP => //=. 
 move => _ h. apply negbT in h. rewrite ltey in h. 
-move /negPn /eqP in h. by [].
+by move /negPn /eqP in h.
 Qed.
 
 Lemma stl_infty_morI f1 f2 (e : expr (boolT_def f1 m_def f2)) : [[ e `++ e ]]_stli = [[ e ]]_stli.
 Proof.
-rewrite /= !big_cons big_nil /maxe.
+rewrite /= !big_ord_recl !big_ord0 !tnthS !tnth0 /maxe.
 repeat case: ifP => //=. 
 move => _ h. rewrite ltNge leNye in h; by [].
 Qed.
@@ -82,122 +82,61 @@ Qed.
 Lemma stl_infty_mandC f1 f2 (e1 e2 : expr (boolT_def f1 m_def f2)) :
   [[ e1 `** e2 ]]_stli = [[ e2 `** e1 ]]_stli.
 Proof.
-rewrite /= ?big_cons ?big_nil !miney.
-rewrite /=/mine; repeat case: ifP => //=; move => h1 h2.
-- apply ltW in h1. apply ltW in h2.
-  apply: le_anti. by apply/andP; split.
-- rewrite  ltNge in h1. move/negbFE in h1.
-  rewrite  ltNge in h2. move/negbFE in h2.
-  apply: le_anti. by apply/andP; split.
+rewrite /= !big_ord_recl !big_ord0 !tnthS !tnth0!miney.
+rewrite /=/mine; repeat case: ifP => //=.
+- by move=>/ltW h1 /ltW h2; apply/le_anti/andP; split.
+- by rewrite !ltNge=> /negbFE h1 /negbFE h2; apply/le_anti/andP; split.
 Qed.
 
 Lemma stl_infty_morC f1 f2 (e1 e2 : expr (boolT_def f1 m_def f2)) :
   [[ e1 `++ e2 ]]_stli = [[ e2 `++ e1 ]]_stli.
 Proof.
-rewrite /=  /maxR !big_cons !big_nil !maxeNy.
- rewrite /= /maxe; repeat case: ifP => //=; move => h1 h2 . 
-- apply ltW in h1. apply ltW in h2.
-  apply: le_anti. by apply/andP; split.
-- rewrite  ltNge in h1. move/negbFE in h1.
-  rewrite  ltNge in h2. move/negbFE in h2.
-  apply: le_anti. by apply/andP; split.
+rewrite /= !big_ord_recl !big_ord0 !tnthS !tnth0 !maxeNy.
+rewrite /=/maxe; repeat case: ifP => //=.
+- by move=> /ltW h1 /ltW h2; apply/le_anti/andP; split.
+- by rewrite !ltNge => /negbFE h1 /negbFE h2; apply/le_anti/andP; split.
 Qed.
 
 Lemma stl_infty_morA f1 f2 (e1 e2 e3 : expr (boolT_def f1 m_def f2)) :
   [[ (e1 `++ (e2 `++ e3)) ]]_stli = [[ ((e1 `++ e2) `++ e3) ]]_stli.
 Proof.
-rewrite /= /maxR !big_cons !big_nil.
-rewrite !maxeNy /= /maxe; repeat case: ifP; rewrite//= => h1 h2 h3 h4.
-- rewrite  ltNge in h2. move/negbFE in h2.
-  apply ltW in h3.
-  apply: le_anti. by apply/andP; split.
-- rewrite  ltNge in h2. move/negbFE in h2.
-  apply ltW in h4.
-  apply: le_anti. by apply/andP; split.
-- rewrite  ltNge in h3. move/negbFE in h3.
-  apply ltW in h2.
-  apply: le_anti. by apply/andP; split.
-- rewrite  ltNge in h4. move/negbFE in h4.
-  have h5:=  lt_trans h1 h2. apply ltW in h5.
-  apply: le_anti. by apply/andP; split.
-- rewrite  ltNge in h4. move/negbFE in h4.
-  apply ltW in h2.
-  apply: le_anti. by apply/andP; split.
-- apply ltW in h1. apply ltW in h3.  
-  rewrite  ltNge in h2; move/negbFE in h2.
-  rewrite  ltNge in h4; move/negbFE in h4.
-  have h5 : [[e2 ]]_stli = [[e3 ]]_stli. by apply: le_anti; apply/andP; split.
-  rewrite  -h5 in h4.
-  by apply: le_anti; apply/andP; split.
-- rewrite  ltNge in h1; move/negbFE in h1.
-  rewrite  ltNge in h3; move/negbFE in h3.
-  have h5 := le_trans h3 h1.
-  rewrite  ltNge in h2. exfalso. 
-  move/negbTE: h2; rewrite h5//=.
+rewrite /= /maxR !big_ord_recl !big_ord0 !tnthS !tnth0/= !big_ord_recl !big_ord0 !tnthS !tnth0.
+rewrite !maxeNy /= /maxe; repeat case: ifP => //=; try by move=> _ ->.
+- by move=> h1 h2; rewrite (lt_trans h1 h2).
+- rewrite ltNge => /negbFE h1 /ltW h2; rewrite ltNge => /negbFE h3 _.
+  by have h4 := le_trans h3 h1; apply/le_anti/andP; split.
 Qed.
 
 Lemma stl_infty_mandA f1 f2 (e1 e2 e3 : expr (boolT_def f1 m_def f2)) :
   [[ e1 `** (e2 `** e3) ]]_stli = [[ (e1 `** e2) `** e3 ]]_stli.
 Proof.
-rewrite /= /maxR !big_cons !big_nil !miney.
-rewrite /= /mine; repeat case: ifP; rewrite//= => h1 h2 h3 h4.
-- have h5 := lt_trans h1 h3.
-  rewrite  ltNge in h2. move/negbFE in h2.
-  apply ltW in h5.
-  apply: le_anti. by apply/andP; split.
-- rewrite  ltNge in h1; move/negbFE in h1.
-  rewrite  ltNge in h3; move/negbFE in h3.
-  have h5 := le_trans h3 h1.
-  apply ltW in h2.
-  have h6 : [[e2 ]]_stli = [[e3 ]]_stli. by apply: le_anti; apply/andP; split.
-  rewrite -h6 in h4. apply ltW in h4.
-  apply: le_anti. by apply/andP; split.
-- rewrite  ltNge in h2; move/negbFE in h2.
-  apply ltW in h4.
-  apply: le_anti. by apply/andP; split.
-- rewrite  ltNge in h1; move/negbFE in h1.
-  rewrite  ltNge in h3; move/negbFE in h3.
-  have h5 := le_trans h3 h1.
-  apply ltW in h4.
-  apply: le_anti. by apply/andP; split.
-- rewrite  ltNge in h2; move/negbFE in h2.
-  apply ltW in h3.
-  apply: le_anti. by apply/andP; split.
-- rewrite  ltNge in h4; move/negbFE in h4.
-  apply ltW in h2.
-  apply: le_anti. by apply/andP; split.
-- rewrite  ltNge in h3; move/negbFE in h3.
-  apply ltW in h2.
-  apply: le_anti. by apply/andP; split. 
+rewrite /= /maxR !big_ord_recl !big_ord0 /= !big_ord_recl !big_ord0 !tnthS !tnth0 !miney.
+rewrite /= /mine; repeat case: ifP => //=; try by move=> _ ->.
+- by move=> h1 h2 h3; rewrite (lt_trans h1 h3) in h2.
+- rewrite !ltNge => /negbFE h1 /negbFE h2 /negbFE h3.
+  by rewrite (le_trans h3 h1).
 Qed.
 
 Lemma stl_infty_involution (e : expr boolT_fuzzy) :
   [[`~ (`~e)]]_stli = [[ e ]]_stli.
 Proof. by rewrite //= oppeK. Qed.
 
-
 Theorem stl_infty_mand_unit f1 f2 (e :  (expr (boolT_def f1 m_def f2))) :
   [[ e `** (ldl_bool _ _ _ _ true) ]]_stli = [[ e ]]_stli.
 Proof.
-rewrite//= /minR !big_cons big_nil.
-rewrite /= /mine; case: ifPn; rewrite//=. 
-move => h. 
-rewrite ltey in h.
-by move/negbTE/eqP in h.
+by rewrite /=!big_ord_recl big_ord0 !tnthS !tnth0 /mine; case: ifPn; rewrite ltey => /negbTE/eqP.
 Qed.
 
 Theorem stl_infty_mor_unit f1 f2 (e :  (expr (boolT_def f1 m_def f2))) :
   [[ e `++ (ldl_bool _ _ _ _ false) ]]_stli = [[ e ]]_stli.
 Proof.
-rewrite//= !big_cons big_nil/= /maxe; case: ifPn; rewrite//=. 
-move => h. 
-rewrite ltNge leNye in h; by [].
+by rewrite /=!big_ord_recl !big_ord0 !tnthS !tnth0 /maxe; case: ifPn; rewrite ltNge leNye.
 Qed.
 
 Lemma stl_infty_residuation (e1 e2 e3 : expr boolT_stli) :
   [[e1 `** e2]]_stli <= [[ e3 ]]_stli <-> [[ e2 ]]_stli <= [[e1 `=> e3]]_stli.
 Proof.
-split; rewrite//= /minR !big_cons big_nil !miney /mine; repeat case: ifPn; rewrite ?leey//=. 
+split; rewrite//= /minR !big_ord_recl !big_ord0 !tnthS !tnth0 !miney /mine; repeat case: ifPn; rewrite ?leey//=. 
 - move => h1 h2 _.
   rewrite ltNge Bool.negb_involutive in h1.
   by rewrite (le_trans h1 h2).
@@ -213,7 +152,7 @@ Qed.
 Lemma stl_infty_demorgan_mand f1 (e1 e2 : expr (boolT_def f1 m_def l_def)) :
   [[`~ (e1 `** e2)]]_stli = [[(`~ e1) `++ (`~ e2)]]_stli.
 Proof.
-rewrite /= /maxR !big_cons !big_nil !miney !maxeNy.
+rewrite /= /maxR !big_ord_recl !big_ord0 !tnthS !tnth0 !miney !maxeNy.
 rewrite /= /mine /maxe; repeat case: ifP; rewrite//= => h1 h2. move/ltW in h1.
 - rewrite neg_swap_ineq in h1. apply ltW in h2. 
   have Heq : [[e1]]_stli = [[e2]]_stli.  apply le_anti; by rewrite h1 h2//=.
@@ -227,7 +166,7 @@ Qed.
 
 Lemma stl_infty_demorgan_mor f1 (e1 e2 : expr (boolT_def f1 m_def l_def)) :
   [[`~ (e1 `++ e2)]]_stli = [[(`~ e1) `** (`~ e2)]]_stli.
-rewrite /= /maxR !big_cons !big_nil !miney !maxeNy.
+rewrite /= /maxR !big_ord_recl !big_ord0 !tnthS !tnth0 !miney !maxeNy.
 rewrite /= /mine /maxe; repeat case: ifP; rewrite//= => h1 h2. move/ltW in h1.
 - rewrite neg_swap_ineq in h1. apply ltW in h2. 
   have Heq : [[e1]]_stli = [[e2]]_stli.  apply le_anti; by rewrite h1 h2//=.
@@ -242,7 +181,7 @@ Qed.
 Lemma stl_infty_distr f1 (e1 e2 e3 :  (expr (boolT_def f1 m_def l_def))) :
   [[ e1 `/\ (e2 `\/ e3)]]_stli = [[ (e1 `/\ e2) `\/ (e1 `/\ e3)]]_stli.
 Proof.
-rewrite /= /maxR !big_cons !big_nil !miney !maxeNy.
+rewrite /= /maxR !big_ord_recl !big_ord0 /= !big_ord_recl !big_ord0 !tnthS !tnth0 !miney !maxeNy.
 rewrite /= /mine /maxe; repeat case: ifP; rewrite//= => h1 h2 h3 h4 h5.
 - rewrite ltNge in h2; move/negbFE in h2.
   rewrite ltNge in h3; move/negbFE in h3.
@@ -270,7 +209,7 @@ Qed.
 Lemma stl_infty_and_abs f1 (e1 e2 : (expr (boolT_def f1 m_def l_def))) :
   [[ e1 `/\ (e1 `\/ e2)]]_stli = [[ e1 ]]_stli.
 Proof.
-rewrite /= /maxR !big_cons !big_nil !miney !maxeNy.
+rewrite /= /maxR !big_ord_recl !big_ord0 /= !big_ord_recl !big_ord0 !tnthS !tnth0 !miney !maxeNy.
 rewrite /= /mine /maxe; repeat case: ifP; rewrite//= => h1 h2.
 - apply ltW in h1. 
   rewrite  ltNge in h2. move/negbFE in h2.
@@ -280,7 +219,7 @@ Qed.
 Lemma dl2_or_abs f1 (e1 e2 : (expr (boolT_def f1 m_def l_def))) :
   [[ e1 `\/ (e1 `/\ e2)]]_stli = [[ e1 ]]_stli.
 Proof.
-rewrite /= /maxR !big_cons !big_nil !miney !maxeNy.
+rewrite /= /maxR !big_ord_recl !big_ord0 /= !big_ord_recl !big_ord0 !tnthS !tnth0 !miney !maxeNy.
 rewrite /= /mine /maxe; repeat case: ifP; rewrite//= => h1 h2.
 - apply ltW in h2. 
   rewrite  ltNge in h1. move/negbFE in h1.
@@ -290,8 +229,8 @@ Qed.
 Lemma stl_infty_prelinearity (e1 e2 e3 : @expr R (boolT_def impl_def m_def l_def)) :
   is_stl true ([[(e1 `=> e2) `\/ (e2 `=> e1)]]_stli).
 Proof.
-rewrite /= !big_cons !big_nil !maxeNy /maxe.
-repeat case: ifP; rewrite//=.
+rewrite /= !big_ord_recl !big_ord0 !tnthS !tnth0 !maxeNy /maxe.
+repeat case: ifP => //=.
 - move => _ _  h3.
   by rewrite ltNge leey in h3.
 - move => /negP h1 _ /ltW h3. by [].
@@ -301,7 +240,5 @@ repeat case: ifP; rewrite//=.
 - move => _ /negP h2 /negP/negP h3. 
   rewrite ltNge Bool.negb_involutive in h3. rewrite//=.
 Qed.
-
-
 
 End stl_infty_lemmas.

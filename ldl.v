@@ -654,13 +654,13 @@ Fixpoint stl_infty_translation {t} (e : @expr R t) {struct e} : ereal_type_trans
   | ldl_vec n t => t
 
   | ldl_and _ _ _ 0 _ => 0
-  | ldl_and _ _ _ n.+1 Es  => \big[mine/stl_infty_translation (Es ord0)]_(i < n.+1) stl_infty_translation (Es i)
+  | ldl_and _ _ _ n.+1 Es  => \big[mine/+oo]_(i < n.+1) stl_infty_translation (Es i)
   | ldl_or _ _ _ 0 _ => 0
-  | ldl_or _ _ _ n.+1 Es  => \big[maxe/stl_infty_translation (Es ord0)]_(i < n.+1) stl_infty_translation (Es i)
+  | ldl_or _ _ _ n.+1 Es  => \big[maxe/-oo]_(i < n.+1) stl_infty_translation (Es i)
   | ldl_mand _ _ _ 0 _ => 0
-  | ldl_mand _ _ _ n.+1 Es  => \big[mine/stl_infty_translation (Es ord0)]_(i < n.+1) stl_infty_translation (Es i)
+  | ldl_mand _ _ _ n.+1 Es  => \big[mine/+oo]_(i < n.+1) stl_infty_translation (Es i)
   | ldl_mor _ _ _ 0 _ => 0
-  | ldl_mor _ _ _ n.+1 Es => \big[maxe/stl_infty_translation (Es ord0)]_(i < n.+1) stl_infty_translation (Es i)
+  | ldl_mor _ _ _ n.+1 Es => \big[maxe/-oo]_(i < n.+1) stl_infty_translation (Es i)
 
   | ldl_not _ _ _ E1 => - {[ E1 ]}
   | ldl_impl _ _ _ E1 E2 => 
