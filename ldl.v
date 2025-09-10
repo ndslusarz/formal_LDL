@@ -413,15 +413,9 @@ Fixpoint dl2_ereal_translation {t} (e : @expr R t) {struct e} : ereal_type_trans
   | ldl_and _ _ _ n Es => \big[mine/0]_(i < n) dl2_ereal_translation (Es i)
   | ldl_or _ _ _ n Es =>\big[maxe/-oo]_(i < n) dl2_ereal_translation (Es i)
   | ldl_mand _ _ _ n Es =>
-      if [exists i, dl2_ereal_translation (Es i) == -oo ] then -oo
-      else if [exists i, dl2_ereal_translation (Es i) == +oo] then -oo
-      else
-        \sum_(i < n) dl2_ereal_translation (Es i)
+      \sum_(i < n) dl2_ereal_translation (Es i)
   | ldl_mor _ _ _ n Es =>
-      if [exists i, dl2_ereal_translation (Es i) == -oo ] then -oo
-      else if [exists i, dl2_ereal_translation (Es i) == +oo] then -oo
-      else
-        (- 1)%:E ^+ n.+1 * \prod_(i < n) dl2_ereal_translation (Es i)
+      ((-1) ^+ n.+1)%:E * \prod_(i < n) dl2_ereal_translation (Es i)
   | ldl_not _ _ _ E1 => +oo (* default value, all lemmas are for negation-free formulas *)
   | ldl_impl _ _ _ E1 E2 =>  (- maxe ({[ E1 ]} - {[ E2 ]}) 0)
   | E1 `== E2 => (- `| {[ E1 ]} - {[ E2 ]}|)%:E
@@ -456,7 +450,7 @@ Fixpoint dl2_translation {t} (e : @expr R t) {struct e} : type_translation t :=
   | ldl_or _ _ _ 0 _ => 0
   | ldl_or _ _ _ n.+1 Es => \big[maxr/dl2_translation (Es ord0)]_(i < n.+1) dl2_translation (Es i)
   | ldl_mand _ _ _ n Es => \sum_(i < n) dl2_translation (Es i)
-  | ldl_mor _ _ _ n Es => (- 1) ^+ n.+1 * \prod_(i < n) dl2_translation (Es i)
+  | ldl_mor _ _ _ n Es => (-1) ^+ n.+1 * \prod_(i < n) dl2_translation (Es i)
 
   | ldl_not _ _ _ E1 => 0 (* default value, all lemmas are for negation-free formulas *)
   | ldl_impl _ _ _ E1 E2 => (- maxr ({[ E1 ]} - {[ E2 ]}) 0)

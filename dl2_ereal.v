@@ -1,7 +1,7 @@
 From HB Require Import structures.
 Require Import Coq.Program.Equality.
 From mathcomp Require Import all_ssreflect all_algebra.
-From mathcomp Require Import lra.
+From mathcomp Require Import lra perm.
 From mathcomp Require Import all_classical.
 From mathcomp Require Import reals ereal interval_inference.
 From mathcomp Require Import topology derive normedtype sequences
@@ -54,157 +54,64 @@ Variable p : R.
 
 Local Notation "[[ e ]]_dl2e" := (@dl2_ereal_translation R _ e).
 
-Lemma dl2_mandC_nary (s1 s2 : seq (expr (boolT_def impl_def m_def l_def))) :
-  perm_eq s1 s2 -> [[ldl_mand s1]]_dl2e = [[ldl_mand s2]]_dl2e.
+Lemma dl2_mandC_nary n (pi : {perm 'I_n}) (s : 'I_n -> (expr (boolT_def impl_def m_def l_def))) :
+  [[ldl_mand s]]_dl2e = [[ldl_mand (s \o pi)]]_dl2e.
 Proof.
-move=> s12/=.
-move/(perm_map (fun e => [[e]]_dl2e)) : (s12) => /[dup].
-move/(perm_has (pred1 -oo%E)) ->.
-move/(perm_has (pred1 +oo%E)) ->.
-case: ifPn => //=; case: ifPn => //= _ _.
-rewrite !big_map.
-exact: perm_big.
+by rewrite /= (perm_big (map pi (index_enum 'I_n))) ?big_map//= perm_eq_fun.
 Qed.
 
 Lemma dl2_mandC (e1 e2 : expr (boolT_def impl_def m_def l_def)) :
  [[ e1 `** e2 ]]_dl2e = [[ e2 `** e1 ]]_dl2e.
 Proof.
-rewrite /= !orbF !big_cons !big_nil !adde0.
-rewrite !(orbC ([[e2]]_dl2e == _)).
-by rewrite addeC.
+by rewrite /= !big_ord_recl !big_ord0 !tnthS !tnth0 !adde0 addeC.
 Qed.
 
 Lemma dl2_mandA (e1 e2 e3 : expr (boolT_undef impl_def m_def l_def)) :
   [[ e1 `** (e2 `** e3) ]]_dl2e = [[ (e1 `** e2) `** e3 ]]_dl2e.
 Proof.
-rewrite /= !orbF !big_cons !big_nil !adde0.
-have [H1//=|/negbTE H1/=] := eqVneq ([[e1]]_dl2e) -oo%E.
-have [H2//=|/negbTE H2/=] := eqVneq ([[e2]]_dl2e) -oo%E.
-have [H3/=|/negbTE H3/=] := eqVneq ([[e3]]_dl2e) -oo%E.
-  by rewrite orbT.
-have [K1//=|/negbTE K1/=] := eqVneq ([[e1]]_dl2e) +oo%E.
-  have [K2//=|/negbTE K2/=] := eqVneq ([[e2]]_dl2e) +oo%E.
-  have [K3//=|/negbTE K3/=] := eqVneq ([[e3]]_dl2e) +oo%E.
-  by case: ifPn.
-have [K2//=|/negbTE K2/=] := eqVneq ([[e2]]_dl2e) +oo%E.
-have [K3//=|/negbTE K3/=] := eqVneq ([[e3]]_dl2e) +oo%E.
-  rewrite !orbF !orbT.
-  by case: ifPn.
-rewrite !adde_eq_ninfty !orbF H1 H2 H3/=.
-by rewrite !adde_eq_pinfty H1 H2 H3 K1 K2 K3/= addeA.
+by rewrite /= !big_ord_recl !big_ord0 /= !big_ord_recl !big_ord0 !tnthS !tnth0 !adde0 addeA.
 Qed.
 
-Lemma dl2_morC_nary (s1 s2 : seq (expr (boolT_def impl_def m_def l_def))) :
-  perm_eq s1 s2 -> [[ldl_mor s1]]_dl2e = [[ldl_mor s2]]_dl2e.
+Lemma dl2_morC_nary n (pi : {perm 'I_n}) (s : 'I_n -> (expr (boolT_def impl_def m_def l_def))) :
+  [[ldl_mor s]]_dl2e = [[ldl_mor (s \o pi)]]_dl2e.
 Proof.
-move=> s12/=.
-move/(perm_map (fun e => [[e]]_dl2e)) : (s12) => /[dup].
-move/(perm_has (pred1 -oo%E)) ->.
-move/(perm_has (pred1 +oo%E)) ->.
-case: ifPn => //=; case: ifPn => //= _ _.
-by rewrite !big_map (perm_size s12) (perm_big _ s12)//=.
+by rewrite /= (perm_big (map pi (index_enum 'I_n))) ?big_map//= perm_eq_fun.
 Qed.
 
 Lemma dl2_morC (e1 e2 : expr (boolT_undef impl_def m_def l_undef)) :
  [[ e1 `++ e2 ]]_dl2e = [[ e2 `++ e1 ]]_dl2e.
 Proof.
-rewrite /= !orbF !big_cons !big_nil !mule1.
-rewrite !(orbC ([[e2]]_dl2e == _)).
-by rewrite (muleC ([[e1]]_dl2e) _).
+by rewrite /= !big_ord_recl !big_ord0 !tnthS !tnth0 !mule1 [X in (_ * X)%E](muleC).
 Qed.
 
 Lemma dl2_ereal_translation_le0 e :
   ([[ e ]]_dl2e <= 0 :> ereal_type_translation (boolT_undef impl_def m_def l_def))%E.
 Proof.
-dependent induction e using expr_ind' => /=.
+dependent induction e => /=.
 - by case: b.
-- case: l H; first by rewrite big_nil.
-  move => a l.
-  rewrite /=; move=> /List.Forall_forall H.
-  rewrite !big_seq bigmin_idl.
-  + rewrite {1}/mine; case: ifPn =>  h; first by rewrite//=.
-    rewrite ltNge Bool.negb_involutive in h.
-    by rewrite h.
-- case: l H; first by rewrite big_nil.
-  move => a l.
-  rewrite /=; move=> /List.Forall_forall H.
-  rewrite big_seq.
-  rewrite bigmax_le//=.
-  + rewrite ?ler01// => i il0.
-    rewrite in_cons in il0. move/orP: il0.
-    move => [/eqP i0 | i0].
-    * subst. by apply: H => //; rewrite -In_in mem_head//.
-    * have /mapP [x Hx ->] := i0.
-    by apply: H => //; rewrite -In_in in_cons Hx orbT.
-- rewrite /maxe; case: ifPn => h //=.
-  by rewrite leeNl oppe0 leNgt h.
-- case: ifPn => //.
-  case: ifPn => //.
-  rewrite big_map big_seq sume_le0// => t tl.
-  move/List.Forall_forall : H => /(_ t); apply => //.
-  exact/In_in.
-- case: ifPn => //.
-  case: ifPn => // hi1 hi2.
-  rewrite  big_map big_seq; have [ol|ol] := boolP (odd (length l)).
-    rewrite exprS -signr_odd ol expr1 mulrN1 !EFinN oppeK mul1e.
-    have [l0|l0] := pselect (forall i, i \in l -> [[i]]_dl2e != 0)%E; last first.
-      move/existsNP : l0 => [/= x /not_implyP[xl /negP/negPn/eqP x0]].
-      rewrite le_eqVlt; apply/orP; left.
-      rewrite prode_seq_eq0; apply/hasP; exists x => //.
-      by rewrite xl x0 eqxx.
-    apply/ltW/sgeN1_lt0; rewrite -big_seq prodeN1.
-      by rewrite -signr_odd ol expr1.
-    move=> e el; rewrite lt_neqAle l0//=.
-    by move/List.Forall_forall : H => /(_ e); apply => //; exact/In_in.
-  rewrite exprS -signr_odd (negbTE ol) expr0 mulN1r.
-  rewrite EFinN mulN1e oppe_le0.
-  have [l0|l0] := pselect (forall i, i \in l -> [[i]]_dl2e != 0)%E; last first.
-    move/existsNP : l0 => [/= x /not_implyP[xl /negP/negPn/eqP x0]].
-    rewrite le_eqVlt; apply/orP; left.
-    rewrite eq_sym prode_seq_eq0; apply/hasP; exists x => //.
-    by rewrite xl x0 eqxx.
-  apply/ltW/sge1_gt0; rewrite -big_seq prodeN1.
-    by rewrite -signr_odd (negbTE ol) expr0.
-  move=> e el; rewrite lt_neqAle l0//=.
-  by move/List.Forall_forall : H => /(_ e); apply => //; exact/In_in.
-- case: c => //=.
-  by rewrite lee_fin oppr_le0 le_max lexx orbT.
+- by rewrite bigmin_idl /mine; case: ifPn; rewrite -?leNgt.
+- by apply/bigmax_le => // i _; exact/H.
+- by rewrite /maxe; case: ifPn => h //=; rewrite leeNl oppe0 leNgt h.
+- by apply/sume_le0 => i _; exact/H.
+- elim: n e H => [e H|n ih e H]; first by rewrite expr1 big_ord0 mule1.
+  rewrite exprS EFinM big_ord_recl muleCA !muleA -muleA mule_ge0_le0//.
+    by rewrite mule_le0 ?(H ord0).
+  by apply/ih => i e0 ? ?; exact/(H (lift ord0 i)).
+- by case: c; rewrite lee_fin oppr_le0// /maxr; case: ifPn => //; rewrite -leNgt.
 Qed.
 
 Lemma dl2_morA (e1 e2 e3 : expr (boolT_undef impl_def m_def l_def)) :
   [[ e1 `++ (e2 `++ e3) ]]_dl2e = [[ (e1 `++ e2) `++ e3 ]]_dl2e.
 Proof.
-rewrite /= !orbF !big_cons !big_nil !mule1.
-have [H1//=|/negbTE H1/=] := eqVneq ([[e1]]_dl2e) -oo%E.
-have [H2//=|/negbTE H2/=] := eqVneq ([[e2]]_dl2e) -oo%E.
-have [H3/=|/negbTE H3/=] := eqVneq ([[e3]]_dl2e) -oo%E.
-  by rewrite orbT.
-have [K1//=|/negbTE K1/=] := eqVneq ([[e1]]_dl2e) +oo%E.
-  have [K2//=|/negbTE K2/=] := eqVneq ([[e2]]_dl2e) +oo%E.
-  have [K3//=|/negbTE K3/=] := eqVneq ([[e3]]_dl2e) +oo%E.
-  by case: ifPn.
-have [K2//=|/negbTE K2/=] := eqVneq ([[e2]]_dl2e) +oo%E.
-have [K3//=|/negbTE K3/=] := eqVneq ([[e3]]_dl2e) +oo%E.
-  rewrite !orbF !orbT.
-  by case: ifPn.
-have T1 := dl2_ereal_translation_le0 e1.
-have T2 := dl2_ereal_translation_le0 e2.
-have T3 := dl2_ereal_translation_le0 e3.
-rewrite !mule_eq_ninfty !orbF H1 H2 H3 K1 K2 K3 !andbF.
-rewrite !mule_eq_pinfty H1 H2 H3 K1 K2 K3/=//= !andbF.
-rewrite !mule_eq_ninfty !orbF H1 H2 H3 K1 K2 K3 !andbF/=.
-rewrite !muleA.
-by rewrite (muleC (((-1) ^+ 3)%:E * [[e1]]_dl2e) _) muleA//=.
+rewrite /= !big_ord_recl !big_ord0 /= !big_ord_recl !big_ord0 !tnthS !tnth0.
+by rewrite !mule1 -muleA [X in (_ * X)%E]muleCA !muleA.
 Qed.
+
 
 Theorem dl2_mand_unit (e : expr (boolT_undef impl_def m_def l_def)) :
   [[ e `** (ldl_bool _ _ _ _ true) ]]_dl2e = [[ e ]]_dl2e.
 Proof.
-rewrite /= !orbF !big_cons big_nil !adde0.
-case: ifPn => [/eqP ->//|e2oo].
-rewrite ifF//.
-apply/negbTE.
-by rewrite -leye_eq -ltNge (le_lt_trans (dl2_ereal_translation_le0 e)).
+by rewrite /= !big_ord_recl big_ord0 tnthS tnth0 !adde0.
 Qed.
 
 
@@ -212,7 +119,11 @@ Theorem dl2_residuation (e1 e2 e3 : expr (boolT_undef impl_def m_def l_def)) :
   ([[ e1 `** e2 ]]_dl2e <= [[ e3 ]]_dl2e <->
    [[ e2 ]]_dl2e <= [[ e1 `=> e3 ]]_dl2e)%E.
 Proof.
-rewrite /= orbF.
+rewrite /= !big_ord_recl !big_ord0 !tnthS !tnth0 adde0 /maxe.
+case: ifPn.
+
+xxx here xxx
+
 have [H1//=|/negbTE H1/=] := eqVneq ([[e1]]_dl2e) -oo%E.
   rewrite H1 leNye; split => // _.
   rewrite (le_trans (dl2_ereal_translation_le0 e2))//.
