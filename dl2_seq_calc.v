@@ -84,7 +84,7 @@ Inductive seq_calc_dl2 :  hypersequent -> Prop :=
     seq_calc_dl2 ((C |- (X ++ A ++ B ++ Y)) :: Q) ->
     seq_calc_dl2 ((C |- (X ++ B ++ A ++ Y)) :: Q)
 (*logical*)
-| top_dl2 : forall Q A B,
+| top_dl2 : forall Q A,
     seq_calc_dl2 ((A |- [::(ldl_bool _ _ _ _ true)]) :: Q)
     
 | mandL_dl2 : forall Q A B (a b : formula),
@@ -426,7 +426,7 @@ apply orL_dl2; apply orR_dl2.
 - by rewrite dl2_cat1C; apply eex_nil; apply ew_dl2; exact: id_dl2.
 Qed.
 
-Lemma dl2_seq_andA (a b c : formula) :
+Lemma dl2_seq_andA1 (a b c : formula) :
   seq_calc_dl2 [:: ([:: a `/\ (b `/\ c)] |- [:: (a `/\ b) `/\ c])].
 Proof.
 apply andR_dl2; apply andL_dl2.
@@ -440,7 +440,19 @@ apply andR_dl2; apply andL_dl2.
   by rewrite dl2_cat1C; apply eex_nil; apply ew_dl2; exact: id_dl2.
 Qed.
 
-Lemma dl2_seq_orA (a b c : formula) :
+Lemma dl2_seq_andA2 (a b c : formula) :
+  seq_calc_dl2 [:: ([:: (a `/\ b) `/\ c] |- [:: a `/\ (b `/\ c)])].
+Proof.
+apply andR_dl2; apply andL_dl2.
+- apply andL_dl2; by rewrite dl2_cat1C; apply ew_dl2; exact: id_dl2.
+- apply andR_dl2; apply andL_dl2; first by rewrite dl2_cat1C; apply eex_nil; apply ew_dl2; exact: id_dl2.
+  rewrite dl2_cat1C; apply eex_nil. rewrite dl2_cat1C; apply eex_nil.
+  apply andR_dl2; last by rewrite dl2_cat1C; apply ew_dl2; exact: id_dl2.
+  rewrite dl2_cat1C; apply eex_nil; rewrite dl2_cat1C; apply eex_nil; apply ew_dl2.
+  exact: comm_hyper_xy.
+Qed.
+
+Lemma dl2_seq_orA1 (a b c : formula) :
   seq_calc_dl2 [:: ([:: a `\/ (b `\/ c)] |- [:: (a `\/ b) `\/ c])].
 Proof.
 apply orL_dl2; apply orR_dl2.
@@ -451,6 +463,41 @@ apply orL_dl2; apply orR_dl2.
   exact: comm_hyper_xy.
 - apply orR_dl2.
   by rewrite dl2_cat1C; apply ew_dl2; exact: id_dl2.
+Qed.
+
+Lemma dl2_seq_orA2 (a b c : formula) :
+  seq_calc_dl2 [:: ([:: (a `\/ b) `\/ c] |- [:: a `\/ (b `\/ c)])].
+Proof.
+apply orL_dl2; apply orR_dl2.
+- rewrite dl2_cat1C; apply eex_nil. apply orR_dl2.
+  by rewrite dl2_cat1C; apply eex_nil; apply ew_dl2; exact: id_dl2.
+- apply orL_dl2; last by rewrite dl2_cat1C; apply ew_dl2; exact: id_dl2. 
+  rewrite dl2_cat1C; apply eex_nil; apply orL_dl2; apply orR_dl2;
+    first by rewrite dl2_cat1C; apply ew_dl2; exact: id_dl2.
+  rewrite dl2_cat1C; apply eex_nil; rewrite dl2_cat1C; apply eex_nil; apply ew_dl2.
+  exact: comm_hyper_xy.
+Qed.
+
+Lemma dl2_seq_unit_el1 (a : formula) :
+  seq_calc_dl2 [:: ([:: a `** (ldl_bool _ _ _ _ true)] |- [:: a ])].
+Proof.
+apply mandL_dl2.
+have h : [:: a; ldl_bool neg_undef impl_def m_def l_def true] = 
+           [:: a] ++ [:: ldl_bool neg_undef impl_def m_def l_def true]. by rewrite//=.
+rewrite h.
+apply w_dl2. rewrite dl2_cat1C.
+apply id_dl2.
+Qed.
+
+Lemma dl2_seq_unit_el2 (a : formula) :
+  seq_calc_dl2 [:: ([:: a ] |- [:: a `** (ldl_bool _ _ _ _ true)])].
+Proof.
+rewrite -( cats0 [:: a]) dl2_cat1C.
+rewrite-( cats0 [:: ldl_mand (tnth [:: a; ldl_bool neg_undef impl_def m_def l_def true])]).
+rewrite-( cats0 [:: ldl_mand (tnth [:: a; ldl_bool neg_undef impl_def m_def l_def true])]).
+apply mandR_dl2.
+- by apply id_dl2.
+- by apply top_dl2. 
 Qed.
 
 
