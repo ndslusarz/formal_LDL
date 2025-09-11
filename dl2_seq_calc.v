@@ -563,12 +563,12 @@ rewrite -(cats0 [:: ldl_mand (tnth [:: b; c])]).
 apply mandR_dl2; by apply id_dl2.
 Qed.
 
-Lemma dl2_residuation (a b c : formula) :
+(*Lemma dl2_residuation (a b c : formula) :
 seq_calc_dl2 [:: ([:: a; b] |- [::c])] <-> seq_calc_dl2 [:: ([:: b] |- [::a `=> c])].
 Proof.
 split => H.
 - apply implR_dl2; last by [].
-  by rewrite  -(cat0s [:: b]); apply w_dl2; apply empty.
+  by rewrite  -(cat0s [:: b]); apply w_dl2; apply empty.*)
   
 (*wrong statement I think, don't think it's provable*)
 (*Lemma dl2_residuation (a b c : formula) :

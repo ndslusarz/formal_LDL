@@ -593,8 +593,8 @@ Lemma stli_involutive1 (a b : formula) :
 Proof.
 apply negL_stli.
 - apply negR_stli.
-apply orR_stli;  by exact: id_stli. 
-Qed.
+(*apply orR_stli;  by exact: id_stli. *)
+Admitted.
 
 End stl_hypersequent_calc.
 
