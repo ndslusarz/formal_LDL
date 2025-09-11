@@ -435,10 +435,41 @@ apply implR_stli.
 by apply comm_hyper_xy.
 Qed.
 
+Lemma cat_cons4 (I L M N : (seq formula * seq formula)):
+ [:: I; L; M; N] = [:: I]++ [:: L] ++ [:: M] ++ [:: N] .
+Proof. by rewrite//=. Qed.
+
 Lemma stli_seq_distributivity (a b c : formula) :
   seq_calc_stli ([:: ([::] |- [:: ((a `/\ (b `\/ c)) `=> ((a `/\ b) `\/ (a `/\ c)))])]).
 Proof.
-Admitted.
+apply implR_stli. apply andL_stli. apply orR_stli.
+apply andR_stli; first by rewrite stli_cat1C; apply ew_stli; exact: id_stli.
+rewrite stli_cat1C; apply eex_nil.
+apply andR_stli; first by rewrite stli_cat1C; apply ew_stli; exact: id_stli.
+rewrite stli_cat1C; apply eex_nil.
+apply orR_stli; apply andR_stli; apply orL_stli; last  by rewrite stli_cat1C; apply ew_stli; exact: id_stli.
+- rewrite stli_cat1C; apply eex_nil.
+  apply orL_stli; apply andR_stli.
+  * rewrite cat_cons_xyz_xy; apply eex_nil; apply ew_stli; apply comm_hyper_xy.
+  * rewrite stli_cat1C; apply ew_stli; exact: id_stli.
+  * rewrite cat_cons_xyz_xy; apply ew_stli; apply comm_hyper_xy.
+  * rewrite cat_cons_xyz_xy; apply eex_nil; apply ew_stli; apply comm_hyper_xy.
+- rewrite stli_cat1C; apply eex_nil.
+  apply orL_stli; apply andR_stli.
+  * rewrite cat_cons4.
+    apply eex_stli. rewrite//= cat_cons_xyz_xy; apply ew_stli; apply comm_hyper_xy.
+  * rewrite stli_cat1C; apply ew_stli; exact: id_stli.
+  * rewrite//= cat_cons_xyz_xy; apply ew_stli; apply comm_hyper_xy.
+  * rewrite cat_cons4; apply eex_stli; rewrite//= cat_cons_xyz_xy; 
+      apply eex_nil; apply ew_stli; apply comm_hyper_xy.
+- rewrite stli_cat1C; apply eex_nil.
+  apply orL_stli; apply andR_stli.
+  * rewrite cat_cons4; apply eex_stli; rewrite//= cat_cons_xyz_xy; apply ew_stli; apply comm_hyper_xy.
+  * rewrite cat_cons4; apply eex_stli; apply ew_stli; exact: id_stli.
+  * rewrite//= cat_cons_xyz_xy; apply ew_stli; apply comm_hyper_xy.
+  * rewrite stli_cat1C; apply eex_nil; rewrite//= cat_cons_xyz_xy; apply eex_nil; 
+      apply ew_stli; apply comm_hyper_xy.
+Qed.
 
 Lemma stl_seq_andC (a b : formula) :
   seq_calc_stli [:: ([:: a `/\ b] |- [:: b`/\ a])].
