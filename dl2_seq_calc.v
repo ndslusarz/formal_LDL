@@ -478,6 +478,32 @@ apply orL_dl2; apply orR_dl2.
   exact: comm_hyper_xy.
 Qed.
 
+Lemma dl2_seq_and1 (a b : formula) :
+  seq_calc_dl2 [:: ([:: a `/\ (a `\/ b)] |- [:: a])].
+Proof.
+apply andL_dl2; by rewrite dl2_cat1C; apply ew_dl2; exact: id_dl2. 
+Qed.
+
+Lemma dl2_seq_and2 (a b : formula) :
+  seq_calc_dl2 [:: ([:: a] |- [:: a `/\ (a `\/ b)])].
+Proof.
+apply andR_dl2; first by exact: id_dl2. 
+apply orR_dl2; first by rewrite dl2_cat1C; apply ew_dl2; exact: id_dl2.
+Qed.
+
+Lemma dl2_seq_or1 (a b : formula) :
+  seq_calc_dl2 [:: ([:: a `\/ (a `/\ b)] |- [:: a])].
+Proof.
+apply orL_dl2; last by exact: id_dl2. 
+apply andL_dl2; by rewrite dl2_cat1C; apply ew_dl2; exact: id_dl2.
+Qed.
+
+Lemma dl2_seq_or2 (a b : formula) :
+  seq_calc_dl2 [:: ([:: a] |- [:: a `\/ (a `/\ b)])].
+Proof.
+apply orR_dl2;  by exact: id_dl2. 
+Qed.
+
 Lemma dl2_seq_unit_el1 (a : formula) :
   seq_calc_dl2 [:: ([:: a `** (ldl_bool _ _ _ _ true)] |- [:: a ])].
 Proof.
@@ -500,5 +526,57 @@ apply mandR_dl2.
 - by apply top_dl2. 
 Qed.
 
+Lemma dl2_seq_mandA1 (a b c : formula) :
+  seq_calc_dl2 [:: ([:: a `** (b `** c)] |- [:: (a `** b) `** c])].
+Proof.
+apply mandL_dl2. 
+have cat_xy : [:: a; ldl_mand (tnth [:: b; c])] = [:: a] ++[:: ldl_mand (tnth [:: b; c])]. by rewrite//=.
+rewrite cat_xy. rewrite exL_nil.
+apply mandL_dl2.
+have ha : [:: b; c; a] = [:: b;  c] ++[:: a]. by rewrite//=.
+rewrite ha. rewrite exL_nil dl2_cat1C.
+rewrite-( cats0 [:: ldl_mand (tnth [:: ldl_mand (tnth [:: a; b]); c])]).
+rewrite-( cats0 [:: ldl_mand (tnth [:: ldl_mand (tnth [:: a; b]); c])]).
+have catbc : [:: a] ++ [:: b; c] = [:: a; b] ++[:: c] by rewrite //=.
+rewrite catbc.
+apply mandR_dl2; last by apply id_dl2.
+have catab : [:: a; b] = [:: a] ++[:: b] by rewrite//=.
+rewrite catab.
+rewrite -(cats0 [:: ldl_mand (tnth [:: a; b])]).
+rewrite -(cats0 [:: ldl_mand (tnth [:: a; b])]).
+apply mandR_dl2; by apply id_dl2.
+Qed.
+
+Lemma dl2_seq_mandA2 (a b c : formula) :
+  seq_calc_dl2 [:: ([:: (a `** b) `** c] |- [:: a `** (b `** c)])].
+Proof.
+apply mandL_dl2; apply mandL_dl2.
+have ha : [:: a; b; c] = [:: a] ++ [:: b; c] by rewrite//=.
+rewrite ha dl2_cat1C.
+rewrite-( cats0 [:: ldl_mand (tnth [:: a; ldl_mand (tnth [:: b; c])])]).
+rewrite-( cats0 [:: ldl_mand (tnth [:: a; ldl_mand (tnth [:: b; c])])]).
+apply mandR_dl2; first by apply id_dl2.
+have catbc : [:: b; c] = [:: b] ++[:: c] by rewrite//=.
+rewrite {1}catbc.
+rewrite -(cats0 [:: ldl_mand (tnth [:: b; c])]).
+rewrite -(cats0 [:: ldl_mand (tnth [:: b; c])]).
+apply mandR_dl2; by apply id_dl2.
+Qed.
+
+Lemma dl2_residuation (a b c : formula) :
+seq_calc_dl2 [:: ([:: a; b] |- [::c])] <-> seq_calc_dl2 [:: ([:: b] |- [::a `=> c])].
+Proof.
+split => H.
+- apply implR_dl2; last by [].
+  by rewrite  -(cat0s [:: b]); apply w_dl2; apply empty.
+  
+(*wrong statement I think, don't think it's provable*)
+(*Lemma dl2_residuation (a b c : formula) :
+seq_calc_dl2 [:: ([:: a `** b] |- [::c])] <-> seq_calc_dl2 [:: ([:: b] |- [::a `=> c])].
+Proof.
+split => H.
+- apply implR_dl2; first by rewrite  -(cat0s [:: b]); apply w_dl2; apply empty.
+  rewrite h.
+-*)
 
 End dl2_hyperseq_calc.
