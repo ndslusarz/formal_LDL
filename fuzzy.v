@@ -529,7 +529,7 @@ case: l => //=; move =>  _ _ _ _.
   by rewrite (mul01 _ _ H2 H1 h).
 Qed.
 
-Lemma nary_inversion_andE1 f1 f2 n (s : 'I_n -> (expr (boolT_def f1 f2 l_def))) :
+Lemma nary_inversion_andE1 f1 f2 n (s : (expr (boolT_def f1 f2 l_def)) ^ n) :
   [[ ldl_and s ]]_ l = 1 -> forall i, [[ s i ]]_ l = 1.
 Proof.
 have /= H := translate_boolT_01 l.
@@ -541,8 +541,9 @@ rewrite ((andP (H _ _ _ _)).2) h //.
 exact: mem_index_enum.
 Qed.
 
-Lemma nary_inversion_andE0 f1 f2 n (s : 'I_n -> (expr (boolT_def f1 f2 l_def))) :
-  l <> Lukasiewicz -> l <> Yager -> [[ ldl_and s ]]_ l = 0 -> exists i, ([[ s i ]]_ l == 0).
+Lemma nary_inversion_andE0 f1 f2 n (s : (expr (boolT_def f1 f2 l_def)) ^ n) :
+  l <> Lukasiewicz -> l <> Yager -> [[ ldl_and s ]]_ l = 0 ->
+    exists i, [[ s i ]]_ l == 0.
 Proof.
 have H := translate_boolT_01. move: H.
 have p0 := lt_le_trans ltr01 p1.
@@ -552,7 +553,20 @@ rewrite /minR.
 move: s; elim: n => [h|n ih s]; first by rewrite big_ord0 oner_eq0.
 rewrite big_ord_recl {1}/minr.
 case: ifPn => [_ ?|_]; first by exists ord0.
-by move/ih => [i i0]; exists (lift ord0 i).
+move=> H1.
+have {H1} : \big[minr/1]_(i < n) [[
+    [ffun j => (s \o [ffun i => (@lift n.+1 ord0 i)]) j ] i]]_l == 0.
+  apply/eqP.
+  move/eqP in H1.
+  under eq_bigr do rewrite !ffunE.
+  rewrite -[RHS]H1.
+  apply: eq_bigr => j _ /=.
+  rewrite (_ : ([ffun i1 => lift ord0 i1] j) = lift ord0 j)//.
+  by rewrite ffunE.
+move/ih => [i i0]; exists (lift ord0 i).
+rewrite ffunE /= in i0.
+rewrite (_ : ([ffun i1 => lift ord0 i1] i) = (lift ord0 i))// in i0.
+by rewrite ffunE.
 Qed.
 
 Lemma nary_inversion_orE1 f1 f2 n (Es : 'I_n -> (expr (boolT_def f1 f2 l_def))) :

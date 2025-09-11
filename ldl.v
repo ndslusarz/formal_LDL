@@ -108,20 +108,30 @@ Inductive expr : ldl_type -> Type :=
   | ldl_real : R -> expr realT
   | ldl_vec : forall n, R ^ n -> expr (vectorT n)
   (* connectives *)
-  | ldl_and : forall fn fi fm n, ('I_n -> expr (boolT fn fi fm l_def)) -> expr (boolT fn fi fm l_def)
-  | ldl_or : forall fn fi fm n, ('I_n -> expr (boolT fn fi fm l_def)) -> expr (boolT fn fi fm l_def)
-  | ldl_not : forall fi fm fl, expr (boolT neg_def fi fm fl) -> expr (boolT neg_def  fi fm fl) 
-  | ldl_impl :forall fn fm fl, expr (boolT fn impl_def fm fl) 
-                               -> expr (boolT fn impl_def fm fl) -> expr (boolT fn impl_def fm fl)
-  | ldl_mand : forall fn fi fl n, ('I_n -> expr (boolT fn fi m_def fl)) -> expr (boolT fn fi m_def fl)
-  | ldl_mor : forall fn fi fl n, ('I_n -> expr (boolT fn fi m_def fl)) -> expr (boolT fn fi m_def fl) 
+  | ldl_and : forall fn fi fm n, (expr (boolT fn fi fm l_def)) ^ n ->
+      expr (boolT fn fi fm l_def)
+  | ldl_or : forall fn fi fm n, ('I_n -> expr (boolT fn fi fm l_def)) ->
+      expr (boolT fn fi fm l_def)
+  | ldl_not : forall fi fm fl, expr (boolT neg_def fi fm fl) ->
+      expr (boolT neg_def  fi fm fl)
+  | ldl_impl :forall fn fm fl, expr (boolT fn impl_def fm fl) ->
+                               expr (boolT fn impl_def fm fl) ->
+                               expr (boolT fn impl_def fm fl)
+  | ldl_mand : forall fn fi fl n,
+      ('I_n -> expr (boolT fn fi m_def fl)) -> expr (boolT fn fi m_def fl)
+  | ldl_mor : forall fn fi fl n,
+      ('I_n -> expr (boolT fn fi m_def fl)) -> expr (boolT fn fi m_def fl)
   (* comparisons *)
-  | ldl_cmp : forall fn fi fm fl, comparison -> expr realT -> expr realT -> expr (boolT fn fi fm fl)
+  | ldl_cmp : forall fn fi fm fl, comparison -> expr realT -> expr realT ->
+      expr (boolT fn fi fm fl)
   (* networks and applications *)
   | ldl_fun : forall n m, (R ^ n -> R ^ m) -> expr (funT n m)
   | ldl_fun2 : forall n m l, (R ^ n -> R ^ m -> R ^ l) -> expr (fun2T n m l)
-  | ldl_app : forall n m, expr (funT n m) -> expr (vectorT n) -> expr (vectorT m)
-  | ldl_app2 : forall n m l, expr (fun2T n m l) -> expr (vectorT n) -> expr (vectorT m) -> expr (vectorT l)
+  | ldl_app : forall n m, expr (funT n m) -> expr (vectorT n) ->
+      expr (vectorT m)
+  | ldl_app2 : forall n m l, expr (fun2T n m l) ->
+      expr (vectorT n) -> expr (vectorT m) ->
+      expr (vectorT l)
   | ldl_lookup : forall n, expr (vectorT n) -> expr (indexT n) -> expr realT.
 
 End expr.
@@ -156,8 +166,9 @@ Lemma expr_ind' (R : realType) :
        (forall (n : nat) (o : 'I_n), P (indexT n) (ldl_idx o)) ->
        (forall s : R, P realT (ldl_real s)) ->
        (forall (n : nat) (t : R ^ n), P (vectorT n) (ldl_vec t)) ->
-       (forall (x : flag_neg) (y : flag_impl) (z : flag_monoid) n (l : 'I_n -> (expr (boolT x y z l_def))),
-          (forall a, P (boolT x y z l_def) (l a)) -> P (boolT x y z l_def) (ldl_and l)) ->
+       (forall (x : flag_neg) (y : flag_impl) (z : flag_monoid) n
+         (l : (expr (boolT x y z l_def)) ^ n),
+           (forall a, P (boolT x y z l_def) (l a)) -> P (boolT x y z l_def) (ldl_and l)) ->
        (forall (x : flag_neg) (y : flag_impl) (z : flag_monoid) n (l : 'I_n -> (expr (boolT x y z l_def))),
         (forall a, P (boolT x y z l_def) (l a)) -> P (boolT x y z l_def) (ldl_or l)) ->
        (forall (x : flag_impl) (y : flag_monoid) (z : flag_lattice) (e : expr (boolT_def x y z)),
@@ -170,7 +181,7 @@ Lemma expr_ind' (R : realType) :
           (forall a, P (boolT x y m_def z) (l a)) -> P (boolT x y m_def z) (ldl_mand l)) ->
        (forall (x : flag_neg) (y : flag_impl) (z : flag_lattice) n (l : 'I_n -> (expr (boolT x y m_def z))),
         (forall a, P (boolT x y m_def z) (l a)) -> P (boolT x y m_def z) (ldl_mor l)) ->
-       (forall (x : flag_neg) (y : flag_impl) (z : flag_monoid) (v : flag_lattice) 
+       (forall (x : flag_neg) (y : flag_impl) (z : flag_monoid) (v : flag_lattice)
           (c : comparison) (e : expr realT),
         P realT e -> forall e0 : expr realT, P realT e0 -> P (boolT x y z v) (ldl_cmp x y z v c e e0)) ->
        (forall (n m : nat) (t : R ^ n -> R ^ m), P (funT n m) (ldl_fun t)) ->
