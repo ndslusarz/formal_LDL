@@ -530,10 +530,10 @@ case: l => //=; move =>  _ _ _ _.
   by rewrite (mul01 _ _ H2 H1 h).
 Qed.
 
-Lemma nary_inversion_andE1 f1 f2 n (s : 'I_n -> (expr (boolT_def f1 f2 l_def))) :
-  [[ ldl_and s ]]_ l = 1 -> forall i, [[ s i ]]_ l = 1.
+Lemma nary_inversion_andE1 f1 f2 n (s : 'I_n -> (expr (boolT_def f1 f2 l_def))) dl :
+  [[ ldl_and s ]]_ dl = 1 -> forall i, [[ s i ]]_ dl = 1.
 Proof.
-have /= H := translate_boolT_01 l.
+have /= H := translate_boolT_01 dl.
 move/eqP.
 rewrite /minR => /bigmin_eqP/= h i.
 apply/eqP.
@@ -556,10 +556,10 @@ case: ifPn => [_ ?|_]; first by exists ord0.
 by move/ih => [i i0]; exists (lift ord0 i).
 Qed.
 
-Lemma nary_inversion_orE1 f1 f2 n (Es : 'I_n -> (expr (boolT_def f1 f2 l_def))) :
-  [[ ldl_or Es ]]_ l = 1 -> exists i, ([[ Es i ]]_ l == 1) .
+Lemma nary_inversion_orE1 f1 f2 n (Es : 'I_n -> (expr (boolT_def f1 f2 l_def))) dl:
+  [[ ldl_or Es ]]_ dl = 1 -> exists i, ([[ Es i ]]_ dl == 1) .
 Proof.
-have H := translate_boolT_01 l. move: H.
+have H := translate_boolT_01 dl. move: H.
 have p0 := lt_le_trans ltr01 p1.
 move => /= H.
 move/eqP.
@@ -591,15 +591,9 @@ Qed.
 
 Definition b2R (b : bool) : R := (PeanoNat.Nat.b2n b)%:R.
 
-Lemma bool_translation_tf (e : @expr R (boolT_def impl_def m_def l_def)) :
-  ([[ e ]]_B = true) \/ ([[ e ]]_B = false).
-Proof.
-dependent induction e using expr_ind'.
-Admitted.
-
 Definition eq_x1 b (x : R) := if b then x = 1 else x < 1.
 
-Lemma adequacy'' (e : expr (boolT_def impl_def m_def l_def)) b :
+Lemma adequacy'_Luka (e : expr (boolT_def impl_def m_def l_def)) b :
   eq_x1 b ([[ e ]]_Lukasiewicz) -> [[ e ]]_B = b.
 Proof.
 rewrite /eq_x1.
@@ -607,10 +601,38 @@ dependent induction e  using expr_ind'.
 - case: b0 => /=; case: b => //=.
   + by move => /eqP; rewrite eq_sym oner_eq0.
   + by rewrite ltxx.
-- case: b => He. admit. 
+- case: b. 
+  + move/nary_inversion_andE1 => h.
+    rewrite /=big_andE; apply/forallP => /=i.
+    exact/H.
+  + have := translate_boolT_01.
+    have p0 := lt_le_trans ltr01 p1.
+    move => /= H'.
+    move/eqP.
+    rewrite /minR.
+    move: l0 H; elim: n => [h|n ih s].
+    * rewrite big_ord0 lt_neqAle => _ /eqP/andP [hh _]. lra. 
+    * rewrite big_ord_recl {1}/minr.
+      case: ifPn => [h1 IH| h1 IH]. 
+      - move => /eqP hh.
+        have IHf := IH _ _ _ _ false hh. 
+        rewrite big_ord_recl (IHf ord0)//=.
+      - move => /eqP hh.
+        have IHf := IH _ _ _ _ false.
+        rewrite big_ord_recl. rewrite ih//= ?andbF ?hh//=.
    admit.
-- admit.
-- admit.
+- case: b. 
+  + move/(nary_inversion_orE1 _ _ _ _) => /=[i /eqP h].
+    rewrite big_orE; apply/existsP; exists i => /=.
+    exact/H.
+  + admit.
+- case: b; rewrite//= => eh.
+  + have h0 : [[e]]_Lukasiewicz = 0. lra.
+    rewrite Bool.negb_true_iff (IHe _ _ _ false) ?h0//=.
+  + admit. (*also problematic*)
+
+
+
 - case: b => /=. 
   + rewrite //=/minr; case: ifP.
     * by move => /[swap] => -> ; rewrite ltxx.
@@ -621,7 +643,37 @@ dependent induction e  using expr_ind'.
        - rewrite He1 in H. symmetry in H.
          by rewrite (IHe1 e1 _ _ true He1)//= (IHe2 e2 _ _ true H)//=.
        - by rewrite (IHe1 e1 _ _ false He1)//=.
+  + rewrite //=/minr; case: ifPn.
+    * move => h _. 
+      have H : [[e1]]_Lukasiewicz > [[e2]]_Lukasiewicz. lra.
+      have /andP [_ ] := translate_boolT_01 Lukasiewicz _ _ _ e1.
+       rewrite le_eqVlt => /orP [/eqP He1 | He1]. rewrite He1 in H.
+       - by rewrite Bool.implb_false_iff (IHe1 e1 _ _ true He1)//= (IHe2 e2 _ _ false H)//=.
+       - admit. (*this is where the issue is - I don't think this is provable*)
+    * rewrite ltxx//=.
 Admitted.
+
+(*Lemma Luka_impl_adeq (e1 e2 : expr (boolT_def impl_def m_def l_def)) b:
+  (forall e : expr (boolT_def impl_def m_def l_def), forall (b0 : bool),
+      eq_x1 b0 ([[ e ]]_Lukasiewicz) -> [[ e ]]_B = b0) ->
+  eq_x1 b ([[ e1 `=> e2 ]]_Lukasiewicz) -> [[ e1 `=> e2 ]]_B = b.
+Proof.
+rewrite /eq_x1 => h.
+case: b => /=. 
++ rewrite //=/minr; case: ifP.
+  * by move => /[swap] => -> ; rewrite ltxx.
+  *  move => e12 _.
+     have H : [[e1]]_Lukasiewicz = [[e2]]_Lukasiewicz. admit.
+     have /andP [_ ] := translate_boolT_01 Lukasiewicz _ _ _ e1.
+     rewrite le_eqVlt => /orP [/eqP He1 | He1]. 
+     - rewrite He1 in H. symmetry in H.
+       by rewrite (h e1 true He1) (h e2 true H)//=.
+       by rewrite (h e1 false He1)//=.
++ rewrite //=/minr; case: ifP.
+   * admit.
+   * rewrite ltxx//=.
+Admitted.*)
+
 
 Lemma adequacy (e : expr (boolT_def impl_def m_def l_def)) b :
   [[ e ]]_ l = [[ ldl_bool _ _ _ _ b ]]_ l -> [[ e ]]_B = b.
@@ -646,11 +698,11 @@ dependent induction e using expr_ind'.
     exact/Bool.negb_true_iff/H.
 - move=>/=h; rewrite (IHe e erefl JMeq_refl (~~ b)) ?negbK//.
   move: h; case: l; rewrite//=;case: b => //=; try lra. admit. admit. admit. admit. 
-  (*like negation, use the advanced adequacy*)
+  (*like impl, use the advanced adequacy for all*)
 - rewrite [ [[ldl_bool _ _ _ _ b]]_l]/=.
   have := inversion_implE1. have := inversion_implE0.
   case: l IHe1 IHe2 => IHe1 IHe2 inv0 inv1.
-  + have := adequacy'' (e1 `=> e2) b.
+  + have := adequacy'_Luka (e1 `=> e2) b.
     move: b => []; first by rewrite /eq_x1.
     rewrite /eq_x1 => H eq0. rewrite eq0 in H.
     by rewrite H.
@@ -694,7 +746,7 @@ dependent induction e using expr_ind'.
     exact/H.
   + have := nary_inversion_mandE0.
     case: l H => H inv0. 
-    admit. admit. (*custom needed*)
+    admit. admit. (*advanced adequacy*)
     * have H' : Godel <> Lukasiewicz -> Godel <> Yager by []. 
       move/(inv0); rewrite//= => //= h'. apply h' in H'; rewrite//=; move: H' => [i h]/=.
       rewrite big_andE; apply/forallPn => /=; exists i.
@@ -715,7 +767,7 @@ dependent induction e using expr_ind'.
   move: b => [].
   + have := nary_inversion_morE1.
     case: l H => H inv. 
-    admit. admit. (*custom needed*)
+    admit. admit. (*advanced adequacy*)
     * have H' : Godel <> Lukasiewicz -> Godel <> Yager by []. 
       move/(inv); rewrite//= => //= h'. apply h' in H'; rewrite//=; move: H' => [i h]/=.
       rewrite big_orE; apply/existsP => /=; exists i.
@@ -789,7 +841,7 @@ dependent induction e using expr_ind'.
 Qed.
 
 
-Lemma adequacy (e : expr (boolT_def impl_def m_def l_def)) b :
+(*Lemma adequacy (e : expr (boolT_def impl_def m_def l_def)) b :
   l <> Lukasiewicz -> l <> Yager -> l <> Godel -> l <> product ->
     [[ e ]]_ l = [[ ldl_bool _ _ _ _ b ]]_ l -> [[ e ]]_B = b.
 Proof.
@@ -892,7 +944,7 @@ dependent induction e using expr_ind' => ll ly lg lp.
         lra.
       rewrite eqr_norml.
       nra.
-Qed.
+Qed.*)
 
 End translation_lemmas.
 
