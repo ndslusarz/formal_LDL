@@ -597,19 +597,6 @@ Proof.
 dependent induction e using expr_ind'.
 Admitted.
 
-Lemma bool_fuzzy_ordering (e1 e2 : @expr R (boolT_def impl_def m_def l_def)) :
-  ([[ e1 ]]_ Lukasiewicz) <= ([[ e2 ]]_Lukasiewicz) -> Bool.le ([[ e1 ]]_B) ([[ e2 ]]_B).
-Proof.
-dependent induction e1 using expr_ind'; dependent induction e2 using expr_ind'; rewrite//=/minR/maxR;
-try move: b b0 => [] [] //=. (*lra.
-repeat case: ifP; rewrite//=; try lra. case: b. .*)Abort.
-
-Lemma fuzzy_neq (e1 e2 : @expr R (boolT_def impl_def m_def l_def)) :
-  ([[ e1 ]]_ Lukasiewicz) != ([[ e2 ]]_Lukasiewicz) -> e1 != e2.
-Proof.
-dependent induction e1 using expr_ind'; dependent induction e2 using expr_ind'; rewrite//=; try case: b; try case: b0; repeat case: ifP;
-rewrite//=; auto. Abort.
-
 Lemma fuzzy_is1 (a : R):
   0 <= a <= 1 -> (a = 1) \/ a != 1.
 Proof. intros; lra. Qed.
@@ -618,12 +605,12 @@ Lemma fuzzy_is0 (a : R):
   0 <= a <= 1 -> (a = 0) \/ a != 0.
 Proof. intros; lra. Qed.
 
-Definition is_luka b (x : R) := if b then x = 1 else x < 1.
+Definition eq_x1 b (x : R) := if b then x = 1 else x < 1.
 
 Lemma adequacy'' (e : expr (boolT_def impl_def m_def l_def)) b :
-  is_luka b ([[ e ]]_Lukasiewicz) -> [[ e ]]_B = b.
+  eq_x1 b ([[ e ]]_Lukasiewicz) -> [[ e ]]_B = b.
 Proof.
-rewrite /is_luka.
+rewrite /e1_x1.
 dependent induction e  using expr_ind'.
 - case: b0 => /=; case: b => //=.
   + by move => /eqP; rewrite eq_sym oner_eq0.
@@ -642,7 +629,7 @@ dependent induction e  using expr_ind'.
        have := eqVneq ([[e1]]_Lukasiewicz) 1.
 Admitted.
   
-Lemma adequacy' (e : expr (boolT_def impl_def m_def l_def)) b  :
+(*Lemma adequacy' (e : expr (boolT_def impl_def m_def l_def)) b  :
 (forall (x y: expr (boolT_def impl_def m_def l_def)),
  ([[ x ]]_ Lukasiewicz) <= ([[ y ]]_Lukasiewicz) -> Bool.le ([[ x ]]_B) ([[ y ]]_B)) ->
     [[ e ]]_Lukasiewicz = [[ ldl_bool _ _ _ _ b ]]_Lukasiewicz -> [[ e ]]_B = b.
@@ -697,7 +684,7 @@ dependent induction e  using expr_ind'.
     move => [hh2 | hh2] [hh1 | hh1]; rewrite hh1 hh2//=.
     (*rewrite -Bool.not_false_iff_true.
   rewrite Bool.implb_false_iff. rewrite Ht1//=. Hf2//=.*)
-Abort.
+Abort.*)
 
 
 Lemma adequacy (e : expr (boolT_def impl_def m_def l_def)) b :
