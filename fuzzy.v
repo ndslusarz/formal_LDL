@@ -589,6 +589,117 @@ case: (unliftP ord0 i) => /=[j ->|->].
 by apply/eqP; rewrite eq_le h0 (andP (H _ _ _ _)).1.
 Qed.
 
+Definition b2R (b : bool) : R := (PeanoNat.Nat.b2n b)%:R.
+
+Lemma bool_translation_tf (e : @expr R (boolT_def impl_def m_def l_def)) :
+  ([[ e ]]_B = true) \/ ([[ e ]]_B = false).
+Proof.
+dependent induction e using expr_ind'.
+Admitted.
+
+Lemma bool_fuzzy_ordering (e1 e2 : @expr R (boolT_def impl_def m_def l_def)) :
+  ([[ e1 ]]_ Lukasiewicz) <= ([[ e2 ]]_Lukasiewicz) -> Bool.le ([[ e1 ]]_B) ([[ e2 ]]_B).
+Proof.
+dependent induction e1 using expr_ind'; dependent induction e2 using expr_ind'; rewrite//=/minR/maxR;
+try move: b b0 => [] [] //=. (*lra.
+repeat case: ifP; rewrite//=; try lra. case: b. .*)Abort.
+
+Lemma fuzzy_neq (e1 e2 : @expr R (boolT_def impl_def m_def l_def)) :
+  ([[ e1 ]]_ Lukasiewicz) != ([[ e2 ]]_Lukasiewicz) -> e1 != e2.
+Proof.
+dependent induction e1 using expr_ind'; dependent induction e2 using expr_ind'; rewrite//=; try case: b; try case: b0; repeat case: ifP;
+rewrite//=; auto. Abort.
+
+Lemma fuzzy_is1 (a : R):
+  0 <= a <= 1 -> (a = 1) \/ a != 1.
+Proof. intros; lra. Qed.
+
+Lemma fuzzy_is0 (a : R):
+  0 <= a <= 1 -> (a = 0) \/ a != 0.
+Proof. intros; lra. Qed.
+
+Definition is_luka b (x : R) := if b then x = 1 else x < 1.
+
+Lemma adequacy'' (e : expr (boolT_def impl_def m_def l_def)) b :
+  is_luka b ([[ e ]]_Lukasiewicz) -> [[ e ]]_B = b.
+Proof.
+rewrite /is_luka.
+dependent induction e  using expr_ind'.
+- case: b0 => /=; case: b => //=.
+  + by move => /eqP; rewrite eq_sym oner_eq0.
+  + by rewrite ltxx.
+- admit.
+- admit.
+- admit.
+- case: b => /=. 
+  + rewrite //=/minr; case: ifP.
+    * by move => /[swap] => -> ; rewrite ltxx.
+    *  move => e12 _.
+       have H : [[e1]]_Lukasiewicz = [[e2]]_Lukasiewicz. admit.
+       have /andP [_ ] := translate_boolT_01 Lukasiewicz _ _ _ e1.
+       rewrite le_eqVlt => /orP [He1 | He1]. admit.
+       
+       have := eqVneq ([[e1]]_Lukasiewicz) 1.
+Admitted.
+  
+Lemma adequacy' (e : expr (boolT_def impl_def m_def l_def)) b  :
+(forall (x y: expr (boolT_def impl_def m_def l_def)),
+ ([[ x ]]_ Lukasiewicz) <= ([[ y ]]_Lukasiewicz) -> Bool.le ([[ x ]]_B) ([[ y ]]_B)) ->
+    [[ e ]]_Lukasiewicz = [[ ldl_bool _ _ _ _ b ]]_Lukasiewicz -> [[ e ]]_B = b.
+Proof.
+move => H.
+dependent induction e  using expr_ind'.
+- move: b b0 => [] [] //=; lra.
+- rewrite [ [[ldl_bool _ _ _ _ b]]_Lukasiewicz ]/=.
+  admit.
+- rewrite [ [[ldl_bool _ _ _ _ b]]_Lukasiewicz ]/=. 
+  admit.
+  admit.
+- rewrite [ [[ldl_bool _ _ _ _ b]]_Lukasiewicz ]/=. 
+  move: b => [].
+  rewrite//=; rewrite//= /minr;repeat case: ifP => h1 h2;
+  have Hf1 := IHe1 _ _ _ false; rewrite//= in Hf1;
+  have Ht1 := IHe1 _ _ _ true; rewrite//= in Ht1;
+  have Hf2 := IHe2 _ _ _ false; rewrite//= in Hf2;
+  have Ht2 := IHe2 _ _ _ true; rewrite//= in Ht2.
+
+  admit. (*contraditction h1 h2*)
+  have e1e2 : (((1 - [[e1]]_Lukasiewicz)%R + [[e2]]_Lukasiewicz)%E < 1) = false -> 
+              [[e1]]_Lukasiewicz <= [[e2]]_Lukasiewicz. lra. apply e1e2 in h1. 
+  clear h2 e1e2 IHe1 IHe2.
+(*version wirh assumption*)
+(*  apply H in h1.
+  rewrite -Bool.le_implb//=.*)
+
+
+(*experiment no assumption*)
+  have h01 : forall (a : R), 0 <= a <= 1 -> (a = 0) \/ (a = 1) \/ (a != 0 /\ a != 1).
+  move => a h; lra.
+  have H1 := translate_boolT_01 Lukasiewicz _ _ _ e1.
+  apply h01 in H1.
+  have H2 := translate_boolT_01 Lukasiewicz _ _ _ e2.
+  apply h01 in H2.
+
+
+  case H1 => [he1 | [he1 | [he1 he1']] ]; case H2 => [he2 | [he2 | [he2 he2']] ].
+  + rewrite (Hf1)//= Bool.implb_false_l.
+  + rewrite (Hf1)//= Bool.implb_false_l.
+  + rewrite (Hf1)//= Bool.implb_false_l.
+  + lra.
+  + rewrite Bool.implb_true_iff (Ht1)//= (Ht2)//=.
+  + admit. (*cause e2 would have to be 1*)
+  + admit. (*cause e1 = 0 now*)
+  + have := bool_translation_tf e1. have := bool_translation_tf e2.
+    move => [hh2 | hh2] [hh1 | hh1]; rewrite hh1 hh2//=.
+    have HH := Ht2 _ _ _ _ he2.
+    rewrite -hh2 HH//=.
+  + have := bool_translation_tf e1. have := bool_translation_tf e2.
+    move => [hh2 | hh2] [hh1 | hh1]; rewrite hh1 hh2//=.
+    (*rewrite -Bool.not_false_iff_true.
+  rewrite Bool.implb_false_iff. rewrite Ht1//=. Hf2//=.*)
+Abort.
+
+
 Lemma adequacy (e : expr (boolT_def impl_def m_def l_def)) b :
   l <> Lukasiewicz -> l <> Yager -> l <> Godel -> l <> product ->
     [[ e ]]_ l = [[ ldl_bool _ _ _ _ b ]]_ l -> [[ e ]]_B = b.
