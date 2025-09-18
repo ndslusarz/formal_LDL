@@ -610,7 +610,7 @@ Definition eq_x1 b (x : R) := if b then x = 1 else x < 1.
 Lemma adequacy'' (e : expr (boolT_def impl_def m_def l_def)) b :
   eq_x1 b ([[ e ]]_Lukasiewicz) -> [[ e ]]_B = b.
 Proof.
-rewrite /e1_x1.
+rewrite /eq_x1.
 dependent induction e  using expr_ind'.
 - case: b0 => /=; case: b => //=.
   + by move => /eqP; rewrite eq_sym oner_eq0.
