@@ -247,7 +247,7 @@ intros; rewrite//=. dependent induction H.
 - move: IHseq_calc_stli => [q + IH2].
   rewrite !in_cons => /predU1P[|IH1].
   + exists ((a `/\ b) :: B |- A); subst; first by rewrite in_cons eq_refl orTb.
-    rewrite //= !big_cons big_nil !big_map miney.
+    rewrite //= !big_ord_recl big_ord0 !tnthS !tnth0 big_cons !big_map miney.
     rewrite //= !big_cons !big_map in IH2.
     rewrite {2}/mine; case: ifP; rewrite//=.
     move => /negP/negP h. rewrite  ltNge Bool.negb_involutive in h. 
@@ -255,7 +255,7 @@ intros; rewrite//=. dependent induction H.
     by rewrite (le_trans h IH2).
   + move/predU1P : IH1 => [|IH1].
     exists ((a `/\ b) :: B |- A); subst; first by rewrite in_cons eq_refl orTb.
-    rewrite //= !big_cons big_nil !big_map miney.
+    rewrite //= !big_ord_recl big_ord0 !tnthS !tnth0 big_cons !big_map miney.
     rewrite //= !big_cons !big_map in IH2.
     rewrite {2}/mine; case: ifP; rewrite//=.
     move => /ltW h.
@@ -267,9 +267,9 @@ intros; rewrite//=. dependent induction H.
   rewrite !in_cons //= => /orP [/eqP h2 | h2] IH12 /orP[/eqP h1 | h1] IH22.
   + subst.
     exists (A |- (a `/\ b) :: B); subst; first by rewrite in_cons eq_refl orTb.
-    rewrite //=!big_map big_cons in IH12.
-    rewrite //= !big_map big_cons in IH22.
-    rewrite //=!big_map !big_cons big_nil miney.
+    rewrite //=!big_map big_cons !big_map in IH12.
+    rewrite //= !big_map big_cons !big_map in IH22.
+    rewrite //= !big_ord_recl big_ord0 !tnthS !tnth0 big_cons !big_map miney.
     rewrite {2}/mine. case: ifP; rewrite//=.
   + by exists q1 => //; rewrite !in_cons h1 !orbT.
   + by exists q2 => //; rewrite !in_cons h2 !orbT.
@@ -279,9 +279,9 @@ intros; rewrite//=. dependent induction H.
   rewrite !in_cons //= => /orP [/eqP h2 | h2] IH12 /orP[/eqP h1 | h1] IH22.
   + subst.
     exists ((a `\/ b) :: B |- A); subst; first by rewrite in_cons eq_refl orTb.
-    rewrite //=!big_map big_cons in IH12.
-    rewrite //= !big_map big_cons in IH22.
-    rewrite //=!big_map !big_cons big_nil maxeNy.
+    rewrite //= big_cons !big_map in IH12.
+    rewrite //= big_cons !big_map in IH22.
+    rewrite //= !big_ord_recl big_ord0 !tnthS !tnth0 big_cons !big_map maxeNy.
     rewrite {1}/maxe. case: ifP; rewrite//=.
   + by exists q1 => //; rewrite !in_cons h1 !orbT.
   + by exists q2 => //; rewrite !in_cons h2 !orbT.
@@ -289,19 +289,19 @@ intros; rewrite//=. dependent induction H.
 - move: IHseq_calc_stli => [q + IH2].
   rewrite !in_cons => /predU1P[|IH1].
   + exists (A |- (a `\/ b) :: B); subst; first by rewrite in_cons eq_refl orTb.
-    rewrite //=!big_map big_cons in IH2.
-    rewrite //=!big_map !big_cons big_nil maxeNy.
+    rewrite //= big_cons !big_map in IH2.
+    rewrite //= !big_ord_recl big_ord0 !tnthS !tnth0 big_cons !big_map maxeNy.
     rewrite {2}/maxe. case: ifP; rewrite//=.
     move => /ltW h. 
-    apply (maxe_gexy (\big[maxe/-oo]_(j <- [seq [[i ]]_stli | i <- B]) j)) in h.
+    apply (maxe_gexy (\big[maxe/-oo]_(j <- B) [[j ]]_stli)) in h.
     by rewrite (le_trans IH2 h).
   + move/predU1P : IH1 => [|IH1].
     exists (A |- (a `\/ b) :: B); subst; first by rewrite in_cons eq_refl orTb.
-    rewrite //=!big_map big_cons in IH2.
-    rewrite //=!big_map !big_cons big_nil maxeNy.
+    rewrite //= big_cons !big_map in IH2.
+    rewrite //= !big_ord_recl big_ord0 !tnthS !tnth0 big_cons !big_map maxeNy.
     rewrite {2}/maxe. case: ifP; rewrite//=.
     move => /negP/negP h. rewrite  ltNge Bool.negb_involutive in h.
-    apply (maxe_gexy (\big[maxe/-oo]_(j <- [seq [[i ]]_stli | i <- B]) j)) in h.
+    apply (maxe_gexy (\big[maxe/-oo]_(j <- B) [[j ]]_stli)) in h.
     by rewrite (le_trans IH2 h).
   + by exists q => //; rewrite !in_cons IH1 !orbT.
 - move: IHseq_calc_stli => [q + IH2].

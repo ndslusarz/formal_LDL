@@ -183,23 +183,19 @@ Lemma translate_boolT_01 dl f1 f2 f3 (e : expr (boolT_def f1 f2 f3)) :
 Proof.
 dependent induction e using expr_ind'.
 - rewrite /=; case b; lra.
-- move: H. rewrite /=; move=> /List.Forall_forall H.
-  apply/andP; split.
+- apply/andP => /=; split.
   * rewrite /minR big_seq.
-    rewrite le_bigmin// => i /mapP[x xl0 ->].
-    by apply: (andP (@H _ _ _ _ _ _ _ _ _ _)).1 => //; rewrite -In_in.
-  * rewrite /minR big_map big_seq.
-    rewrite bigmin_idl.
+    rewrite le_bigmin => //=i _.
+    exact: (andP (@H _ _ _ _ _ _ _ _ _)).1.
+  * rewrite /minR big_seq bigmin_idl.
     suff : forall (x y : R), minr x y <= x => // x y.
     by rewrite /minr; case: ifPn; lra.
-- move: H. rewrite /=; move=> /List.Forall_forall H.
-  rewrite /maxR big_map big_seq.
-  apply/andP; split.
-  * rewrite bigmax_idl.
+- apply/andP => /=; split.
+  * rewrite /maxR bigmax_idl.
     suff : forall (x y : R), x <= maxr x y => // x y.
     by rewrite /maxr; case: ifPn; lra.
-  * rewrite bigmax_le ?ler01// => i il0.
-    by apply: (andP (H _ _ _ _ _ _ _ _ _ _)).2 => //; rewrite -In_in.
+  * rewrite /maxR bigmax_le ?ler01// => i il0.
+    exact: (andP (H _ _ _ _ _ _ _ _ _)).2.
 - move: IHe => /(_ _ _ _ _ _ e erefl JMeq_refl).
   have h' : forall (x : R), 0 <= x <= 1 ->
            0 <= 1 - x <= 1 by intros; lra.
@@ -257,65 +253,61 @@ dependent induction e using expr_ind'.
     have h' := @h ([[e2]]_productS) (H1 _ p1). 
     have h1' := h1 _ _ h' (H2 _ p1).
     have H := h _ h1'. rewrite//=.
-- move: H. case: dl; rewrite /=; move=> /List.Forall_forall H.
+- move: H; case: dl => /= H.
   + rewrite /maxr. case: ifP.
     * by lra.
     * move=> /negbT; rewrite -leNgt => -> /=.
-      rewrite big_map -lerBrDr subrr subr_le0; rewrite sum_01// => e el0.
-      by rewrite (andP (H e  _ _ _ _ _ _ _ _ _)).2 //; exact/In_in.
+      rewrite -lerBrDr subrr subr_le0 sum_01// => i.
+      exact: (andP (H i _ _ _ _ _ _ _ _)).2.
   + rewrite /maxr. case: ifP.
     * by lra.
     * move=> /negbT; rewrite -leNgt => -> /=.
-      by rewrite big_map gerBl ?powR_ge0.
+      by rewrite gerBl ?powR_ge0.
   + apply/andP; split.
-    * rewrite /minR big_seq.
-      rewrite le_bigmin// => i /mapP[x xl0 ->].
-      by apply: (andP (@H _  _ _ _ _ _ _ _ _ _)).1 => //; rewrite -In_in.
-    * rewrite /minR big_map big_seq.
-      rewrite bigmin_idl.
+    * rewrite /minR le_bigmin// => i _.
+      by apply: (andP (@H _ _ _ _ _ _ _ _ _)).1 => //.
+    * rewrite /minR bigmin_idl.
       suff : forall (x y : R), minr x y <= x => // x y.
       by rewrite /minr; case: ifPn; lra.
-  + apply: prod01 => e.
-    move/mapP => [x xl0 ->].
-    by apply: H _ _ _ _ _ => //; rewrite -In_in.
+  + apply: prod01 => i.
+    by apply: H _ _ _ _ _ => //.
   + apply/andP; split.
     * rewrite /minR big_seq.
-      rewrite le_bigmin// => i /mapP[x xl0 ->].
-      by apply: (andP (@H _  _ _ _ _ _ _ _ _ _)).1 => //; rewrite -In_in.
-    * rewrite /minR big_map big_seq.
-      rewrite bigmin_idl.
+      rewrite le_bigmin// => i _.
+      exact: (andP (@H _ _ _ _ _ _ _ _ _)).1 => //=.
+    * rewrite /minR  bigmin_idl.
       suff : forall (x y : R), minr x y <= x => // x y.
       by rewrite /minr; case: ifPn; lra.
-  + apply: prod01 => e /mapP[x xl0 ->].
-    by apply: H _ _ _ _ _ => //; rewrite -In_in.
-- move: H. case: dl; rewrite /=; move=> /List.Forall_forall H.
+  + apply: prod01 => i.
+    exact: H.
+- move: H. case: dl => /= H.
   + rewrite /minr. case: ifP.
     * move=> /ltW ->.
-      rewrite andbT big_map big_seq sumr_ge0// => e.
-      by move=> /In_in/H /(_ p p1 _ _ _ e erefl) /(_ _)/andP[|].
+      rewrite andbT sumr_ge0// => i _.
+      exact: ((andP (H i _ _ _ _ _ _ _ _)).1).
     * by lra.
   + rewrite /minr. case: ifP.
     * move=> /ltW ->.
-      by rewrite andbT big_map big_seq powR_ge0.
+      by rewrite andbT powR_ge0.
     * by lra.
-  + rewrite /maxR big_map big_seq.
+  + rewrite /maxR.
     apply/andP; split.
     * rewrite bigmax_idl.
       suff : forall (x y : R), x <= maxr x y => // x y.
       by rewrite /maxr; case: ifPn; lra.
     * rewrite bigmax_le ?ler01// => i il0.
-      by apply: (andP (H _  _ _ _ _ _ _ _ _ _)).2 => //; rewrite -In_in.
-  + rewrite /product_dl_prod big_map product_dl_mul_seq_01=> //i il0.
-    by apply: H => //; rewrite -In_in.
-  + rewrite /maxR big_map big_seq.
+      exact: (andP (H _ _ _ _ _ _ _ _ _)).2.
+  + rewrite /product_dl_prod product_dl_mul_seq_01=> //i il0.
+    exact: H.
+  + rewrite /maxR.
     apply/andP; split.
     * rewrite bigmax_idl.
       suff : forall (x y : R), x <= maxr x y => // x y.
       by rewrite /maxr; case: ifPn; lra.
     * rewrite bigmax_le ?ler01// => i il0.
-      by apply: (andP (H _  _ _ _ _ _ _ _ _ _)).2 => //; rewrite -In_in.
-  + rewrite /product_dl_prod big_map product_dl_mul_seq_01=> //i il0.
-    by apply: H => //; rewrite -In_in.
+      exact: (andP (H  _ _ _ _ _ _ _ _ _)).2.
+  + rewrite /product_dl_prod product_dl_mul_seq_01=> //i il0.
+    exact: H.
 - case: c => /=; case: ifP => ?.
   - by case: ([[e1]]_dl <= [[e2]]_dl)%R; rewrite lexx ler01.
   - by rewrite le_max lexx orbT/= ge_max ler01 gerBl// le_max lexx orbT.
@@ -323,204 +315,166 @@ dependent induction e using expr_ind'.
   - by rewrite le_max lexx orbT/= ge_max ler01 gerBl// normr_ge0 andTb.
 Qed.
 
-Lemma nary_inversion_mandE1 f1 f2 (s : seq (expr (boolT_def f1 m_def f2))) :
-  [[ ldl_mand s ]]_ l = 1 ->
-    forall i, (i < size s)%N -> [[ nth (ldl_bool _ _ _ _ false) s i ]]_ l = 1.
+Lemma nary_inversion_mandE1 f1 f2 n (s : 'I_n -> (expr (boolT_def f1 m_def f2))) :
+  [[ @ldl_mand R _ _ _ n s ]]_ l = 1 -> forall i, [[ s i ]]_ l = 1.
 Proof.
 have := translate_boolT_01 l.
 case: l => /= H.
 - move/eqP. rewrite maxr01 eq_sym -subr_eq subrr eq_sym subr_eq0.
-  move/eqP; rewrite big_map psumr_eqsize.
-  + move => h i iEs.
-    move: h => /(_ (nth (ldl_bool _ _ _ _ false) s i)).
-    apply.
-    apply/(nthP (ldl_bool _ _ _ _ false)).
-    by exists i.
-  + move => i //=.
-    by move: (H _ _ _ i); set a := [[i]]_ _; lra.
+  move/eqP; rewrite psumr_eqsize//.
+  move => i //=.
+  by move: (H _ _ _ (s i)); set a := [[s i]]_ _; lra.
 - move/eqP.
   rewrite maxr01 eq_sym addrC -subr_eq subrr eq_sym oppr_eq0 powR_eq0 invr_eq0 => /andP [+ _].
-  + rewrite big_map psumr_eq0.
-    move => /allP h i iEs.
-    apply/eqP.
-    move: h => /(_ (nth (ldl_bool _ _ _ _ false) s i)).
-    rewrite implyTb powR_eq0 subr_eq0 eq_sym (gt_eqF (lt_le_trans _ p1))// ?andbT.
-    apply.
-    by apply/(nthP (ldl_bool _ _ _ _ false)); exists i.
-  + by move=> ? //= _; exact: powR_ge0.
+  rewrite psumr_eq0//=; last by move=> i _; rewrite powR_ge0.
+  move=> /allP h i.
+  have h' := @pfsumr_eq0 R 'I_n setT (fun i => 1 - [[ s i ]]_Yager) finite_finset _ _ i.
+  apply/eqP.
+  rewrite eq_sym -subr_eq0 h'//; first by move=> j _; rewrite subr_ge0 (andP (H _ _ _ _)).2.
+  apply/eqP. rewrite psumr_eq0//=; last by move=> j _; rewrite subr_ge0 (andP (H _ _ _ _)).2.
+  apply/allP => /=j _.
+  suff: (1 - [[s j]]_Yager) `^ p == 0.
+    by rewrite powR_eq0 (@gt_eqF _ _ p 0) ?(lt_le_trans _ p1)//= andbT.
+  by rewrite h// mem_index_enum.
 - move/eqP.
-  rewrite /minR big_map => /bigmin_eqP/= h i iEs.
+  rewrite /minR => /bigmin_eqP/= h i.
   apply/eqP.
   rewrite eq_sym eq_le.
   rewrite ((andP (H _ _ _ _)).2) h //.
-  exact: mem_nth.
-- move/eqP. rewrite big_map => h i si.
-  apply (@prod1_01 _ (map (@translation R product p (boolT _ _ _ _)) s)) => // [e||].
-  - by move=> /mapP[x _ ->].
-  - by apply/eqP; rewrite big_map.
-  - by apply/mapP; eexists; last reflexivity; exact: mem_nth.
+  exact: mem_index_enum.
+- by move/prod1_01; apply => i; exact: H.
 - move/eqP.
-  rewrite /minR big_map => /bigmin_eqP/= h i iEs.
+  rewrite /minR => /bigmin_eqP/= h i.
   apply/eqP.
-  rewrite eq_sym eq_le.
-  rewrite ((andP (H _ _ _ _)).2) h //.
-  exact: mem_nth.
-- move/eqP. rewrite big_map => h i si.
-  apply (@prod1_01 _ (map (@translation R productS p (boolT _ _ _ _)) s)) => // [e||].
-  - by move=> /mapP[x _ ->].
-  - by apply/eqP; rewrite big_map.
-  - by apply/mapP; eexists; last reflexivity; exact: mem_nth.
+  rewrite eq_sym eq_le ((andP (H _ _ _ _)).2) h //.
+  exact: mem_index_enum.
+- move/prod1_01; apply => i. exact: H.
 Qed.
 
-Lemma nary_inversion_mandE0 f1 f2 (s : seq (expr (boolT_def f1 m_def f2))) :
-  l <> Lukasiewicz -> l <> Yager -> [[ ldl_mand s ]]_ l = 0 ->
-   exists2 i, ([[ nth (ldl_bool _ _ _ _ false) s i ]]_ l == 0) & (i < size s)%N.
+Lemma nary_inversion_mandE0 f1 f2 n (s : 'I_n -> (expr (boolT_def f1 m_def f2))) :
+  l <> Lukasiewicz -> l <> Yager -> [[ @ldl_mand R _ _ _ n s ]]_ l = 0 ->
+   exists i, [[ s i ]]_ l = 0.
 Proof.
 have H := translate_boolT_01. move: H.
 have p0 := lt_le_trans ltr01 p1.
 case: l => //=; move => H.
-- move => l1 l2; move/eqP.
-  rewrite /minR big_map.
-  elim: s.
-  + by rewrite big_nil oner_eq0.
-  + move=> a l0 IH.
-    rewrite big_cons {1}/minr.
-    case: ifPn => [_ ?|_]; first by exists 0%N => //; rewrite ltn0Sn andbT.
-    by move/IH => [i i0]; exists i.+1.
+- move => l1 l2; move/eqP. move: s.
+  rewrite /minR.
+  elim: n => [s|n ih s].
+  + by rewrite big_ord0 oner_eq0.
+  + rewrite big_ord_recl {1}/minr.
+    case: ifPn => [_ /eqP ?|_ h1]; first by exists ord0.
+    have /= [i h2] := (ih (s \o (lift ord0)) h1).
+    by exists (lift ord0 i).
 - move=> l1 l2 /eqP.
-  rewrite big_map prodf_seq_eq0 => /hasP[e eEs/= /eqP e0].
-  move/(nthP (ldl_bool _ _ _ _ false)) : eEs => [i iEs ie].
-  by exists i => //; rewrite ie e0 eqxx.
+  rewrite prodf_seq_eq0 => /hasP[i _/= /eqP si0].
+  by exists i; rewrite si0.
 - move => l1 l2; move/eqP.
-  rewrite /minR big_map.
-  elim: s.
-  + by rewrite big_nil oner_eq0.
-  + move=> a l0 IH.
-    rewrite big_cons {1}/minr.
-    case: ifPn => [_ ?|_]; first by exists 0%N => //; rewrite ltn0Sn andbT.
-    by move/IH => [i i0]; exists i.+1.
+  rewrite /minR.
+  move: s; elim: n => [s|n ih s].
+  + by rewrite big_ord0 oner_eq0.
+  + rewrite big_ord_recl {1}/minr.
+    case: ifPn => [_ /eqP ?|_]; first by exists 0.
+    by move/ih => [i i0]; exists (lift ord0 i).
 - move=> l1 l2 /eqP.
-  rewrite big_map prodf_seq_eq0 => /hasP[e eEs/= /eqP e0].
-  move/(nthP (ldl_bool _ _ _ _ false)) : eEs => [i iEs ie].
-  by exists i => //; rewrite ie e0 eqxx.
+  rewrite prodf_seq_eq0 => /hasP[e eEs/= /eqP e0].
+  by exists e => //; rewrite e0.
 Qed.
 
-Lemma nary_inversion_morE1 f1 f2 (Es : seq (expr (boolT_def f1 m_def f2))) :
+Lemma nary_inversion_morE1 f1 f2 n (Es : 'I_n -> expr (boolT_def f1 m_def f2)) :
   l <> Lukasiewicz -> l <> Yager -> [[ ldl_mor Es ]]_ l = 1 ->
-    exists2 i, ([[ nth (ldl_bool _ _ _ _ false) Es i ]]_ l == 1) & (i < size Es)%N.
+    exists i, [[ Es i ]]_ l = 1.
 Proof.
 have H := translate_boolT_01 l. move: H.
 have p0 := lt_le_trans ltr01 p1.
 case: l => //=; move => H.
-- move => l1 l2; move/eqP.
-  rewrite /maxR big_map big_seq.
-  elim: Es.
-  + by rewrite big_nil eq_sym oner_eq0.
-  + move=> a l0 IH.
-    rewrite -big_seq big_cons {1}/maxr.
-    case: ifPn => [_|_ a1]; last by exists 0%N => //; rewrite a1 ltn0Sn.
-    rewrite big_seq; move/IH => [i i1].
-    by exists i.+1.
-- move => l1 l2 /eqP.
-  rewrite /product_dl_prod big_map big_seq.
-  elim: Es.
-  + by rewrite big_nil eq_sym oner_eq0.
-  + move=> a l0 IH.
-    rewrite -big_seq big_cons {1}/product_dl_mul.
+- move: Es; elim: n => [Es l0 l1|n ih Es l0 l1] /eqP; rewrite /maxR.
+  + by rewrite big_ord0 eq_sym oner_eq0.
+  + rewrite big_ord_recl {1}/maxr => /eqP.
+    case: ifPn => [_|_ a1]; last by exists ord0.
+    move/(ih _ l0 l1) => [i h].
+    by exists (lift ord0 i).
+- move: Es; elim: n => [Es l1 l2| n ih Es l1 l2] /eqP; rewrite /product_dl_prod.
+  + by rewrite big_ord0 eq_sym oner_eq0.
+  + rewrite big_ord_recl {1}/product_dl_mul.
     move/product_dl_mul_inv => [|||/eqP].
     * exact: H.
     * by apply: product_dl_mul_seq_01.
-    * by exists 0%N => //; rewrite a0 eqxx.
-    * by rewrite big_seq; move/IH => [x ?]; exists x.+1.
-- move => l1 l2; move/eqP.
-  rewrite /maxR big_map big_seq.
-  elim: Es.
-  + by rewrite big_nil eq_sym oner_eq0.
-  + move=> a l0 IH.
-    rewrite -big_seq big_cons {1}/maxr.
-    case: ifPn => [_|_ a1]; last by exists 0%N => //; rewrite a1 ltn0Sn.
-    rewrite big_seq; move/IH => [i i1].
-    by exists i.+1.
-- move => l1 l2 /eqP.
-  rewrite /product_dl_prod big_map big_seq.
-  elim: Es.
-  + by rewrite big_nil eq_sym oner_eq0.
-  + move=> a l0 IH.
-    rewrite -big_seq big_cons {1}/product_dl_mul.
-    move/product_dl_mul_inv => [|||/eqP].
+    * by exists ord0.
+    * by move/eqP/(ih _ l1 l2) => [i h]; exists (lift ord0 i).
+- move: Es; elim: n => [Es l1 l2 | n ih Es l1 l2] /eqP; rewrite /maxR.
+  + by rewrite big_ord0 eq_sym oner_eq0.
+  + rewrite big_ord_recl {1}/maxr.
+    case: ifPn => [_|_] /eqP; last by exists ord0.
+    move/(ih _ l1 l2) => [i h].
+    by exists (lift ord0 i).
+- move: Es; elim: n => [Es l1 l2 | n ih Es l1 l2] /eqP; rewrite /product_dl_prod.
+  + by rewrite big_ord0 eq_sym oner_eq0.
+  + rewrite big_ord_recl {1}/product_dl_mul.
+    move/product_dl_mul_inv => [|||].
     * exact: H.
     * by apply: product_dl_mul_seq_01.
-    * by exists 0%N => //; rewrite a0 eqxx.
-    * by rewrite big_seq; move/IH => [x ?]; exists x.+1.
+    * by exists ord0.
+    * by move/(ih _ l1 l2) => [i h]; exists (lift ord0 i).
 Qed.
 
-Lemma nary_inversion_morE0 f1 f2 (Es : seq (expr (boolT_def f1 m_def f2))) :
-  [[ ldl_mor Es ]]_ l = 0 ->
-    forall i, (i < size Es)%N -> [[ nth (ldl_bool _ _ _ _ false) Es i ]]_ l = 0.
+Lemma nary_inversion_morE0 f1 f2 n (Es : 'I_n -> (expr (boolT_def f1 m_def f2))) :
+  [[ ldl_mor Es ]]_ l = 0 -> forall i, [[ Es i ]]_ l = 0.
 Proof.
 have H := translate_boolT_01 l. move: H.
 have p0 := lt_le_trans ltr01 p1.
 case: l => //=; move => H.
-- move/eqP. rewrite minr10 big_map.
-  rewrite (@bigsum_0x R _ _ Es) => h i.
-    by move=> iEs; apply: h; rewrite mem_nth.
-  exact: (andP (translate_boolT_01 _ _ _ _ _)).1.
+- move/eqP; rewrite minr10 => /eqP.
+  move=> /psumr_eq0P => h i.
+  by apply: h => // j _; apply (andP (H _ _ _ _)).1.
 - move/eqP; rewrite minr10 powR_eq0.
   move/andP => [].
-  rewrite (@gt_eqF _ _ (p^-1)) ?invr_gt0//.
-  rewrite big_seq big_map psumr_eq0=>[|i]; last by rewrite powR_ge0.
-  move/allP => h _ i iEs.
+  rewrite (@gt_eqF _ _ (p^-1)) ?invr_gt0//=.
+  rewrite psumr_eq0=>[|i]; last by rewrite powR_ge0.
+  move/allP => h _ i.
   apply/eqP.
-  suff: ([[nth (ldl_bool _ _ _ _ false) Es i]]_Yager == 0) && (p != 0).
+  suff: ([[Es i]]_Yager == 0) && (p != 0).
     by move/andP=>[].
   rewrite -powR_eq0.
-  apply: (implyP (h (nth (ldl_bool _ _ _ _ false) Es i) _)).
-    by rewrite mem_nth.
-  apply/mapP; exists (nth (ldl_bool _ _ _ _ false) Es i) => //.
-    by rewrite mem_nth.
+  exact/h/mem_index_enum.
 - rewrite /maxR/product_dl_prod.
-  elim: Es => [h i|a l0 IH h]; first by rewrite nth_nil.
-  elim => /=[_|].
-  + move: h.
-    rewrite big_cons big_map {1}/maxr.
-    case: ifPn => // /[swap] ->.
-    have := H _ _ _  a; set b := [[_]]_ _; lra.
-  + move=> n h' nl0.
-    apply: IH => //.
-    move: h; rewrite !big_map big_cons {1}/maxr.
-    case: ifPn => // /[swap] ->; rewrite -leNgt => bigle0.
-    by apply/eqP; rewrite eq_le bigle0 bigmax_idl le_max lexx.
-- rewrite /product_dl_prod big_map.
-  elim: Es => // a l0 IH.
-  rewrite big_cons => /eqP /product_dl_prod_inv0 h.
-  case => /=[_|i].
-  + apply: (h _ _).1 => //.
+  move: Es; elim: n => [Es h|n ih Es h i]; first by case.
+  have := h; rewrite big_ord_recl {1}/maxr.
+  case: ifPn => // /[swap] ->; first by move: (H _ _ _ (Es ord0)); lra.
+  rewrite -leNgt => bigle0.
+  have /eqP : \big[maxr/0]_(i < n) [[Es (lift ord0 i)]]_Godel == 0.
+    by rewrite eq_le bigle0 bigmax_idl le_max lexx.
+  case: (unliftP ord0 i) => /= [j ->|-> _].
+    by move/(ih (fun i => Es (lift ord0 i))).
+  move: h => /eqP; rewrite eq_le => /andP [].
+  move=> /bigmax_leP => [ [_ /=] + _ ]; move=> /(_ ord0) h.
+  by apply/eqP; rewrite eq_le h//= (andP (H _ _ _ _)).1.
+- rewrite /product_dl_prod.
+  move: Es; elim: n => [Es h | n ih Es]; first by case.
+  rewrite big_ord_recl => /eqP /product_dl_prod_inv0 h i.
+  case: (unliftP ord0 i) => [/=j ->| ->].
+  + apply/(ih (fun i => Es (lift ord0 i)))/(h _ _).2 => //.
     exact: product_dl_mul_seq_01.
-  + rewrite ltnS => isize.
-    apply: IH =>//.
-    apply: (h _ _).2 => //.
+  + apply/eqP; rewrite (h _ _).1//.
     exact: product_dl_mul_seq_01.
 - rewrite /maxR/product_dl_prod.
-  elim: Es => [h i|a l0 IH h]; first by rewrite nth_nil.
-  elim => /=[_|].
-  + move: h.
-    rewrite big_cons big_map {1}/maxr.
-    case: ifPn => // /[swap] ->.
-    have := H _ _ _ a; set b := [[_]]_ _; lra.
-  + move=> n h' nl0.
-    apply: IH => //.
-    move: h; rewrite !big_map big_cons {1}/maxr.
-    case: ifPn => // /[swap] ->; rewrite -leNgt => bigle0.
-    by apply/eqP; rewrite eq_le bigle0 bigmax_idl le_max lexx.
-- rewrite /product_dl_prod big_map.
-  elim: Es => // a l0 IH.
-  rewrite big_cons => /eqP /product_dl_prod_inv0 h.
-  case => /=[_|i].
-  + apply: (h _ _).1 => //.
+  move: Es; elim: n => [Es h|n ih Es h i]; first by case.
+  case: (unliftP ord0 i) => [j ->|->].
+  + apply/(ih (fun i => Es (lift ord0 i))).
+    apply/eqP. rewrite eq_le. apply/andP; split.
+      apply/bigmax_leP; split => //; move => k.
+      by move: h => /eqP; rewrite eq_le => /andP [] /bigmax_leP [_ /(_ (lift ord0 k)) +_].
+    exact/bigmax_ge_id.
+  + apply/eqP. rewrite eq_le. apply/andP; split.
+      by move: h => /eqP; rewrite eq_le => /andP [] /bigmax_leP [_ /(_ ord0) +_]; apply.
+    exact/(andP (H _ _ _ _)).1.
+- rewrite /product_dl_prod.
+  move: Es; elim: n => [Es h|n ih Es h i]; first by case.
+  move: h; rewrite big_ord_recl=> /eqP/product_dl_prod_inv0 => h.
+  case: (unliftP ord0 i) => [j ->|->].
+  + apply/(ih (fun i => Es (lift ord0 i)))/(h _ _).2 => //.
     exact: product_dl_mul_seq_01.
-  + rewrite ltnS => isize.
-    apply: IH =>//.
-    apply: (h _ _).2 => //.
+  + apply/(h _ _).1 => //.
     exact: product_dl_mul_seq_01.
 Qed.
 
@@ -575,73 +529,64 @@ case: l => //=; move =>  _ _ _ _.
   by rewrite (mul01 _ _ H2 H1 h).
 Qed.
 
-Lemma nary_inversion_andE1 f1 f2 (s : seq (expr (boolT_def f1 f2 l_def))) :
-  [[ ldl_and s ]]_ l = 1 ->
-    forall i, (i < size s)%N -> [[ nth (ldl_bool _ _ _ _ false) s i ]]_ l = 1.
+Lemma nary_inversion_andE1 f1 f2 n (s : 'I_n -> (expr (boolT_def f1 f2 l_def))) :
+  [[ ldl_and s ]]_ l = 1 -> forall i, [[ s i ]]_ l = 1.
 Proof.
 have /= H := translate_boolT_01 l.
 move/eqP.
-rewrite /minR big_map => /bigmin_eqP/= h i iEs.
+rewrite /minR => /bigmin_eqP/= h i.
 apply/eqP.
 rewrite eq_sym eq_le.
 rewrite ((andP (H _ _ _ _)).2) h //.
-exact: mem_nth.
+exact: mem_index_enum.
 Qed.
 
-Lemma nary_inversion_andE0 f1 f2 (s : seq (expr (boolT_def f1 f2 l_def))) :
-  l <> Lukasiewicz -> l <> Yager -> [[ ldl_and s ]]_ l = 0 ->
-   exists2 i, ([[ nth (ldl_bool _ _ _ _ false) s i ]]_ l == 0) & (i < size s)%N.
+Lemma nary_inversion_andE0 f1 f2 n (s : 'I_n -> (expr (boolT_def f1 f2 l_def))) :
+  l <> Lukasiewicz -> l <> Yager -> [[ ldl_and s ]]_ l = 0 -> exists i, ([[ s i ]]_ l == 0).
 Proof.
 have H := translate_boolT_01. move: H.
 have p0 := lt_le_trans ltr01 p1.
 move => /= H.
-- move => l1 l2; move/eqP.
-  rewrite /minR big_map.
-  elim: s.
-  + by rewrite big_nil oner_eq0.
-  + move=> a l0 IH.
-    rewrite big_cons {1}/minr.
-    case: ifPn => [_ ?|_]; first by exists 0%N => //; rewrite ltn0Sn andbT.
-    by move/IH => [i i0]; exists i.+1.
+move => l1 l2; move/eqP.
+rewrite /minR.
+move: s; elim: n => [h|n ih s]; first by rewrite big_ord0 oner_eq0.
+rewrite big_ord_recl {1}/minr.
+case: ifPn => [_ ?|_]; first by exists ord0.
+by move/ih => [i i0]; exists (lift ord0 i).
 Qed.
 
-Lemma nary_inversion_orE1 f1 f2 (Es : seq (expr (boolT_def f1 f2 l_def))) :
+Lemma nary_inversion_orE1 f1 f2 n (Es : 'I_n -> (expr (boolT_def f1 f2 l_def))) :
   l <> Lukasiewicz -> l <> Yager -> [[ ldl_or Es ]]_ l = 1 ->
-    exists2 i, ([[ nth (ldl_bool _ _ _ _ false) Es i ]]_ l == 1) & (i < size Es)%N.
+    exists i, ([[ Es i ]]_ l == 1) .
 Proof.
 have H := translate_boolT_01 l. move: H.
 have p0 := lt_le_trans ltr01 p1.
 move => /= H.
-- move => l1 l2; move/eqP.
-  rewrite /maxR big_map big_seq.
-  elim: Es.
-  + by rewrite big_nil eq_sym oner_eq0.
-  + move=> a l0 IH.
-    rewrite -big_seq big_cons {1}/maxr.
-    case: ifPn => [_|_ a1]; last by exists 0%N => //; rewrite a1 ltn0Sn.
-    rewrite big_seq; move/IH => [i i1].
-    by exists i.+1.
+move => l1 l2; move/eqP.
+rewrite /maxR.
+move: Es; elim: n => [Es|n ih Es]; first by rewrite big_ord0 eq_sym oner_eq0.
+rewrite big_ord_recl {1}/maxr.
+case: ifPn => [_|_ a1]; last by exists ord0.
+move/ih => [i h].
+by exists (lift ord0 i).
 Qed.
 
-Lemma nary_inversion_orE0 f1 f2 (Es : seq (expr (boolT_def f1 f2 l_def))) :
-  [[ ldl_or Es ]]_ l = 0 ->
-    forall i, (i < size Es)%N -> [[ nth (ldl_bool _ _ _ _ false) Es i ]]_ l = 0.
+Lemma nary_inversion_orE0 f1 f2 n (Es : 'I_n -> (expr (boolT_def f1 f2 l_def))) :
+  [[ ldl_or Es ]]_ l = 0 -> forall i, [[ Es i ]]_ l = 0.
 Proof.
 have H := translate_boolT_01 l. move: H.
 have p0 := lt_le_trans ltr01 p1.
  move =>/= H.
 rewrite /maxR/product_dl_prod.
-elim: Es => [h i|a l0 IH h]; first by rewrite nth_nil.
-elim => /=[_|].
-+ move: h.
-  rewrite big_cons big_map {1}/maxr.
-  case: ifPn => // /[swap] ->.
-  have := H _ _ _  a; set b := [[_]]_ _; lra.
-+ move=> n h' nl0.
-  apply: IH => //.
-  move: h; rewrite !big_map big_cons {1}/maxr.
-  case: ifPn => // /[swap] ->; rewrite -leNgt => bigle0.
-  by apply/eqP; rewrite eq_le bigle0 bigmax_idl le_max lexx.
+move: Es; elim: n => [Es h|n ih Es h i]; first by case.
+move: h => /eqP. rewrite big_ord_recl eq_le => /andP[+_].
+rewrite {1}bigmax_idl ge_max => /andP[h0].
+rewrite ge_max => /andP[_ h].
+case: (unliftP ord0 i) => /=[j ->|->].
+- apply/(ih (fun i => Es (lift ord0 i))).
+  apply/eqP; rewrite eq_le h/=.
+  by apply/bigmax_geP; left.
+by apply/eqP; rewrite eq_le h0 (andP (H _ _ _ _)).1.
 Qed.
 
 Lemma adequacy (e : expr (boolT_def impl_def m_def l_def)) b :
@@ -650,36 +595,22 @@ Lemma adequacy (e : expr (boolT_def impl_def m_def l_def)) b :
 Proof.
 dependent induction e using expr_ind' => ll ly lg lp.
 - move: b b0 => [] [] //=; lra.
-- rewrite List.Forall_forall in H.
-  rewrite [ [[ldl_bool _ _ _ _ b]]_l ]/=.
+- rewrite [ [[ldl_bool _ _ _ _ b]]_l ]/=.
   move: b => [].
-  + move/nary_inversion_andE1.
-    rewrite /= big_map big_seq big_all_cond => h.
-    apply: allT => x/=.
-    apply/implyP => /nthP xnth.
-    have [i il0 <-] := xnth (ldl_bool _ _ _ _ false).
-    by apply: H  => //; rewrite ?h// -In_in mem_nth.
-  + move/nary_inversion_andE0.
-    rewrite /= big_map big_all.
-    elim=>// i /eqP i0 isize.
-    apply/allPn; exists (nth (ldl_bool _ _ _ _ false) l0 i); first by rewrite mem_nth.
-    apply/negPf; apply: H => //.
-    by rewrite -In_in mem_nth.
-- rewrite List.Forall_forall in H.
-  rewrite [ [[ldl_bool _ _ _ _ b]]_l]/=.
+  + move/nary_inversion_andE1 => h.
+    rewrite /=big_andE; apply/forallP => /=i.
+    exact/H.
+  + move/(nary_inversion_andE0 _ _ _ _ ll ly) => [i /eqP h].
+    rewrite /=big_andE; apply /forallP => /= /(_ i).
+    by have /=/(_ _ _ h) -> := (H i (l0 i) _ _ false ll ly lg lp).
+- rewrite [ [[ldl_bool _ _ _ _ b]]_l]/=.
   move: b => [].
-  + move/nary_inversion_orE1.
-    rewrite /= big_map big_has.
-    elim=>// i /eqP i0 isize.
-    apply/hasP; exists (nth (ldl_bool _ _ _ _ false) l0 i); first by rewrite mem_nth.
-    apply: H => //.
-    by rewrite -In_in mem_nth.
-  + move/nary_inversion_orE0.
-    rewrite /= big_map big_has => h.
-    apply/hasPn => x.
-    move/nthP => xnth.
-    have [i il0 <-] := xnth (ldl_bool _ _ _ _ false).
-    by apply/negPf; apply: H => //; rewrite ?h// -In_in mem_nth.
+  + move/(nary_inversion_orE1 _ _ _ _ ll ly) => /=[i /eqP h].
+    rewrite big_orE; apply/existsP; exists i => /=.
+    exact/H.
+  + move/nary_inversion_orE0 => h /=.
+    rewrite big_orE; apply/existsPn => /= i.
+    exact/Bool.negb_true_iff/H.
 - move=>/=h; rewrite (IHe e erefl JMeq_refl (~~ b) ll ly lg lp) ?negbK//.
   move: ll ly lg lp h; case: l; rewrite//=;case: b => //=; lra.
 - rewrite [ [[ldl_bool _ _ _ _ b]]_l]/=.
@@ -694,36 +625,22 @@ dependent induction e using expr_ind' => ll ly lg lp.
     rewrite implybE Bool.orb_false_intro//=. 
     * rewrite //= in IHe1. by rewrite (IHe1 e1 erefl JMeq_refl (true) ll ly lg lp H1)//=.
     * rewrite //= in IHe2. by rewrite (IHe2 e2 erefl JMeq_refl (false) ll ly lg lp H2)//=.
-- rewrite List.Forall_forall in H.
-  rewrite [ [[ldl_bool _ _ _ _ b]]_l ]/=.
+- rewrite [ [[ldl_bool _ _ _ _ b]]_l ]/=.
   move: b => [].
-  + move/nary_inversion_mandE1.
-    rewrite /= big_map big_seq big_all_cond => h.
-    apply: allT => x/=.
-    apply/implyP => /nthP xnth.
-    have [i il0 <-] := xnth (ldl_bool _ _ _ _ false).
-    by apply: H  => //; rewrite ?h// -In_in mem_nth.
-  + move/nary_inversion_mandE0.
-    rewrite /= big_map big_all.
-    elim=>// i /eqP i0 isize.
-    apply/allPn; exists (nth (ldl_bool _ _ _ _ false) l0 i); first by rewrite mem_nth.
-    apply/negPf; apply: H => //.
-    by rewrite -In_in mem_nth.
-- rewrite List.Forall_forall in H.
-  rewrite [ [[ldl_bool _ _ _ _ b]]_l]/=.
+  + move/nary_inversion_mandE1 => h /=.
+    rewrite big_andE; apply/forallP => /= i.
+    exact/H.
+  + move/(nary_inversion_mandE0 _ _ _ _ ll ly) => [i h]/=.
+    rewrite big_andE; apply/forallPn => /=; exists i.
+    exact/Bool.negb_true_iff/H.
+- rewrite [ [[ldl_bool _ _ _ _ b]]_l]/=.
   move: b => [].
-  + move/nary_inversion_morE1.
-    rewrite /= big_map big_has.
-    elim=>// i /eqP i0 isize.
-    apply/hasP; exists (nth (ldl_bool _ _ _ _ false) l0 i); first by rewrite mem_nth.
-    apply: H => //.
-    by rewrite -In_in mem_nth.
-  + move/nary_inversion_morE0.
-    rewrite /= big_map big_has => h.
-    apply/hasPn => x.
-    move/nthP => xnth.
-    have [i il0 <-] := xnth (ldl_bool _ _ _ _ false).
-    by apply/negPf; apply: H => //; rewrite ?h// -In_in mem_nth.
+  + move/(nary_inversion_morE1 _ _ _ _ ll ly) => [i h]/=.
+    rewrite big_orE; apply/existsP => /=; exists i.
+    exact/H.
+  + move/nary_inversion_morE0 => h/=.
+    rewrite big_orE; apply/existsPn => i/=.
+    exact/Bool.negb_true_iff/H.
 - case: c; rewrite //=; rewrite -!translations_Real_coincide;
   set t1 := _ e1; set t2 := _ e2.
   + case: ifPn => [/eqP ->|e12eq].
@@ -829,6 +746,8 @@ Proof. by move=> p p0 i; rewrite shadowlifting_product_andE// exprn_gt0. Qed.
 
 End shadow_lifting_product_and.
 
+From mathcomp Require Import perm.
+
 Section Lukasiewicz_lemmas.
 Local Open Scope ldl_scope.
 Local Open Scope ring_scope.
@@ -838,30 +757,30 @@ Hypothesis p1 : 1 <= p.
 
 Local Notation "[[ e ]]_ l" := (translation l p e).
 
-Lemma Lukasiewicz_mandC_nary f1 f2 (s1 s2 : seq (expr (boolT_def f1 m_def f2))) :
-  perm_eq s1 s2 -> [[ldl_mand s1]]_Lukasiewicz = [[ldl_mand s2]]_Lukasiewicz.
+Lemma Lukasiewicz_mandC_nary f1 f2 n (pi : {perm 'I_n}) (s : 'I_n -> (expr (boolT_def f1 m_def f2))) :
+  [[ldl_mand s]]_Lukasiewicz = [[ldl_mand (s \o pi)]]_Lukasiewicz.
 Proof.
-by move=> pi; rewrite /= !big_map (perm_big _ pi)/= (perm_size pi).
+rewrite /=; congr maxr; congr +%R; congr +%R.
+by rewrite (perm_big (map pi (index_enum 'I_n))) ?big_map//= perm_eq_fun.
 Qed.
 
 Lemma Lukasiewicz_mandC f1 f2 (e1 e2 : (expr (boolT_def f1 m_def f2))) :
   [[ e1 `** e2 ]]_Lukasiewicz = [[ e2 `** e1 ]]_Lukasiewicz.
 Proof.
-rewrite /= !big_cons !big_nil.
-by rewrite addr0 addr0 (addrC (_ e1)).
+by rewrite /=!big_ord_recl !big_ord0 !tnthS !tnth0 !addr0 (addrC (_ e1)).
 Qed.
 
-Lemma Lukasiewicz_morC_nary f1 f2 (s1 s2 : seq (expr (boolT_def f1 m_def f2))) :
-  perm_eq s1 s2 -> [[ldl_mor s1]]_Lukasiewicz = [[ldl_mor s2]]_Lukasiewicz.
+Lemma Lukasiewicz_morC_nary f1 f2 n (pi : {perm 'I_n}) (s : 'I_n -> (expr (boolT_def f1 m_def f2))) :
+  [[ldl_mor s]]_Lukasiewicz = [[ldl_mor (s \o pi)]]_Lukasiewicz.
 Proof.
-by move=> pi; rewrite /= !big_map (perm_big _ pi)/=.
+rewrite /=; congr minr.
+by rewrite (perm_big (map pi (index_enum 'I_n))) ?big_map//= perm_eq_fun.
 Qed.
 
 Lemma Lukasiewicz_morC f1 f2 (e1 e2 :(expr (boolT_def f1 m_def f2))) :
   [[ e1 `++ e2 ]]_Lukasiewicz = [[ e2 `++ e1 ]]_Lukasiewicz.
 Proof.
-rewrite /= /maxR ?big_cons ?big_nil.
-by rewrite /= addr0 addr0 (addrC (_ e1)).
+by rewrite /=!big_ord_recl !big_ord0 !tnthS !tnth0 !addr0 addrC.
 Qed.
 
 Lemma Lukasiewicz_morA f1 f2 (e1 e2 e3 :  (expr (boolT_def f1 m_def f2))) :
@@ -870,8 +789,7 @@ Proof.
 have := translate_boolT_01 p p1 Lukasiewicz _ _ _ e1.
 have := translate_boolT_01 p p1 Lukasiewicz _ _ _ e2.
 have := translate_boolT_01 p p1 Lukasiewicz _ _ _ e3.
-rewrite /= /minR !big_cons !big_nil.
-rewrite /minr//=.
+rewrite /=!big_ord_recl !big_ord0 !tnthS !tnth0/= !big_ord_recl !big_ord0 !tnthS !tnth0/= /minr.
 repeat case: ifP; set a := [[_]]__; set b := [[_]]__; set c := [[_]]__; lra.
 Qed.
 
@@ -881,7 +799,7 @@ Proof.
 have := translate_boolT_01 p p1 Lukasiewicz _ _ _ e1.
 have := translate_boolT_01 p p1 Lukasiewicz _ _ _ e2.
 have := translate_boolT_01 p p1 Lukasiewicz _ _ _ e3.
-rewrite /= /maxR /minR /product_dl_prod !big_cons !big_nil.
+rewrite /= /maxR /minR /product_dl_prod !big_ord_recl !big_ord0 !tnthS !tnth0/= !big_ord_recl !big_ord0 !tnthS !tnth0.
 set t1 := _ e1.
 set t2 := _ e2.
 set t3 := _ e3.
@@ -892,23 +810,25 @@ Qed.
 Theorem Lukasiewicz_mand_unit f1 f2 (e :  (expr (boolT_def f1 m_def f2))) :
   [[ e `** (ldl_bool _ _ _ _ true) ]]_Lukasiewicz = [[ e ]]_Lukasiewicz.
 Proof.
-have := translate_boolT_01 p p1 Lukasiewicz _ _ _ e.
-rewrite /= !big_cons big_nil addr0 addrAC.
-by rewrite /maxr; case: ifP; move => he; lra.
+have /=h := translate_boolT_01 p p1 Lukasiewicz _ _ _ e.
+rewrite /= !big_ord_recl big_ord0 !tnthS !tnth0 /= addr0 addrAC.
+rewrite /maxr; case: ifP; move => he; lra.
 Qed.
 
 Theorem Lukasiewicz_mor_unit f1 f2 (e :  (expr (boolT_def f1 m_def f2))) :
   [[ e `++ (ldl_bool _ _ _ _ false) ]]_Lukasiewicz = [[ e ]]_Lukasiewicz.
 Proof.
 have := translate_boolT_01 p p1 Lukasiewicz _ _ _ e.
-rewrite /= !big_cons big_nil !addr0.
+rewrite /= !big_ord_recl big_ord0 !addr0.
 by rewrite/minr; case: ifP; intros; lra.
 Qed.
 
 Lemma Lukasiewicz_prelinearity (e1 e2 e3 : @expr R boolT_fuzzy) :
   [[(e1 `=> e2) `\/ (e2 `=> e1)]]_Lukasiewicz = [[ldl_bool  _ _ _ _ true]]_Lukasiewicz.
 Proof.
-rewrite//= /maxR !big_cons !big_nil /maxr /minr; repeat case: ifP; intros; lra.
+have := translate_boolT_01 p p1 Lukasiewicz _ _ _ (e1 `=> e2).
+have := translate_boolT_01 p p1 Lukasiewicz _ _ _ (e2 `=> e1).
+rewrite//= /maxR !big_ord_recl big_ord0 tnthS !tnth0 //= /maxr /minr; repeat case: ifPn; intros; lra.
 Qed.
 
 Lemma Lukasiewicz_residuation (e1 e2 e3 : expr boolT_fuzzy) :
@@ -917,7 +837,7 @@ Proof.
 have h1 := translate_boolT_01 p p1 Lukasiewicz _ _ _ e1.
 have h2 := translate_boolT_01 p p1 Lukasiewicz _ _ _ e2.
 have h3 := translate_boolT_01 p p1 Lukasiewicz _ _ _ e3.
-split; rewrite//= !big_cons big_nil addr0 /minr/maxr; repeat case: ifP; intros; lra.
+split; rewrite//= !big_ord_recl big_ord0 addr0 /minr/maxr; repeat case: ifP; intros; lra.
 Qed.
 
 Lemma Lukasiewicz_involution (e : expr boolT_fuzzy) :
@@ -928,13 +848,13 @@ Proof. by rewrite//=; lra. Qed.
 Lemma Lukasiewicz_demorgan_mand  (e1 e2 : expr boolT_fuzzy) :
   [[`~ (e1 `** e2)]]_Lukasiewicz = [[(`~ e1) `++ (`~ e2)]]_Lukasiewicz.
 Proof.
-rewrite//= !big_cons big_nil !addr0 /maxr /minr; repeat case: ifP; intros; lra.
+rewrite//= !big_ord_recl !big_ord0 !tnthS !tnth0 /= !addr0 /maxr /minr; repeat case: ifP; intros; lra.
 Qed.
 
 Lemma Lukasiewicz_demorgan_mor  (e1 e2 : expr boolT_fuzzy) :
   [[`~ (e1 `++ e2)]]_Lukasiewicz = [[(`~ e1) `** (`~ e2)]]_Lukasiewicz.
 Proof.
-rewrite//= !big_cons big_nil !addr0 /maxr /minr; repeat case: ifP; intros; lra.
+rewrite//= !big_ord_recl !big_ord0/= !addr0 /maxr /minr; repeat case: ifP; intros; lra.
 Qed.
 
 End Lukasiewicz_lemmas.
@@ -948,29 +868,31 @@ Hypothesis p1 : 1 <= p.
 
 Local Notation "[[ e ]]_ l" := (translation l p e).
 
-Lemma Yager_mandC_nary f1 f2 (s1 s2 : seq (expr (boolT_def f1 m_def f2))) :
-  perm_eq s1 s2 -> [[ldl_mand s1]]_Yager = [[ldl_mand s2]]_Yager.
+Lemma Yager_mandC_nary f1 f2 n (pi : {perm 'I_n}) (s : 'I_n -> (expr (boolT_def f1 m_def f2))) :
+  [[ldl_mand s]]_Yager = [[ldl_mand (s \o pi)]]_Yager.
 Proof.
-by move=> pi; rewrite /= !big_map (perm_big _ pi)/=.
+rewrite /= (_ : \sum_(i < n) (1 - [[s i]]_Yager) `^ p = \sum_(i < n) (1 - [[s (pi i)]]_Yager) `^ p)//.
+by rewrite (perm_big (map pi (index_enum 'I_n))) ?big_map//= perm_eq_fun.
 Qed.
 
 Lemma Yager_mandC f1 f2 (e1 e2 : expr (boolT_def f1 m_def f2)) :
   [[ e1 `** e2 ]]_Yager = [[ e2 `** e1 ]]_Yager.
 Proof.
-rewrite /= !big_cons !big_nil.
+rewrite /= !big_ord_recl !big_ord0.
 by rewrite /= addr0 addr0 (addrC (_ `^ _)).
 Qed.
 
-Lemma Yager_morC_nary f1 f2 (s1 s2 : seq (expr (boolT_def f1 m_def f2))) :
-  perm_eq s1 s2 -> [[ldl_mor s1]]_Yager = [[ldl_mor s2]]_Yager.
+Lemma Yager_morC_nary f1 f2 n (pi : {perm 'I_n}) (s : 'I_n -> (expr (boolT_def f1 m_def f2))) :
+  [[ldl_mor s]]_Yager = [[ldl_mor (s \o pi)]]_Yager.
 Proof.
-by move=> pi; rewrite /= !big_map (perm_big _ pi)/=.
+rewrite /= (_ : \sum_(i < n) [[s i]]_Yager `^ p = \sum_(i < n) [[s (pi i)]]_Yager `^ p)//.
+by rewrite (perm_big (map pi (index_enum 'I_n))) ?big_map//= perm_eq_fun.
 Qed.
 
 Lemma Yager_morC f1 f2 (e1 e2 : expr (boolT_def f1 m_def f2)) :
   [[ e1 `++ e2 ]]_Yager = [[ e2 `++ e1 ]]_Yager.
 Proof.
-rewrite /= /maxR !big_cons !big_nil.
+rewrite /= /maxR !big_ord_recl !big_ord0.
 by rewrite /= addr0 addr0 (addrC (_ `^ _)).
 Qed.
 
@@ -982,7 +904,7 @@ have ? : p != 0 by exact: lt0r_neq0.
 have := translate_boolT_01 p p1 Yager _ _ _  e1.
 have := translate_boolT_01 p p1 Yager _ _ _ e2.
 have := translate_boolT_01 p p1 Yager _ _ _ e3.
-rewrite /= /maxR /minR /product_dl_prod ?big_cons ?big_nil.
+rewrite /= /maxR /minR /product_dl_prod !big_ord_recl !big_ord0 !tnthS !tnth0/= !big_ord_recl !big_ord0 !tnthS !tnth0/=.
 rewrite ![in _ + _]addr0 addr0 addr0.
 set t1 := _ e1.
 set t2 := _ e2.
@@ -1045,7 +967,7 @@ have pneq0 : p != 0 by exact: lt0r_neq0.
 have := translate_boolT_01 p p1 Yager _ _ _ e1.
 have := translate_boolT_01 p p1 Yager _ _ _ e2.
 have := translate_boolT_01 p p1 Yager _ _ _ e3.
-rewrite /= /maxR /minR /product_dl_prod ?big_cons ?big_nil.
+rewrite /= /maxR /minR /product_dl_prod !big_ord_recl !big_ord0 !tnthS !tnth0/= !big_ord_recl !big_ord0 !tnthS !tnth0.
 set t1 := _ e1.
 set t2 := _ e2.
 set t3 := _ e3.
@@ -1152,7 +1074,7 @@ Theorem Yager_mand_unit f1 f2 (e :  (expr (boolT_def f1 m_def f2))) :
   [[ e `** (ldl_bool _ _ _ _ true) ]]_Yager = [[ e ]]_Yager.
 Proof.
 have h01 := translate_boolT_01 p p1 Yager _ _ _ e.
-rewrite /= !big_cons big_nil addr0.
+rewrite /= !big_ord_recl big_ord0 addr0.
 have p_nq : forall (x : R), 1 <= x -> x != 0 by intros; lra.
 rewrite subrr powR0 ?p_nq//=.
 rewrite addr0 -powRrM divff//= ?powRr1 ?p_nq//=; try lra.
@@ -1163,7 +1085,7 @@ Theorem Yager_mor_unit f1 f2 (e :  (expr (boolT_def f1 m_def f2))) :
   [[ e `++ (ldl_bool _ _ _ _ false) ]]_Yager = [[ e ]]_Yager.
 Proof.
 have h01 := translate_boolT_01 p p1 Yager _ _ _ e.
-rewrite /= !big_cons big_nil addr0.
+rewrite /= !big_ord_recl big_ord0 addr0.
 have p_nq : forall (x : R), 1 <= x -> x != 0 by intros; lra.
 rewrite powR0 ?addr0 ?p_nq//=.
 rewrite -powRrM divff//= ?powRr1 ?p_nq//=; try lra.
@@ -1208,7 +1130,7 @@ have powRge1 : forall x y, 0 <= x -> 0 <= y  -> x <= y `^ p -> x `^ p^-1 <= y .
   rewrite -(powRselfNx y)//=. rewrite h ?nnegrE//=.
   - by rewrite invr_ge0 (ltW p0).
   - by rewrite (le_trans x0 hp).
-rewrite//= !big_cons big_nil !addr0 /maxr/minr.
+rewrite//= !big_ord_recl big_ord0 tnthS !tnth0 !addr0 //= /maxr/minr.
 set t1 := _ e1.
 set t2 := _ e2.
 set t3 := _ e3.
@@ -1278,7 +1200,14 @@ Proof. by rewrite//=; lra. Qed.
 Lemma Yager_demorgan_mand  (e1 e2 : expr boolT_fuzzy) :
   [[`~ (e1 `** e2)]]_Yager = [[(`~ e1) `++ (`~ e2)]]_Yager.
 Proof.
-rewrite//= !big_cons big_nil !addr0 /maxr /minr; repeat case: ifP; intros; lra.
+rewrite//= !big_ord_recl !big_ord0 !tnthS !tnth0/= !addr0 /maxr /minr; repeat case: ifP; intros; lra.
+Qed.
+
+Lemma Yager_demorgan_mor  (e1 e2 : expr boolT_fuzzy) :
+  [[`~ (e1 `++ e2)]]_Yager = [[(`~ e1) `** (`~ e2)]]_Yager.
+Proof.
+have oneone (x : R) : (1 - (1 - x))%R = x by lra.
+rewrite//= !big_ord_recl !big_ord0 !tnthS !tnth0 !addr0 /maxr /minr/= !oneone; repeat case: ifP; lra.
 Qed.
 
 End Yager_lemmas.
@@ -1294,7 +1223,7 @@ Local Notation "[[ e ]]_ l" := (translation l p e).
 
 Lemma Godel_mandI f1 f2 (e : expr (boolT_def f1 m_def f2)) : [[ e `** e ]]_Godel = [[ e ]]_Godel.
 Proof.
-rewrite /=/minR ?big_cons ?big_nil.
+rewrite /=/minR !big_ord_recl !big_ord0 /= !tnthS !tnth0.
 have := translate_boolT_01 p p1 Godel _ _ _ e.
 set t1 := _ e.
 move => h.
@@ -1303,50 +1232,49 @@ Qed.
 
 Lemma Godel_morI f1 f2 (e : expr (boolT_def f1 m_def f2)) : [[ e `++ e ]]_Godel = [[ e ]]_Godel.
 Proof.
-rewrite /= /maxR !big_cons big_nil.
+rewrite /= /maxR !big_ord_recl big_ord0.
 have /max_idPl -> : 0 <= [[ e ]]_Godel.
   by have /andP[] := translate_boolT_01 p p1 Godel _ _ _ e.
 by rewrite maxxx.
 Qed.
 
-Lemma Godel_mandC_nary f1 f2 (s1 s2 : seq (expr (boolT_def f1 m_def f2))) :
-  perm_eq s1 s2 -> [[ldl_mand s1]]_Godel = [[ldl_mand s2]]_Godel.
+Lemma Godel_mandC_nary f1 f2 n (pi : {perm 'I_n}) (s : 'I_n -> (expr (boolT_def f1 m_def f2))) :
+  [[ldl_mand s]]_Godel = [[ldl_mand (s \o pi)]]_Godel.
 Proof.
-by move=> pi; rewrite /=/minR !big_map (perm_big _ pi)/=.
+by rewrite /= /minR (perm_big (map pi (index_enum 'I_n))) ?big_map//= perm_eq_fun.
 Qed.
 
 Lemma Godel_mandC f1 f2 (e1 e2 : expr (boolT_def f1 m_def f2)) :
   [[ e1 `** e2 ]]_Godel = [[ e2 `** e1 ]]_Godel.
 Proof.
-rewrite /=/minR ?big_cons ?big_nil.
+rewrite /=/minR !big_ord_recl !big_ord0/= !tnthS !tnth0.
 by rewrite /=/minr; repeat case: ifP; lra.
 Qed.
 
-Lemma Godel_morC_nary f1 f2 (s1 s2 : seq (expr (boolT_def f1 m_def f2))) :
-  perm_eq s1 s2 -> [[ldl_mor s1]]_Godel = [[ldl_mor s2]]_Godel.
+Lemma Godel_morC_nary f1 f2 n (pi : {perm 'I_n}) (s : 'I_n -> (expr (boolT_def f1 m_def f2))) :
+  [[ldl_mor s]]_Godel = [[ldl_mor (s \o pi)]]_Godel.
 Proof.
-by move=> pi; rewrite /=/maxR !big_map (perm_big _ pi)/=.
+by rewrite /= /maxR (perm_big (map pi (index_enum 'I_n))) ?big_map//= perm_eq_fun.
 Qed.
 
 Lemma Godel_morC f1 f2 (e1 e2 : expr (boolT_def f1 m_def f2)) :
   [[ e1 `++ e2 ]]_Godel = [[ e2 `++ e1 ]]_Godel.
 Proof.
-rewrite /=  /maxR !big_cons !big_nil.
+rewrite /=  /maxR !big_ord_recl !big_ord0.
 by rewrite /= /maxr; repeat case: ifP; lra.
 Qed.
 
 Lemma Godel_morA f1 f2 (e1 e2 e3 : expr (boolT_def f1 m_def f2)) :
   [[ (e1 `++ (e2 `++ e3)) ]]_Godel = [[ ((e1 `++ e2) `++ e3) ]]_Godel.
 Proof.
-rewrite /= /maxR !big_cons !big_nil.
-rewrite /maxr.
-by repeat case: ifPn => //; lra.
+rewrite /= /maxR !big_ord_recl !big_ord0 /= !tnthS !tnth0/= /maxR !big_ord_recl !big_ord0 !tnthS !tnth0/=/maxr.
+repeat case: ifPn => //; lra.
 Qed.
 
 Theorem Godel_mandA f1 f2 (e1 e2 e3 : expr (boolT_def f1 m_def f2)) : (0 < p) ->
   [[ (e1 `** e2) `** e3]]_Godel = [[ e1 `** (e2 `** e3) ]]_Godel.
 Proof.
-rewrite /= /minR !big_cons !big_nil.
+rewrite /= /minR !big_ord_recl !big_ord0/=/minR !big_ord_recl !big_ord0 !tnthS !tnth0.
 have := translate_boolT_01 p p1 Godel _ _ _ e1.
 have := translate_boolT_01 p p1 Godel _ _ _ e2.
 have := translate_boolT_01 p p1 Godel _ _ _ e3.
@@ -1355,14 +1283,14 @@ set t1 := _ e1.
   set t3 := _ e3.
 move => h1 h2 h3 p0.
 rewrite /minr.
-by repeat case: ifPn => //; lra.
+repeat case: ifPn => //; lra.
 Qed.
 
 Theorem Godel_mand_unit f1 f2 (e :  (expr (boolT_def f1 m_def f2))) :
   [[ e `** (ldl_bool _ _ _ _ true) ]]_Godel = [[ e ]]_Godel.
 Proof.
 have := translate_boolT_01 p p1 Godel _ _ _ e.
-rewrite//= /minR !big_cons big_nil.
+rewrite//= /minR !big_ord_recl !big_ord0/= !tnth0.
 rewrite /minr; repeat case: ifP; intros; lra.
 Qed.
 
@@ -1370,7 +1298,7 @@ Theorem Godel_mor_unit f1 f2 (e :  (expr (boolT_def f1 m_def f2))) :
   [[ e `++ (ldl_bool _ _ _ _ false) ]]_Godel = [[ e ]]_Godel.
 Proof.
 have := translate_boolT_01 p p1 Godel _ _ _ e.
-rewrite//= /maxR !big_cons big_nil.
+rewrite//= /maxR !big_ord_recl !big_ord0/= !tnth0.
 rewrite /maxr; repeat case: ifP; intros; lra.
 Qed.
 
@@ -1379,7 +1307,7 @@ Lemma Godel_prelinearity (e1 e2 e3 : @expr R boolT_fuzzy) :
 Proof.
 have := translate_boolT_01 p p1 Godel _ _ _ e1.
 have := translate_boolT_01 p p1 Godel _ _ _ e2.
-rewrite//=/maxR; rewrite !big_cons big_nil /maxr; repeat case: ifP; intros; try lra.
+rewrite//=/maxR; rewrite !big_ord_recl big_ord0 tnthS !tnth0//= /maxr; repeat case: ifP; intros; lra.
 Qed.
 
 Lemma Godel_residuation (e1 e2 e3 : expr boolT_fuzzy) :
@@ -1387,7 +1315,7 @@ Lemma Godel_residuation (e1 e2 e3 : expr boolT_fuzzy) :
 Proof.
 have := translate_boolT_01 p p1 Godel _ _ _ e1.
 have := translate_boolT_01 p p1 Godel _ _ _ e2.
-split; rewrite//=/minR; rewrite !big_cons big_nil /minr; repeat case: ifP; intros; try lra.
+split; rewrite//=/minR; rewrite !big_ord_recl big_ord0 /minr; repeat case: ifP; intros; try lra.
 Qed.
 
 Lemma Godel_demorgan_mand  (e1 e2 : expr boolT_fuzzy) :
@@ -1395,7 +1323,7 @@ Lemma Godel_demorgan_mand  (e1 e2 : expr boolT_fuzzy) :
 Proof.
 have := translate_boolT_01 p p1 Godel _ _ _ e1.
 have := translate_boolT_01 p p1 Godel _ _ _ e2.
-by rewrite//= /minR /maxR !big_cons !big_nil /maxr /minr; repeat case: ifP; intros; lra.
+rewrite//= /minR /maxR !big_ord_recl !big_ord0 !tnthS !tnth0/= /maxr /minr; repeat case: ifP; lra.
 Qed.
 
 Lemma Godel_demorgan_mor  (e1 e2 : expr boolT_fuzzy) :
@@ -1403,7 +1331,7 @@ Lemma Godel_demorgan_mor  (e1 e2 : expr boolT_fuzzy) :
 Proof.
 have := translate_boolT_01 p p1 Godel _ _ _ e1.
 have := translate_boolT_01 p p1 Godel _ _ _ e2.
-by rewrite//= /minR /maxR !big_cons !big_nil /maxr /minr; repeat case: ifP; intros; lra.
+rewrite//= /minR /maxR !big_ord_recl !big_ord0 !tnthS !tnth0/= /maxr /minr; repeat case: ifP; lra.
 Qed.
 
 End Godel_lemmas.
@@ -1417,35 +1345,35 @@ Hypothesis p1 : 1 <= p.
 
 Local Notation "[[ e ]]_ l" := (translation l p e).
 
-Lemma product_mandC_nary f1 f2 (s1 s2 : seq (expr (boolT_def f1 m_def f2))) :
-  perm_eq s1 s2 -> [[ldl_mand s1]]_Godel = [[ldl_mand s2]]_Godel.
+Lemma product_mandC_nary f1 f2 n (pi : {perm 'I_n}) (s : 'I_n -> (expr (boolT_def f1 m_def f2))) :
+  [[ldl_mand s]]_Godel = [[ldl_mand (s \o pi)]]_Godel.
 Proof.
-by move=> pi; rewrite /=/minR !big_map (perm_big _ pi)/=.
+by rewrite /= /minR (perm_big (map pi (index_enum 'I_n))) ?big_map//= perm_eq_fun.
 Qed.
 
 Lemma product_mandC f1 f2 (e1 e2 : expr (boolT_def f1 m_def f2)) :
   [[ e1 `** e2 ]]_product = [[ e2 `** e1 ]]_product.
 Proof.
-by rewrite /= !big_cons !big_nil /= mulr1 mulr1 mulrC.
+by rewrite /= !big_ord_recl !big_ord0 /= mulr1 mulr1 mulrC.
 Qed.
 
-Lemma product_morC_nary f1 f2 (s1 s2 : seq (expr (boolT_def f1 m_def f2))) :
-  perm_eq s1 s2 -> [[ldl_mor s1]]_Godel = [[ldl_mor s2]]_Godel.
+Lemma product_morC_nary f1 f2 n (pi : {perm 'I_n}) (s : 'I_n -> (expr (boolT_def f1 m_def f2))) :
+  [[ldl_mor s]]_Godel = [[ldl_mor (s \o pi)]]_Godel.
 Proof.
-by move=> pi; rewrite /=/maxR !big_map (perm_big _ pi)/=.
+by rewrite /= /maxR (perm_big (map pi (index_enum 'I_n))) ?big_map//= perm_eq_fun.
 Qed.
 
 Lemma product_morC f1 f2 (e1 e2 : expr (boolT_def f1 m_def f2)) :
   [[ e1 `++ e2 ]]_product = [[ e2 `++ e1 ]]_product.
 Proof.
-rewrite /= /maxR/product_dl_prod !big_cons !big_nil.
+rewrite /= /maxR/product_dl_prod !big_ord_recl !big_ord0.
 by rewrite /=/product_dl_mul addr0 addr0 mulr0 mulr0 subr0 subr0 mulrC -(addrC (_ e2)).
 Qed.
 
 Lemma product_morA f1 f2 (e1 e2 e3 : expr (boolT_def f1 m_def f2)) :
   [[ (e1 `++ (e2 `++ e3)) ]]_product = [[ ((e1 `++ e2) `++ e3) ]]_product.
 Proof.
-rewrite /= /product_dl_prod !big_cons !big_nil.
+rewrite /= /product_dl_prod !big_ord_recl !big_ord0 !tnthS/= !tnth0 /product_dl_prod !big_ord_recl !big_ord0 !tnthS/= !tnth0.
 rewrite /product_dl_mul !addr0 !mulr0 !subr0.
 lra.
 Qed.
@@ -1457,20 +1385,20 @@ rewrite /= /maxR /minR /product_dl_prod.
 set t1 := _ e1.
 set t2 := _ e2.
 set t3 := _ e3.
-rewrite !big_cons !big_nil.
+rewrite !big_ord_recl !big_ord0 !tnthS !tnth0/= !big_ord_recl !big_ord0 !tnthS !tnth0.
 lra.
 Qed.
 
 Theorem product_mand_unit f1 f2 (e :  (expr (boolT_def f1 m_def f2))) :
   [[ e `** (ldl_bool _ _ _ _ true) ]]_product = [[ e ]]_product.
-Proof. by rewrite /= !big_cons big_nil !mulr1. Qed.
+Proof. by rewrite /= !big_ord_recl big_ord0 !mulr1. Qed.
 
 Lemma product_prelinearity (e1 e2 e3 : @expr R boolT_fuzzy) :
   [[(e1 `=> e2) `\/ (e2 `=> e1)]]_product = [[ldl_bool  _ _ _ _ true]]_product.
 Proof.
 have h1 := translate_boolT_01 p p1 product _ _ _ e1.
 have h2 := translate_boolT_01 p p1 product _ _ _ e2.
-rewrite//= /maxR !big_cons big_nil.
+rewrite//= /maxR !big_ord_recl big_ord0 tnthS !tnth0//=.
 rewrite /maxr; repeat case: ifP; intros; try nra.
 - have : 0 < [[e2]]_product \/ 0 = [[e2]]_product by lra.
   move => [h | h]. 
@@ -1479,7 +1407,7 @@ rewrite /maxr; repeat case: ifP; intros; try nra.
     have H : 1 < [[e1]]_product / [[e2]]_product -> 
              [[e2]]_product < [[e1]]_product * ([[e2]]_product / [[e2]]_product). intros; nra.
     apply H in i0.
-    rewrite divff in i0. nra. nra.
+    rewrite divff in i0; nra.
   + rewrite -h in i; nra.
 - have : 0 < [[e1]]_product \/ 0 = [[e1]]_product by lra.
   move => [h | h]. 
@@ -1488,7 +1416,7 @@ rewrite /maxr; repeat case: ifP; intros; try nra.
     have H : ([[e2]]_product / [[e1]]_product < 1) = false -> 
              [[e2]]_product * ([[e1]]_product / [[e1]]_product) >= [[e1]]_product. intros; nra.
     apply H in n1.
-    rewrite divff in n1. nra. nra.
+    rewrite divff in n1; nra.
   + rewrite -h in i; nra.
 Qed.
 
@@ -1498,7 +1426,7 @@ Proof.
 have := translate_boolT_01 p p1 product _ _ _ e1.
 have := translate_boolT_01 p p1 product _ _ _ e2.
 have := translate_boolT_01 p p1 product _ _ _ e3.
-split; rewrite//= !big_cons big_nil mulr1 /maxr/minr; case: ifP; try nra.
+split; rewrite//= !big_ord_recl big_ord0 !tnthS !tnth0 mulr1 /maxr/minr; case: ifP; try nra.
 - move => h1 h2. 
   have : [[e1]]_product = 0 \/ [[e1]]_product > 0 by lra.
   move => [h|h]; first by rewrite h in h1; lra.
@@ -1523,21 +1451,22 @@ Qed.
 Lemma product_demorgan_mand  (e1 e2 : expr boolT_fuzzy) :
   [[`~ (e1 `** e2)]]_product = [[(`~ e1) `++ (`~ e2)]]_product.
 Proof.
-have := translate_boolT_01 p p1 product _ _ _ e1.
-have := translate_boolT_01 p p1 product _ _ _ e2.
-rewrite//=/product_dl_prod /product_dl_mul !big_cons !big_nil.  
-repeat case: ifP; rewrite !mulr1 !mulr0 !addr0 !subr0 ?mulr0 ?mul0r ?addr0 ?add0r ?subr0 ?mulr1 ?oppr0;
- move => h1 h2 H1 H2 H3; rewrite//=; try nra.
+have ? := translate_boolT_01 p p1 product _ _ _ e1.
+have ? := translate_boolT_01 p p1 product _ _ _ e2.
+rewrite//=/product_dl_prod /product_dl_mul !big_ord_recl !big_ord0 !tnthS !tnth0.
+case: ifP;
+rewrite !mulr1 !mulr0 !addr0 !subr0 ?mulr0 ?mul0r ?addr0 ?add0r ?subr0 ?mulr1 ?oppr0 => h1/=.
+all: repeat case: ifP => ?; nra.
 Qed.
 
 Lemma product_demorgan_mor  (e1 e2 : expr boolT_fuzzy) :
   [[`~ (e1 `++ e2)]]_product = [[(`~ e1) `** (`~ e2)]]_product.
 Proof.
-have := translate_boolT_01 p p1 product _ _ _ e1.
-have := translate_boolT_01 p p1 product _ _ _ e2.
-rewrite//=/product_dl_prod /product_dl_mul !big_cons !big_nil.  
-repeat case: ifP; rewrite !mulr1 !mulr0 !addr0 !subr0 ?mulr0 ?mul0r ?addr0 ?add0r ?subr0 ?mulr1 ?oppr0;
- move => h1 h2 H1 H2 H3; rewrite//=; try nra.
+have ? := translate_boolT_01 p p1 product _ _ _ e1.
+have ? := translate_boolT_01 p p1 product _ _ _ e2.
+rewrite//=/product_dl_prod /product_dl_mul !big_ord_recl !big_ord0.  
+case: ifP; rewrite !mulr1 !mulr0 !addr0 !subr0 ?mulr0 ?mul0r ?addr0 ?add0r ?subr0 ?mulr1 ?oppr0 => h1/=.
+all: repeat case: ifP => /=; nra.
 Qed.
 
 End product_lemmas.
@@ -1554,7 +1483,7 @@ Local Notation "[[ e ]]_ l" := (translation l p e).
 
 Lemma fuzzy_landI f1 f2 (e : expr (boolT_def f1 f2 l_def)) : [[ e `/\ e ]]_ dl = [[ e ]]_dl.
 Proof.
-rewrite /=/minR ?big_cons ?big_nil.
+rewrite /=/minR !big_ord_recl !big_ord0 !tnthS !tnth0.
 have := translate_boolT_01 p p1 dl _ _ _ e.
 set t1 := _ e.
 move => h.
@@ -1564,50 +1493,49 @@ Qed.
 
 Lemma fuzzy_lorI f1 f2 (e : expr (boolT_def f1 f2 l_def)) : [[ e `\/ e ]]_dl = [[ e ]]_dl.
 Proof.
-rewrite /= /maxR !big_cons big_nil.
+rewrite /= /maxR !big_ord_recl !big_ord0 !tnthS !tnth0.
 have /max_idPl -> : 0 <= [[ e ]]_ dl.
   by have /andP[] := translate_boolT_01 p p1 dl _ _ _ e.
 by rewrite maxxx.
 Qed.
 
-Lemma fuzzy_andC_nary f1 f2 (s1 s2 : seq (expr (boolT_def f1 f2 l_def))) :
-  perm_eq s1 s2 -> [[ldl_and s1]]_ dl = [[ldl_and s2]]_ dl.
+Lemma fuzzy_andC_nary f1 f2 n (pi : {perm 'I_n}) (s : 'I_n -> (expr (boolT_def f1 f2 l_def))) :
+  [[ldl_and s]]_ dl = [[ldl_and (s \o pi)]]_ dl.
 Proof.
-by move=> pi; rewrite /=/minR !big_map (perm_big _ pi)/=.
+by rewrite /= /minR (perm_big (map pi (index_enum 'I_n))) ?big_map//= perm_eq_fun.
 Qed.
 
 Lemma fuzzy_andC f1 f2 (e1 e2 : expr (boolT_def f1 f2 l_def)) :
   [[ e1 `/\ e2 ]]_ dl = [[ e2 `/\ e1 ]]_ dl.
 Proof.
-rewrite /=/minR ?big_cons ?big_nil.
+rewrite /=/minR !big_ord_recl !big_ord0 !tnthS !tnth0.
 by rewrite /=/minr; repeat case: ifP; lra.
 Qed.
 
-Lemma fuzzy_orC_nary f1 f2 (s1 s2 : seq (expr (boolT_def f1 f2 l_def))) :
-  perm_eq s1 s2 -> [[ldl_or s1]]_ dl = [[ldl_or s2]]_ dl.
+Lemma fuzzy_orC_nary f1 f2 n (pi : {perm 'I_n}) (s : 'I_n -> (expr (boolT_def f1 f2 l_def))) :
+  [[ldl_or s]]_ dl = [[ldl_or (s \o pi)]]_ dl.
 Proof.
-by move=> pi; rewrite /=/maxR !big_map (perm_big _ pi)/=.
+by rewrite /= /maxR (perm_big (map pi (index_enum 'I_n))) ?big_map//= perm_eq_fun.
 Qed.
 
 Lemma fuzzy_orC f1 f2 (e1 e2 : expr (boolT_def f1 f2 l_def)) :
   [[ e1 `\/ e2 ]]_ dl = [[ e2 `\/ e1 ]]_ dl.
 Proof.
-rewrite /= /maxR !big_cons !big_nil.
+rewrite /= /maxR !big_ord_recl !big_ord0.
 rewrite /=/maxr; repeat case: ifP; lra.
 Qed.
 
 Lemma fuzzy_orA f1 f2 (e1 e2 e3 : expr (boolT_def f1 f2 l_def)) :
   [[ (e1 `\/ (e2 `\/ e3)) ]]_ dl = [[ ((e1 `\/ e2) `\/ e3) ]]_ dl.
 Proof.
-rewrite /= /maxR !big_cons !big_nil.
-rewrite /maxr.
+rewrite /= /maxR !big_ord_recl !big_ord0 !tnthS !tnth0 /=/maxR !big_ord_recl !big_ord0 !tnthS !tnth0 /maxr.
 by repeat case: ifPn => //; lra.
 Qed.
 
 Theorem fuzzy_andA f1 f2 (e1 e2 e3 : expr (boolT_def f1 f2 l_def)) : (0 < p) ->
   [[ (e1 `/\ e2) `/\ e3]]_ dl = [[ e1 `/\ (e2 `/\ e3) ]]_ dl.
 Proof.
-rewrite /= /minR !big_cons !big_nil.
+rewrite /= /minR !big_ord_recl !big_ord0 /=/minR !big_ord_recl !big_ord0 !tnthS !tnth0.
 have := translate_boolT_01 p p1 dl _ _ _ e1.
 have := translate_boolT_01 p p1 dl _ _ _ e2.
 have := translate_boolT_01 p p1 dl _ _ _ e3.
@@ -1622,7 +1550,7 @@ Qed.
 Lemma fuzzy_and_distr (e1 e2 e3 : expr boolT_fuzzy) :
   [[ e1 `/\ (e2 `\/ e3)]]_ dl = [[ (e1 `/\ e2) `\/ (e1 `/\ e3)]]_ dl.
 Proof.
-rewrite//= /minR /maxR !big_cons !big_nil.
+rewrite//= /minR/maxR !big_ord_recl !big_ord0/= /minR/maxR !big_ord_recl !big_ord0 !tnthS !tnth0/=.
 have e101 := translate_boolT_01 _ p1 dl _ _ _ e1.
 have e201 := translate_boolT_01 _ p1 dl _ _ _ e2.
 have e301 := translate_boolT_01 _ p1 dl _ _ _ e3.
@@ -1631,14 +1559,14 @@ Finished transaction in 205.419 secs (204.099u,1.173s) (successful)*)
 rewrite [in RHS]maxA.
 rewrite -(min_maxr ([[e1]]_dl)).
 rewrite -(min_maxl _ _ 1).
-Time rewrite /minr /maxr; repeat case: ifP => //; intros; try lra.
+Time rewrite /minr /maxr; repeat case: ifP => //; lra.
 (* Finished transaction in 17.673 secs (17.434u,0.22s) (successful) *)
 Qed.
 
 Lemma fuzzy_and_distr2 (e1 e2 e3 : expr boolT_fuzzy) :
   [[ e1 `\/ (e2 `/\ e3)]]_ dl = [[ (e1 `\/ e2) `/\ (e1 `\/ e3)]]_ dl.
 Proof.
-rewrite//= /minR /maxR !big_cons !big_nil.
+rewrite//= /minR/maxR !big_ord_recl !big_ord0/= /minR/maxR !big_ord_recl !big_ord0 !tnthS !tnth0/=.
 have e101 := translate_boolT_01 _ p1 dl _ _ _ e1.
 have e201 := translate_boolT_01 _ p1 dl _ _ _ e2.
 have e301 := translate_boolT_01 _ p1 dl _ _ _ e3.
@@ -1646,14 +1574,14 @@ have e301 := translate_boolT_01 _ p1 dl _ _ _ e3.
 rewrite [in RHS]minA.
 rewrite -(max_minr ([[e1]]_dl)).
 rewrite -(max_minl _ _ 0).
-Time rewrite /minr /maxr; repeat case: ifP => //; intros; try lra.
+Time rewrite /minr /maxr; repeat case: ifP => //; lra.
 (* Finished transaction in 18.3 secs (17.851u,0.361s) (successful) *)
 Qed.
 
 Lemma fuzzy_and_abs (e1 e2 : expr boolT_fuzzy) :
   [[ e1 `/\ (e1 `\/ e2)]]_ dl = [[ e1 ]]_ dl.
 Proof.
-rewrite /= /minR/maxR !big_cons !big_nil.
+rewrite//=/minR/maxR !big_ord_recl !big_ord0 !tnth0/=/maxR !big_ord_recl !big_ord0 !tnthS !tnth0.
 have := translate_boolT_01 p p1 dl _ _ _ e1.
 have := translate_boolT_01 p p1 dl _ _ _ e2.
 by rewrite /minr /maxr; repeat case: ifP; intros; try lra.
@@ -1662,7 +1590,7 @@ Qed.
 Lemma fuzzy_or_abs (e1 e2 : expr boolT_fuzzy) :
   [[ e1 `\/ (e1 `/\ e2)]]_ dl = [[ e1 ]]_ dl.
 Proof.
-rewrite /= /minR /maxR !big_cons !big_nil.
+rewrite//=/minR/maxR !big_ord_recl !big_ord0 !tnthS !tnth0/=/minR !big_ord_recl big_ord0/= !tnthS !tnth0/=.
 have := translate_boolT_01 p p1 dl _ _ _ e1.
 have := translate_boolT_01 p p1 dl _ _ _ e2.
 by rewrite /minr /maxr; repeat case: ifP; intros; try lra.
@@ -1671,15 +1599,14 @@ Qed.
 Lemma fuzzy_demorgan_mor  (e1 e2 : expr boolT_fuzzy) :
   [[`~ (e1 `\/ e2)]]_ dl = [[(`~ e1) `/\ (`~ e2)]]_ dl.
 Proof.
-by case: dl; rewrite /= /minR /maxR !big_cons !big_nil/=;
-  rewrite /minr /maxr; repeat case: ifP; intros; lra.
+case: dl; rewrite//= /minR /maxR !big_ord_recl !big_ord0 !tnthS !tnth0/= /minr /maxr;
+repeat case: ifP; intros; lra.
 Qed.
 
 Lemma fuzzy_demorgan_and  (e1 e2 : expr boolT_fuzzy) :
   [[`~ (e1 `/\ e2)]]_ dl = [[(`~ e1) `\/ (`~ e2)]]_ dl.
 Proof.
-by case: dl; rewrite//= /minR /maxR !big_cons !big_nil;
-  rewrite /minr /maxr; repeat case: ifP; intros; lra.
+case: dl; rewrite//= /minR /maxR !big_ord_recl !big_ord0 !tnthS !tnth0/= /minr /maxr; repeat case: ifP; intros; lra.
 Qed.
 
 End lattice_fuzzy_lemmas.

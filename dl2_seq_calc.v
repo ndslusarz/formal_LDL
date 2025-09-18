@@ -90,9 +90,6 @@ Inductive seq_calc_dl2 :  hypersequent -> Prop :=
 | mandL_dl2 : forall Q A B (a b : formula),
     seq_calc_dl2 ((a::b :: A |- B) :: Q) ->
     seq_calc_dl2 (((a `** b) :: A |- B) :: Q)
-(*    seq_calc_dl2 ((a :: A |- B) :: Q) ->
-    seq_calc_dl2 ((b :: A |- B) :: Q) ->
-    seq_calc_dl2 (((a `** b) :: A |- B) :: Q)*)
 | mandR_dl2 : forall Q A1 A2 B1 B2 (a b : formula),
     seq_calc_dl2 ((A1 |- a  :: B1 ) :: Q) ->
     seq_calc_dl2 ((A2 |-  b :: B2 ) :: Q) ->
@@ -121,7 +118,8 @@ Inductive seq_calc_dl2 :  hypersequent -> Prop :=
     seq_calc_dl2 (( A |- (a `\/ b):: B ) :: Q) 
 .
 
-Definition eval_dl2 A := [[(ldl_mand A)]]_dl2 .
+Definition eval_dl2 A := \sum_(i <- map dl2_translation A) i.
+(*Definition eval_dl2 A := [[(ldl_mand A)]]_dl2 .*)
 
 Lemma eval_dl2_cat A B :
  eval_dl2 (A ++ B) = eval_dl2 A + eval_dl2 B.
@@ -133,7 +131,13 @@ Proof. by rewrite /eval_dl2/= !big_cons. Qed.
 
 Lemma eval_dl2_and_le0 A:
   eval_dl2 A <= 0.
-Proof. by have := dl2_translation_le0 (ldl_mand A). Qed.
+Proof. 
+rewrite /eval_dl2; elim: A => [|a l ih].
+- by rewrite big_nil lexx.
+- have H := dl2_translation_le0 a.
+  rewrite big_map in ih.
+  by rewrite big_map big_cons; lra.
+ Qed.
 
 Lemma sound_dl2 Q :
 seq_calc_dl2 Q -> 
@@ -196,7 +200,7 @@ intros; rewrite//=. dependent induction H.
   rewrite in_cons => /predU1P[h | h].
   + subst. exists ((a `** b) :: A |- B); first by rewrite mem_head.
     rewrite//= !eval_dl2_cons in IH2.
-    rewrite//= eval_dl2_cons/= !big_cons big_nil addr0.
+    rewrite//= eval_dl2_cons/= big_ord_recl !big_ord1 tnthS !tnth0.
     rewrite addrA in IH2.
     by []. 
   + by exists q => //; rewrite in_cons h orbT.
@@ -207,7 +211,7 @@ intros; rewrite//=. dependent induction H.
     have ev_0 : eval_dl2 [::] = 0. 
       rewrite /eval_dl2/= big_nil//=.
     rewrite//= !eval_dl2_cons ?addrA//= in IH12 IH22.
-    by rewrite//= eval_dl2_cons/= !big_cons big_nil addr0 !eval_dl2_cat; lra.
+    by rewrite//= eval_dl2_cons/= big_ord_recl !big_ord1 tnthS !tnth0 !eval_dl2_cat; lra.
   + by exists q1 => //; rewrite !in_cons h1 !orbT.
   + by exists q2 => //; rewrite !in_cons h2 !orbT.
   + by exists q1 => //; rewrite !in_cons h1 !orbT.
@@ -238,11 +242,11 @@ intros; rewrite//=. dependent induction H.
   rewrite !in_cons => /predU1P[h |/predU1P [h | h]].
   + subst. exists ((a `/\ b) :: B |- A); first by rewrite mem_head.
     rewrite//= !eval_dl2_cons //= in IH2.
-    rewrite//= eval_dl2_cons/= !big_cons big_nil//=.
+    rewrite//= eval_dl2_cons/= !big_ord_recl !tnthS !tnth0//=.
     by rewrite /minr; repeat case: ifP; move => h1 h2; lra.
   + subst. exists ((a `/\ b) :: B |- A); first by rewrite mem_head.
     rewrite//= !eval_dl2_cons //= in IH2.
-    rewrite//= eval_dl2_cons/= !big_cons big_nil//=.
+    rewrite//= eval_dl2_cons/= !big_ord_recl !tnthS !tnth0//=.
     by rewrite /minr; repeat case: ifP; move => h1 h2; lra.
   + by exists q => //; rewrite in_cons h orbT.
 - case IHseq_calc_dl2_1 => [q1].
@@ -250,9 +254,9 @@ intros; rewrite//=. dependent induction H.
   rewrite !in_cons //= => /orP [/eqP h2 | h2] IH22 /orP[/eqP h1 | h1] IH12.
   + subst. exists (A |- (a `/\ b) :: B); first by rewrite mem_head.
     rewrite//= !eval_dl2_cons in IH12 IH22.
-    rewrite//= eval_dl2_cons//= !big_cons big_nil /minr.
-    repeat case: ifP; move => /eqP hc;
-    by rewrite ?oppr0 ?add0r//=; lra.
+    rewrite//= eval_dl2_cons//= !big_ord_recl big_ord0 !tnthS !tnth0 /minr//=;
+    repeat case: ifP; move => hc;
+    rewrite ?oppr0 ?add0r//=; lra.
   + by exists q1 => //; rewrite !in_cons h1 !orbT.
   + by exists q2 => //; rewrite !in_cons h2 !orbT.
   + by exists q1 => //; rewrite !in_cons h1 !orbT.
@@ -261,7 +265,7 @@ intros; rewrite//=. dependent induction H.
   rewrite !in_cons //= => /orP [/eqP h2 | h2] IH22 /orP[/eqP h1 | h1] IH12.
   + subst. exists ((a `\/ b) :: B |- A); first by rewrite mem_head.
     rewrite//= !eval_dl2_cons in IH12 IH22.
-    rewrite//= eval_dl2_cons//= !big_cons big_nil /maxr.
+    rewrite//= eval_dl2_cons//= !big_ord_recl big_ord0 !tnthS !tnth0 /maxr.
     repeat case: ifP; move => /eqP hc;
     by rewrite ?oppr0 ?add0r//=; lra.
   + by exists q1 => //; rewrite !in_cons h1 !orbT.
@@ -271,11 +275,11 @@ intros; rewrite//=. dependent induction H.
   rewrite !in_cons => /predU1P[h |/predU1P [h | h]].
   + subst. exists (A |- (a `\/ b) :: B); first by rewrite mem_head.
     rewrite//= !eval_dl2_cons //= in IH2.
-    rewrite//= eval_dl2_cons/= !big_cons big_nil//=.
+    rewrite//= eval_dl2_cons/= !big_ord_recl big_ord0 !tnthS !tnth0//=.
     by rewrite /maxr; repeat case: ifP; move => h1 h2; lra.
   + subst. exists (A |- (a `\/ b) :: B); first by rewrite mem_head.
     rewrite//= !eval_dl2_cons //= in IH2.
-    rewrite//= eval_dl2_cons/= !big_cons big_nil//=.
+    rewrite//= eval_dl2_cons/= !big_ord_recl big_ord0 !tnthS !tnth0//=.
     by rewrite /maxr; repeat case: ifP; move => h1 h2; lra.
   + by exists q => //; rewrite in_cons h orbT.
 Qed.

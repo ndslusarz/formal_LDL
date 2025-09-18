@@ -56,6 +56,9 @@ Context {n m : nat} (eps delta : expr realT) (f : expr (funT n.+1 m.+1))
 Definition eps_delta_robust fn fm fl : expr (boolT fn impl_def fm fl) :=
   `| x `- v | `<= eps `=> `| (f `@ x) `- (f `@ v) | `<= delta.
 
+Let eps_delta_robust_dl2 := ([[ eps_delta_robust neg_undef m_undef l_undef ]]_dl2).
+Compute eps_delta_robust_dl2.
+
 End example_robust.
 
 Section example_hierarchical.
@@ -64,10 +67,9 @@ Context {R : realType}.
 
 Definition group_confidence n m x y z eps
     (f : expr (funT n.+1 m.+1)) (v : expr (vectorT n.+1))
-    (idxs : seq (expr (indexT m.+1))) :=
-  @ldl_and R x y z
-    [seq (((ldl_app f v) `! idx) `<= ldl_real eps) `/\
-           ((ldl_real (1-eps)) `<= (ldl_app f v) `! idx)
-    | idx <- idxs].
+    (idx_ : (expr (indexT m.+1)) ^ n) :=
+  @ldl_and R x y z _
+    (fun i => (((ldl_app f v) `! (idx_ i)) `<= ldl_real eps) `/\
+           ((ldl_real (1-eps)) `<= (ldl_app f v) `! (idx_ i))).
 
 End example_hierarchical.
