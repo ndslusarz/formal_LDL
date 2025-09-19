@@ -653,6 +653,45 @@ dependent induction e  using expr_ind'.
     * rewrite ltxx//=.
 Admitted.
 
+Lemma bool_le1_luka (e : expr (boolT_def impl_def m_def l_def)) :
+  [[e]]_Lukasiewicz < 1 -> [[e]]_B = false.
+Proof.
+dependent induction e using expr_ind'.
+- admit.
+- admit.
+- admit.
+-admit.
+- rewrite /= /minr; case: ifPn . Abort.
+
+Lemma bool_le1 (e : @expr R (boolT_def impl_def m_def l_def)) :
+  ([[e]]_B <= 1)%N.
+Proof.
+dependent induction e using expr_ind'.
+Admitted.
+
+Lemma order_luka (e1 e2 : expr (boolT_def impl_def m_def l_def)) :
+  [[e2]]_Lukasiewicz <= [[e1]]_Lukasiewicz -> (([[e2]]_B) <=([[e1]]_B))%N.
+Proof.
+dependent induction e1 using expr_ind'.
+- case: b => /= h. by rewrite bool_le1.
+  dependent induction e2 using expr_ind'.
+  + case: b h => //=. lra.
+  + rewrite//= big_andE. rewrite  H.
+dependent induction e2 using expr_ind'.
+- case: b; case: b0 => //=. lra.
+- case: b H => /= H.
+  + 
+
+
+
+(*have /andP [_ ] := translate_boolT_01 Lukasiewicz _ _ _ e1.
+rewrite le_eqVlt => /orP [/eqP He1 | He1].
+- admit.
+- have /andP [_ ] := translate_boolT_01 Lukasiewicz _ _ _ e2.
+  rewrite le_eqVlt => /orP [/eqP He2 | He2].
+  + admit.
+  + *)
+
 (*Lemma Luka_impl_adeq (e1 e2 : expr (boolT_def impl_def m_def l_def)) b:
   (forall e : expr (boolT_def impl_def m_def l_def), forall (b0 : bool),
       eq_x1 b0 ([[ e ]]_Lukasiewicz) -> [[ e ]]_B = b0) ->
