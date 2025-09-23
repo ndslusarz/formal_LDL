@@ -588,13 +588,5 @@ apply andR_stli.
 - by apply top_stli. 
 Qed.
 
-Lemma stli_involutive1 (a b : formula) :
-  seq_calc_stli [:: ([:: `~ `~ a] |- [:: a ])].
-Proof.
-apply negL_stli.
-- apply negR_stli.
-(*apply orR_stli;  by exact: id_stli. *)
-Admitted.
-
 End stl_hypersequent_calc.
 
