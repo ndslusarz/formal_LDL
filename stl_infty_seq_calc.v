@@ -364,5 +364,229 @@ intros; rewrite//=. dependent induction H.
   + by exists q1 => //; rewrite !in_cons h1 !orbT.
 Qed.
 
+Lemma stli_cat1C Q a :
+  seq_calc_stli (a :: Q) =
+  seq_calc_stli ([::a] ++ Q).
+Proof.
+rewrite//=.
+Qed.
+
+Lemma eex_nil Q P :
+    seq_calc_stli (P ++ Q) <->
+    seq_calc_stli (Q ++ P).
+Proof.
+intros. 
+have hxy M L : M ++ L = [::] ++ M ++ L ++ [::] by rewrite /= cats0.
+rewrite (hxy _  Q P). split => ih.
+- apply eex_stli; by rewrite cats0//=.
+- apply eex_stli in ih. by rewrite cats0//= in ih.
+Qed.
+
+Lemma exL_nil Q A B C :
+    seq_calc_stli (((A ++ B) |- C) :: Q) <->
+    seq_calc_stli (((B ++ A) |- C) :: Q).
+Proof.
+intros.
+have hxy M L : M ++ L = [::] ++ M ++ L ++ [::] by rewrite /= cats0.
+split; rewrite (hxy _  A B) (hxy _  B A);
+by exact/exL_stli.
+Qed.
+
+Lemma exR_nil Q A B C :
+    seq_calc_stli ((C |- (A ++ B)) :: Q) <->
+    seq_calc_stli ((C |- (B ++ A)) :: Q).
+Proof.
+intros.
+have hxy M L : M ++ L = [::] ++ M ++ L ++ [::] by rewrite /= cats0.
+split; rewrite (hxy _  A B) (hxy _  B A);
+exact/exR_stli.
+Qed.
+
+Lemma cat_cons_xyz_xy (I L M N : (seq formula * seq formula)):
+ [:: I; L; M; N] = [:: I; L] ++ [::M; N] .
+Proof. by rewrite //=. Qed.
+
+Lemma cat_cons_xyz_xyz (I L M N : (seq formula * seq formula)):
+ [:: I; L; M; N] = [:: I; L; M] ++ [:: N] .
+Proof. by rewrite //=. Qed.
+
+Lemma comm_xy (a c : formula):
+  [:: [:: c] |- [:: a]] ++ [:: [:: a] |- [:: c]] =
+                   [:: [::] ++ [:: c] |- [:: a], [:: a] ++ [::] |- [:: c] & [::]]. 
+Proof. by rewrite//=. Qed.
+
+Lemma comm_hyper_xy (a b : formula):
+seq_calc_stli [:: [:: b] |- [:: a]; [:: a] |- [:: b]].
+Proof.
+rewrite stli_cat1C. rewrite -(cat0s [:: b]) -{2}((cat0s [:: a])).
+rewrite comm_xy.
+apply comm_hyper_stli; rewrite ?cat0s ?cats0; by apply id_stli.
+Qed.
+
+Lemma stli_prelinearity (a b : formula) :
+seq_calc_stli ([:: ([::] |- [:: ((a `=> b) `\/ (b `=> a))])]).
+Proof.
+apply orR_stli.
+apply implR_stli. 
+have cat_cons : [:: [:: a] |- [:: b]; [::] |- [:: b `=> a]] =
+                  [:: [:: a] |- [:: b]] ++ [:: [::] |- [:: b `=> a]] by rewrite//=.
+rewrite cat_cons eex_nil.
+apply implR_stli.
+by apply comm_hyper_xy.
+Qed.
+
+Lemma cat_cons4 (I L M N : (seq formula * seq formula)):
+ [:: I; L; M; N] = [:: I]++ [:: L] ++ [:: M] ++ [:: N] .
+Proof. by rewrite//=. Qed.
+
+Lemma stli_seq_distributivity (a b c : formula) :
+  seq_calc_stli ([:: ([::] |- [:: ((a `/\ (b `\/ c)) `=> ((a `/\ b) `\/ (a `/\ c)))])]).
+Proof.
+apply implR_stli. apply andL_stli. apply orR_stli.
+apply andR_stli; first by rewrite stli_cat1C; apply ew_stli; exact: id_stli.
+rewrite stli_cat1C; apply eex_nil.
+apply andR_stli; first by rewrite stli_cat1C; apply ew_stli; exact: id_stli.
+rewrite stli_cat1C; apply eex_nil.
+apply orR_stli; apply andR_stli; apply orL_stli; last  by rewrite stli_cat1C; apply ew_stli; exact: id_stli.
+- rewrite stli_cat1C; apply eex_nil.
+  apply orL_stli; apply andR_stli.
+  * rewrite cat_cons_xyz_xy; apply eex_nil; apply ew_stli; apply comm_hyper_xy.
+  * rewrite stli_cat1C; apply ew_stli; exact: id_stli.
+  * rewrite cat_cons_xyz_xy; apply ew_stli; apply comm_hyper_xy.
+  * rewrite cat_cons_xyz_xy; apply eex_nil; apply ew_stli; apply comm_hyper_xy.
+- rewrite stli_cat1C; apply eex_nil.
+  apply orL_stli; apply andR_stli.
+  * rewrite cat_cons4.
+    apply eex_stli. rewrite//= cat_cons_xyz_xy; apply ew_stli; apply comm_hyper_xy.
+  * rewrite stli_cat1C; apply ew_stli; exact: id_stli.
+  * rewrite//= cat_cons_xyz_xy; apply ew_stli; apply comm_hyper_xy.
+  * rewrite cat_cons4; apply eex_stli; rewrite//= cat_cons_xyz_xy; 
+      apply eex_nil; apply ew_stli; apply comm_hyper_xy.
+- rewrite stli_cat1C; apply eex_nil.
+  apply orL_stli; apply andR_stli.
+  * rewrite cat_cons4; apply eex_stli; rewrite//= cat_cons_xyz_xy; apply ew_stli; apply comm_hyper_xy.
+  * rewrite cat_cons4; apply eex_stli; apply ew_stli; exact: id_stli.
+  * rewrite//= cat_cons_xyz_xy; apply ew_stli; apply comm_hyper_xy.
+  * rewrite stli_cat1C; apply eex_nil; rewrite//= cat_cons_xyz_xy; apply eex_nil; 
+      apply ew_stli; apply comm_hyper_xy.
+Qed.
+
+Lemma stl_seq_andC (a b : formula) :
+  seq_calc_stli [:: ([:: a `/\ b] |- [:: b`/\ a])].
+Proof.
+apply andR_stli; apply andL_stli. 
+- by rewrite stli_cat1C; apply eex_nil; apply ew_stli; exact: id_stli.
+- by rewrite stli_cat1C; apply ew_stli; exact: id_stli.
+Qed.
+
+Lemma stli_seq_orC (a b : formula) :
+  seq_calc_stli [:: ([:: a `\/ b] |- [:: b`\/ a])].
+Proof.
+apply orL_stli; apply orR_stli. 
+- by rewrite stli_cat1C; apply ew_stli; exact: id_stli.
+- by rewrite stli_cat1C; apply eex_nil; apply ew_stli; exact: id_stli.
+Qed.
+
+Lemma stli_seq_andA1 (a b c : formula) :
+  seq_calc_stli [:: ([:: a `/\ (b `/\ c)] |- [:: (a `/\ b) `/\ c])].
+Proof.
+apply andR_stli; apply andL_stli.
+- apply andR_stli; first by rewrite stli_cat1C; apply ew_stli; exact: id_stli.
+  rewrite stli_cat1C; apply eex_nil.
+  apply andR_stli; apply andL_stli; last by rewrite stli_cat1C; apply ew_stli; exact: id_stli.
+  rewrite stli_cat1C; apply eex_nil; rewrite stli_cat1C; apply eex_nil; apply ew_stli.
+  exact: comm_hyper_xy.
+- rewrite stli_cat1C; apply eex_nil.
+  apply andL_stli.
+  by rewrite stli_cat1C; apply eex_nil; apply ew_stli; exact: id_stli.
+Qed.
+
+Lemma stli_seq_andA2 (a b c : formula) :
+  seq_calc_stli [:: ([:: (a `/\ b) `/\ c] |- [:: a `/\ (b `/\ c)])].
+Proof.
+apply andR_stli; apply andL_stli.
+- apply andL_stli; by rewrite stli_cat1C; apply ew_stli; exact: id_stli.
+- apply andR_stli; apply andL_stli; first by rewrite stli_cat1C; apply eex_nil; apply ew_stli; exact: id_stli.
+  rewrite stli_cat1C; apply eex_nil. rewrite stli_cat1C; apply eex_nil.
+  apply andR_stli; last by rewrite stli_cat1C; apply ew_stli; exact: id_stli.
+  rewrite stli_cat1C; apply eex_nil; rewrite stli_cat1C; apply eex_nil; apply ew_stli.
+  exact: comm_hyper_xy.
+Qed.
+
+Lemma stli_seq_orA1 (a b c : formula) :
+  seq_calc_stli [:: ([:: a `\/ (b `\/ c)] |- [:: (a `\/ b) `\/ c])].
+Proof.
+apply orL_stli; apply orR_stli.
+- apply orL_stli; apply orR_stli; last by rewrite stli_cat1C; apply eex_nil; apply ew_stli; exact: id_stli.
+  rewrite stli_cat1C; apply eex_nil; rewrite stli_cat1C; apply eex_nil.
+  apply orL_stli; first by rewrite stli_cat1C; apply ew_stli; exact: id_stli.
+  rewrite stli_cat1C; apply eex_nil; rewrite stli_cat1C; apply eex_nil; apply ew_stli.
+  exact: comm_hyper_xy.
+- apply orR_stli.
+  by rewrite stli_cat1C; apply ew_stli; exact: id_stli.
+Qed.
+
+Lemma stli_seq_orA2 (a b c : formula) :
+  seq_calc_stli [:: ([:: (a `\/ b) `\/ c] |- [:: a `\/ (b `\/ c)])].
+Proof.
+apply orL_stli; apply orR_stli.
+- rewrite stli_cat1C; apply eex_nil. apply orR_stli.
+  by rewrite stli_cat1C; apply eex_nil; apply ew_stli; exact: id_stli.
+- apply orL_stli; last by rewrite stli_cat1C; apply ew_stli; exact: id_stli. 
+  rewrite stli_cat1C; apply eex_nil; apply orL_stli; apply orR_stli;
+    first by rewrite stli_cat1C; apply ew_stli; exact: id_stli.
+  rewrite stli_cat1C; apply eex_nil; rewrite stli_cat1C; apply eex_nil; apply ew_stli.
+  exact: comm_hyper_xy.
+Qed.
+
+Lemma stli_seq_and1 (a b : formula) :
+  seq_calc_stli [:: ([:: a `/\ (a `\/ b)] |- [:: a])].
+Proof.
+apply andL_stli; by rewrite stli_cat1C; apply ew_stli; exact: id_stli. 
+Qed.
+
+Lemma stli_seq_and2 (a b : formula) :
+  seq_calc_stli [:: ([:: a] |- [:: a `/\ (a `\/ b)])].
+Proof.
+apply andR_stli; first by exact: id_stli. 
+apply orR_stli; first by rewrite stli_cat1C; apply ew_stli; exact: id_stli.
+Qed.
+
+Lemma stli_seq_or1 (a b : formula) :
+  seq_calc_stli [:: ([:: a `\/ (a `/\ b)] |- [:: a])].
+Proof.
+apply orL_stli; last by exact: id_stli. 
+apply andL_stli; by rewrite stli_cat1C; apply ew_stli; exact: id_stli.
+Qed.
+
+Lemma stli_seq_or2 (a b : formula) :
+  seq_calc_stli [:: ([:: a] |- [:: a `\/ (a `/\ b)])].
+Proof.
+apply orR_stli;  by exact: id_stli. 
+Qed.
+
+Lemma stli_seq_unit_el1 (a : formula) :
+  seq_calc_stli [:: ([:: a `/\ (ldl_bool _ _ _ _ true)] |- [:: a ])].
+Proof.
+apply andL_stli.
+have h : [:: [:: a] |- [:: a]; [:: ldl_bool neg_def impl_def m_def l_def true] |- [:: a]] = 
+           [:: [:: a] |- [:: a]] ++ [:: [:: ldl_bool neg_def impl_def m_def l_def true] |- [:: a]].
+  by rewrite//=.
+rewrite h.
+apply ew_stli.
+apply id_stli.
+Qed.
+
+Lemma stli_seq_unit_el2 (a : formula) :
+  seq_calc_stli [:: ([:: a ] |- [:: a `/\ (ldl_bool _ _ _ _ true)])].
+Proof.
+rewrite -( cats0 [:: a]) stli_cat1C.
+rewrite-( cats0 [:: ldl_and (tnth [:: a; ldl_bool neg_def impl_def m_def l_def true])]).
+rewrite-( cats0 [:: ldl_and (tnth [:: a; ldl_bool neg_def impl_def m_def l_def true])]).
+apply andR_stli.
+- by apply id_stli.
+- by apply top_stli. 
+Qed.
+
 End stl_hypersequent_calc.
 

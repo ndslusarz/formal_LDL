@@ -142,7 +142,7 @@ rewrite /= !big_ord_recl !big_ord0 /= !big_ord_recl !big_ord0 /maxr !tnthS !tnth
 by repeat case: ifPn => //; lra.
 Qed.
 
-Theorem dl2_andA (e1 e2 e3 : expr boolT_dl2) : (0 < p) ->
+Theorem dl2_andA (e1 e2 e3 : expr boolT_dl2) : 
   [[ (e1 `/\ e2) `/\ e3]]_dl2 = [[ e1 `/\ (e2 `/\ e3) ]]_dl2.
 Proof.
 rewrite /= !big_ord_recl !big_ord0 /= !big_ord_recl !big_ord0.
@@ -152,7 +152,7 @@ have := dl2_translation_le0 e3.
 set t1 := _ e1.
 set t2 := _ e2.
 set t3 := _ e3.
-move => h1 h2 h3 p0.
+move => h1 h2 h3.
 rewrite /minr.
 by repeat case: ifPn => //; lra.
 Qed.

@@ -84,7 +84,7 @@ Inductive seq_calc_dl2 :  hypersequent -> Prop :=
     seq_calc_dl2 ((C |- (X ++ A ++ B ++ Y)) :: Q) ->
     seq_calc_dl2 ((C |- (X ++ B ++ A ++ Y)) :: Q)
 (*logical*)
-| top_dl2 : forall Q A B,
+| top_dl2 : forall Q A,
     seq_calc_dl2 ((A |- [::(ldl_bool _ _ _ _ true)]) :: Q)
     
 | mandL_dl2 : forall Q A B (a b : formula),
@@ -284,37 +284,283 @@ intros; rewrite//=. dependent induction H.
   + by exists q => //; rewrite in_cons h orbT.
 Qed.
 
+Lemma dl2_cat1C Q a :
+  seq_calc_dl2 (a :: Q) =
+  seq_calc_dl2 ([::a] ++ Q).
+Proof.
+rewrite//=.
+Qed.
+
 Lemma eex_nil Q P :
-    seq_calc_dl2 (P ++ Q) ->
+    seq_calc_dl2 (P ++ Q) <->
     seq_calc_dl2 (Q ++ P).
 Proof.
-intros.
+intros. 
 have hxy M L : M ++ L = [::] ++ M ++ L ++ [::] by rewrite /= cats0.
-rewrite (hxy _  P Q) in H.
-rewrite (hxy _  Q P).
-exact/eex_dl2/H.
+rewrite (hxy _  Q P). split => ih.
+- apply eex_dl2; by rewrite cats0//=.
+- apply eex_dl2 in ih. by rewrite cats0//= in ih.
 Qed.
 
 Lemma exL_nil Q A B C :
-    seq_calc_dl2 (((A ++ B) |- C) :: Q) ->
+    seq_calc_dl2 (((A ++ B) |- C) :: Q) <->
     seq_calc_dl2 (((B ++ A) |- C) :: Q).
 Proof.
 intros.
 have hxy M L : M ++ L = [::] ++ M ++ L ++ [::] by rewrite /= cats0.
-rewrite (hxy _  A B) in H.
-rewrite (hxy _  B A).
-exact/exL_dl2/H.
+split; rewrite (hxy _  A B) (hxy _  B A);
+by exact/exL_dl2.
 Qed.
 
 Lemma exR_nil Q A B C :
-    seq_calc_dl2 ((C |- (A ++ B)) :: Q) ->
+    seq_calc_dl2 ((C |- (A ++ B)) :: Q) <->
     seq_calc_dl2 ((C |- (B ++ A)) :: Q).
 Proof.
 intros.
 have hxy M L : M ++ L = [::] ++ M ++ L ++ [::] by rewrite /= cats0.
-rewrite (hxy _  A B) in H.
-rewrite (hxy _  B A).
-exact/exR_dl2/H.
+split; rewrite (hxy _  A B) (hxy _  B A);
+exact/exR_dl2.
+Qed.
+
+Lemma cat_cons_xyz_xy (I L M N : (seq formula * seq formula)):
+ [:: I; L; M; N] = [:: I; L] ++ [::M; N] .
+Proof. by rewrite //=. Qed.
+
+Lemma cat_cons_xyz_xyz (I L M N : (seq formula * seq formula)):
+ [:: I; L; M; N] = [:: I; L; M] ++ [:: N] .
+Proof. by rewrite //=. Qed.
+
+Lemma dl2_prelinearity (a b : formula) :
+seq_calc_dl2 ([:: ([::] |- [:: ((a `=> b) `\/ (b `=> a))])]).
+Proof.
+apply orR_dl2.
+apply implR_dl2.
+- rewrite dl2_cat1C.
+  apply ew_dl2.
+  exact: empty.
+- rewrite dl2_cat1C eex_nil.
+  apply implR_dl2.
+  + rewrite dl2_cat1C.
+    apply ew_dl2.
+    exact: empty.
+  + rewrite dl2_cat1C. rewrite -(cat0s [:: b]) -{2}((cat0s [:: a])).
+    have commH :  [:: [:: b] |- [:: a]] ++ [:: [:: a] |- [:: b]] =
+                   [:: [::] ++ [:: b] |- [:: a], [:: a] ++ [::] |- [:: b] & [::]] by rewrite//=.
+    rewrite commH.
+    apply comm_hyper_dl2; rewrite ?cat0s ?cats0; by apply id_dl2.
+Qed.
+
+Lemma comm_xy (a c : formula):
+  [:: [:: c] |- [:: a]] ++ [:: [:: a] |- [:: c]] =
+                   [:: [::] ++ [:: c] |- [:: a], [:: a] ++ [::] |- [:: c] & [::]]. 
+Proof. by rewrite//=. Qed.
+
+Lemma comm_hyper_xy (a b : formula):
+seq_calc_dl2 [:: [:: b] |- [:: a]; [:: a] |- [:: b]].
+Proof.
+rewrite dl2_cat1C. rewrite -(cat0s [:: b]) -{2}((cat0s [:: a])).
+rewrite comm_xy.
+apply comm_hyper_dl2; rewrite ?cat0s ?cats0; by apply id_dl2.
+Qed.
+
+Lemma dl2_seq_distributivity (a b c : formula) :
+  seq_calc_dl2 ([:: ([::] |- [:: ((a `/\ (b `\/ c)) `=> ((a `/\ b) `\/ (a `/\ c)))])]).
+Proof.
+apply implR_dl2; first by apply empty.
+apply orR_dl2.
+apply andL_dl2.
+apply andR_dl2.
+- repeat rewrite dl2_cat1C; apply ew_dl2. exact: id_dl2.
+- rewrite !dl2_cat1C.
+  apply eex_nil. rewrite !dl2_cat1C.
+  apply eex_nil.
+  apply andL_dl2.
+  apply andR_dl2; first by repeat rewrite dl2_cat1C; apply ew_dl2; exact: id_dl2.
+  rewrite !dl2_cat1C.
+  apply eex_nil.
+  apply orL_dl2; apply andR_dl2.
+  + rewrite cat_cons_xyz_xy. apply eex_nil. 
+    apply orL_dl2; apply andR_dl2.
+    * rewrite cat_cons_xyz_xy.
+      apply ew_dl2.
+      exact: comm_hyper_xy.
+    * rewrite cat_cons_xyz_xyz. apply ew_dl2.
+      rewrite dl2_cat1C. apply eex_nil. apply ew_dl2.
+      exact: comm_hyper_xy.
+    * rewrite dl2_cat1C. apply eex_nil. rewrite //= cat_cons_xyz_xy.
+      apply ew_dl2.
+      exact: comm_hyper_xy.
+    * by repeat rewrite dl2_cat1C; apply ew_dl2; exact: id_dl2.
+  + by repeat rewrite dl2_cat1C; apply ew_dl2; exact: id_dl2.
+  + rewrite cat_cons_xyz_xy.
+    apply ew_dl2. 
+    exact: comm_hyper_xy.
+  + rewrite dl2_cat1C; apply eex_nil.
+    rewrite dl2_cat1C; apply eex_nil.
+    apply orL_dl2; apply andR_dl2.
+    * rewrite cat_cons_xyz_xy. apply ew_dl2.
+      exact: comm_hyper_xy.
+    * rewrite cat_cons_xyz_xyz. apply ew_dl2.
+      rewrite dl2_cat1C; apply eex_nil.
+      rewrite dl2_cat1C; apply eex_nil. apply ew_dl2.
+      exact: comm_hyper_xy.
+    * rewrite cat_cons_xyz_xyz. apply eex_nil.
+      rewrite //=cat_cons_xyz_xy. apply ew_dl2.
+      exact: comm_hyper_xy.
+    * by repeat rewrite dl2_cat1C; apply ew_dl2; exact: id_dl2.
+Qed.
+
+Lemma dl2_seq_andC (a b : formula) :
+  seq_calc_dl2 [:: ([:: a `/\ b] |- [:: b`/\ a])].
+Proof.
+apply andR_dl2; apply andL_dl2. 
+- by rewrite dl2_cat1C; apply eex_nil; apply ew_dl2; exact: id_dl2.
+- by rewrite dl2_cat1C; apply ew_dl2; exact: id_dl2.
+Qed.
+
+Lemma dl2_seq_orC (a b : formula) :
+  seq_calc_dl2 [:: ([:: a `\/ b] |- [:: b`\/ a])].
+Proof.
+apply orL_dl2; apply orR_dl2. 
+- by rewrite dl2_cat1C; apply ew_dl2; exact: id_dl2.
+- by rewrite dl2_cat1C; apply eex_nil; apply ew_dl2; exact: id_dl2.
+Qed.
+
+Lemma dl2_seq_andA1 (a b c : formula) :
+  seq_calc_dl2 [:: ([:: a `/\ (b `/\ c)] |- [:: (a `/\ b) `/\ c])].
+Proof.
+apply andR_dl2; apply andL_dl2.
+- apply andR_dl2; first by rewrite dl2_cat1C; apply ew_dl2; exact: id_dl2.
+  rewrite dl2_cat1C; apply eex_nil.
+  apply andR_dl2; apply andL_dl2; last by rewrite dl2_cat1C; apply ew_dl2; exact: id_dl2.
+  rewrite dl2_cat1C; apply eex_nil; rewrite dl2_cat1C; apply eex_nil; apply ew_dl2.
+  exact: comm_hyper_xy.
+- rewrite dl2_cat1C; apply eex_nil.
+  apply andL_dl2.
+  by rewrite dl2_cat1C; apply eex_nil; apply ew_dl2; exact: id_dl2.
+Qed.
+
+Lemma dl2_seq_andA2 (a b c : formula) :
+  seq_calc_dl2 [:: ([:: (a `/\ b) `/\ c] |- [:: a `/\ (b `/\ c)])].
+Proof.
+apply andR_dl2; apply andL_dl2.
+- apply andL_dl2; by rewrite dl2_cat1C; apply ew_dl2; exact: id_dl2.
+- apply andR_dl2; apply andL_dl2; first by rewrite dl2_cat1C; apply eex_nil; apply ew_dl2; exact: id_dl2.
+  rewrite dl2_cat1C; apply eex_nil. rewrite dl2_cat1C; apply eex_nil.
+  apply andR_dl2; last by rewrite dl2_cat1C; apply ew_dl2; exact: id_dl2.
+  rewrite dl2_cat1C; apply eex_nil; rewrite dl2_cat1C; apply eex_nil; apply ew_dl2.
+  exact: comm_hyper_xy.
+Qed.
+
+Lemma dl2_seq_orA1 (a b c : formula) :
+  seq_calc_dl2 [:: ([:: a `\/ (b `\/ c)] |- [:: (a `\/ b) `\/ c])].
+Proof.
+apply orL_dl2; apply orR_dl2.
+- apply orL_dl2; apply orR_dl2; last by rewrite dl2_cat1C; apply eex_nil; apply ew_dl2; exact: id_dl2.
+  rewrite dl2_cat1C; apply eex_nil; rewrite dl2_cat1C; apply eex_nil.
+  apply orL_dl2; first by rewrite dl2_cat1C; apply ew_dl2; exact: id_dl2.
+  rewrite dl2_cat1C; apply eex_nil; rewrite dl2_cat1C; apply eex_nil; apply ew_dl2.
+  exact: comm_hyper_xy.
+- apply orR_dl2.
+  by rewrite dl2_cat1C; apply ew_dl2; exact: id_dl2.
+Qed.
+
+Lemma dl2_seq_orA2 (a b c : formula) :
+  seq_calc_dl2 [:: ([:: (a `\/ b) `\/ c] |- [:: a `\/ (b `\/ c)])].
+Proof.
+apply orL_dl2; apply orR_dl2.
+- rewrite dl2_cat1C; apply eex_nil. apply orR_dl2.
+  by rewrite dl2_cat1C; apply eex_nil; apply ew_dl2; exact: id_dl2.
+- apply orL_dl2; last by rewrite dl2_cat1C; apply ew_dl2; exact: id_dl2. 
+  rewrite dl2_cat1C; apply eex_nil; apply orL_dl2; apply orR_dl2;
+    first by rewrite dl2_cat1C; apply ew_dl2; exact: id_dl2.
+  rewrite dl2_cat1C; apply eex_nil; rewrite dl2_cat1C; apply eex_nil; apply ew_dl2.
+  exact: comm_hyper_xy.
+Qed.
+
+Lemma dl2_seq_and1 (a b : formula) :
+  seq_calc_dl2 [:: ([:: a `/\ (a `\/ b)] |- [:: a])].
+Proof.
+apply andL_dl2; by rewrite dl2_cat1C; apply ew_dl2; exact: id_dl2. 
+Qed.
+
+Lemma dl2_seq_and2 (a b : formula) :
+  seq_calc_dl2 [:: ([:: a] |- [:: a `/\ (a `\/ b)])].
+Proof.
+apply andR_dl2; first by exact: id_dl2. 
+apply orR_dl2; first by rewrite dl2_cat1C; apply ew_dl2; exact: id_dl2.
+Qed.
+
+Lemma dl2_seq_or1 (a b : formula) :
+  seq_calc_dl2 [:: ([:: a `\/ (a `/\ b)] |- [:: a])].
+Proof.
+apply orL_dl2; last by exact: id_dl2. 
+apply andL_dl2; by rewrite dl2_cat1C; apply ew_dl2; exact: id_dl2.
+Qed.
+
+Lemma dl2_seq_or2 (a b : formula) :
+  seq_calc_dl2 [:: ([:: a] |- [:: a `\/ (a `/\ b)])].
+Proof.
+apply orR_dl2;  by exact: id_dl2. 
+Qed.
+
+Lemma dl2_seq_unit_el1 (a : formula) :
+  seq_calc_dl2 [:: ([:: a `** (ldl_bool _ _ _ _ true)] |- [:: a ])].
+Proof.
+apply mandL_dl2.
+have h : [:: a; ldl_bool neg_undef impl_def m_def l_def true] = 
+           [:: a] ++ [:: ldl_bool neg_undef impl_def m_def l_def true]. by rewrite//=.
+rewrite h.
+apply w_dl2. rewrite dl2_cat1C.
+apply id_dl2.
+Qed.
+
+Lemma dl2_seq_unit_el2 (a : formula) :
+  seq_calc_dl2 [:: ([:: a ] |- [:: a `** (ldl_bool _ _ _ _ true)])].
+Proof.
+rewrite -( cats0 [:: a]) dl2_cat1C.
+rewrite-( cats0 [:: ldl_mand (tnth [:: a; ldl_bool neg_undef impl_def m_def l_def true])]).
+rewrite-( cats0 [:: ldl_mand (tnth [:: a; ldl_bool neg_undef impl_def m_def l_def true])]).
+apply mandR_dl2.
+- by apply id_dl2.
+- by apply top_dl2. 
+Qed.
+
+Lemma dl2_seq_mandA1 (a b c : formula) :
+  seq_calc_dl2 [:: ([:: a `** (b `** c)] |- [:: (a `** b) `** c])].
+Proof.
+apply mandL_dl2. 
+have cat_xy : [:: a; ldl_mand (tnth [:: b; c])] = [:: a] ++[:: ldl_mand (tnth [:: b; c])]. by rewrite//=.
+rewrite cat_xy. rewrite exL_nil.
+apply mandL_dl2.
+have ha : [:: b; c; a] = [:: b;  c] ++[:: a]. by rewrite//=.
+rewrite ha. rewrite exL_nil dl2_cat1C.
+rewrite-( cats0 [:: ldl_mand (tnth [:: ldl_mand (tnth [:: a; b]); c])]).
+rewrite-( cats0 [:: ldl_mand (tnth [:: ldl_mand (tnth [:: a; b]); c])]).
+have catbc : [:: a] ++ [:: b; c] = [:: a; b] ++[:: c] by rewrite //=.
+rewrite catbc.
+apply mandR_dl2; last by apply id_dl2.
+have catab : [:: a; b] = [:: a] ++[:: b] by rewrite//=.
+rewrite catab.
+rewrite -(cats0 [:: ldl_mand (tnth [:: a; b])]).
+rewrite -(cats0 [:: ldl_mand (tnth [:: a; b])]).
+apply mandR_dl2; by apply id_dl2.
+Qed.
+
+Lemma dl2_seq_mandA2 (a b c : formula) :
+  seq_calc_dl2 [:: ([:: (a `** b) `** c] |- [:: a `** (b `** c)])].
+Proof.
+apply mandL_dl2; apply mandL_dl2.
+have ha : [:: a; b; c] = [:: a] ++ [:: b; c] by rewrite//=.
+rewrite ha dl2_cat1C.
+rewrite-( cats0 [:: ldl_mand (tnth [:: a; ldl_mand (tnth [:: b; c])])]).
+rewrite-( cats0 [:: ldl_mand (tnth [:: a; ldl_mand (tnth [:: b; c])])]).
+apply mandR_dl2; first by apply id_dl2.
+have catbc : [:: b; c] = [:: b] ++[:: c] by rewrite//=.
+rewrite {1}catbc.
+rewrite -(cats0 [:: ldl_mand (tnth [:: b; c])]).
+rewrite -(cats0 [:: ldl_mand (tnth [:: b; c])]).
+apply mandR_dl2; by apply id_dl2.
 Qed.
 
 End dl2_hyperseq_calc.
