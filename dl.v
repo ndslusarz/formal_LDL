@@ -480,6 +480,12 @@ Definition mine_dev (x y : \bar R) : \bar R := (x - y) / y.
 
 Definition maxe_dev (x y : \bar R) : \bar R := (x - y) / x.
 
+Lemma mine_devxx (x : \bar R) : x \is a fin_num -> mine_dev x x = 0.
+Proof. by move=> finx; rewrite /mine_dev subee// mul0e. Qed.
+
+Lemma maxe_devxx (x : \bar R) : x \is a fin_num -> maxe_dev x x = 0.
+Proof. by move=> finx; rewrite /maxe_dev subee// mul0e. Qed.
+
 Let bigmine n (f : 'I_n -> (\bar R)) := \big[mine/+oo]_(i < n) f i.
 Let bigmaxe n (f : 'I_n -> (\bar R)) := \big[maxe/-oo]_(i < n) f i.
 

@@ -63,20 +63,24 @@ Lemma stl_infty_mor_or_eq f1 (e1 e2 : expr (boolT_def f1 m_def l_def)) :
   [[e1 `++ e2]]_stli = [[e1 `\/ e2]]_stli.
 Proof. by rewrite//=. Qed.
 
-Lemma stl_infty_mandI f1 f2 (e : expr (boolT_def f1 m_def f2)) : [[ e `** e ]]_stli = [[ e ]]_stli.
+Lemma stl_infty_mandI f1 f2 (e : expr (boolT_def f1 m_def f2)) :
+  [[ e `** e ]]_stli = [[ e ]]_stli.
 Proof.
 rewrite //= !big_ord_recl !big_ord0 !tnthS !tnth0.
 set t1 := _ e.
-rewrite /=/mine; repeat case: ifP => //=. 
-move => _ h. apply negbT in h. rewrite ltey in h. 
-by move /negPn /eqP in h.
+rewrite /= /mine; repeat case: ifP => //=.
+by move/negbT; rewrite -leNgt leye_eq => /eqP.
 Qed.
 
-Lemma stl_infty_morI f1 f2 (e : expr (boolT_def f1 m_def f2)) : [[ e `++ e ]]_stli = [[ e ]]_stli.
+(* TODO: move*)
+Lemma lteNy (x : \bar R) : (x < -oo) = false.
+Proof. by case: x. Qed.
+
+Lemma stl_infty_morI f1 f2 (e : expr (boolT_def f1 m_def f2)) :
+  [[ e `++ e ]]_stli = [[ e ]]_stli.
 Proof.
 rewrite /= !big_ord_recl !big_ord0 !tnthS !tnth0 /maxe.
-repeat case: ifP => //=. 
-move => _ h. rewrite ltNge leNye in h; by [].
+by rewrite lteNy ltxx.
 Qed.
 
 Lemma stl_infty_mandC f1 f2 (e1 e2 : expr (boolT_def f1 m_def f2)) :
@@ -112,19 +116,20 @@ Lemma stl_infty_mandA f1 f2 (e1 e2 e3 : expr (boolT_def f1 m_def f2)) :
 Proof.
 rewrite /= /maxR !big_ord_recl !big_ord0 /= !big_ord_recl !big_ord0 !tnthS !tnth0 !miney.
 rewrite /= /mine; repeat case: ifP => //=; try by move=> _ ->.
-- by move=> h1 h2 h3; rewrite (lt_trans h1 h3) in h2.
+- by move=> h1 h2 h3; rewrite (lt_trans h1) in h2.
 - rewrite !ltNge => /negbFE h1 /negbFE h2 /negbFE h3.
-  by rewrite (le_trans h3 h1).
+  by rewrite (le_trans h3).
 Qed.
 
 Lemma stl_infty_involution (e : expr boolT_fuzzy) :
   [[`~ (`~e)]]_stli = [[ e ]]_stli.
-Proof. by rewrite //= oppeK. Qed.
+Proof. by rewrite /= oppeK. Qed.
 
 Theorem stl_infty_mand_unit f1 f2 (e : expr (boolT_def f1 m_def f2)) :
   [[ e `** dl_bool _ _ _ _ true ]]_stli = [[ e ]]_stli.
 Proof.
-by rewrite /=!big_ord_recl big_ord0 !tnthS !tnth0 /mine; case: ifPn; rewrite ltey => /negbTE/eqP.
+rewrite /=!big_ord_recl big_ord0 !tnthS !tnth0 /mine.
+by rewrite ltey; case: ifPn => //; rewrite negbK => /eqP.
 Qed.
 
 Theorem stl_infty_mor_unit f1 f2 (e : expr (boolT_def f1 m_def f2)) :
@@ -136,17 +141,9 @@ Qed.
 Lemma stl_infty_residuation (e1 e2 e3 : expr boolT_stli) :
   [[e1 `** e2]]_stli <= [[ e3 ]]_stli <-> [[ e2 ]]_stli <= [[e1 `=> e3]]_stli.
 Proof.
-split; rewrite//= /minR !big_ord_recl !big_ord0 !tnthS !tnth0 !miney /mine; repeat case: ifPn; rewrite ?leey//=.
-- move => h1 h2 _.
-  rewrite -leNgt in h1.
-  by rewrite (le_trans h1 h2).
-- move => /ltW h1 _ h3.
-  by rewrite (le_trans h1 h3).
-Qed.
-
-Lemma neg_swap_ineq (e1 e2 : \bar R) : (- e1 <= - e2)%E = (e2 <= e1)%E.
-Proof.
-rewrite leeNr oppeK//=.
+split; rewrite /= /minR !big_ord_recl !big_ord0 !tnthS !tnth0 !miney /mine; repeat case: ifPn; rewrite ?leey//=.
+- by move => h1 h2 _; by rewrite (le_trans _ h2)// leNgt.
+- by move => /ltW h1 _; exact: le_trans.
 Qed.
 
 Lemma stl_infty_demorgan_mand f1 (e1 e2 : expr (boolT_def f1 m_def l_def)) :
@@ -154,31 +151,31 @@ Lemma stl_infty_demorgan_mand f1 (e1 e2 : expr (boolT_def f1 m_def l_def)) :
 Proof.
 rewrite /= /maxR !big_ord_recl !big_ord0 !tnthS !tnth0 !miney !maxeNy.
 rewrite /= /mine /maxe; repeat case: ifP; rewrite//= => h1 h2. move/ltW in h1.
-- rewrite neg_swap_ineq in h1. apply ltW in h2. 
-  have Heq : [[e1]]_stli = [[e2]]_stli.  apply le_anti; by rewrite h1 h2//=.
+- rewrite leeN2 in h1; apply ltW in h2.
+  have Heq : [[e1]]_stli = [[e2]]_stli by apply le_anti; rewrite h1 h2.
   by rewrite eqe_oppP Heq.
 - move/negP/negP in h1. move/negP/negP in h2.
-  rewrite -leNgt neg_swap_ineq in h1.
+  rewrite -leNgt leeN2 in h1.
   rewrite -leNgt in h2.
-  have Heq : [[e1]]_stli = [[e2]]_stli.  apply le_anti; by rewrite h1 h2//=.
+  have Heq : [[e1]]_stli = [[e2]]_stli by apply le_anti; rewrite h1 h2.
   by rewrite eqe_oppP Heq.
 Qed.
 
 Lemma stl_infty_demorgan_mor f1 (e1 e2 : expr (boolT_def f1 m_def l_def)) :
   [[`~ (e1 `++ e2)]]_stli = [[(`~ e1) `** (`~ e2)]]_stli.
 rewrite /= /maxR !big_ord_recl !big_ord0 !tnthS !tnth0 !miney !maxeNy.
-rewrite /= /mine /maxe; repeat case: ifP; rewrite//= => h1 h2. move/ltW in h1.
-- rewrite neg_swap_ineq in h1. apply ltW in h2. 
-  have Heq : [[e1]]_stli = [[e2]]_stli.  apply le_anti; by rewrite h1 h2//=.
+rewrite /= /mine /maxe; repeat case: ifP; rewrite //= => h1 h2. move/ltW in h1.
+- rewrite leeN2 in h1. apply ltW in h2.
+  have Heq : [[e1]]_stli = [[e2]]_stli by apply le_anti; rewrite h1 h2.
   by rewrite eqe_oppP Heq.
 - move/negP/negP in h1. move/negP/negP in h2.
-  rewrite -leNgt neg_swap_ineq in h1.
+  rewrite -leNgt leeN2 in h1.
   rewrite -leNgt in h2.
-  have Heq : [[e1]]_stli = [[e2]]_stli.  apply le_anti; by rewrite h1 h2//=.
+  have Heq : [[e1]]_stli = [[e2]]_stli by apply le_anti; rewrite h1 h2.
   by rewrite eqe_oppP Heq.
 Qed.
 
-Lemma stl_infty_distr f1 (e1 e2 e3 :  (expr (boolT_def f1 m_def l_def))) :
+Lemma stl_infty_distr f1 (e1 e2 e3 : expr (boolT_def f1 m_def l_def)) :
   [[ e1 `/\ (e2 `\/ e3)]]_stli = [[ (e1 `/\ e2) `\/ (e1 `/\ e3)]]_stli.
 Proof.
 rewrite /= /maxR !big_ord_recl !big_ord0 /= !big_ord_recl !big_ord0 !tnthS !tnth0 !miney !maxeNy.
@@ -206,23 +203,23 @@ rewrite /= /mine /maxe; repeat case: ifP; rewrite//= => h1 h2 h3 h4 h5.
   apply: le_anti. by apply/andP; split.
 Qed.
 
-Lemma stl_infty_and_abs f1 (e1 e2 : (expr (boolT_def f1 m_def l_def))) :
+Lemma stl_infty_and_abs f1 (e1 e2 : expr (boolT_def f1 m_def l_def)) :
   [[ e1 `/\ (e1 `\/ e2)]]_stli = [[ e1 ]]_stli.
 Proof.
 rewrite /= /maxR !big_ord_recl !big_ord0 /= !big_ord_recl !big_ord0 !tnthS !tnth0 !miney !maxeNy.
 rewrite /= /mine /maxe; repeat case: ifP; rewrite//= => h1 h2.
-- apply ltW in h1. 
+- apply ltW in h1.
   rewrite  ltNge in h2. move/negbFE in h2.
   apply: le_anti. by apply/andP; split.
 Qed.
 
-Lemma dl2_or_abs f1 (e1 e2 : (expr (boolT_def f1 m_def l_def))) :
+Lemma dl2_or_abs f1 (e1 e2 : expr (boolT_def f1 m_def l_def)) :
   [[ e1 `\/ (e1 `/\ e2)]]_stli = [[ e1 ]]_stli.
 Proof.
 rewrite /= /maxR !big_ord_recl !big_ord0 /= !big_ord_recl !big_ord0 !tnthS !tnth0 !miney !maxeNy.
 rewrite /= /mine /maxe; repeat case: ifP; rewrite//= => h1 h2.
-- apply ltW in h2. 
-  rewrite  ltNge in h1. move/negbFE in h1.
+- apply ltW in h2.
+  rewrite ltNge in h1. move/negbFE in h1.
   apply: le_anti. by apply/andP; split.
 Qed.
 
@@ -234,7 +231,7 @@ repeat case: ifP => //=.
 - move => _ _  h3.
   by rewrite ltNge leey in h3.
 - move => /negP h1 _ /ltW h3. by [].
-- move => h1 h2 /negP/negP h. 
+- move => h1 h2 /negP/negP h.
   rewrite -leNgt leye_eq in h. move /eqP in h.
   by rewrite h le0y.
 - move => _ /negP h2 /negP/negP h3.

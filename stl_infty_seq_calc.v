@@ -1,11 +1,11 @@
 From HB Require Import structures.
-Require Import Coq.Program.Equality.
+Require Import Stdlib.Program.Equality.
 From mathcomp Require Import all_ssreflect all_algebra.
 From mathcomp Require Import lra.
 From mathcomp Require Import all_classical reals.
 From mathcomp Require Import reals ereal interval_inference.
 From mathcomp Require Import topology derive normedtype sequences
- exp measure lebesgue_measure lebesgue_integral hoelder finmap multiset.
+  exp measure lebesgue_measure lebesgue_integral hoelder finmap multiset.
 Require Import mathcomp_extra analysis_extra dl stl_infty.
 
 Set Implicit Arguments.
@@ -28,9 +28,8 @@ Import numFieldTopology.Exports.
 Section stl_hypersequent_calc.
 Local Open Scope ereal_scope.
 Local Open Scope dl_scope.
-Context {R : realType}.
-Context {K : choiceType}.
-Implicit Types (s : seq K).
+Context {R : realType} {K : choiceType}.
+Implicit Types s : seq K.
 Local Notation "[[ e ]]_stli" := (@stl_infty_translation R _ e).
 
 Reserved Notation "Q |- P" (no associativity, at level 61).
@@ -43,10 +42,9 @@ Let hypersequent := seq (seq formula * seq formula).
 Implicit Type Q P S : hypersequent.
 Implicit Type A B C D X Y : seq formula.
 
-
 Inductive seq_calc_stli : hypersequent -> Prop :=
 | id_stli : forall Q (a : formula),
-    seq_calc_stli ( ([::a] |- [::a]) :: Q)
+    seq_calc_stli (([::a] |- [::a]) :: Q)
 (*structural*)
 | eex_stli : forall Q P S1 S2,
     seq_calc_stli (S1 ++ P ++ Q ++ S2) ->
@@ -60,7 +58,7 @@ Inductive seq_calc_stli : hypersequent -> Prop :=
 | comm_hyper_stli : forall Q A1 A2 B1 B2 C D,
     seq_calc_stli (((A1 ++ B1) |- C) :: Q) ->
     seq_calc_stli (((A2 ++ B2) |- D) :: Q) ->
-    seq_calc_stli ( ((A1 ++ A2) |- C) :: ((B1 ++ B2) |- D) :: Q)
+    seq_calc_stli (((A1 ++ A2) |- C) :: ((B1 ++ B2) |- D) :: Q)
 | comm_stli : forall Q A B C,
     seq_calc_stli (((A ++ B ++ B) |- C) :: Q) ->
     seq_calc_stli (((A ++ B) |- C) :: Q)
@@ -82,12 +80,12 @@ Inductive seq_calc_stli : hypersequent -> Prop :=
     seq_calc_stli (((a :: B) |- A) :: ((b :: B) |- A):: Q ) ->
     seq_calc_stli ((((a `/\ b) :: B) |- A) :: Q)
 | andR_stli : forall Q A B (a b : formula),
-    seq_calc_stli ( (A |- a :: B) :: Q ) ->
-    seq_calc_stli ( (A |- b :: B) :: Q) ->
+    seq_calc_stli ((A |- a :: B) :: Q ) ->
+    seq_calc_stli ((A |- b :: B) :: Q) ->
     seq_calc_stli ((A |- (a `/\ b) :: B) :: Q )
-| orL_stli : forall  Q A B (a b : formula),
-    seq_calc_stli ( ((b :: B) |- A) :: Q) ->
-    seq_calc_stli ( ((a :: B) |- A) :: Q) ->
+| orL_stli : forall Q A B (a b : formula),
+    seq_calc_stli (((b :: B) |- A) :: Q) ->
+    seq_calc_stli (((a :: B) |- A) :: Q) ->
     seq_calc_stli (((a `\/ b) :: B |- A) :: Q)
 | orR_stli : forall Q A B (a b : formula),
     seq_calc_stli ((A |- a :: B ) :: ( A |- b :: B) :: Q ) ->
@@ -110,66 +108,14 @@ Inductive seq_calc_stli : hypersequent -> Prop :=
     seq_calc_stli ((b :: A2 |- B) :: Q) ->
     seq_calc_stli (( (a `=> b) :: A1 ++ A2 |- B) :: Q).
 
-
-
-Lemma big_min_cat A B :
-  \big[mine/+oo]_(j <- A ++ B) [[j]]_stli =
-  mine (\big[mine/+oo]_(j <- A) [[j]]_stli) (\big[mine/+oo]_(j <- B) [[j]]_stli).
-Proof.
-elim: A => [|x xs IH].
-- rewrite /= big_nil//= {2}/mine; case: ifP; intros; rewrite//=.
-  case: B i. rewrite big_nil//=. 
-  move => a l IH. rewrite ltNge leey in IH; rewrite//=. 
-- simpl; rewrite !big_cons -minA; f_equal.
-  by exact: IH.
-Qed.
-
-Lemma big_max_cat A B:
-  \big[maxe/-oo]_(j <- A ++ B) [[j]]_stli =
-  maxe (\big[maxe/-oo]_(j <- A) [[j]]_stli) (\big[maxe/-oo]_(j <- B) [[j]]_stli).
-Proof.
-elim: A => [|x xs IH].
-- rewrite /= big_nil//= {2}/maxe; case: ifP; intros; rewrite//=. 
-  case: B n. rewrite big_nil//=. 
-  move => a l /negP/negP IH. rewrite ltNye negbK in IH. move/eqP in IH; rewrite//=.
-- simpl; rewrite !big_cons -maxA; f_equal.
-  by exact IH.
-Qed.
-
-Lemma mine_gexy (a b c : \bar R):
-  a <= b -> mine a c <= mine b c.
-Proof.
-move => H. rewrite /mine. repeat case: ifPn; rewrite//=.
--  move => _ /ltW h2; by [].
-- move => /ltW h1 h2.
-  rewrite -leNgt in h2.
-  by rewrite (le_trans h2 H).
-Qed. 
-
-Lemma maxe_gexy (a b c : \bar R):
-  a <= b -> maxe a c <= maxe b c.
-Proof.
-move => H. rewrite /maxe. repeat case: ifPn; rewrite//=.
-- move => h1 /ltW h2. by rewrite -leNgt in h1.
-- move => /ltW h1 _. 
-  by rewrite (le_trans H h1).
-Qed. 
-
-Lemma neg_swap_ineq (e1 e2 : \bar R) : (- e1 <= - e2)%E = (e2 <= e1)%E.
-Proof.
-rewrite leeNr oppeK//=.
-Qed.
-
-
-Lemma sound_stli Q:
-  seq_calc_stli Q ->
+Lemma sound_stli Q : seq_calc_stli Q ->
   exists2 q : seq formula * seq formula, q \in Q &
-(\big[mine/+oo]_(i <- (map stl_infty_translation (fst q))) i  <=
-   \big[maxe/-oo]_(i <- (map stl_infty_translation (snd q))) i).
+  \big[mine/+oo]_(i <- map stl_infty_translation q.1) i <=
+  \big[maxe/-oo]_(i <- map stl_infty_translation q.2) i.
 Proof.
 intros; rewrite//=. dependent induction H.
 - exists ([:: a] |- [:: a]); first by rewrite //= mem_head.
-  by rewrite !big_cons !big_nil miney maxeNy. 
+  by rewrite !big_cons !big_nil miney maxeNy.
 - case: IHseq_calc_stli => [M].
   rewrite !mem_cat => IH1 IH2.
   exists M => //.
@@ -181,24 +127,22 @@ intros; rewrite//=. dependent induction H.
   by exists q => //; rewrite mem_cat IH1 orTb.
 - case IHseq_calc_stli => [M + IH2].
   rewrite !mem_cat => /orP [h |/orP [h | h]]; exists M => //;
-            by rewrite mem_cat h ?orbT; split; rewrite//=.
+  by rewrite mem_cat h ?orbT; split.
 - case IHseq_calc_stli1 => [q1].
   case IHseq_calc_stli2 => [q2].
-  rewrite !in_cons //= => /predU1P[h2 | h2] IH12 /predU1P[h1 | h1] IH22.
+  rewrite !in_cons //= => /predU1P[|]h2 IH12 /predU1P[|]h1 IH22.
   + subst.
-    rewrite /= !big_map !big_min_cat in IH12 IH22.
-    have := le_total_ereal (\big[mine/+oo]_(j <- A2) [[j ]]_stli) (\big[mine/+oo]_(j <- B1) [[j ]]_stli).
-    move => /orP [h | h].
+    rewrite /= !big_map !big_cat in IH12 IH22.
+    have /orP[h|h] := le_total_ereal (\big[mine/+oo]_(j <- A2) [[j ]]_stli)
+                                    (\big[mine/+oo]_(j <- B1) [[j ]]_stli).
     * apply (mine_gexy (\big[mine/+oo]_(j <- A1) [[j ]]_stli)) in h.
-      rewrite (mineC (\big[mine/+oo]_(j <- A2) [[j ]]_stli)) (mineC (\big[mine/+oo]_(j <- B1) [[j ]]_stli))
-        in h.
+      rewrite (minC (\big[mine/+oo]_(j <- A2) [[j ]]_stli))
+              (minC (\big[mine/+oo]_(j <- B1) [[j ]]_stli)) in h.
       exists (A1 ++ A2 |- C); subst; first by rewrite mem_head.
-      rewrite//= !big_map big_min_cat.
-      by rewrite (le_trans h IH22).
+      by rewrite//= !big_map big_cat/= (le_trans h).
     * apply (mine_gexy (\big[mine/+oo]_(j <- B2) [[j ]]_stli)) in h.
-      exists (B1 ++ B2 |- D); subst; first by rewrite !in_cons eq_refl orTb orbT.
-      rewrite//= !big_map big_min_cat.
-      by rewrite (le_trans h IH12).
+      exists (B1 ++ B2 |- D); subst; first by rewrite !in_cons eqxx orTb orbT.
+      by rewrite//= !big_map big_cat (le_trans h).
   + by exists q1 => //; rewrite !in_cons h1 !orbT.
   + by exists q2 => //; rewrite !in_cons h2 !orbT.
   + by exists q1 => //; rewrite !in_cons h1 !orbT.
@@ -209,35 +153,36 @@ intros; rewrite//=. dependent induction H.
     rewrite //= /minR !big_map.
     suff : \big[mine/+oo]_(j <- A ++ B ++ B) [[j]]_stli =
            \big[mine/+oo]_(j <- A ++ B) [[j]]_stli by move=> ->.
-    rewrite !big_min_cat {1}/mine {2}/mine {7}/mine {11}/mine; repeat case: ifP; rewrite//=.
+    rewrite !big_cat/= {1}/mine {2}/mine {7}/mine {11}/mine; repeat case: ifP; rewrite//=.
   + by exists q => //; rewrite !in_cons IH1 !orbT.
 - move: IHseq_calc_stli => [q + IH2].
   rewrite in_cons => /predU1P[|IH1].
   + exists (A ++ B |- C); subst; first by rewrite mem_head.
     rewrite //= !big_map.
     rewrite //= !big_map in IH2.
-    have := le_total_ereal (\big[mine/+oo]_(j <- A) [[j ]]_stli) (\big[mine/+oo]_(j <- B) [[j ]]_stli).
-    move => /orP [h|h]; rewrite !big_min_cat {1}/mine; case: ifPn; rewrite//=.
-    -  rewrite ltNge. move => /negPn h'. by rewrite (le_trans h' IH2).
-    -  rewrite ltNge. move => /negPn h'. by rewrite (le_trans h' IH2).
+    have := le_total_ereal (\big[mine/+oo]_(j <- A) [[j ]]_stli)
+                          (\big[mine/+oo]_(j <- B) [[j ]]_stli).
+    move => /orP[|] h; rewrite !big_cat/= {1}/mine; case: ifPn => //=.
+    * by rewrite -leNgt => /le_trans; exact.
+    * by rewrite -leNgt => /le_trans; exact.
   + by exists q => //; rewrite !in_cons IH1 !orbT.
 - move: IHseq_calc_stli => [q + IH2].
   rewrite in_cons => /predU1P[|IH1].
   + exists (X ++ B ++ A ++ Y |- C); subst; first by rewrite mem_head.
-    rewrite //= !big_map !big_min_cat.
-    rewrite //= !big_map !big_min_cat in IH2.
-    rewrite (mineA (\big[mine/+oo]_(j <- A) [[j ]]_stli)) in IH2.
-    rewrite (mineC (\big[mine/+oo]_(j <- A) [[j ]]_stli)) in IH2.
-    by rewrite (mineA (\big[mine/+oo]_(j <- B) [[j ]]_stli))//=.
+    rewrite //= !big_map !big_cat/=.
+    rewrite //= !big_map !big_cat/= in IH2.
+    rewrite (minA (\big[mine/+oo]_(j <- A) [[j ]]_stli)) in IH2.
+    rewrite (minC (\big[mine/+oo]_(j <- A) [[j ]]_stli)) in IH2.
+    by rewrite (minA (\big[mine/+oo]_(j <- B) [[j ]]_stli)).
   + by exists q => //; rewrite !in_cons IH1 !orbT.
 - move: IHseq_calc_stli => [q + IH2].
   rewrite in_cons => /predU1P[|IH1].
   + exists (C |- X ++ B ++ A ++ Y); subst; first by rewrite mem_head.
-    rewrite //= !big_map !big_max_cat.
-    rewrite //= !big_map !big_max_cat in IH2.
+    rewrite //= !big_map !big_cat/=.
+    rewrite //= !big_map !big_cat/= in IH2.
     rewrite (maxA (\big[maxe/-oo]_(j <- A) [[j ]]_stli)) in IH2.
     rewrite (maxC (\big[maxe/-oo]_(j <- A) [[j ]]_stli)) in IH2.
-    by rewrite (maxA (\big[maxe/-oo]_(j <- B) [[j ]]_stli))//=.
+    by rewrite (maxA (\big[maxe/-oo]_(j <- B) [[j ]]_stli)).
   + by exists q => //; rewrite !in_cons IH1 !orbT.
 - exists (dl_bool _ _ _ _ false :: A |- B); first by rewrite mem_head.
   by rewrite /minR/maxR//= !big_cons !big_map ge_min leNye orTb.
@@ -250,79 +195,71 @@ intros; rewrite//=. dependent induction H.
     rewrite //= !big_cons !big_map in IH2.
     rewrite {2}/mine; case: ifP; rewrite//=.
     move => /negP/negP h. rewrite -leNgt in h.
-    apply (mine_gexy  (\big[mine/+oo]_(j <- B) [[j ]]_stli)) in h.
-    by rewrite (le_trans h IH2).
+    apply (mine_gexy (\big[mine/+oo]_(j <- B) [[j ]]_stli)) in h.
+    by rewrite (le_trans h).
   + move/predU1P : IH1 => [|IH1].
     exists ((a `/\ b) :: B |- A); subst; first by rewrite mem_head.
     rewrite //= !big_ord_recl big_ord0 !tnthS !tnth0 big_cons !big_map miney.
     rewrite //= !big_cons !big_map in IH2.
-    rewrite {2}/mine; case: ifP; rewrite//=.
-    move => /ltW h.
-     apply (mine_gexy (\big[mine/+oo]_(j <- B) [[j ]]_stli)) in h.
-    by rewrite (le_trans h IH2).
+    rewrite {2}/mine; case: ifP => //= /ltW.
+    by move/(mine_gexy (\big[mine/+oo]_(j <- B) [[j ]]_stli))/le_trans; exact.
   + by exists q => //; rewrite !in_cons IH1 !orbT.
 - case IHseq_calc_stli1 => [q1].
   case IHseq_calc_stli2 => [q2].
-  rewrite !in_cons //= => /predU1P[h2 | h2] IH12 /predU1P[h1 | h1] IH22.
+  rewrite !in_cons //= => /predU1P[|]h2 IH12 /predU1P[|]h1 IH22.
   + subst.
     exists (A |- (a `/\ b) :: B); subst; first by rewrite mem_head.
-    rewrite //=!big_map big_cons !big_map in IH12.
-    rewrite //= !big_map big_cons !big_map in IH22.
-    rewrite //= !big_ord_recl big_ord0 !tnthS !tnth0 big_cons !big_map miney.
-    rewrite {2}/mine. case: ifP; rewrite//=.
+    rewrite /= !big_map big_cons !big_map in IH12.
+    rewrite /= !big_map big_cons !big_map in IH22.
+    rewrite /= !big_ord_recl big_ord0 !tnthS !tnth0 big_cons !big_map miney.
+    rewrite {2}/mine; case: ifP => //=.
   + by exists q1 => //; rewrite !in_cons h1 !orbT.
   + by exists q2 => //; rewrite !in_cons h2 !orbT.
   + by exists q1 => //; rewrite !in_cons h1 !orbT.
 - case IHseq_calc_stli1 => [q1].
   case IHseq_calc_stli2 => [q2].
-  rewrite !in_cons //= => /predU1P[h2 | h2] IH12 /predU1P[h1 | h1] IH22.
+  rewrite !in_cons //= => /predU1P[|]h2 IH12 /predU1P[|]h1 IH22.
   + subst.
     exists ((a `\/ b) :: B |- A); subst; first by rewrite mem_head.
     rewrite //= big_cons !big_map in IH12.
     rewrite //= big_cons !big_map in IH22.
     rewrite //= !big_ord_recl big_ord0 !tnthS !tnth0 big_cons !big_map maxeNy.
-    rewrite {1}/maxe. case: ifP; rewrite//=.
+    by rewrite {1}/maxe; case: ifP.
   + by exists q1 => //; rewrite !in_cons h1 !orbT.
   + by exists q2 => //; rewrite !in_cons h2 !orbT.
   + by exists q1 => //; rewrite !in_cons h1 !orbT.
 - move: IHseq_calc_stli => [q + IH2].
   rewrite !in_cons => /predU1P[|IH1].
   + exists (A |- (a `\/ b) :: B); subst; first by rewrite mem_head.
-    rewrite //= big_cons !big_map in IH2.
-    rewrite //= !big_ord_recl big_ord0 !tnthS !tnth0 big_cons !big_map maxeNy.
-    rewrite {2}/maxe. case: ifP; rewrite//=.
-    move => /ltW h.
-    apply (maxe_gexy (\big[maxe/-oo]_(j <- B) [[j ]]_stli)) in h.
-    by rewrite (le_trans IH2 h).
+    rewrite /= big_cons !big_map in IH2.
+    rewrite /= !big_ord_recl big_ord0 !tnthS !tnth0 big_cons !big_map maxeNy.
+    rewrite {2}/maxe. case: ifP => //= /ltW.
+    by move/(maxe_gexy (\big[maxe/-oo]_(j <- B) [[j ]]_stli)); exact: le_trans.
   + move/predU1P : IH1 => [|IH1].
     exists (A |- (a `\/ b) :: B); subst; first by rewrite mem_head.
-    rewrite //= big_cons !big_map in IH2.
-    rewrite //= !big_ord_recl big_ord0 !tnthS !tnth0 big_cons !big_map maxeNy.
-    rewrite {2}/maxe. case: ifP; rewrite//=.
-    move => /negP/negP h. rewrite -leNgt in h.
-    apply (maxe_gexy (\big[maxe/-oo]_(j <- B) [[j ]]_stli)) in h.
-    by rewrite (le_trans IH2 h).
+    rewrite /= big_cons !big_map in IH2.
+    rewrite /= !big_ord_recl big_ord0 !tnthS !tnth0 big_cons !big_map maxeNy.
+    rewrite {2}/maxe; case: ifP => //= /negbT; rewrite -leNgt.
+    by move/(maxe_gexy (\big[maxe/-oo]_(j <- B) [[j ]]_stli)); exact: le_trans.
   + by exists q => //; rewrite !in_cons IH1 !orbT.
 - move: IHseq_calc_stli => [q + IH2].
   rewrite !in_cons => /predU1P[|IH1].
   + exists (A |- [:: (`~ a)]); subst; first by rewrite mem_head.
     rewrite //= !big_cons big_nil maxNye in IH2.
     rewrite leeNy_eq {1}/mine in IH2; move/eqP in IH2.
-    rewrite //=!big_map !big_cons big_nil maxeNy.
+    rewrite /= !big_map !big_cons big_nil maxeNy.
     move: IH2. case: ifP.
-    * move => _ h. rewrite h.
-      have h_inf : - -oo = +oo. move => t; have hh := eqe_oppLRP (-oo) (+oo); by [].
-      by rewrite h_inf leey.
-    * by rewrite big_map => _ h; by rewrite h leNye.
+    * by move => _ ->; rewrite leey.
+    * by rewrite big_map => _ ->; rewrite leNye.
   + by exists q => //; rewrite !in_cons IH1 !orbT.
 - case IHseq_calc_stli1 => [q1].
   case IHseq_calc_stli2 => [q2].
-  rewrite !in_cons //= => /predU1P[h2 | h2] IH12 /predU1P[h1 | h1] IH22.
+  rewrite !in_cons //= => /predU1P[|]h2 IH12 /predU1P[|]h1 IH22.
   + subst.
     exists ((`~ a) :: A |- B); subst; first by rewrite mem_head.
     rewrite //=!big_map !big_cons ?big_nil ?maxeNy ?minNye in IH12 IH22.
     rewrite //=!big_map !big_cons {1}/mine; case: ifP; rewrite !big_map//=.
-    by move => /ltW h; rewrite (le_trans h IH12).
+    by move => /ltW /le_trans; exact.
   + by exists q1 => //; rewrite !in_cons h1 !orbT.
   + by exists q2 => //; rewrite !in_cons h2 !orbT.
   + by exists q1 => //; rewrite !in_cons h1 !orbT.
@@ -333,17 +270,17 @@ intros; rewrite//=. dependent induction H.
     rewrite //=!big_map !big_cons big_nil maxeNy; repeat case: ifP.
     - by rewrite leey.
     - move => /negP h.
-      rewrite {1}/mine big_map in IH2. move: IH2. case: ifPn; rewrite//=.
+      rewrite {1}/mine big_map in IH2. move: IH2. case: ifPn => //=.
   + by exists q => //; rewrite !in_cons IH1 !orbT.
 - case IHseq_calc_stli1 => [q1].
   case IHseq_calc_stli2 => [q2].
-  rewrite !in_cons //= => /predU1P[h2 | h2] IH12 /predU1P[h1 | h1] IH22.
+  rewrite !in_cons //= => /predU1P[|]h2 IH12 /predU1P[|] h1 IH22.
   + subst.
     exists ((a `=> b) :: A1 ++ A2 |- B); subst; first by rewrite mem_head.
     rewrite //=!big_map big_cons {1}/mine in IH12.
     rewrite //= !big_map big_cons big_nil maxeNy in IH22.
-    rewrite //=!big_map !big_cons. move: IH12.
-    repeat case: ifP; rewrite ?minye !big_map ?big_min_cat//=; move => h1 h2 h3;
+    rewrite //= !big_map !big_cons. move: IH12.
+    repeat case: ifP; rewrite ?minye !big_map ?big_cat/= => h1 h2 h3;
     rewrite {1}/mine; case: ifP; rewrite//= => h4.
     * move /ltW in h2. have h5 := le_trans IH22 h1.
       by rewrite (le_trans h5).
@@ -356,8 +293,7 @@ intros; rewrite//=. dependent induction H.
     * move: h4; rewrite {1}/mine; case: ifP; rewrite//= =>  h4 /ltW h5.
       - move /ltW in h4. by rewrite (le_trans (le_trans h5 h4) h3).
       - by rewrite (le_trans h5).
-    * rewrite {1}/mine; case: ifP; rewrite//= => /ltW h5.
-      by rewrite (le_trans h5).
+    * by rewrite {1}/mine; case: ifP; rewrite//= => /ltW/le_trans ->.
   + by exists q1 => //; rewrite !in_cons h1 !orbT.
   + by exists q2 => //; rewrite !in_cons h2 !orbT.
   + by exists q1 => //; rewrite !in_cons h1 !orbT.
@@ -371,7 +307,7 @@ Proof.
 intros.
 have hxy M L : M ++ L = [::] ++ M ++ L ++ [::] by rewrite /= cats0.
 rewrite (hxy _  Q P). split => ih.
-- apply eex_stli; by rewrite cats0//=.
+- by apply: eex_stli; rewrite cats0.
 - apply eex_stli in ih. by rewrite cats0//= in ih.
 Qed.
 
@@ -395,17 +331,17 @@ split; rewrite (hxy _  A B) (hxy _  B A);
 exact/exR_stli.
 Qed.
 
-Lemma cat_cons_xyz_xy (I L M N : (seq formula * seq formula)):
+Lemma cat_cons_xyz_xy (I L M N : seq formula * seq formula):
  [:: I; L; M; N] = [:: I; L] ++ [::M; N] .
-Proof. by rewrite //=. Qed.
+Proof. by []. Qed.
 
-Lemma cat_cons_xyz_xyz (I L M N : (seq formula * seq formula)):
- [:: I; L; M; N] = [:: I; L; M] ++ [:: N] .
-Proof. by rewrite //=. Qed.
+Lemma cat_cons_xyz_xyz (I L M N : seq formula * seq formula):
+  [:: I; L; M; N] = [:: I; L; M] ++ [:: N] .
+Proof. by []. Qed.
 
-Lemma comm_xy (a c : formula):
+Lemma comm_xy (a c : formula) :
   [:: [:: c] |- [:: a]] ++ [:: [:: a] |- [:: c]] =
-                   [:: [::] ++ [:: c] |- [:: a], [:: a] ++ [::] |- [:: c] & [::]].
+  [:: [::] ++ [:: c] |- [:: a], [:: a] ++ [::] |- [:: c] & [::]].
 Proof. by []. Qed.
 
 Lemma comm_hyper_xy (a b : formula):
@@ -541,42 +477,34 @@ Qed.
 Lemma stli_seq_and2 (a b : formula) :
   seq_calc_stli [:: ([:: a] |- [:: a `/\ (a `\/ b)])].
 Proof.
-apply andR_stli; first by exact: id_stli. 
+apply andR_stli; first exact: id_stli.
 apply orR_stli; first by rewrite stli_cat1C; apply ew_stli; exact: id_stli.
 Qed.
 
 Lemma stli_seq_or1 (a b : formula) :
   seq_calc_stli [:: ([:: a `\/ (a `/\ b)] |- [:: a])].
 Proof.
-apply orL_stli; last by exact: id_stli.
+apply orL_stli; last exact: id_stli.
 apply andL_stli; by rewrite stli_cat1C; apply ew_stli; exact: id_stli.
 Qed.
 
 Lemma stli_seq_or2 (a b : formula) :
   seq_calc_stli [:: ([:: a] |- [:: a `\/ (a `/\ b)])].
-Proof.
-apply orR_stli;  by exact: id_stli.
-Qed.
+Proof. exact/orR_stli/id_stli. Qed.
 
 Lemma stli_seq_unit_el1 (a : formula) :
   seq_calc_stli [:: ([:: a `/\ dl_bool _ _ _ _ true] |- [:: a ])].
 Proof.
-apply andL_stli.
-have h : [:: [:: a] |- [:: a]; [:: dl_bool neg_def impl_def m_def l_def true] |- [:: a]] =
-           [:: [:: a] |- [:: a]] ++ [:: [:: dl_bool neg_def impl_def m_def l_def true] |- [:: a]].
-  by [].
-rewrite h.
-apply ew_stli.
-apply id_stli.
+by apply: andL_stli; rewrite -cat1s; exact/ew_stli/id_stli.
 Qed.
 
 Lemma stli_seq_unit_el2 (a : formula) :
   seq_calc_stli [:: ([:: a ] |- [:: a `/\ dl_bool _ _ _ _ true ])].
 Proof.
 rewrite -(cats0 [:: a]) stli_cat1C.
-rewrite -(cats0 [:: dl_and (tnth [:: a; dl_bool neg_def impl_def m_def l_def true])]).
-rewrite -(cats0 [:: dl_and (tnth [:: a; dl_bool neg_def impl_def m_def l_def true])]).
-apply andR_stli.
+rewrite -(cats0 [:: dl_and (tnth [:: a; dl_bool _ _ _ _ true])]).
+rewrite -(cats0 [:: dl_and (tnth [:: a; dl_bool _ _ _ _ true])]).
+apply: andR_stli.
 - exact: id_stli.
 - exact: top_stli.
 Qed.

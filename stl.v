@@ -36,15 +36,12 @@ set a_min := minr (nu.-[[e]]_stl) (nu.-[[e]]_stl).
 set a := (nu.-[[e]]_stl - a_min) * a_min^-1.
 have a_min_e : a_min = nu.-[[e]]_stl.
   by rewrite /a_min /minr; repeat case: ifPn => //; rewrite -leNgt leye_eq => /eqP ->.
-have -> : a = 0.
-  by rewrite /a a_min_e subrr ?mul0r.
+have -> : a = 0 by rewrite /a a_min_e subrr ?mul0r.
 rewrite !addr0 !mulr0 expR0 !mulr1/= a_min_e.
 have -> : ((nu.-[[e]]_stl + nu.-[[e]]_stl) * (1 + 1)^-1) = nu.-[[e]]_stl.
-  have -> : 1 + 1 = (2 : R) by lra.
-  by rewrite mulrDl -splitr.
-case: ifPn => //h1.
-case: ifPn => //h2.
-by apply le_anti; rewrite !leNgt; rewrite h1 h2.
+  by rewrite -mulr2n -mulr_natr -mulrA divff// mulr1.
+case: ifPn => // h1; case: ifPn => // h2.
+by apply/eqP; rewrite eq_le !leNgt h1 h2.
 Qed.
 
 Lemma andC_stl (e1 e2 : expr (boolT_def impl_undef m_undef l_def)) :
@@ -68,18 +65,15 @@ Proof.
 rewrite /= /stl_or /stl_or_gt0 /stl_or_lt0 /max_dev !big_ord_recl !big_ord0/= !tnthS !tnth0.
 rewrite !addr0 !maxrxyx.
 set a_max := maxr (nu.-[[e]]_stl) (nu.-[[e]]_stl).
-set a :=  ((a_max - nu.-[[e]]_stl) / a_max).
+set a := ((a_max - nu.-[[e]]_stl) / a_max).
 have a_max_e : a_max = nu.-[[e]]_stl.
   by rewrite /a_max /maxr; repeat case: ifPn => //; rewrite -leNgt leye_eq => /eqP ->.
-have -> : a = 0.
-  by rewrite /a a_max_e subrr ?mul0r.
+have -> : a = 0 by rewrite /a a_max_e subrr ?mul0r.
 rewrite !mulr0 expR0 !mulr1/= a_max_e.
 have -> : ((nu.-[[e]]_stl + nu.-[[e]]_stl) * (1 + 1)^-1) = nu.-[[e]]_stl.
-  have -> : 1 + 1 = (2 : R) by lra.
-  by rewrite mulrDl -splitr.
-case: ifPn => //h1.
-case: ifPn => //h2.
-by apply le_anti; rewrite !leNgt h1 h2.
+  by rewrite -mulr2n -mulr_natr -mulrA divff// mulr1.
+case: ifPn => // h1; case: ifPn => // h2.
+by apply/eqP; rewrite eq_le !leNgt h1 h2.
 Qed.
 
 Lemma orC_stl (e1 e2 : expr (boolT_def impl_undef m_undef l_def)) :
@@ -103,19 +97,19 @@ Lemma stl_translations_coincide t (e : @expr R t) n m j :
   nu.-[[ e ]]_stl ~= [[ e ]]_B.
 Proof.
 dependent induction e using expr_ind' => //=; move=> [|[|[|[|]]]]t0//.
-- rewrite (JMeq_eq (IHe1 n m j _)); last by (right; right; right; left).
-  by rewrite (JMeq_eq (IHe2 n m j _)); last by (right; left).
-- rewrite (JMeq_eq (IHe1 n m l _)); last by (right; right; right; right).
-  rewrite (JMeq_eq (IHe2 n m l _)); last by (right; left).
-  by rewrite (JMeq_eq (IHe3 m n l _)); last by (right; left).
-- rewrite (JMeq_eq (IHe1 n m j _)); last by (right; left).
-  by rewrite (JMeq_eq (IHe2 n m j _)); last by (right; right; left).
+- rewrite (JMeq_eq (IHe1 n m j _)); last by right; right; right; left.
+  by rewrite (JMeq_eq (IHe2 n m j _)); last by right; left.
+- rewrite (JMeq_eq (IHe1 n m l _)); last by right; right; right; right.
+  rewrite (JMeq_eq (IHe2 n m l _)); last by right; left.
+  by rewrite (JMeq_eq (IHe3 m n l _)); last by right; left.
+- rewrite (JMeq_eq (IHe1 n m j _)); last by right; left.
+  by rewrite (JMeq_eq (IHe2 n m j _)); last by right; right; left.
 Qed.
 
 Lemma stl_translations_Fun_coincide n m (e : expr (funT n m)) :
   nu.-[[ e ]]_stl = [[ e ]]_B.
 Proof.
-by apply/JMeq_eq/(stl_translations_coincide _ _ n m 0); right;right;right;left.
+by apply/JMeq_eq/(stl_translations_coincide _ _ n m 0); right; right; right; left.
 Qed.
 
 Lemma stl_translations_Vector_coincide n (e : @expr R (vectorT n)) :
@@ -138,7 +132,8 @@ Qed.
 
 Definition is_stl b (x : R) := if b then x >= 0 else x < 0.
 
-Lemma stl_nary_inversion_andE1 n (Es : 'I_n -> (expr (boolT neg_undef impl_undef m_undef l_def))) :
+Lemma stl_nary_inversion_andE1 n
+    (Es : 'I_n -> expr (boolT neg_undef impl_undef m_undef l_def)) :
   is_stl true (nu.-[[ dl_and Es ]]_stl) ->
     forall i, is_stl true (nu.-[[ Es i ]]_stl).
 Proof.
@@ -156,14 +151,15 @@ by case: ifPn => _ _ i; exact/hi.
 Qed.
 
 
-Lemma stl_nary_inversion_andE0 n (Es : 'I_n -> expr (boolT neg_undef impl_undef m_undef l_def)) :
+Lemma stl_nary_inversion_andE0 n
+    (Es : 'I_n -> expr (boolT neg_undef impl_undef m_undef l_def)) :
   is_stl false (nu.-[[ dl_and Es ]]_stl) ->
     exists i, is_stl false (nu.-[[ Es i ]]_stl).
 Proof.
 move: Es; case: n => [Es|n Es]//=; first by rewrite ltr10.
 rewrite /is_stl /= /stl_and /=.
 set a_min := \big[minr/nu.-[[Es ord0]]_stl]_(i < n.+1) nu.-[[Es i]]_stl.
-case: ifPn=>[hminlt0 _|].
+case: ifPn => [hminlt0 _|].
   have [x xmem hlt0] := minrltx hminlt0.
   by exists x.
 rewrite -leNgt => hminge0.
@@ -173,7 +169,8 @@ rewrite ltNge divr_ge0// big_ord_recl/= addr_ge0//= ?mulr_ge0 ?expR_ge0 ?sumr_ge
 by move=> i _; rewrite mulr_ge0// (le_trans hminge0)// bigmin_le.
 Qed.
 
-Lemma stl_nary_inversion_orE1 n (Es : 'I_n -> expr (boolT neg_undef impl_undef m_undef l_def)) :
+Lemma stl_nary_inversion_orE1 n
+    (Es : 'I_n -> expr (boolT neg_undef impl_undef m_undef l_def)) :
   is_stl true (nu.-[[ dl_or Es ]]_stl) ->
     exists i, is_stl true (nu.-[[ Es i ]]_stl).
 Proof.
@@ -184,7 +181,7 @@ case: ifPn=> [hmaxgt0 _|].
   have [x xmem hgt0] := maxrgtx hmaxgt0.
   by exists x; exact/ltW.
 rewrite -leNgt => hmaxle0.
-case: ifPn=>[hmaxlt0|].
+case: ifPn => [hmaxlt0|].
   rewrite leNgt nmulr_rlt0.
     by rewrite invr_gt0 sumr_gt0//; exists ord0; rewrite mem_index_enum expR_gt0.
   rewrite sumr_lt0//.
@@ -195,7 +192,8 @@ have /= [x xmem hxge0] := maxrgex hmaxge0.
 by exists x.
 Qed.
 
-Lemma stl_nary_inversion_orE0 n (Es : 'I_n -> expr (boolT neg_undef impl_undef m_undef l_def)) :
+Lemma stl_nary_inversion_orE0 n
+    (Es : 'I_n -> expr (boolT neg_undef impl_undef m_undef l_def)) :
   is_stl false (nu.-[[ dl_or Es ]]_stl) ->
     forall i, is_stl false (nu.-[[ Es i ]]_stl).
 Proof.
@@ -291,11 +289,8 @@ elim: v => [FF f a fa|h t IH FF f a fa].
   exact: cvg_cst.
 rewrite big_cons.
 under eq_fun do rewrite big_cons.
-case: ifPn => Ph.
-  apply: cvgD.
-    exact: fa.
-  exact: IH.
-exact: IH.
+case: ifPn => Ph; last exact: IH.
+by apply: cvgD; [exact: fa|exact: IH].
 Qed.
 
 Section stl_and_conv_lattice.
@@ -313,15 +308,6 @@ Qed.
 Variables (nu : R) (M : nat).
 
 Local Notation seq_of_rV := (@MatrixFormula.seq_of_rV _ M.+1).
-
-Lemma minr_le_l (x y : R) : minr x y <= x.
-Proof. rewrite /minr; case: ifP; lra. Qed.
-
-Lemma minr_le_r (x y : R)  : minr x y <= y.
-Proof. rewrite /minr; case: ifP; lra. Qed.
-
-Lemma minr_gt0 (x y : R) : 0 < x -> 0 < y -> 0 < minr x y.
-Proof. move=> hx hy; rewrite /minr; case: ifP=> //= _; exact: hy. Qed.
 
 Lemma min_dev_gt0 n (v : 'I_n.+1 -> R) i :
   (forall j, 0 < v j) ->
@@ -341,16 +327,12 @@ Proof.
 move => vnil v0.
 rewrite /stl_and_gt0.
 set min_val := \big[minr/v ord0]_(i < n.+1) v i.
-have sum_spl1 : forall (x : R),   \sum_(a < n.+1) v a * expR (- x * min_dev a v)
-  =  \sum_(a < n.+1 | v a == min_val) v a  * expR (- x * min_dev a v)
-    + \sum_(a < n.+1 | v a != min_val) v a * expR (- x * min_dev a v)
-    by move => x0; exact/bigID.
 (*top sum*)
 have sum_top : (\sum_(a < n.+1) v a * expR (- p0 * min_dev a v)) @[p0 --> +oo] -->
               (min_val) * (\sum_(a < n.+1 | v a == min_val) 1).
   apply/cvgrPdist_le => /= e e0.
   near=> t.
-  rewrite sum_spl1.
+  rewrite [X in _ - X](bigID [pred a | v a == min_val])/=.
   near: t; move: e e0; apply/cvgrPdist_le.
   (*top sum non-minimum elements*)
   have sum_top_rest :
@@ -362,79 +344,63 @@ have sum_top : (\sum_(a < n.+1) v a * expR (- p0 * min_dev a v)) @[p0 --> +oo] -
     near: t; move: e e0; apply/cvgrPdist_le.
     apply: cvg_sum => a /andP [av amin].
     rewrite -(mulr0 (v a)).
-    apply: cvgM => //.
-      by exact: cvg_cst.
+    apply: cvgM; first exact: cvg_cst.
     under eq_fun do rewrite mulrC.
     apply: (@cvg_comp _ _ _ _ _ _ -oo).
       apply/gt0_cvgMrNy; first by rewrite min_dev_gt0 ?min_val_eq.
       exact/cvgNrNy.
     exact/cvgNy_compNP/cvgr_expR.
-  rewrite -(addr0 (min_val * (\sum_(a < n.+1 | v a == min_val) 1))).
-  apply: cvgD; last by exact sum_top_rest.
-  apply/cvgrPdist_le => /= e e0.
-  near=> t.
-  near: t; move: e e0; apply/cvgrPdist_le.
+  rewrite -[X in _ --> X]addr0.
+  apply: cvgD; last exact sum_top_rest.
   rewrite mulr_sumr mulr1 /min_dev.
-  apply: cvg_sum => /=a /eqP ->.
+  apply: cvg_sum => /= a /eqP ->.
   rewrite subrr mul0r.
   under eq_fun do rewrite mulr0 expR0 mulr1.
   exact: cvg_cst.
 (*bottom sum*)
-have sum_spl2 : forall (x : R), (\sum_(a < n.+1) expR (- x * min_dev a v))
-  = \sum_(a < n.+1 | v a == min_val) expR (- x * min_dev a v)
-    + \sum_(a < n.+1 | v a != min_val) expR (- x * min_dev a v)
-    by move=> i; exact/bigID.
 have sum_bot : (\sum_(a < n.+1) expR (- p0 * min_dev a v)) @[p0 --> +oo] -->
-                 ((\sum_(a < n.+1 | v a == min_val) 1): R).
+               ((\sum_(a < n.+1 | v a == min_val) 1): R).
   apply/cvgrPdist_le => /= e e0.
   near=> t.
-  rewrite sum_spl2.
+  rewrite [X in _ - X](bigID [pred a | v a == min_val])/=.
   near: t; move: e e0; apply/cvgrPdist_le.
   (*top sum non-minimum elements*)
   have sum_bot_rest :
-      (\sum_(a < n.+1 | v a != min_val)  expR (- t * min_dev a v))%R @[t --> +oo] --> 0.
+      (\sum_(a < n.+1 | v a != min_val) expR (- t * min_dev a v))%R @[t --> +oo] --> 0.
     rewrite [X in _ --> X](_ : _ = \sum_(a < n.+1 | v a != min_val) 0); last by rewrite big1.
     apply/cvgrPdist_le => /= e e0.
     near=> t.
-    rewrite big_seq_cond.
-    rewrite [X in _ - X]big_seq_cond.
+    rewrite big_seq_cond [X in _ - X]big_seq_cond.
     near: t; move: e e0; apply/cvgrPdist_le.
-    apply: cvg_sum => a /andP [av amin].
+    apply: cvg_sum => a /andP[av amin].
     under eq_fun do rewrite mulrC.
     apply: (@cvg_comp _ _ _ _ _ _ -oo).
       apply/gt0_cvgMrNy; first by rewrite min_dev_gt0 ?min_val_eq.
       exact/cvgNrNy/cvg_id.
     exact/cvgNy_compNP/cvgr_expR.
-  rewrite -(addr0 ((\sum_(a < n.+1 | v a == min_val) 1))).
-  apply: cvgD; last by exact sum_bot_rest.
-  apply/cvgrPdist_le => /= e e0.
-  near=> t.
-  near: t; move: e e0; apply/cvgrPdist_le.
+  rewrite -[X in _ --> X]addr0.
+  apply: cvgD; last exact sum_bot_rest.
   rewrite /min_dev.
   apply: cvg_sum => i /eqP ->.
   rewrite subrr mul0r.
   under eq_fun do rewrite mulr0 expR0.
   exact: cvg_cst.
-have gt0 : ((\sum_(a < n.+1 | v a == min_val) 1) : R) > 0.
+have gt0 : (\sum_(a < n.+1 | v a == min_val) 1) > 0 :> R.
   rewrite sumr_gt0//=.
   exists (extremum <=%R ord0 xpredT v).
-  split => //; first by rewrite mem_index_enum.
+  rewrite mem_index_enum/=; split => //.
   case: (@extremumP _ _ ler ord0 xpredT v lexx le_trans le_total isT) => i _/= h.
   by rewrite eq_le !le_bigmin ?h//= bigmin_le.
-have sum_inv : (\sum_(a < n.+1) expR (- p0 * min_dev a v))^-1 @[p0 --> +oo] --> 
-                  ((\sum_(a < n.+1 | v a == min_val) 1): R)^-1.
-  apply: cvgV; first exact/lt0r_neq0. 
-  exact/sum_bot.
-have l :=  (@cvgM _ _ _ _ _ _ _ _ sum_top sum_inv).
-rewrite -fctM in l.
-have helper : min_val * (\sum_(a < n.+1 | v a == min_val) 1) / (\sum_(a < n.+1 | v a == min_val) 1) = min_val.
-  rewrite mulrK//=.
-  rewrite unitfE. 
-  by apply lt0r_neq0; exact gt0.
-rewrite helper in l.
-apply: l.
-Unshelve. all: end_near.
-Qed.
+have : (\sum_(a < n.+1) expR (- p0 * min_dev a v))^-1 @[p0 --> +oo] -->
+               ((\sum_(a < n.+1 | v a == min_val) 1): R)^-1.
+  by apply: cvgV; [exact/lt0r_neq0|exact/sum_bot].
+move/(@cvgM _ _ _ _ _ _ _ _ sum_top).
+rewrite -fctM.
+have -> : min_val * (\sum_(a < n.+1 | v a == min_val) 1) /
+                   (\sum_(a < n.+1 | v a == min_val) 1) = min_val.
+  by rewrite mulrK//= unitfE lt0r_neq0.
+exact.
+Unshelve. all: end_near. Qed.
 
 Lemma min_dev_lt0 n (v : 'I_n.+1 -> R) :
   (exists i, v i < 0) ->
@@ -446,25 +412,20 @@ have minlt0 : \big[minr/v ord0]_(i0 < n.+1) v i0 < 0 by apply/bigmin_ltP; right;
 by rewrite mulr_lt0 subr_eq0 Hvi/= subr_lt0 lt_eqF ?invr_lt0//= ltNge bigmin_le.
 Qed.
 
-Lemma stl_and_lt0_cvg_infty (p : R) n (v : 'I_n.+1 -> R)  : 
+Lemma stl_and_lt0_cvg_infty (p : R) n (v : 'I_n.+1 -> R) :
   (exists x, v x < 0) ->
   (stl_and_lt0 p v) @[p --> +oo] --> \big[minr/v ord0]_(i < n.+1) v i.
 Proof.
 move => vnil v0.
 rewrite /stl_and_lt0.
 set (min_val := \big[minr/v ord0]_(i < n.+1) v i) in *.
-have sum_spl1 : forall (x : R),
-    \sum_(a < n.+1) \big[minr/v ord0]_(i < n.+1) v i * expR (min_dev a v) * expR (x * min_dev a v) =
-      \sum_(a < n.+1 | v a == min_val) \big[minr/v ord0]_(i < n.+1) v i  * expR (min_dev a v) * expR (x * min_dev a v)
-      + \sum_(a < n.+1 | v a != min_val) \big[minr/v ord0]_(i < n.+1) v i * expR (min_dev a v) * expR (x * min_dev a v).
-  by move => x1; exact/bigID.
 (*top sum*)
 have sum_top :
-  (\sum_(a < n.+1) \big[minr/v ord0]_(i < n.+1) v i * expR (min_dev a v) * expR (p0 * min_dev a v)) @[p0 --> +oo] --> 
-    (min_val) * (\sum_(a < n.+1 | v a == min_val) 1). 
+  (\sum_(a < n.+1) \big[minr/v ord0]_(i < n.+1) v i * expR (min_dev a v) * expR (p0 * min_dev a v)) @[p0 --> +oo] -->
+    min_val * \sum_(a < n.+1 | v a == min_val) 1.
   apply/cvgrPdist_le => /= e e0.
   near=> t.
-  rewrite sum_spl1.
+  rewrite [X in _ - X](bigID [pred a | v a == min_val])/=.
   near: t; move: e e0; apply/cvgrPdist_le.
   (*top sum non-minimum elements*)
   have sum_top_rest :
@@ -475,7 +436,7 @@ have sum_top :
     near=> t.
     near: t; move: e e0; apply/cvgrPdist_le.
     apply: cvg_sum => a amin.
-    rewrite -(mulr0 (\big[minr/v ord0]_(i < n.+1) v i)). 
+    rewrite -(mulr0 (\big[minr/v ord0]_(i < n.+1) v i)).
     apply/cvgrPdist_le => /= e e0.
     near=> t.
     rewrite -mulrA -expRD.
@@ -488,10 +449,7 @@ have sum_top :
       by rewrite oppr_gt0 min_dev_lt0.
     exact/cvgNrNy.
   rewrite -(addr0 (min_val * (\sum_(a < n.+1 | v a == min_val) 1))).
-  apply: cvgD; last by exact sum_top_rest.
-  apply/cvgrPdist_le => /= e e0.
-  near=> t.
-  near: t; move: e e0; apply/cvgrPdist_le.
+  apply: cvgD; last exact sum_top_rest.
   rewrite [X in _ --> X](_ : _ = (\sum_(i < n.+1 | v i == min_val) min_val));
     last first.
   - rewrite -(mulr1 min_val) {1}mulr1. rewrite -mulr_sumr.
@@ -501,15 +459,11 @@ have sum_top :
     under eq_fun do rewrite mulr0 !expR0 !mulr1.
     exact: cvg_cst.
 (*bottom sum*)
-have sum_spl2 : forall (x : R),   (\sum_(a < n.+1)  expR (x * min_dev a v))
-  = \sum_(a < n.+1 | v a == min_val)  expR (x * min_dev a v)
-    + \sum_(a < n.+1 | v a != min_val)  expR (x * min_dev a v)
-  by move => x0; exact/bigID.
 have sum_bot : (\sum_(a < n.+1) expR (p0 * min_dev a v)) @[p0 --> +oo] -->
-                 ((\sum_(a < n.+1| v a == min_val) 1) : R).
+               ((\sum_(a < n.+1| v a == min_val) 1) : R).
   apply/cvgrPdist_le => /= e e0.
   near=> t.
-  rewrite sum_spl2.
+  rewrite [X in _ - X](bigID [pred a | v a == min_val])/=.
   near: t; move: e e0; apply/cvgrPdist_le.
   (*bot sum non-minimum elements*)
   have sum_bot_rest :
@@ -527,10 +481,7 @@ have sum_bot : (\sum_(a < n.+1) expR (p0 * min_dev a v)) @[p0 --> +oo] -->
     rewrite oppr_gt0.
     exact/min_dev_lt0.
   rewrite -(addr0 ((\sum_(a < n.+1 | v a == min_val) 1))).
-  apply: cvgD; last by exact sum_bot_rest.
-  apply/cvgrPdist_le => /= e e0.
-  near=> t.
-  near: t; move: e e0; apply/cvgrPdist_le.
+  apply: cvgD; last exact sum_bot_rest.
   apply: cvg_sum => a /eqP amin.
   rewrite /min_dev amin subrr mul0r.
   under eq_fun do rewrite mulr0 expR0.
@@ -538,21 +489,19 @@ have sum_bot : (\sum_(a < n.+1) expR (p0 * min_dev a v)) @[p0 --> +oo] -->
 have gt0 : ((\sum_(a < n.+1 | v a == min_val) 1) : R) > 0.
   rewrite sumr_gt0//=.
   exists (extremum <=%R ord0 xpredT v).
-  split => //; first by rewrite mem_index_enum.
+  rewrite mem_index_enum; split => //.
   case: (@extremumP _ _ ler ord0 xpredT v lexx le_trans le_total isT) => i _/= h.
   by rewrite eq_le !le_bigmin ?h//= bigmin_le.
-have sum_inv : (\sum_(a < n.+1) expR ( p0 * min_dev a v))^-1 @[p0 --> +oo] -->
-                  ((\sum_(a < n.+1 | v a == min_val) 1): R)^-1.
-  apply: cvgV; first exact/lt0r_neq0/gt0. 
-  exact sum_bot.
-have l := (@cvgM _ _ _ _ _ _ _ _ sum_top sum_inv).
-rewrite -fctM in l.
-have helper : min_val * (\sum_(a < n.+1 | v a == min_val) 1) / (\sum_(a < n.+1 | v a == min_val) 1) = min_val.
+have : (\sum_(a < n.+1) expR ( p0 * min_dev a v))^-1 @[p0 --> +oo] -->
+       ((\sum_(a < n.+1 | v a == min_val) 1) : R)^-1.
+  by apply: cvgV; [exact/lt0r_neq0/gt0|exact: sum_bot].
+move/(@cvgM _ _ _ _ _ _ _ _ sum_top).
+rewrite -fctM.
+have -> : min_val * (\sum_(a < n.+1 | v a == min_val) 1) /
+                   (\sum_(a < n.+1 | v a == min_val) 1) = min_val.
   by rewrite mulrK//= unitfE; apply lt0r_neq0; exact gt0.
-rewrite helper in l.
-apply: l.
-Unshelve. all: end_near.
-Qed.
+exact.
+Unshelve. all: end_near. Qed.
 
 End stl_and_conv_lattice.
 
@@ -563,8 +512,7 @@ Variables (nu : R) (M : nat).
 
 Definition fun_of_rV := (fun v j => @fun_of_matrix R 1 M.+1 v ord0 j).
 
-Lemma fun_of_rV_const (p : R) :
-  fun_of_rV (const_mx p) = fun=> p.
+Lemma fun_of_rV_const (p : R) : fun_of_rV (const_mx p) = fun=> p.
 Proof. by apply/funext => i; rewrite /fun_of_rV mxE. Qed.
 
 Lemma min_dev_const (a : 'I_M.+1) (p : R) : min_dev a (fun=> p) = 0.
@@ -601,8 +549,7 @@ Section shadow_lifting_stl_and.
 Local Open Scope ring_scope.
 Local Open Scope classical_set_scope.
 Context {R : realType}.
-Variable nu : R.
-Variable M : nat.
+Variables (nu : R) (M : nat).
 
 Local Notation stl_and_gt0 := (stl_and_gt0 nu).
 Local Notation stl_and_lt0 := (stl_and_lt0 nu).
@@ -747,7 +694,8 @@ have H h : h < 0 -> (stl_and_gt0 (fun_of_rV _ (const_mx p + h *: err_vec i))) =
     by rewrite /min_dev /fun_of_rV mip_at_left// !mxE/= eqxx/=; lra.
   rewrite (eq_bigr (fun=> (expR (- nu * (- h / (p + h)))))); last first.
     move=> j /negbTE ji.
-    by rewrite /min_dev mip'_at_left// /fun_of_rV !mxE eq_sym ji/= mulr0 addr0 opprD addrA subrr sub0r.
+    rewrite /min_dev mip'_at_left//.
+    by rewrite /fun_of_rV !mxE eq_sym ji/= mulr0 addr0 opprD addrA subrr sub0r.
   rewrite big_const/= iter_addr addr0 card_ordS.
   by rewrite mulr0 expR0 addrC -[in LHS]mulr_natr mulrC.
 apply/cvgrPdist_le => /= e e0; near=> t.
@@ -758,14 +706,13 @@ rewrite -[X in (_ / _ - X * _)](@divff _ (M.+1%:R * expR (- nu * (- t / (p + t))
   rewrite lt0r_neq0// addr_gt0// ?expR_gt0// mulr_gt0//.
   rewrite (mulrAC _ (_^-1) p) -mulrBl.
   have -> : ((p * M.+1%:R * expR (- nu * (- t / (p + t)))) + (p + t)) -
-   ((M.+1%:R * expR (- nu * (- t / (p + t)))) + 1) * p = t by lra.
+    ((M.+1%:R * expR (- nu * (- t / (p + t)))) + 1) * p = t by lra.
   have -> : t^-1 * (t / ((M.+1%:R * expR (- nu * (- t / (p + t)))) + 1)) =
     1 / ((M.+1%:R * expR (- nu * (- t / (p + t)))) + 1).
     by rewrite (mulrA (t^-1)) mulVf.
   rewrite div1r.
   near: t; move: e e0; apply/cvgrPdist_le.
-  apply: cvgV.
-    by rewrite gt_eqF.
+  apply: cvgV => //.
   rewrite -[X in _ --> X]natr1; apply: cvgD; last exact: cvg_cst.
   rewrite -[X in _ --> X]mulr1; apply: cvgM; first exact: cvg_cst.
   rewrite -expR0; apply: continuous_cvg; first exact: continuous_expR.
@@ -805,7 +752,7 @@ Let num' (p x : R) : R := M.+1%:R * expR (- x / (p + x)) +
   expR (- x / (p + x)) * x * M.+1%:R * (x / (x + p)^+2 - (x + p)^-1) +
   expR (- x / (p + x)) * M.+1%:R * p * (x / (x + p)^+2 - (x + p)^-1).
 
-Let px_neq0 (p y : R) : y \in (ball 0 p : set R) -> (p + y) != 0.
+Let px_neq0 (p y : R) : y \in (ball 0 p : set R) -> p + y != 0.
 Proof.
 rewrite inE /ball/= sub0r normrN lter_norml => /andP[Npx xp].
 by rewrite gt_eqF// -ltrBlDl sub0r.
@@ -1181,25 +1128,18 @@ apply: (@lhopital_at_left R _ (num' p) _ (den' p) (- q)).
   apply: cvgV; first by rewrite gt_eqF.
   apply: cvg_at_left_filter.
   rewrite -[X in _ --> X]addr0.
-  apply: cvgD.
-    exact: cvg_cst.
-  exact: cvg_id.
+  by apply: cvgD; [exact: cvg_cst|exact: cvg_id].
 - rewrite -[X in _ --> X](mul0r (M.+1%:R + 1^-1)).
   apply: cvgM.
-    apply: cvg_at_left_filter.
-    exact: cvg_id.
+    by apply: cvg_at_left_filter; exact: cvg_id.
   apply: cvgD.
-    apply: cvg_at_left_filter.
-    exact: cvg_cst.
-  by apply: cvgV => //.
+    by apply: cvg_at_left_filter; exact: cvg_cst.
+  exact: cvgV.
 - move=> x; rewrite in_itv/= => /andP[xp x0].
   rewrite /den'.
-  apply: ep; last first.
-   by rewrite lt_eqF.
+  apply: ep; last by rewrite lt_eqF.
   rewrite /ball_/= sub0r normrN ltr0_norm//.
-  rewrite ltrNl.
-  rewrite (lt_trans _ xp)//.
-  by rewrite ltrN2//.
+  by rewrite ltrNl (lt_trans _ xp)// ltrN2.
 - rewrite -{2}(mul0r (den' p 0)^-1).
   have H3 : expR (nu * (x / (x + p))) @[x --> 0^'-] -->
             expR (nu * (0 / (0 + p))).
@@ -1210,7 +1150,7 @@ apply: (@lhopital_at_left R _ (num' p) _ (den' p) (- q)).
     by apply: cvgD; [exact/cvg_at_left_filter/cvg_id|exact: cvg_cst].
   apply: cvgM; last first.
     apply: cvgV.
-      by rewrite /den' !mul0r !mulr0 !mul0r addr0 gt_eqF// addr_gt0// ?expR_gt0 ?ltr0n ?lt0n.
+      by rewrite /den' !(mul0r,mulr0,addr0) gt_eqF// addr_gt0// ?expR_gt0 ?ltr0n ?lt0n.
     apply: cvgD.
       by apply: cvgD; [exact: H3|exact: cvg_cst].
     apply: cvgM.

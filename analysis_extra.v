@@ -85,39 +85,14 @@ apply: IH.
 by exists x; rewrite xl Px Fx0.
 Qed.
 
-(*Definition sumE {R : numDomainType} (Es : seq \bar R) : \bar R :=
-  \sum_(i <- Es) i.*)
-(*Definition prodE {R : numDomainType} (Es : seq \bar R) : \bar R :=
-  \big[*%E/1%E]_(i <- Es) i.*)
-
-Section mine_extra.
 Local Open Scope ereal_scope.
-Context {R : realDomainType}.
+(* TODO: PR *)
+Lemma mule_natr {R : realDomainType} (x : \bar R) (n : nat) :
+  x * (n%:R)%:E = x *+ n.
+Proof. by rewrite muleC mule_natl. Qed.
 
 (* TODO: PR *)
-Lemma mineC : commutative (fun x y : \bar R => mine x y).
-Proof.
-move=> x y; rewrite /mine; case: ifPn; rewrite ltNge le_eqVlt.
-- by rewrite negb_or => /andP[_]; case: ifPn.
-- by rewrite negbK => /predU1P[|]->//; case: ifPn.
-Qed.
-
-(* TODO: PR *)
-Lemma mineA : associative (fun x y : \bar R => mine x y).
-Proof.
-move=> x y z; rewrite /mine.
-repeat case: ifPn => //; rewrite -!leNgt => a b c d; apply/eqP; rewrite eq_le.
-- by rewrite b andbT le_eqVlt (lt_trans a c) orbT.
-- by rewrite a andbT (ltW (lt_le_trans d c)).
-- by rewrite b andbT ltW.
-- by rewrite (le_trans b a) ltW.
-- by rewrite b ltW.
-- by rewrite d ltW.
-- by rewrite c ltW.
-Qed.
-
-(* TODO: PR *)
-Lemma inve_eqy {K : realDomainType} (x : \bar K) : ((x^-1)%E == +oo%E) = (x == 0%E).
+Lemma inve_eqy {K : realDomainType} (x : \bar K) : (x^-1 == +oo) = (x == 0).
 Proof.
 case: x => [r| |] //=; apply/idP/idP => [|].
   by rewrite inver; case: ifPn.
@@ -125,10 +100,82 @@ by rewrite eqe => /eqP ->/=; rewrite inver//= eqxx.
 Qed.
 
 (* TODO: PR *)
-Lemma inve_eqNy {K : realDomainType} (x : \bar K) : ((x^-1)%E == -oo%E) = (x == -oo%E).
+Lemma inve_eqNy {K : realDomainType} (x : \bar K) : (x^-1 == -oo) = (x == -oo).
 Proof.
 by case: x => [r| |] //=; rewrite inver; case: ifPn.
 Qed.
+
+Lemma mine_gexy {R : realDomainType} (a b c : \bar R) :
+  a <= b -> mine a c <= mine b c.
+Proof.
+move=> ab; rewrite /mine; case: ifPn => // ac; case: ifPn => //.
+- by move/ltW : ac.
+- by move=> _; rewrite (le_trans _ ab)// leNgt.
+Qed.
+
+Lemma maxe_gexy {R : realDomainType} (a b c : \bar R) :
+  a <= b -> maxe a c <= maxe b c.
+Proof.
+move=> ab; rewrite /maxe; case: ifPn => // ac; case: ifPn => //.
+- by rewrite -leNgt.
+- by move=> bc; rewrite (le_trans ab)// ltW.
+Qed.
+
+(* TODO: PR *)
+HB.instance Definition _ {R : realDomainType} :=
+  Monoid.isLaw.Build (\bar R) +oo mine minA minye miney.
+
+(* TODO: PR *)
+Lemma big_miney {R : numDomainType} (T : eqType) (v : seq T) (f : T -> \bar R) :
+  (forall x, x \in v -> f x = +oo) -> \big[mine/+oo]_(j <- v) f j = +oo.
+Proof.
+elim: v => [|h t ih H].
+  by rewrite big_nil.
+rewrite big_cons ih ?miney ?H ?mem_head// => x xt.
+by rewrite H// inE xt orbT.
+Qed.
+
+(* TODO: PR *)
+Lemma big_maxeNy {R : numDomainType} (T : eqType) (v : seq T) (f : T -> \bar R) :
+  (forall x, x \in v -> f x = -oo) -> \big[maxe/-oo]_(j <- v) f j = -oo.
+Proof.
+elim: v => [|h t ih H].
+  by rewrite big_nil.
+rewrite big_cons ih ?maxey ?H ?mem_head// => x xt.
+by rewrite H// inE xt orbT.
+Qed.
+
+(* TODO: PR *)
+Lemma big_maxey {R : realDomainType} T (v : seq T) (f : T -> \bar R) :
+  +oo \in map f v -> \big[maxe/-oo]_(j <- v) f j = +oo.
+Proof.
+elim: v => // h t ih.
+by rewrite inE big_cons => /predU1P[<-|/ih ->]; rewrite ?(maxye,maxey).
+Qed.
+
+(* TODO: PR *)
+Lemma big_mineNy {R : realDomainType} T (v : seq T) (f : T -> \bar R) :
+  -oo \in map f v -> \big[mine/+oo]_(j <- v) f j = -oo.
+Proof.
+elim: v => // h t ih.
+by rewrite inE big_cons => /predU1P[<-|/ih ->]; rewrite ?(minNye,mineNy).
+Qed.
+
+Local Close Scope ereal_scope.
+
+Section mine_extra.
+Local Open Scope ereal_scope.
+Context {R : realDomainType}.
+
+(*
+(* TODO: PR? *)
+Lemma mineC : commutative (fun x y : \bar R => mine x y).
+Proof. exact: minC. Qed.
+
+(* TODO: PR *)
+Lemma mineA : associative (fun x y : \bar R => mine x y).
+Proof. exact: minA. Qed.
+*)
 
 Lemma mine_eqyP (T : eqType) (s : seq T) (P : pred T) (f : T -> \bar R) :
   \big[mine/+oo]_(i <- s | P i) f i = +oo <->
@@ -561,7 +608,7 @@ Proof.
 elim: r; first by move=> _ [x []]; rewrite in_nil.
 move=> a l IH h [x []].
 rewrite in_cons big_cons => /predU1P[ -> Pa Fa_gt0|].
-  by rewrite Pa -{1}(adde0 0) lte_le_add//sume_ge0.
+  by rewrite Pa -{1}(adde0 0) lte_leD// sume_ge0.
 move=> xl Px Fx_gt0.
 case: ifPn => Pa.
   rewrite -{1}(adde0 0) lee_ltD// ?h//.
