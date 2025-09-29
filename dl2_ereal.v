@@ -6,7 +6,7 @@ From mathcomp Require Import all_classical.
 From mathcomp Require Import reals ereal interval_inference.
 From mathcomp Require Import topology derive normedtype sequences
  exp measure lebesgue_measure lebesgue_integral hoelder.
-Require Import mathcomp_extra analysis_extra ldl dl2.
+Require Import mathcomp_extra analysis_extra dl dl2.
 
 (**md**************************************************************************)
 (* # Properties of DL2 on extended reals                                      *)
@@ -47,15 +47,16 @@ Proof. by move: x y => [?| |] [?| |]. Qed.
 Local Close Scope ereal_scope.
 
 Section dl2_lemmas.
-Local Open Scope ldl_scope.
+Local Open Scope dl_scope.
 Local Open Scope ring_scope.
 Context {R : realType}.
 Variable p : R.
 
 Local Notation "[[ e ]]_dl2e" := (@dl2_ereal_translation R _ e).
 
-Lemma dl2_mandC_nary n (pi : {perm 'I_n}) (s : 'I_n -> (expr (boolT_def impl_def m_def l_def))) :
-  [[ldl_mand s]]_dl2e = [[ldl_mand (s \o pi)]]_dl2e.
+Lemma dl2_mandC_nary n (pi : {perm 'I_n})
+    (s : 'I_n -> expr (boolT_def impl_def m_def l_def)) :
+  [[dl_mand s]]_dl2e = [[dl_mand (s \o pi)]]_dl2e.
 Proof.
 by rewrite /= (perm_big (map pi (index_enum 'I_n))) ?big_map//= perm_eq_fun.
 Qed.
@@ -72,8 +73,8 @@ Proof.
 by rewrite /= !big_ord_recl !big_ord0 /= !big_ord_recl !big_ord0 !tnthS !tnth0 !adde0 addeA.
 Qed.
 
-Lemma dl2_morC_nary n (pi : {perm 'I_n}) (s : 'I_n -> (expr (boolT_def impl_def m_def l_def))) :
-  [[ldl_mor s]]_dl2e = [[ldl_mor (s \o pi)]]_dl2e.
+Lemma dl2_morC_nary n (pi : {perm 'I_n}) (s : 'I_n -> expr (boolT_def impl_def m_def l_def)) :
+  [[dl_mor s]]_dl2e = [[dl_mor (s \o pi)]]_dl2e.
 Proof.
 by rewrite /= (perm_big (map pi (index_enum 'I_n))) ?big_map//= perm_eq_fun.
 Qed.
@@ -109,7 +110,7 @@ Qed.
 
 
 Theorem dl2_mand_unit (e : expr (boolT_undef impl_def m_def l_def)) :
-  [[ e `** (ldl_bool _ _ _ _ true) ]]_dl2e = [[ e ]]_dl2e.
+  [[ e `** dl_bool _ _ _ _ true ]]_dl2e = [[ e ]]_dl2e.
 Proof.
 by rewrite /= !big_ord_recl big_ord0 tnthS tnth0 !adde0.
 Qed.
@@ -176,16 +177,14 @@ elim: r=> [|a r ihr hr] /=; rewrite (big_nil, big_cons); first by rewrite eqxx.
 by case: ifP=> pa /=; rewrite ?nadde_eq0 ?ihr ?hr // sume_le0.
 Qed.
 
-Lemma dl2_nary_inversion_andE1 n (s : 'I_n -> (expr (boolT_undef impl_def m_def l_def))) :
-  is_dl2 true ([[ ldl_mand s ]]_dl2e) -> (forall i, is_dl2 true ([[ s i ]]_dl2e)).
+Lemma dl2_nary_inversion_andE1 n (s : 'I_n -> expr (boolT_undef impl_def m_def l_def)) :
+  is_dl2 true ([[ dl_mand s ]]_dl2e) -> (forall i, is_dl2 true ([[ s i ]]_dl2e)).
 Proof.
 rewrite/is_dl2/= nsume_eq0/=; last by move=> i _; exact/dl2_ereal_translation_le0.
 by move=> /allP/= h i; rewrite h ?mem_index_enum.
 Qed.
 
-
-Lemma nadde_lt0 (x y : \bar R) :
-  (x + y < 0 -> (x < 0) || (y < 0))%E.
+Lemma nadde_lt0 (x y : \bar R) : (x + y < 0 -> (x < 0) || (y < 0))%E.
 Proof.
 move: x y => [x| |] [y| |]//; rewrite ?lee_fin ?lte_fin.
 - rewrite !ltNge -negb_and; apply: contra.
@@ -205,8 +204,8 @@ move=> a l ih. rewrite big_cons => /nadde_lt0 /orP [fa0 | /ih[i il fi0]].
 by exists i; rewrite ?fi0// mem_behead.
 Qed.
 
-Lemma dl2_nary_inversion_andE0 n (s : 'I_n -> (expr (boolT_undef impl_def m_def l_def))) :
-  is_dl2 false ([[ ldl_mand s ]]_dl2e) -> (exists i, (is_dl2 false ([[ s i ]]_dl2e))).
+Lemma dl2_nary_inversion_andE0 n (s : 'I_n -> expr (boolT_undef impl_def m_def l_def)) :
+  is_dl2 false ([[ dl_mand s ]]_dl2e) -> (exists i, (is_dl2 false ([[ s i ]]_dl2e))).
 Proof.
 rewrite /is_dl2/=.
 move=> /fsume_lt0 [/=i _ si0].

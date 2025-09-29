@@ -6,7 +6,7 @@ From mathcomp Require Import all_classical.
 From mathcomp Require Import reals ereal interval_inference.
 From mathcomp Require Import topology derive normedtype sequences
  exp measure lebesgue_measure lebesgue_integral hoelder.
-Require Import mathcomp_extra analysis_extra ldl.
+Require Import mathcomp_extra analysis_extra dl.
 
 (**md**************************************************************************)
 (* # Properties of DL2                                                        *)
@@ -46,7 +46,7 @@ HB.instance Definition _ (R : realType) x y z v :=
   @gen_eqMixin (@expr R (boolT x y z v)).
 
 Section dl2_lemmas.
-Local Open Scope ldl_scope.
+Local Open Scope dl_scope.
 Local Open Scope ring_scope.
 Context {R : realType}.
 Variable p : R.
@@ -55,8 +55,9 @@ Local Notation "[[ e ]]_dl2" := (@dl2_translation R _ e).
 
 From mathcomp Require Import perm.
 
-Lemma dl2_mandC_nary f1 f2 n (pi : {perm 'I_n}) (s : 'I_n -> (expr (boolT_def f1 m_def f2))) :
-  [[ldl_mand s]]_dl2 = [[ldl_mand (s \o pi)]]_dl2.
+Lemma dl2_mandC_nary f1 f2 n (pi : {perm 'I_n})
+    (s : 'I_n -> expr (boolT_def f1 m_def f2)) :
+  [[dl_mand s]]_dl2 = [[dl_mand (s \o pi)]]_dl2.
 Proof.
 by rewrite/= (perm_big (map pi (index_enum 'I_n))) ?big_map//= perm_eq_fun.
 Qed.
@@ -69,8 +70,9 @@ Lemma dl2_mandA f1 f2 (e1 e2 e3 : expr (boolT_def f1 m_def f2)) :
   [[ e1 `** (e2 `** e3) ]]_dl2 = [[ (e1 `** e2) `** e3 ]]_dl2.
 Proof. by rewrite /= !big_ord_recl /= !big_ord_recl !big_ord0 !addr0 addrA. Qed.
 
-Lemma dl2_morC_nary f1 f2 n (pi : {perm 'I_n}) (s : 'I_n -> (expr (boolT_def f1 m_def f2))) :
-  [[ldl_mor s]]_dl2 = [[ldl_mor (s \o pi)]]_dl2.
+Lemma dl2_morC_nary f1 f2 n (pi : {perm 'I_n})
+    (s : 'I_n -> expr (boolT_def f1 m_def f2)) :
+  [[dl_mor s]]_dl2 = [[dl_mor (s \o pi)]]_dl2.
 Proof.
 by rewrite/= (perm_big (map pi (index_enum 'I_n))) ?big_map//= perm_eq_fun.
 Qed.
@@ -100,8 +102,8 @@ dependent induction e using expr_ind' => /=.
 - by case: c; rewrite //= oppr_le0 le_max lexx orbT.
 Qed.
 
-Theorem dl2_mand_unit f1 f2 (e : (expr (boolT_def f1 m_def f2))) :
-  [[ e `** (ldl_bool _ _ _ _ true) ]]_dl2 = [[ e ]]_dl2.
+Theorem dl2_mand_unit f1 f2 (e : expr (boolT_def f1 m_def f2)) :
+  [[ e `** dl_bool _ _ _ _ true ]]_dl2 = [[ e ]]_dl2.
 Proof. by rewrite /= !big_ord_recl big_ord0 !addr0. Qed.
 
 Theorem dl2_residuation (e1 e2 e3 : expr boolT_dl2) :
@@ -118,7 +120,7 @@ split; move => /= H.
 Qed.
 
 Lemma dl2_prelinearity (e1 e2 e3 : @expr R boolT_dl2) :
-  [[(e1 `=> e2) `\/ (e2 `=> e1)]]_dl2 = [[ldl_bool  _ _ _ _ true]]_dl2.
+  [[(e1 `=> e2) `\/ (e2 `=> e1)]]_dl2 = [[dl_bool  _ _ _ _ true]]_dl2.
 Proof.
 by rewrite /= !big_ord_recl !big_ord0 /= /maxr; repeat case: ifP; lra.
 Qed.
@@ -136,13 +138,13 @@ by rewrite /=!big_ord_recl !big_ord0 /maxr; repeat case: ifP; lra.
 Qed.
 
 Lemma dl2_orA (e1 e2 e3 : expr boolT_dl2) :
-  [[ (e1 `\/ (e2 `\/ e3)) ]]_dl2 = [[ ((e1 `\/ e2) `\/ e3) ]]_dl2.
+  [[ e1 `\/ (e2 `\/ e3) ]]_dl2 = [[ (e1 `\/ e2) `\/ e3 ]]_dl2.
 Proof.
 rewrite /= !big_ord_recl !big_ord0 /= !big_ord_recl !big_ord0 /maxr !tnthS !tnth0.
 by repeat case: ifPn => //; lra.
 Qed.
 
-Theorem dl2_andA (e1 e2 e3 : expr boolT_dl2) : 
+Theorem dl2_andA (e1 e2 e3 : expr boolT_dl2) :
   [[ (e1 `/\ e2) `/\ e3]]_dl2 = [[ e1 `/\ (e2 `/\ e3) ]]_dl2.
 Proof.
 rewrite /= !big_ord_recl !big_ord0 /= !big_ord_recl !big_ord0.
@@ -206,16 +208,16 @@ move=> F_ge0 /eqP; rewrite nsumr_eq0 // -big_all big_andE => /forallP hF i Pi.
 by move: (hF i); rewrite implyTb Pi /= => /eqP.
 Qed.
 
-Lemma dl2_nary_inversion_mandE1 n (s : 'I_n -> (expr (boolT_dl2))) :
-  is_dl2 true ([[ ldl_mand s ]]_dl2) -> (forall i, is_dl2 true ([[ s i ]]_dl2)).
+Lemma dl2_nary_inversion_mandE1 n (s : 'I_n -> expr boolT_dl2) :
+  is_dl2 true ([[ dl_mand s ]]_dl2) -> (forall i, is_dl2 true ([[ s i ]]_dl2)).
 Proof.
 move: s; case: n => [s _|n s/=]; first by case.
 rewrite nsumr_eq0//=; last by move=> i _; exact/dl2_translation_le0.
 by move/allP => h i; exact/h/mem_index_enum.
 Qed.
 
-Lemma dl2_nary_inversion_mandE0 n (s : 'I_n -> (expr boolT_dl2)) :
-  is_dl2 false ([[ ldl_mand s ]]_dl2) ->
+Lemma dl2_nary_inversion_mandE0 n (s : 'I_n -> expr boolT_dl2) :
+  is_dl2 false ([[ dl_mand s ]]_dl2) ->
   (exists i, is_dl2 false ([[ s i ]]_dl2)).
 Proof.
 move: s => /=; elim: n => [s|n ih s]; first by rewrite big_ord0 ltxx.
@@ -287,7 +289,7 @@ Definition dl2_and {R' : fieldType} {n} (v : 'rV[R']_n) :=
 Import MatrixFormula.
 
 Lemma dl2_andE {n} (v : 'rV[R]_n) :
-  dl2_and v = \sum_(i <- seq_of_rV v) (dl2_translation \o ldl_real) i.
+  dl2_and v = \sum_(i <- seq_of_rV v) (dl2_translation \o dl_real) i.
 Proof.
 rewrite !big_map /dl2_and -enumT big_enum.
 by under [in RHS]eq_bigr do rewrite ffunE.
@@ -302,10 +304,10 @@ have /cvg_lim : h^-1 * (dl2_and (const_mx p + h *: err_vec i) -
                         dl2_and (n:=M.+1) (const_mx p))
        @[h --> (0:R)^'] --> (1:R)%R.
   rewrite /dl2_and.
-  have H : forall h, h != 0 ->
+  have H h : h != 0 ->
       \sum_(x < M.+1) (const_mx p + h *: err_vec i) ``_ x -
       \sum_(x < M.+1) (const_mx (n:=M.+1) (m:=1) p) ``_ x = h.
-    move=> h h0; rewrite [X in X - _](bigD1 i)//= !mxE eqxx mulr1.
+    move=> h0; rewrite [X in X - _](bigD1 i)//= !mxE eqxx mulr1.
     rewrite (eq_bigr (fun=> p)); last first.
       by move=> j ji; rewrite !mxE eq_sym (negbTE ji) mulr0 addr0.
     rewrite [X in _ - X](eq_bigr (fun=> p)); last by move=> *; rewrite mxE.
