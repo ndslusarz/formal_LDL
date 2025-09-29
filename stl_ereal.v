@@ -1,5 +1,5 @@
 From HB Require Import structures.
-Require Import Coq.Program.Equality.
+Require Import Stdlib.Program.Equality.
 From mathcomp Require Import all_ssreflect all_algebra.
 From mathcomp Require Import lra.
 From mathcomp Require Import all_classical.

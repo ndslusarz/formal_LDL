@@ -86,6 +86,15 @@ by exists x; rewrite xl Px Fx0.
 Qed.
 
 Local Open Scope ereal_scope.
+
+(* TODO: PR*)
+Lemma lteNy {R : numDomainType} (x : \bar R) : (x < -oo) = false.
+Proof. by case: x. Qed.
+
+(* TODO: PR*)
+Lemma ltye {R : numDomainType} (x : \bar R) : (+oo < x) = false.
+Proof. by case: x. Qed.
+
 (* TODO: PR *)
 Lemma mule_natr {R : realDomainType} (x : \bar R) (n : nat) :
   x * (n%:R)%:E = x *+ n.

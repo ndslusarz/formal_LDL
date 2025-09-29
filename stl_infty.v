@@ -1,5 +1,5 @@
 From HB Require Import structures.
-Require Import Coq.Program.Equality.
+Require Import Stdlib.Program.Equality.
 From mathcomp Require Import all_ssreflect all_algebra.
 From mathcomp Require Import lra.
 From mathcomp Require Import all_classical.
@@ -71,10 +71,6 @@ set t1 := _ e.
 rewrite /= /mine; repeat case: ifP => //=.
 by move/negbT; rewrite -leNgt leye_eq => /eqP.
 Qed.
-
-(* TODO: move*)
-Lemma lteNy (x : \bar R) : (x < -oo) = false.
-Proof. by case: x. Qed.
 
 Lemma stl_infty_morI f1 f2 (e : expr (boolT_def f1 m_def f2)) :
   [[ e `++ e ]]_stli = [[ e ]]_stli.
@@ -227,15 +223,12 @@ Lemma stl_infty_prelinearity (e1 e2 e3 : @expr R (boolT_def impl_def m_def l_def
   is_stl true ([[(e1 `=> e2) `\/ (e2 `=> e1)]]_stli).
 Proof.
 rewrite /= !big_ord_recl !big_ord0 !tnthS !tnth0 !maxeNy /maxe.
-repeat case: ifP => //=.
-- move => _ _  h3.
-  by rewrite ltNge leey in h3.
-- move => /negP h1 _ /ltW h3. by [].
-- move => h1 h2 /negP/negP h.
-  rewrite -leNgt leye_eq in h. move /eqP in h.
-  by rewrite h le0y.
-- move => _ /negP h2 /negP/negP h3.
-  by rewrite -leNgt in h3.
+repeat case: ifPn => //=.
+- by move => _ _; rewrite ltye.
+- by move => /negP h1 _ /ltW h3.
+- move => h1 h2 /negP/negP.
+  by rewrite -leNgt leye_eq => /eqP ->.
+- by move => _ /negP h2 /negP/negP; rewrite -leNgt.
 Qed.
 
 End stl_infty_lemmas.
