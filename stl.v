@@ -6,7 +6,7 @@ From mathcomp Require Import all_classical.
 From mathcomp Require Import reals ereal interval_inference.
 From mathcomp Require Import topology derive normedtype sequences exp measure.
 From mathcomp Require Import lebesgue_measure lebesgue_integral hoelder realfun.
-Require Import mathcomp_extra analysis_extra ldl.
+Require Import mathcomp_extra analysis_extra dl.
 
 (**md**************************************************************************)
 (* # STL alternative                                                          *)
@@ -21,7 +21,7 @@ HB.instance Definition _ (R : realType)  f1 f2 f3 f4 :=
   @gen_eqMixin (@expr R (boolT f1 f2 f3 f4)).
 
 Section stl_lemmas.
-Local Open Scope ldl_scope.
+Local Open Scope dl_scope.
 Local Open Scope ring_scope.
 Context {R : realType}.
 Variable nu : R.
@@ -139,7 +139,7 @@ Qed.
 Definition is_stl b (x : R) := if b then x >= 0 else x < 0.
 
 Lemma stl_nary_inversion_andE1 n (Es : 'I_n -> (expr (boolT neg_undef impl_undef m_undef l_def))) :
-  is_stl true (nu.-[[ ldl_and Es ]]_stl) ->
+  is_stl true (nu.-[[ dl_and Es ]]_stl) ->
     forall i, is_stl true (nu.-[[ Es i ]]_stl).
 Proof.
 move: Es; case: n => [Es _|n Es]; first by case.
@@ -156,8 +156,8 @@ by case: ifPn => _ _ i; exact/hi.
 Qed.
 
 
-Lemma stl_nary_inversion_andE0 n (Es : 'I_n -> (expr (boolT neg_undef impl_undef m_undef l_def))) :
-  is_stl false (nu.-[[ ldl_and Es ]]_stl) ->
+Lemma stl_nary_inversion_andE0 n (Es : 'I_n -> expr (boolT neg_undef impl_undef m_undef l_def)) :
+  is_stl false (nu.-[[ dl_and Es ]]_stl) ->
     exists i, is_stl false (nu.-[[ Es i ]]_stl).
 Proof.
 move: Es; case: n => [Es|n Es]//=; first by rewrite ltr10.
@@ -173,8 +173,8 @@ rewrite ltNge divr_ge0// big_ord_recl/= addr_ge0//= ?mulr_ge0 ?expR_ge0 ?sumr_ge
 by move=> i _; rewrite mulr_ge0// (le_trans hminge0)// bigmin_le.
 Qed.
 
-Lemma stl_nary_inversion_orE1 n (Es : 'I_n -> (expr (boolT neg_undef impl_undef m_undef l_def))) :
-  is_stl true (nu.-[[ ldl_or Es ]]_stl) ->
+Lemma stl_nary_inversion_orE1 n (Es : 'I_n -> expr (boolT neg_undef impl_undef m_undef l_def)) :
+  is_stl true (nu.-[[ dl_or Es ]]_stl) ->
     exists i, is_stl true (nu.-[[ Es i ]]_stl).
 Proof.
 move: Es; case: n => [Es|n Es]/=; first by rewrite /= ler0N1.
@@ -195,8 +195,8 @@ have /= [x xmem hxge0] := maxrgex hmaxge0.
 by exists x.
 Qed.
 
-Lemma stl_nary_inversion_orE0 n (Es : 'I_n -> (expr (boolT neg_undef impl_undef m_undef l_def))) :
-  is_stl false (nu.-[[ ldl_or Es ]]_stl) ->
+Lemma stl_nary_inversion_orE0 n (Es : 'I_n -> expr (boolT neg_undef impl_undef m_undef l_def)) :
+  is_stl false (nu.-[[ dl_or Es ]]_stl) ->
     forall i, is_stl false (nu.-[[ Es i ]]_stl).
 Proof.
 move: Es; case: n => [Es _|n Es]; first by case.
@@ -218,19 +218,19 @@ dependent induction e using expr_ind'.
 - by move: b b0 => [] [] //=; rewrite ?leNgt ?ltrN10 ?ltr10.
 - move: b => []. rewrite /is_stl.
   + move/stl_nary_inversion_andE1.
-    rewrite [bool_translation (ldl_and l)]/= big_all => h.
+    rewrite [bool_translation (dl_and l)]/= big_all => h.
     by apply/allP => /= i _; exact/H.
   + move/stl_nary_inversion_andE0.
-    rewrite [bool_translation (ldl_and l)]/= big_all => [ [i] h].
+    rewrite [bool_translation (dl_and l)]/= big_all => [ [i] h].
     apply/allPn; exists i; first by rewrite mem_index_enum.
     by rewrite (H i _ _ _ false).
 - move: b => [|].
   + move/stl_nary_inversion_orE1.
-    rewrite [bool_translation (ldl_or l)]/= big_has => [ [i] h].
+    rewrite [bool_translation (dl_or l)]/= big_has => [ [i] h].
     apply/hasP; exists i; first by rewrite mem_index_enum.
     exact: H.
   + move/stl_nary_inversion_orE0.
-    rewrite [bool_translation (ldl_or l)]/= big_has => h.
+    rewrite [bool_translation (dl_or l)]/= big_has => h.
     apply/hasPn => i _.
     by rewrite (H i _ _ _ false).
 - case: c.
@@ -242,8 +242,9 @@ Qed.
 
 From mathcomp Require Import perm.
 
-Lemma andC_stl_nary n (pi : {perm 'I_n}) (s : 'I_n -> (expr (boolT_def impl_undef m_undef l_def))) :
-  nu.-[[ldl_and s]]_stl = nu.-[[ldl_and (s \o pi)]]_stl.
+Lemma andC_stl_nary n (pi : {perm 'I_n})
+    (s : 'I_n -> expr (boolT_def impl_undef m_undef l_def)) :
+  nu.-[[dl_and s]]_stl = nu.-[[dl_and (s \o pi)]]_stl.
 Proof.
 case: n pi s => [pi s|n pi s]//=.
 rewrite /stl_and.

@@ -6,7 +6,7 @@ From mathcomp Require Import all_classical.
 From mathcomp Require Import reals ereal interval_inference.
 From mathcomp Require Import topology derive normedtype sequences
  exp measure lebesgue_measure lebesgue_integral hoelder.
-Require Import mathcomp_extra analysis_extra ldl.
+Require Import mathcomp_extra analysis_extra dl.
 
 (**md**************************************************************************)
 (* # Properties of STL on extended reals                                      *)
@@ -52,7 +52,7 @@ Context {R : realType}.
 Variables (nu : R).
 Hypothesis nu0 : 0 < nu.
 Local Open Scope ring_scope.
-Local Open Scope ldl_scope.
+Local Open Scope dl_scope.
 
 (* TODO: move *)
 Lemma mine_devxx (x : \bar R) : x \is a fin_num -> mine_dev x x = 0.
@@ -229,8 +229,8 @@ Qed.
 
 Definition is_stl b (x : \bar R) := (if b then x >= 0 else x < 0)%E.
 
-Lemma stl_nary_inversion_andE1 f n (Es : 'I_n -> (expr (boolT_undef f m_undef l_def))) :
-  is_stl true (nu.-[[ ldl_and Es ]]_stle) -> (forall i, is_stl true (nu.-[[ Es i ]]_stle)).
+Lemma stl_nary_inversion_andE1 f n (Es : 'I_n -> expr (boolT_undef f m_undef l_def)) :
+  is_stl true (nu.-[[ dl_and Es ]]_stle) -> (forall i, is_stl true (nu.-[[ Es i ]]_stle)).
 Proof.
 rewrite/is_stl/=.
 case: ifPn => [//|hnoo].
@@ -351,8 +351,8 @@ case: ifPn=>[hminlt0|].
 by rewrite -leNgt => /mine_geP + _ i => /(_ i(mem_index_enum _) isT).
 Qed.
 
-Lemma stl_nary_inversion_andE0 f n (Es : 'I_n -> (expr (boolT_undef f m_undef l_def)) ) :
-  is_stl false (nu.-[[ ldl_and Es ]]_stle) -> (exists i, is_stl false (nu.-[[ Es i ]]_stle)%E).
+Lemma stl_nary_inversion_andE0 f n (Es : 'I_n -> expr (boolT_undef f m_undef l_def) ) :
+  is_stl false (nu.-[[ dl_and Es ]]_stle) -> (exists i, is_stl false (nu.-[[ Es i ]]_stle)%E).
 Proof.
 rewrite/is_stl/=.
 have h0 : (-oo != +oo)%E by [].
@@ -377,8 +377,8 @@ case: ifPn => [hgt0|].
 by rewrite ltxx.
 Qed.
 
-Lemma stl_nary_inversion_orE1 f n (Es : 'I_n -> (expr (boolT_undef f m_undef l_def))) :
-  is_stl true (nu.-[[ ldl_or Es ]]_stle) -> exists i, is_stl true (nu.-[[ Es i ]]_stle).
+Lemma stl_nary_inversion_orE1 f n (Es : 'I_n -> expr (boolT_undef f m_undef l_def)) :
+  is_stl true (nu.-[[ dl_or Es ]]_stle) -> exists i, is_stl true (nu.-[[ Es i ]]_stle).
 Proof.
 rewrite/is_stl/=.
 case: ifPn => [_|hnoo]; first by rewrite leNgt ltNyr.
@@ -480,8 +480,8 @@ move=> /(_ isT)[i [iEs _ hige0 ] ].
 by exists i; rewrite hige0.
 Qed.
 
-Lemma stl_nary_inversion_orE0 f n (Es : 'I_n -> (expr (boolT_undef f m_undef l_def))) :
-  is_stl false (nu.-[[ ldl_or Es ]]_stle) -> forall i, is_stl false (nu.-[[ Es i ]]_stle).
+Lemma stl_nary_inversion_orE0 f n (Es : 'I_n -> expr (boolT_undef f m_undef l_def)) :
+  is_stl false (nu.-[[ dl_or Es ]]_stle) -> forall i, is_stl false (nu.-[[ Es i ]]_stle).
 Proof.
 rewrite/is_stl/=.
 case: ifPn => [/eqP hnoo _|hnoo].

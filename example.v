@@ -6,17 +6,17 @@ From mathcomp Require Import all_classical.
 From mathcomp Require Import reals ereal interval_inference.
 From mathcomp Require Import topology derive normedtype sequences
  exp measure lebesgue_measure lebesgue_integral hoelder.
-Require Import mathcomp_extra analysis_extra ldl.
+Require Import mathcomp_extra analysis_extra dl.
 
 (**md**************************************************************************)
 (* # Examples                                                                 *)
 (*                                                                            *)
 (* ```                                                                        *)
-(*      ldl_norm_infty == infinity norm                                       *)
+(*       dl_norm_infty == infinity norm                                       *)
 (*         lbl_vec_sub == vector subtraction                                  *)
 (*    eps_delta_robust == example from the ITP paper                          *)
-(*        ldl_add_real == real addition                                       *)
-(*        ldl_sub_real == real subtraction                                    *)
+(*         dl_add_real == real addition                                       *)
+(*         dl_sub_real == real subtraction                                    *)
 (*    group_similarity == TODO                                                *)
 (* ```                                                                        *)
 (******************************************************************************)
@@ -31,22 +31,22 @@ Import numFieldTopology.Exports.
 Local Open Scope classical_set_scope.
 
 Section example_robust.
-Local Open Scope ldl_scope.
+Local Open Scope dl_scope.
 Context {R : realType}.
 
 Local Notation expr := (@expr R).
 
-Let ldl_norm_infty n : expr (funT n.+1 1) := ldl_fun
+Let dl_norm_infty n : expr (funT n.+1 1) := dl_fun
   (fun t : R ^ n.+1 => [ffun x : 'I_1 => \big[maxr/t 0]_(i < n.+1) t i ])%R.
-Let idx0 := @ldl_idx R 1 ord0.
-Local Notation "'`|' v '|'" := ((ldl_norm_infty _ `@ v) `! idx0).
+Let idx0 := @dl_idx R 1 ord0.
+Local Notation "'`|' v '|'" := ((dl_norm_infty _ `@ v) `! idx0).
 
-Let ldl_vec_sub n :=
-  ldl_fun2 (fun (x y : R ^ n) => [ffun i => x i - y i]%R).
-Local Notation "x `- y" := (ldl_vec_sub _ `@2 (x, y)) (at level 42).
+Let dl_vec_sub n :=
+  dl_fun2 (fun (x y : R ^ n) => [ffun i => x i - y i]%R).
+Local Notation "x `- y" := (dl_vec_sub _ `@2 (x, y)) (at level 42).
 
-Lemma ldl_vec_sub0 n (e : expr (vectorT n)) :
-  [[ (ldl_vec_sub n) `@2 (e, ldl_vec [ffun x => 0%R]) ]]_B = [[ e ]]_B.
+Lemma dl_vec_sub0 n (e : expr (vectorT n)) :
+  [[ (dl_vec_sub n) `@2 (e, dl_vec [ffun x => 0%R]) ]]_B = [[ e ]]_B.
 Proof.
 by dependent induction e => /=; apply/ffunP => i; rewrite !ffunE/= subr0.
 Qed.
@@ -62,14 +62,14 @@ Compute eps_delta_robust_dl2.
 End example_robust.
 
 Section example_hierarchical.
-Local Open Scope ldl_scope.
+Local Open Scope dl_scope.
 Context {R : realType}.
 
 Definition group_confidence n m x y z eps
     (f : expr (funT n.+1 m.+1)) (v : expr (vectorT n.+1))
     (idx_ : (expr (indexT m.+1)) ^ n) :=
-  @ldl_and R x y z _
-    (fun i => (((ldl_app f v) `! (idx_ i)) `<= ldl_real eps) `/\
-           ((ldl_real (1-eps)) `<= (ldl_app f v) `! (idx_ i))).
+  @dl_and R x y z _
+    (fun i => (((dl_app f v) `! (idx_ i)) `<= dl_real eps) `/\
+           ((dl_real (1-eps)) `<= (dl_app f v) `! (idx_ i))).
 
 End example_hierarchical.

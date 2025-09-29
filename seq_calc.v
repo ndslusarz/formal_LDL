@@ -6,7 +6,7 @@ From mathcomp Require Import all_classical reals.
 From mathcomp Require Import reals ereal interval_inference.
 From mathcomp Require Import topology derive normedtype sequences
  exp measure lebesgue_measure lebesgue_integral hoelder finmap multiset.
-Require Import mathcomp_extra analysis_extra ldl fuzzy.
+Require Import mathcomp_extra analysis_extra dl fuzzy.
 
 Set Implicit Arguments.
 Unset Strict Implicit.
@@ -69,25 +69,25 @@ HB.instance Definition _ (R : realType) x y z v :=
 
 Reserved Notation "Q |= P" (no associativity, at level 61).
 Reserved Notation "Q |- P" (no associativity, at level 61).
-Open Scope ldl_scope.
+Open Scope dl_scope.
 
 Definition neg_impl_dl (R : realType) :=
   forall f1 f2 (e : @expr R (boolT_def impl_def f1 f2)),
-    (`~ e) = (e `=> ldl_bool neg_def impl_def f1 f2 false).
+    (`~ e) = (e `=> dl_bool neg_def impl_def f1 f2 false).
 
 Definition true_false_dl (R : realType) :=
   forall f1 f2 f3,
-    (@ldl_bool R neg_def f1 f2 f3  true) = (`~ ldl_bool neg_def f1 f2 f3 false).
+    (@dl_bool R neg_def f1 f2 f3  true) = (`~ dl_bool neg_def f1 f2 f3 false).
 
 Definition mand_impl_dl (R : realType) :=
-  forall f (a b : @expr R (boolT_def impl_def m_def f)), (a `** b) = (`~ (a `=> `~b)).
+  forall f (a b : @expr R (boolT_def impl_def m_def f)), a `** b = (`~ (a `=> `~b)).
 
 Definition mor_impl_dl (R : realType) :=
-  forall f (a b : @expr R (boolT_def impl_def m_def f)), (a `++ b) = ((`~ a) `=> b).
+  forall f (a b : @expr R (boolT_def impl_def m_def f)), a `++ b = ((`~ a) `=> b).
 
 Section hypersequent_lukasiewicz.
 Local Open Scope ring_scope.
-Local Open Scope ldl_scope.
+Local Open Scope dl_scope.
 Context {R : realType} {K : choiceType}.
 Implicit Types (s : seq K).
 Variable p : R.
@@ -149,7 +149,7 @@ Inductive seq_calc_luka_impl : hypersequent -> Prop :=
 (*logical*)
 (*restricted to a single-conclusion case for Lukasiewicz*)
 | bot_l : forall Q A (b : formula),
-    seq_calc_luka_impl (((ldl_bool neg_def _ _ _ false :: A) |- [:: b]) :: Q)
+    seq_calc_luka_impl ((dl_bool neg_def _ _ _ false :: A |- [:: b]) :: Q)
 |implL_l : forall Q A B (a b : formula),
     seq_calc_luka_impl (((b :: B) |- a:: A) :: Q ) ->
     seq_calc_luka_impl ((((a `=> b) :: B) |- A) :: Q)
@@ -207,33 +207,33 @@ Inductive seq_calc_luka : hypersequent -> Prop :=
 (*logical*)
 (*both are restricted to a single-conclusion case for Lukasiewicz*)
 | bot_l' : forall Q A (b : formula),
-    seq_calc_luka (((ldl_bool neg_def _ _ _ false :: A) |- [:: b]) :: Q)
+    seq_calc_luka ((dl_bool neg_def _ _ _ false :: A |- [:: b]) :: Q)
 | top_l' : forall Q A,
-    seq_calc_luka ((A |- [:: (ldl_bool neg_def _ _ _  true)]) :: Q)
+    seq_calc_luka ((A |- [:: (dl_bool neg_def _ _ _  true)]) :: Q)
 | mandL_l' : forall Q A B (a b : formula),
     seq_calc_luka (((a :: b :: B) |- A) :: Q ) ->
-    seq_calc_luka ((ldl_bool neg_def _ _ _ false :: B |- A) :: Q ) ->
+    seq_calc_luka ((dl_bool neg_def _ _ _ false :: B |- A) :: Q ) ->
     seq_calc_luka ((((a `** b) :: B) |- A) :: Q)
 | mandR_l' : forall Q A B (a b : formula),
     seq_calc_luka ((A |- B) :: Q ) -> (*not needed for soundness,
                                         but this is needed for this rule
                                         to be derivable*)
-    seq_calc_luka  ((A |- (a ::  b :: B)) :: (A |- (ldl_bool neg_def _ _ _ false :: B)) :: Q)  ->
+    seq_calc_luka  ((A |- (a ::  b :: B)) :: (A |- dl_bool neg_def _ _ _ false :: B) :: Q)  ->
     seq_calc_luka ((A |- (a `** b) :: B) :: Q )
 | negL_l' : forall Q A B (a : formula),
-    seq_calc_luka (((ldl_bool neg_def _ _ _ false :: A) |-  a :: B) :: Q) ->
+    seq_calc_luka (((dl_bool neg_def _ _ _ false :: A) |-  a :: B) :: Q) ->
     seq_calc_luka ((((`~ a) :: A) |- B) :: Q)
 | negR_l' : forall Q A B (a : formula),
     seq_calc_luka ( ( A |- B):: Q) ->
-    seq_calc_luka (((a :: A) |-  ldl_bool neg_def _ _ _ false :: B)::Q) ->
+    seq_calc_luka (((a :: A) |- dl_bool neg_def _ _ _ false :: B)::Q) ->
     seq_calc_luka ((A |-  (`~a) :: B) :: Q)
 | morL_l' : forall Q A B (a b : formula),
     seq_calc_luka (( A |- B) :: Q) ->
-    seq_calc_luka (((a :: b :: A) |- ldl_bool neg_def _ _ _ false :: B) :: Q) ->
+    seq_calc_luka (((a :: b :: A) |- dl_bool neg_def _ _ _ false :: B) :: Q) ->
     seq_calc_luka ((((a `++ b) :: A) |- B) :: Q)
 | morR_l' : forall Q A B (a b : formula),
     seq_calc_luka ((A |- B):: Q) ->
-    seq_calc_luka (((ldl_bool neg_def _ _ _ false :: A) |-  a :: b :: B) :: Q) ->
+    seq_calc_luka (((dl_bool neg_def _ _ _ false :: A) |-  a :: b :: B) :: Q) ->
     seq_calc_luka ((A |- (a `++ b) :: B) :: Q)
 | andL_l' : forall Q A B (a b : formula),
     seq_calc_luka (((a :: B) |- A) :: ((b :: B) |- A) :: Q) ->
@@ -350,7 +350,7 @@ intros; rewrite//=. dependent induction H.
     rewrite//= !eval_luka_add in IH2.
     by rewrite//= !eval_luka_add; lra.
   + by exists q; rewrite ?in_cons ?h ?orbT//=.
-- exists (ldl_bool neg_def  _ _ _ false :: A |- [:: b]); first by rewrite mem_head.
+- exists (dl_bool neg_def  _ _ _ false :: A |- [:: b]); first by rewrite mem_head.
   rewrite //= !eval_luka_add_el addr0.
   have h := eval_luka1 A.
   have hb := @translate_boolT_01 R _ p1 Lukasiewicz _ _ _ b.
@@ -523,7 +523,7 @@ intros; rewrite//=. dependent induction H.
     rewrite//= !eval_luka_add in IH2.
     by rewrite//= !eval_luka_add; lra.
   + by exists q => //; rewrite in_cons h !orbT.
-- exists (ldl_bool neg_def _ _ _ false :: A |- [:: b]); first by rewrite mem_head.
+- exists (dl_bool neg_def _ _ _ false :: A |- [:: b]); first by rewrite mem_head.
   rewrite /= !eval_luka_add_el addr0.
   have h := eval_luka1 A.
   have /andP[b0 b1] := @translate_boolT_01 R _ p1 Lukasiewicz _ _ _ b.
@@ -531,7 +531,7 @@ intros; rewrite//=. dependent induction H.
          eval_luka A - 1 <= (eval_luka [::] + [[b]]_Lukasiewicz)%E - 1
     by intros; lra.
   by apply; rewrite /eval_luka//= big_nil addr0; lra.
-- exists (A |- [:: ldl_bool neg_def _ _ _ true]); first by rewrite mem_head.
+- exists (A |- [:: dl_bool neg_def _ _ _ true]); first by rewrite mem_head.
   rewrite //= !eval_luka_add_el//= .
   have h := eval_luka1 A.
   by rewrite addrK /eval_luka big_nil addr0 h.
@@ -706,7 +706,7 @@ intros; rewrite//=. dependent induction H.
 Qed.
 
 Lemma luka_neg_impl_admissable (e : formula) :
- [[`~ e]]_Lukasiewicz = [[e `=> ldl_bool _ _ _ _ false]]_Lukasiewicz.
+ [[`~ e]]_Lukasiewicz = [[e `=> dl_bool _ _ _ _ false]]_Lukasiewicz.
 Proof.
 rewrite//= addr0 /minr; case: ifPn; intros; first by [].
 have h := @translate_boolT_01 R _ p1 Lukasiewicz _ _ _ e.
@@ -716,8 +716,8 @@ by lra.
 Qed.
 
 Lemma luka_true_false_admissable :
-  [[@ldl_bool R neg_def impl_def m_def l_def true]]_Lukasiewicz =
-    [[`~ ldl_bool neg_def impl_def m_def l_def false]]_Lukasiewicz.
+  [[@dl_bool R neg_def impl_def m_def l_def true]]_Lukasiewicz =
+    [[`~ dl_bool neg_def impl_def m_def l_def false]]_Lukasiewicz.
 Proof. by rewrite//= subr0. Qed.
 
 Lemma luka_mand_impl_admissable (a b: formula):
@@ -868,15 +868,15 @@ dependent induction H.
   apply implL_l. apply implR_l.
   + by exact IHseq_calc_luka2.
   + rewrite neg_impl_luka. apply implR_l.
-    * have -> : [:: a, ldl_bool _ _ _ _ false & B] =
-                [:: a] ++ (ldl_bool _ _ _ _ false :: B) by [].
+    * have -> : [:: a, dl_bool _ _ _ _ false & B] =
+                [:: a] ++ (dl_bool _ _ _ _ false :: B) by [].
       apply/luka_exL_nil/w_l.
       by exact: IHseq_calc_luka2.
-    * have -> : [:: b, a, ldl_bool _ _ _ _ false & B] =
-                [:: b; a] ++ (ldl_bool _ _ _ _ false :: B) by [].
+    * have -> : [:: b, a, dl_bool _ _ _ _ false & B] =
+                [:: b; a] ++ (dl_bool _ _ _ _ false :: B) by [].
       apply luka_exL_nil.
-      have -> : (ldl_bool _ _ _ _ false :: B) ++ [:: b; a] =
-                [::ldl_bool _ _ _ _ false] ++ B ++ [:: b; a] by [].
+      have -> : (dl_bool _ _ _ _ false :: B) ++ [:: b; a] =
+                [::dl_bool _ _ _ _ false] ++ B ++ [:: b; a] by [].
       rewrite -(cat1s _ A).
       apply: mix_l.
       - by exact: id_l.
@@ -890,35 +890,35 @@ dependent induction H.
   apply: implR_l.
   + by exact: IHseq_calc_luka1.
   + apply luka_implL_extended. rewrite neg_impl_luka.
-    have -> : [:: A |- ldl_bool _ _ _ _ false :: B,
-                     (b `=> ldl_bool _ _ _ _ false) :: A |- [:: a, ldl_bool _ _ _ _ false & B] & Q] =
-                    [:: A |- ldl_bool _ _ _ _ false :: B] ++ ((
-                       (b `=> ldl_bool _ _ _ _ false) :: A |- [:: a, ldl_bool _ _ _ _ false & B]) :: Q).
+    have -> : [:: A |- dl_bool _ _ _ _ false :: B,
+                     (b `=> dl_bool _ _ _ _ false) :: A |- [:: a, dl_bool _ _ _ _ false & B] & Q] =
+                    [:: A |- dl_bool _ _ _ _ false :: B] ++ ((
+                       (b `=> dl_bool _ _ _ _ false) :: A |- [:: a, dl_bool _ _ _ _ false & B]) :: Q).
       by [].
     apply luka_catC => /=.
     apply luka_implL_extended.
-    have -> : [:: A |- [:: a, ldl_bool _ _ _ _ false & B],
-                      ldl_bool _ _ _ _ false :: A |- [:: b, a, ldl_bool _ _ _ _ false & B]
-      & Q ++ [:: A |- ldl_bool _ _ _ _ false :: B]] =
-                     [:: A |- [:: a, ldl_bool _ _ _ _ false & B]] ++
-                       (( ldl_bool _ _ _ _ false :: A |- [:: b, a, ldl_bool _ _ _ _ false & B]) ::
-      Q ++ [:: A |- ldl_bool _ _ _ _ false :: B]).
+    have -> : [:: A |- [:: a, dl_bool _ _ _ _ false & B],
+                      dl_bool _ _ _ _ false :: A |- [:: b, a, dl_bool _ _ _ _ false & B]
+      & Q ++ [:: A |- dl_bool _ _ _ _ false :: B]] =
+                     [:: A |- [:: a, dl_bool _ _ _ _ false & B]] ++
+                       ((dl_bool _ _ _ _ false :: A |- [:: b, a, dl_bool _ _ _ _ false & B]) ::
+      Q ++ [:: A |- dl_bool _ _ _ _ false :: B]).
       by [].
     apply luka_catC.
     apply ew_l .
-    have -> : ldl_bool _ _ _ _ false :: A |- [:: b, a, ldl_bool _ _ _ _ false & B] =
-                     ([::ldl_bool _ _ _ _ false] ++ A |- [:: b] ++ [:: a] ++ [:: ldl_bool _ _ _ _ false] ++ B).
+    have -> : dl_bool _ _ _ _ false :: A |- [:: b, a, dl_bool _ _ _ _ false & B] =
+                     ([::dl_bool _ _ _ _ false] ++ A |- [:: b] ++ [:: a] ++ [:: dl_bool _ _ _ _ false] ++ B).
       by [].
-    apply exR_l. apply(@luka_exR_nil _ ([:: ldl_bool _ _ _ _ false] ++ [:: a] ++ B) ([:: b])).
-    have -> : ([:: ldl_bool  _ _ _ _ false] ++ [:: a] ++ B) ++ [:: b] =
-              ([:: ldl_bool  _ _ _ _ false]) ++ ([:: a] ++ B ++ [:: b]) by [].
+    apply exR_l. apply(@luka_exR_nil _ ([:: dl_bool _ _ _ _ false] ++ [:: a] ++ B) ([:: b])).
+    have -> : ([:: dl_bool  _ _ _ _ false] ++ [:: a] ++ B) ++ [:: b] =
+              ([:: dl_bool  _ _ _ _ false]) ++ ([:: a] ++ B ++ [:: b]) by [].
     apply: mix_l.
     * by exact: id_l.
     * rewrite catA. apply luka_exR_nil.
       have -> : [:: b] ++ [:: a] ++ B = [::] ++ [:: b] ++ [:: a] ++ B by [].
       apply exR_l. rewrite//=.
-      have -> : (A |- [:: a, b & B]) :: Q ++ [:: A |- ldl_bool  _ _ _ _ false :: B] =
-                ([::A |- [:: a, b & B]] ++ Q ++ [:: A |- ldl_bool  _ _ _ _ false :: B] ++ [::]) by [].
+      have -> : (A |- [:: a, b & B]) :: Q ++ [:: A |- dl_bool  _ _ _ _ false :: B] =
+                ([::A |- [:: a, b & B]] ++ Q ++ [:: A |- dl_bool  _ _ _ _ false :: B] ++ [::]) by [].
       by apply: eex_l; rewrite cats0.
 - by rewrite neg_impl_luka; exact/implL_l/IHseq_calc_luka.
 - rewrite neg_impl_luka. apply implR_l.
@@ -926,8 +926,8 @@ dependent induction H.
   + by exact: IHseq_calc_luka2.
 - rewrite mor_impl_luka. apply luka_implL_extended.
   rewrite neg_impl_luka.
-  have -> : [:: A |- B, b :: A |- (a `=> ldl_bool  _ _ _ _ false) :: B & Q] =
-            [:: A |- B] ++ ((b :: A |- (a `=> ldl_bool  _ _ _ _ false) :: B) :: Q) by [].
+  have -> : [:: A |- B, b :: A |- (a `=> dl_bool  _ _ _ _ false) :: B & Q] =
+            [:: A |- B] ++ ((b :: A |- (a `=> dl_bool  _ _ _ _ false) :: B) :: Q) by [].
   apply: luka_catC => /=.
   apply: implR_l.
   + rewrite -(cat1s b A).
@@ -935,33 +935,31 @@ dependent induction H.
     rewrite -(cat1s (A |- B)) catA.
     apply ew_l.
     rewrite -(cat1s (A |- B)).
-    by exact: IHseq_calc_luka1.
-  + have -> : ([:: a, b & A] |- ldl_bool  _ _ _ _ false :: B) :: Q ++ [:: A |- B] =
-              (([:: a, b & A] |- ldl_bool  _ _ _ _ false :: B) :: Q) ++ [:: A |- B] by [].
+    exact: IHseq_calc_luka1.
+  + have -> : ([:: a, b & A] |- dl_bool  _ _ _ _ false :: B) :: Q ++ [:: A |- B] =
+              (([:: a, b & A] |- dl_bool  _ _ _ _ false :: B) :: Q) ++ [:: A |- B] by [].
     apply ew_l.
-    by exact: IHseq_calc_luka2.
+    exact: IHseq_calc_luka2.
 - rewrite mor_impl_luka. apply implR_l.
-  + by exact: IHseq_calc_luka1.
+  + exact: IHseq_calc_luka1.
   + rewrite neg_impl_luka. apply implL_l.
-    by exact: IHseq_calc_luka2.
-- apply andL_l. by exact IHseq_calc_luka.
+    exact: IHseq_calc_luka2.
+- apply andL_l. exact IHseq_calc_luka.
 - apply andR_l.
-  + by exact IHseq_calc_luka1.
-  + by exact IHseq_calc_luka2.
+  + exact IHseq_calc_luka1.
+  + exact IHseq_calc_luka2.
 - apply orL_l.
-  + by exact IHseq_calc_luka1.
-  + by exact IHseq_calc_luka2.
-- apply orR_l. by exact IHseq_calc_luka.
+  + exact IHseq_calc_luka1.
+  + exact IHseq_calc_luka2.
+- apply orR_l. exact IHseq_calc_luka.
 Qed.
-
 
 End hypersequent_lukasiewicz.
 
 Section hypersequent_product.
 Local Open Scope ring_scope.
-Local Open Scope ldl_scope.
-Context {R : realType}.
-Context {K : choiceType}.
+Local Open Scope dl_scope.
+Context {R : realType} {K : choiceType}.
 Implicit Types (s : seq K).
 Variable p : R.
 Hypothesis p1 : 1 <= p.
@@ -1015,7 +1013,7 @@ Inductive seq_calc_product : hypersequent -> Prop :=
     seq_calc_product ((A ++ C |- B) :: Q)
 (*logical*)
 | bot_p : forall Q A B (b : formula),
-    seq_calc_product (((ldl_bool _ _ _ _ false :: A) |- B) :: Q)
+    seq_calc_product ((dl_bool _ _ _ _ false :: A |- B) :: Q)
 | mandL_p : forall Q A B (a b : formula),
     seq_calc_product ((a :: b :: B |- A) :: Q ) ->
     seq_calc_product ((((a `** b) :: B) |- A) :: Q )
@@ -1083,9 +1081,9 @@ Inductive seq_calc_product' : hypersequent -> Prop :=
     seq_calc_product' ((A ++ C |- B) :: Q)
 (*logical*)
 | bot_p' : forall Q A B (b : formula),
-    seq_calc_product' (((ldl_bool _ _ _ _ false :: A) |- B) :: Q)
+    seq_calc_product' ((dl_bool _ _ _ _ false :: A |- B) :: Q)
 | top_p' : forall Q A,
-   seq_calc_product' ((A |- [:: (ldl_bool _ _ _ _ true)]) :: Q)
+   seq_calc_product' ((A |- [:: dl_bool _ _ _ _ true]) :: Q)
 | mandL_p' : forall Q A B (a b : formula),
     seq_calc_product' (((a :: b :: B) |- A) :: Q ) ->
     seq_calc_product' ((((a `** b) :: B) |- A) :: Q )
@@ -1094,7 +1092,7 @@ Inductive seq_calc_product' : hypersequent -> Prop :=
     seq_calc_product' ((A |- (a `** b):: B ) :: Q )
 | negR_p' : forall Q A B (a : formula),
     seq_calc_product' ((A |- B) :: Q) ->
-    seq_calc_product' ((a :: A |- ldl_bool _ _ _ _ false :: B) :: Q) ->
+    seq_calc_product' ((a :: A |- dl_bool _ _ _ _ false :: B) :: Q) ->
     seq_calc_product' ((A |- (`~ a) :: B) :: Q)
 | negL_p' : forall Q A B (a : formula),
     seq_calc_product' ((B |- [::a]) :: Q) ->
@@ -1202,7 +1200,7 @@ intros; rewrite//=. dependent induction H.
       rewrite (le_trans _ IH2)//.
       by rewrite ler_piMr ?eval_product_ge0 ?eval_product_le1.
   + by exists q1 => //; rewrite !in_cons h2 !orbT.
-- exists (ldl_bool _ _ _ _ false :: A |- B).
+- exists (dl_bool _ _ _ _ false :: A |- B).
   + by rewrite in_cons eq_refl orTb.
   + rewrite//= /eval_product big_cons//= mul0r.
     have h := eval_product_01 B. rewrite /eval_product in h.
@@ -1464,14 +1462,14 @@ intros; rewrite//=. dependent induction H.
     * rewrite //= eval_product_add.
       by rewrite (le_trans _ IH2)// ler_piMr ?eval_product_ge0 ?eval_product_le1.
   + by exists q1 => //; rewrite !in_cons h2 !orbT.
-- exists (ldl_bool _ _ _ _ false :: A |- B).
+- exists (dl_bool _ _ _ _ false :: A |- B).
   + by rewrite in_cons eq_refl orTb.
   + rewrite//= /eval_product big_cons//= mul0r.
     have h := eval_product_01 B. rewrite /eval_product in h.
     have helper : forall (x : R), 0 <= x <= 1 -> 0 <= x /\ x <= 1 by intros; lra.
     apply helper in h. case h => [h1 _].
     by rewrite h1.
-- exists (A |- [:: ldl_bool _ _ _ _ true]).
+- exists (A |- [:: dl_bool _ _ _ _ true]).
   + by rewrite in_cons eq_refl orTb.
   + rewrite//= /eval_product big_cons//= mul1r big_nil.
     by have /andP[] := eval_product_01 A.
@@ -1605,34 +1603,34 @@ intros; rewrite//=. dependent induction H.
   rewrite !in_cons => /predU1P[h1 | /predU1P [h2 | h3]].
   + subst.
     exists (A |- (a `\/ b) :: B); first by rewrite in_cons eq_refl orTb.
-    rewrite //= /eval_product !big_cons//= /maxR !big_ord_recl big_ord0 /maxr. 
-    rewrite//= /eval_product !big_cons in IH2. 
-    have ha := @translate_boolT_01 R p p1 product _ _ _ (a).
-    have hb := @translate_boolT_01 R p p1 product _ _ _ (b).
-    have hB := eval_product_01 B. 
+    rewrite //= /eval_product !big_cons//= /maxR !big_ord_recl big_ord0 /maxr.
+    rewrite//= /eval_product !big_cons in IH2.
+    have ha := @translate_boolT_01 R p p1 product _ _ _ a.
+    have hb := @translate_boolT_01 R p p1 product _ _ _ b.
+    have hB := eval_product_01 B.
     have hA := eval_product_01 A.
     rewrite /eval_product in hB hA.
     by repeat case: ifP; move=> h1 h2; nra.
   + subst.
     exists (A |- (a `\/ b) :: B); first by rewrite in_cons eq_refl orTb.
-    rewrite //= /eval_product !big_cons//= /maxR !big_ord_recl big_ord0 /maxr. 
-    rewrite//= /eval_product !big_cons in IH2. 
-    have ha := @translate_boolT_01 R p p1 product _ _ _ (a).
-    have hb := @translate_boolT_01 R p p1 product _ _ _ (b).
-    have hB := eval_product_01 B. 
+    rewrite //= /eval_product !big_cons//= /maxR !big_ord_recl big_ord0 /maxr.
+    rewrite//= /eval_product !big_cons in IH2.
+    have ha := @translate_boolT_01 R p p1 product _ _ _ a.
+    have hb := @translate_boolT_01 R p p1 product _ _ _ b.
+    have hB := eval_product_01 B.
     have hA := eval_product_01 A.
     rewrite /eval_product in hB hA.
     by repeat case: ifP; move=> h1 h2; nra.
-  + by exists q1 => //; rewrite !in_cons h3 !orbT. 
+  + by exists q1 => //; rewrite !in_cons h3 !orbT.
 Qed.
 
 Lemma product_true_false_admissable :
-  [[@ldl_bool R neg_def impl_def m_def l_def true]]_product =
-    [[`~ ldl_bool neg_def impl_def m_def l_def false]]_product.
-Proof. by rewrite//=; case: ifP; intros; lra. Qed.
+  [[@dl_bool R neg_def impl_def m_def l_def true]]_product =
+    [[`~ dl_bool neg_def impl_def m_def l_def false]]_product.
+Proof. by rewrite /=; case: ifP; intros; lra. Qed.
 
 Lemma product_neg_impl_admissable (e : formula):
- [[`~ e]]_product = [[e `=> ldl_bool _ _ _ _  false]]_product.
+ [[`~ e]]_product = [[e `=> dl_bool _ _ _ _  false]]_product.
 Proof.
 rewrite//=. repeat case: ifP; intros; by rewrite ?mul0r//=.
 Qed.
@@ -1641,48 +1639,45 @@ Lemma equivalence_product Q:
   seq_calc_product' Q -> seq_calc_product Q.
 Proof.
 intros.
-dependent induction H. 
+dependent induction H.
 - apply id_p.
 - apply empty_p.
 - apply eex_p. by exact IHseq_calc_product'.
 - apply ew_p. by exact IHseq_calc_product'.
 - apply ec_p. by exact IHseq_calc_product'.
 - apply split_p. by exact IHseq_calc_product'.
-- apply mix_p. 
-  + by exact IHseq_calc_product'1.
-  + by exact IHseq_calc_product'2. 
+- apply mix_p.
+  + exact IHseq_calc_product'1.
+  + exact IHseq_calc_product'2.
 - apply exL_p. by exact IHseq_calc_product'.
 - apply exR_p. by exact IHseq_calc_product'.
 - apply w_p. by exact IHseq_calc_product'.
 - by apply bot_p.
-- rewrite true_false_product neg_impl_product. apply implR_p. 
-  + have h : [::] ++ A = A by [].
-    rewrite -h. 
-    apply w_p. apply empty_p.
-  + have h : ldl_bool _ _ _ _ false :: A = [::ldl_bool _ _ _ _ false] ++ A.
-      by [].
-    rewrite h . apply w_p. apply id_p.
+- rewrite true_false_product neg_impl_product. apply implR_p.
+  + rewrite -(cat0s A).
+    apply w_p. exact: empty_p.
+  + have -> : dl_bool _ _ _ _ false :: A = [:: dl_bool _ _ _ _ false] ++ A by [].
+    apply w_p. exact: id_p.
 - apply mandL_p. by exact IHseq_calc_product'.
 - apply mandR_p. by exact IHseq_calc_product'.
-- rewrite neg_impl_product. apply implR_p; rewrite//=. 
+- rewrite neg_impl_product. apply implR_p; rewrite//=.
 - apply negL_p. by exact IHseq_calc_product'.
 - apply andL_p. by exact IHseq_calc_product'.
-- apply andR_p. 
-  + by exact IHseq_calc_product'1. 
-  + by exact IHseq_calc_product'2.
-- apply orL_p. 
-  + by exact IHseq_calc_product'1. 
-  + by exact IHseq_calc_product'2.
-- apply orR_p. by exact IHseq_calc_product'.
+- apply andR_p.
+  + exact: IHseq_calc_product'1.
+  + exact: IHseq_calc_product'2.
+- apply orL_p.
+  + exact: IHseq_calc_product'1.
+  + exact: IHseq_calc_product'2.
+- apply orR_p. exact: IHseq_calc_product'.
 Qed.
 
 End hypersequent_product.
 
 Section hypersequent_godel.
 Local Open Scope ring_scope.
-Local Open Scope ldl_scope.
-Context {R : realType}.
-Context {K : choiceType}.
+Local Open Scope dl_scope.
+Context {R : realType} {K : choiceType}.
 Implicit Types (s : seq K).
 Variable p : R.
 Hypothesis p1 : 1 <= p.
@@ -1733,12 +1728,12 @@ Inductive seq_calc_godel :  hypersequent
     seq_calc_godel ((C |- (X ++ B ++ A ++ Y)) :: Q)
 (*logical*)
 | bot_g : forall Q A B,
-    seq_calc_godel (((ldl_bool _ _ _ _ false :: A) |- B) :: Q)
+    seq_calc_godel ((dl_bool _ _ _ _ false :: A |- B) :: Q)
 | top_g : forall Q A,
-    seq_calc_godel ((A |- [::ldl_bool _ _ _ _ true]) :: Q )
+    seq_calc_godel ((A |- [::dl_bool _ _ _ _ true]) :: Q )
 | andL_g : forall Q A B (a b : formula),
     seq_calc_godel (((a :: B) |- A) :: ((b :: B) |- A):: Q ) ->
-    seq_calc_godel ((((a `/\ b) :: B) |- A) :: Q) 
+    seq_calc_godel ((((a `/\ b) :: B) |- A) :: Q)
 | andR_g : forall Q A (a b : formula),
     seq_calc_godel ( (A |- [:: a]) :: Q ) ->
     seq_calc_godel ( (A |- [:: b]) :: Q) ->
@@ -1749,7 +1744,7 @@ Inductive seq_calc_godel :  hypersequent
     seq_calc_godel (((a `\/ b) :: B |- A) :: Q)
 | orR_g : forall Q A (a b : formula),
     seq_calc_godel (( A |- [::a] ) :: ( A |- [::b]) :: Q ) ->
-    seq_calc_godel (( A |- [::(a `\/ b)] ) :: Q) 
+    seq_calc_godel (( A |- [::(a `\/ b)] ) :: Q)
 | implR_g : forall Q A B (a b : formula),
     seq_calc_godel ((a :: A |- [::b]) :: Q) ->
     seq_calc_godel ((A |- [:: (a `=> b)]) :: Q)
@@ -1789,9 +1784,9 @@ Inductive seq_calc_godel' : hypersequent -> Prop :=
     seq_calc_godel' ((C |- (X ++ B ++ A ++ Y)) :: Q)
 (*logical*)
 | bot_g' : forall Q A B,
-    seq_calc_godel' (((ldl_bool _ _ _ _ false :: A) |- B) :: Q)
+    seq_calc_godel' ((dl_bool _ _ _ _ false :: A |- B) :: Q)
 | top_g' : forall Q A,
-    seq_calc_godel' ((A |- [::ldl_bool _ _ _ _ true]) :: Q )
+    seq_calc_godel' ((A |- [::dl_bool _ _ _ _ true]) :: Q )
 | andL_g' : forall Q A B (a b : formula),
     seq_calc_godel' (((a :: B) |- A) :: ((b :: B) |- A):: Q ) ->
     seq_calc_godel' ((((a `/\ b) :: B) |- A) :: Q)
@@ -1807,17 +1802,17 @@ Inductive seq_calc_godel' : hypersequent -> Prop :=
     seq_calc_godel' ((A |- [::a] ) :: ( A |- [::b]) :: Q ) ->
     seq_calc_godel' ((A |- [::(a `\/ b)] ) :: Q)
 | negR_g : forall Q A (a : formula),
-    seq_calc_godel' ((a :: A |- [:: ldl_bool _ _ _ _ false]) :: Q) ->
+    seq_calc_godel' ((a :: A |- [:: dl_bool _ _ _ _ false]) :: Q) ->
     seq_calc_godel' ((A |- [:: (`~ a)]) :: Q)
 | negL_g : forall Q A1 A2 B (a : formula),
     seq_calc_godel' ((A1 |- [:: a]) :: Q) ->
-    seq_calc_godel' (((ldl_bool _ _ _ _ false) :: A2 |- B) :: Q) ->
+    seq_calc_godel' ((dl_bool _ _ _ _ false :: A2 |- B) :: Q) ->
     seq_calc_godel' (((`~ a) :: A1 ++ A2 |- B) :: Q).
 
 Lemma big_maxr_godel_le1 n (A : 'I_n -> formula) :
    \big[maxr/0]_(j < n) [[A j]]_Godel <= 1.
 Proof.
-have := @translate_boolT_01 R p p1 Godel _ _ _  (ldl_or A).
+have := @translate_boolT_01 R p p1 Godel _ _ _  (dl_or A).
 rewrite /= /maxR.
 by case/andP.
 Qed.
@@ -1825,7 +1820,7 @@ Qed.
 Lemma big_minr_godel_le1 n (A : 'I_n -> formula) :
   \big[minr/1]_(j < n) [[A j]]_Godel <= 1.
 Proof.
-have := @translate_boolT_01 R _ p1 Godel _ _ _  (ldl_and A).
+have := @translate_boolT_01 R _ p1 Godel _ _ _  (dl_and A).
 rewrite /= /minR.
 by case/andP.
 Qed.
@@ -1833,16 +1828,16 @@ Qed.
 Lemma big_maxr_godel_ge0 n (A : 'I_n -> formula) :
    0 <= \big[maxr/0]_(j < n) [[A j]]_Godel .
 Proof.
-have := @translate_boolT_01 R _ p1 Godel _ _ _  (ldl_or A).
-rewrite //= /maxR.
+have := @translate_boolT_01 R _ p1 Godel _ _ _  (dl_or A).
+rewrite /= /maxR.
 by case/andP.
 Qed.
 
 Lemma big_minr_godel_ge0 n (A : 'I_n -> formula) :
    0 <= \big[minr/1]_(j < n) [[A j]]_Godel .
 Proof.
-have := @translate_boolT_01 R _ p1 Godel _ _ _  (ldl_and A).
-by rewrite //= /minR => /andP[].
+have := @translate_boolT_01 R _ p1 Godel _ _ _  (dl_and A).
+by rewrite /= /minR => /andP[].
 Qed.
 
 Lemma big_min_cat_godel (A B : seq formula) :
@@ -1874,8 +1869,8 @@ Lemma minr_lt_godel A B C :
 Proof.
 split.
 - move => [h1 h2].
-  have := big_minr_if A B. 
-  by case: ifP; move => _ ->.
+  have := big_minr_if A B.
+  by case: ifP => _ ->.
 - move => h.
   have := big_minr_if A B.
   by case: ifP; move => H' H; rewrite H in h; rewrite h; split; first by []; lra.
@@ -1902,7 +1897,7 @@ Proof.
 split.
 - move => [h1 h2].
   have := big_minr_if A B.
-  by case: ifP; move => _ ->. 
+  by case: ifP; move => _ ->.
 - move => h.
   have := big_minr_if A B.
   by case: ifP; move => H' H; rewrite H in h; rewrite h; split; first by []; lra.
@@ -2003,9 +1998,9 @@ intros; rewrite//=. dependent induction H.
     move: IH2.
     repeat case: ifP; intros; rewrite//=; try lra.
   + by exists q => //; rewrite !in_cons IH1 !orbT.
-- exists (ldl_bool _ _ _ _ false :: A |- B); first by rewrite in_cons eq_refl orTb.
+- exists (dl_bool _ _ _ _ false :: A |- B); first by rewrite in_cons eq_refl orTb.
   by rewrite //= !big_cons ge_min big_tnth big_maxr_godel_ge0.
-- exists (A |- [:: ldl_bool _ _ _ _ true]); first by rewrite in_cons eq_refl orTb.
+- exists (A |- [:: dl_bool _ _ _ _ true]); first by rewrite in_cons eq_refl orTb.
   rewrite /minR/maxR//= !big_cons big_nil /maxr; case: ifPn => /= i.
   + by exfalso; lra.
   + by rewrite big_tnth big_minr_godel_le1.
@@ -2216,9 +2211,9 @@ intros; rewrite//=. dependent induction H.
     move: IH2.
     by repeat (case: ifP; try lra).
   + by exists q => //; rewrite !in_cons IH1 !orbT.
-- exists (ldl_bool _ _ _ _ false :: A |- B); first by rewrite in_cons eq_refl orTb.
+- exists (dl_bool _ _ _ _ false :: A |- B); first by rewrite in_cons eq_refl orTb.
   by rewrite /minR/maxR//= !big_cons ge_min/= big_tnth big_maxr_godel_ge0.
-- exists (A |- [:: ldl_bool _ _ _ _ true]); first by rewrite in_cons eq_refl orTb.
+- exists (A |- [:: dl_bool _ _ _ _ true]); first by rewrite in_cons eq_refl orTb.
   rewrite /= !big_cons big_nil /maxr; case: ifPn => /=h.
   + lra.
   + by rewrite big_tnth big_minr_godel_le1.
@@ -2263,7 +2258,7 @@ intros; rewrite//=. dependent induction H.
   + by exists q1 => //; rewrite !in_cons h1 !orbT.
 - case IHseq_calc_godel'1 => [q1].
   case IHseq_calc_godel'2 => [q2].
-  rewrite !in_cons //= => /orP [/eqP h2 | h2] IH22 /orP[/eqP h1 | h1] IH12.
+  rewrite !in_cons //= => /predU1P [h2 | h2] IH22 /predU1P[h1 | h1] IH12.
   + subst.
     rewrite /= !big_cons in IH12 IH22.
     exists ((a `\/ b) :: B |- A); first by rewrite in_cons eq_refl orTb.
@@ -2315,7 +2310,7 @@ intros; rewrite//=. dependent induction H.
       rewrite maxxx {1}/minr in IH2; move: IH2; case: ifP; intros; rewrite//=.
       - by lra.
       - have ha := @translate_boolT_01 R _ p1 Godel _ _ _  a.
-        have := @translate_boolT_01 R _ p1 Godel _ _ _  (ldl_and (tnth (in_tuple A))).
+        have := @translate_boolT_01 R _ p1 Godel _ _ _  (dl_and (tnth (in_tuple A))).
         by lra.
     * have -> : @maxr R 1 0 = 1 by rewrite /maxr ltNge ler01.
       rewrite maxxx {1}/minr in IH2; move: IH2; case: ifPn.
@@ -2324,22 +2319,22 @@ intros; rewrite//=. dependent induction H.
   + by exists q => //; rewrite !in_cons b orbT.
 - case IHseq_calc_godel'1 => [q1].
   case IHseq_calc_godel'2 => [q2].
-  rewrite !in_cons //= => /orP [/eqP h2 | h2] IH22 /orP[/eqP h1 | h1] IH12.
+  rewrite !in_cons //= => /predU1P [h2 | h2] IH22 /predU1P[h1 | h1] IH12.
   + exists ((`~ a) :: A1 ++ A2 |- B); subst; first by rewrite in_cons eq_refl orTb.
     rewrite //= /minR/maxR !big_cons/=.
     rewrite //= /minR/maxR !big_cons ?big_nil/= in IH12 IH22.
     rewrite {1}/minr. case: ifPn; case: ifPn; intros; rewrite//=.
-    * have := @translate_boolT_01 R p p1 Godel _ _ _  (ldl_or (tnth (in_tuple B))).
+    * have := @translate_boolT_01 R p p1 Godel _ _ _  (dl_or (tnth (in_tuple B))).
       by rewrite /=/maxR big_tnth; case/andP.
     * have := big_minr_godel_le1 (tnth (in_tuple (A1 ++ A2))).
       by move: i; rewrite leNgt big_tnth => ->.
-    * have hAA :=  @translate_boolT_01 R p p1 Godel _ _ _  (ldl_and (tnth (in_tuple (A1 ++ A2)))).
+    * have hAA :=  @translate_boolT_01 R p p1 Godel _ _ _ (dl_and (tnth (in_tuple (A1 ++ A2)))).
       rewrite//= /minR in hAA.
       rewrite big_tnth in n.
       have {hAA}-> : \big[minr/1]_(j <- (A1 ++ A2)) [[j]]_Godel = 0.
         apply/eqP; rewrite eq_le big_tnth leNgt n/=.
         by case/andP : hAA.
-      have := @translate_boolT_01 R _ p1 Godel _ _ _  (ldl_or (tnth (in_tuple B))).
+      have := @translate_boolT_01 R _ p1 Godel _ _ _  (dl_or (tnth (in_tuple B))).
       rewrite/=/maxR big_tnth.
       by case/andP.
     * rewrite /maxr in IH12. move: IH12.
@@ -2347,7 +2342,7 @@ intros; rewrite//=. dependent induction H.
       case: ifPn; intros; rewrite//=; first lra.
       have {}ha : [[a]]_Godel = 0 by apply/eqP; rewrite eq_le !leNgt n/=.
       rewrite ha big_tnth in IH12.
-      have hA1 := @translate_boolT_01 R p p1 Godel _ _ _  (ldl_and (tnth (in_tuple A1))).
+      have hA1 := @translate_boolT_01 R p p1 Godel _ _ _ (dl_and (tnth (in_tuple A1))).
       rewrite//= /minR in hA1.
       have helper : \big[minr/1]_(j <- A1) [[j]]_Godel <= 0 ->
                     0 <= \big[minr/1]_(j <- A1) [[j]]_Godel <= 1 ->
@@ -2355,11 +2350,11 @@ intros; rewrite//=. dependent induction H.
       rewrite big_tnth in helper.
       apply (helper IH12) in hA1.
       have := big_minr_if A1 A2.
-      have hA2 :=  @translate_boolT_01 R p p1 Godel _ _ _  (ldl_and (tnth (in_tuple A2))).
+      have hA2 :=  @translate_boolT_01 R p p1 Godel _ _ _ (dl_and (tnth (in_tuple A2))).
       rewrite//= /minR in hA2.
       case: ifPn; intros; rewrite//=.
       - rewrite H1 [leLHS]big_tnth hA1.
-        have := @translate_boolT_01 R p p1 Godel _ _ _  (ldl_or (tnth (in_tuple B))).
+        have := @translate_boolT_01 R p p1 Godel _ _ _ (dl_or (tnth (in_tuple B))).
         rewrite /= /maxR big_tnth.
         rewrite big_tnth [leRHS]big_tnth in i.
         by case/andP.
@@ -2375,7 +2370,7 @@ intros; rewrite//=. dependent induction H.
 Qed.
 
 Lemma godel_neg_impl_admissable (e : formula) :
-  [[`~ e]]_Godel = [[e `=> ldl_bool _ _ _ _ false]]_Godel.
+  [[`~ e]]_Godel = [[e `=> dl_bool _ _ _ _ false]]_Godel.
 Proof. by []. Qed.
 
 Lemma equivalence_godel Q : seq_calc_godel' Q -> seq_calc_godel Q.
@@ -2402,7 +2397,7 @@ dependent induction H.
 - apply orL_g.
   + exact: IHseq_calc_godel'1.
   + exact: IHseq_calc_godel'2.
-- apply/orR_g. by exact IHseq_calc_godel'.
+- by apply/orR_g; exact: IHseq_calc_godel'.
 - by rewrite neg_impl_godel; exact: implR_g.
 - by rewrite neg_impl_godel; exact: implL_g.
 Qed.

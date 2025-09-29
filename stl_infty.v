@@ -6,7 +6,7 @@ From mathcomp Require Import all_classical.
 From mathcomp Require Import reals ereal interval_inference.
 From mathcomp Require Import topology derive normedtype sequences
  exp measure lebesgue_measure lebesgue_integral hoelder.
-Require Import mathcomp_extra analysis_extra ldl.
+Require Import mathcomp_extra analysis_extra dl.
 
 (**md**************************************************************************)
 (* # Properties of stl_infty                                                  *)
@@ -46,7 +46,7 @@ HB.instance Definition _ (R : realType) x y z v :=
   @gen_eqMixin (@expr R (boolT x y z v)).
 
 Section stl_infty_lemmas.
-Local Open Scope ldl_scope.
+Local Open Scope dl_scope.
 Local Open Scope ereal_scope.
 Context {R : realType}.
 
@@ -121,14 +121,14 @@ Lemma stl_infty_involution (e : expr boolT_fuzzy) :
   [[`~ (`~e)]]_stli = [[ e ]]_stli.
 Proof. by rewrite //= oppeK. Qed.
 
-Theorem stl_infty_mand_unit f1 f2 (e :  (expr (boolT_def f1 m_def f2))) :
-  [[ e `** (ldl_bool _ _ _ _ true) ]]_stli = [[ e ]]_stli.
+Theorem stl_infty_mand_unit f1 f2 (e : expr (boolT_def f1 m_def f2)) :
+  [[ e `** dl_bool _ _ _ _ true ]]_stli = [[ e ]]_stli.
 Proof.
 by rewrite /=!big_ord_recl big_ord0 !tnthS !tnth0 /mine; case: ifPn; rewrite ltey => /negbTE/eqP.
 Qed.
 
-Theorem stl_infty_mor_unit f1 f2 (e :  (expr (boolT_def f1 m_def f2))) :
-  [[ e `++ (ldl_bool _ _ _ _ false) ]]_stli = [[ e ]]_stli.
+Theorem stl_infty_mor_unit f1 f2 (e : expr (boolT_def f1 m_def f2)) :
+  [[ e `++ dl_bool _ _ _ _ false ]]_stli = [[ e ]]_stli.
 Proof.
 by rewrite /=!big_ord_recl !big_ord0 !tnthS !tnth0 /maxe; case: ifPn; rewrite ltNge leNye.
 Qed.
@@ -136,7 +136,7 @@ Qed.
 Lemma stl_infty_residuation (e1 e2 e3 : expr boolT_stli) :
   [[e1 `** e2]]_stli <= [[ e3 ]]_stli <-> [[ e2 ]]_stli <= [[e1 `=> e3]]_stli.
 Proof.
-split; rewrite//= /minR !big_ord_recl !big_ord0 !tnthS !tnth0 !miney /mine; repeat case: ifPn; rewrite ?leey//=. 
+split; rewrite//= /minR !big_ord_recl !big_ord0 !tnthS !tnth0 !miney /mine; repeat case: ifPn; rewrite ?leey//=.
 - move => h1 h2 _.
   rewrite ltNge Bool.negb_involutive in h1.
   by rewrite (le_trans h1 h2).

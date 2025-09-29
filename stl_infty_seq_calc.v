@@ -6,7 +6,7 @@ From mathcomp Require Import all_classical reals.
 From mathcomp Require Import reals ereal interval_inference.
 From mathcomp Require Import topology derive normedtype sequences
  exp measure lebesgue_measure lebesgue_integral hoelder finmap multiset.
-Require Import mathcomp_extra analysis_extra ldl stl_infty.
+Require Import mathcomp_extra analysis_extra dl stl_infty.
 
 Set Implicit Arguments.
 Unset Strict Implicit.
@@ -27,7 +27,7 @@ Import numFieldTopology.Exports.
 
 Section stl_hypersequent_calc.
 Local Open Scope ereal_scope.
-Local Open Scope ldl_scope.
+Local Open Scope dl_scope.
 Context {R : realType}.
 Context {K : choiceType}.
 Implicit Types (s : seq K).
@@ -75,9 +75,9 @@ Inductive seq_calc_stli : hypersequent -> Prop :=
     seq_calc_stli ((C |- (X ++ B ++ A ++ Y)) :: Q)
 (*logical*)
 | bot_stli : forall Q A B,
-    seq_calc_stli (((ldl_bool _ _ _ _ false :: A) |- B) :: Q)
+    seq_calc_stli ((dl_bool _ _ _ _ false :: A |- B) :: Q)
 | top_stli : forall Q A B,
-    seq_calc_stli ((A |- (ldl_bool _ _ _ _ true) :: B) :: Q )
+    seq_calc_stli ((A |- dl_bool _ _ _ _ true :: B) :: Q )
 | andL_stli : forall Q A B (a b : formula),
     seq_calc_stli (((a :: B) |- A) :: ((b :: B) |- A):: Q ) ->
     seq_calc_stli ((((a `/\ b) :: B) |- A) :: Q)
@@ -93,7 +93,7 @@ Inductive seq_calc_stli : hypersequent -> Prop :=
     seq_calc_stli ((A |- a :: B ) :: ( A |- b :: B) :: Q ) ->
     seq_calc_stli ((A |- (a `\/ b) :: B ) :: Q)
 | negR_stli : forall Q A (a : formula),
-    seq_calc_stli ((a :: A |- [::(ldl_bool _ _ _ _ false)]) :: Q) ->
+    seq_calc_stli ((a :: A |- [:: dl_bool _ _ _ _ false]) :: Q) ->
     seq_calc_stli ((A |- [:: (`~ a)]) :: Q)
 | negL_stli : forall Q A B (a : formula),
     seq_calc_stli ((A |- [:: a]) :: Q) ->
@@ -240,10 +240,10 @@ intros; rewrite//=. dependent induction H.
     rewrite (maxC (\big[maxe/-oo]_(j <- A) [[j ]]_stli)) in IH2.
     by rewrite (maxA (\big[maxe/-oo]_(j <- B) [[j ]]_stli))//=.
   + by exists q => //; rewrite !in_cons IH1 !orbT.
-- exists (ldl_bool _ _ _ _ false :: A |- B); first by rewrite in_cons eq_refl orTb.
+- exists (dl_bool _ _ _ _ false :: A |- B); first by rewrite in_cons eq_refl orTb.
   by rewrite /minR/maxR//= !big_cons !big_map ge_min leNye orTb.
-- exists (A |- ldl_bool neg_def impl_def m_def l_def true :: B); first by rewrite in_cons eq_refl orTb.
-  by rewrite //= !big_cons !big_map maxye leey. 
+- exists (A |- dl_bool neg_def impl_def m_def l_def true :: B); first by rewrite in_cons eq_refl orTb.
+  by rewrite /= !big_cons !big_map maxye leey.
 - move: IHseq_calc_stli => [q + IH2].
   rewrite !in_cons => /predU1P[|IH1].
   + exists ((a `/\ b) :: B |- A); subst; first by rewrite in_cons eq_refl orTb.
@@ -555,38 +555,37 @@ Qed.
 Lemma stli_seq_or1 (a b : formula) :
   seq_calc_stli [:: ([:: a `\/ (a `/\ b)] |- [:: a])].
 Proof.
-apply orL_stli; last by exact: id_stli. 
+apply orL_stli; last by exact: id_stli.
 apply andL_stli; by rewrite stli_cat1C; apply ew_stli; exact: id_stli.
 Qed.
 
 Lemma stli_seq_or2 (a b : formula) :
   seq_calc_stli [:: ([:: a] |- [:: a `\/ (a `/\ b)])].
 Proof.
-apply orR_stli;  by exact: id_stli. 
+apply orR_stli;  by exact: id_stli.
 Qed.
 
 Lemma stli_seq_unit_el1 (a : formula) :
-  seq_calc_stli [:: ([:: a `/\ (ldl_bool _ _ _ _ true)] |- [:: a ])].
+  seq_calc_stli [:: ([:: a `/\ dl_bool _ _ _ _ true] |- [:: a ])].
 Proof.
 apply andL_stli.
-have h : [:: [:: a] |- [:: a]; [:: ldl_bool neg_def impl_def m_def l_def true] |- [:: a]] = 
-           [:: [:: a] |- [:: a]] ++ [:: [:: ldl_bool neg_def impl_def m_def l_def true] |- [:: a]].
-  by rewrite//=.
+have h : [:: [:: a] |- [:: a]; [:: dl_bool neg_def impl_def m_def l_def true] |- [:: a]] =
+           [:: [:: a] |- [:: a]] ++ [:: [:: dl_bool neg_def impl_def m_def l_def true] |- [:: a]].
+  by [].
 rewrite h.
 apply ew_stli.
 apply id_stli.
 Qed.
 
 Lemma stli_seq_unit_el2 (a : formula) :
-  seq_calc_stli [:: ([:: a ] |- [:: a `/\ (ldl_bool _ _ _ _ true)])].
+  seq_calc_stli [:: ([:: a ] |- [:: a `/\ dl_bool _ _ _ _ true ])].
 Proof.
-rewrite -( cats0 [:: a]) stli_cat1C.
-rewrite-( cats0 [:: ldl_and (tnth [:: a; ldl_bool neg_def impl_def m_def l_def true])]).
-rewrite-( cats0 [:: ldl_and (tnth [:: a; ldl_bool neg_def impl_def m_def l_def true])]).
+rewrite -(cats0 [:: a]) stli_cat1C.
+rewrite -(cats0 [:: dl_and (tnth [:: a; dl_bool neg_def impl_def m_def l_def true])]).
+rewrite -(cats0 [:: dl_and (tnth [:: a; dl_bool neg_def impl_def m_def l_def true])]).
 apply andR_stli.
-- by apply id_stli.
-- by apply top_stli. 
+- exact: id_stli.
+- exact: top_stli.
 Qed.
 
 End stl_hypersequent_calc.
-

@@ -7,7 +7,7 @@ From mathcomp Require Import all_classical reals.
 From mathcomp Require Import reals ereal interval_inference.
 From mathcomp Require Import topology derive normedtype sequences
  exp measure lebesgue_measure lebesgue_integral hoelder finmap multiset.
-Require Import mathcomp_extra analysis_extra ldl fuzzy.
+Require Import mathcomp_extra analysis_extra dl fuzzy.
 
 (**md**************************************************************************)
 (* # Classical sequent calculus                                               *)
@@ -34,11 +34,10 @@ Reserved Notation "Q |- P" (no associativity, at level 61).
 
 Section seq_calc_bool.
 Local Open Scope ring_scope.
-Local Open Scope ldl_scope.
+Local Open Scope dl_scope.
 Local Open Scope mset_scope.
-Context {R : realType}.
-Context {K : choiceType}.
-Implicit Types  (A : {mset K}) (s : seq K).
+Context {R : realType} {K : choiceType}.
+Implicit Types (A : {mset K}) (s : seq K).
 Local Notation "<< e >>" := (@bool_translation R _ e).
 
 Inductive seq_calc_bool_ms : {mset (@expr R (boolT_def impl_def m_undef l_def))}
@@ -46,9 +45,9 @@ Inductive seq_calc_bool_ms : {mset (@expr R (boolT_def impl_def m_undef l_def))}
 | init : forall (Q P : {mset (@expr R (boolT_def impl_def m_undef l_def))}) (a : @expr R (boolT_def impl_def m_undef l_def)),
      a +` Q |= a +` P
 | bot : forall (Q P : {mset (@expr R (boolT_def impl_def m_undef l_def))}),
-    (ldl_bool neg_def _ _ _ false) +` Q |= P
+    (dl_bool neg_def _ _ _ false) +` Q |= P
 | top : forall (Q P : {mset (@expr R (boolT_def impl_def m_undef l_def))}),
-    Q |= (ldl_bool neg_def _ _ _ true) +` P
+    Q |= (dl_bool neg_def _ _ _ true) +` P
 | and_R : forall (Q P : {mset (@expr R (boolT_def impl_def m_undef l_def))}) (a : @expr R (boolT_def impl_def m_undef l_def))
                  (b : (@expr R (boolT_def impl_def m_undef l_def))),
     Q |= a +` P  ->  Q |= ( b) +` P ->
@@ -83,9 +82,9 @@ where "Q |= P" := (seq_calc_bool_ms Q P).
 Lemma sound_sc_bool_mseq (Q P : {mset expr (boolT_def impl_def m_undef l_def)}) :
   Q |= P ->
   (forall q : expr (boolT_def impl_def m_undef l_def),
-    q \in Q -> <<q>> = <<ldl_bool neg_def _ _ _ true>>) ->
+    q \in Q -> <<q>> = <<dl_bool neg_def _ _ _ true>>) ->
   exists p : expr (boolT_def impl_def m_undef l_def),
-    (p \in P) /\ <<p>> = <<ldl_bool neg_def _ _ _ true>>.
+    (p \in P) /\ <<p>> = <<dl_bool neg_def _ _ _ true>>.
 Proof.
  rewrite //=. intros. dependent induction H.
 - exists a. have H := H0 a.
@@ -96,10 +95,10 @@ Proof.
   rewrite//=. apply contrapT. rewrite  not_implyE.
   rewrite not_andE notE. left.
   rewrite -existsNP.
-  exists (ldl_bool neg_def _ _ _ false).
+  exists (dl_bool neg_def _ _ _ false).
   rewrite in_mset1D eq_refl orTb//=.
   auto.
-- exists (ldl_bool neg_def _ _ _ true).
+- exists (dl_bool neg_def _ _ _ true).
   by rewrite in_mset1D eq_refl orTb//=.
 - destruct (IHseq_calc_bool_ms1 H1) as [x [IH11 IH12]].
   destruct (IHseq_calc_bool_ms2 H1) as [y [IH21 IH22]].
