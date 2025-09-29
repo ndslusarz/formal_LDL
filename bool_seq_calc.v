@@ -1,5 +1,4 @@
 From HB Require Import structures.
-From HB Require Import structures.
 Require Import Coq.Program.Equality.
 From mathcomp Require Import all_ssreflect all_algebra.
 From mathcomp Require Import lra.
@@ -88,113 +87,84 @@ Lemma sound_sc_bool_mseq (Q P : {mset expr (boolT_def impl_def m_undef l_def)}) 
 Proof.
  rewrite //=. intros. dependent induction H.
 - exists a. have H := H0 a.
-  rewrite in_mset1D eq_refl orTb ?andTb.
-  move: H; rewrite in_mset1D eq_refl orTb ?andTb//=.
-  auto.
+  rewrite in_mset1D eqxx orTb ?andTb.
+  move: H; rewrite in_mset1D eqxx orTb ?andTb//=.
+  by auto.
 - exfalso.  move: H0.
   rewrite//=. apply contrapT. rewrite  not_implyE.
   rewrite not_andE notE. left.
   rewrite -existsNP.
   exists (dl_bool neg_def _ _ _ false).
-  rewrite in_mset1D eq_refl orTb//=.
-  auto.
+  rewrite in_mset1D eqxx orTb//=.
+  by auto.
 - exists (dl_bool neg_def _ _ _ true).
-  by rewrite in_mset1D eq_refl orTb//=.
+  by rewrite in_mset1D eqxx.
 - destruct (IHseq_calc_bool_ms1 H1) as [x [IH11 IH12]].
   destruct (IHseq_calc_bool_ms2 H1) as [y [IH21 IH22]].
-  rewrite in_mset1D in IH11. move/orP: IH11.
-  move => IH11.
-  destruct IH11.
-    + move/eqP: H2. move/esym => H2. subst.
-      rewrite in_mset1D in IH21. move/orP: IH21.
-      move => IH21. destruct IH21.
-      * move/eqP: H2. move/esym => H2.
-        subst.
-        exists (x `/\ y).
+  rewrite in_mset1D in IH11. move/predU1P: IH11 => [H2|H2].
+    + subst.
+      rewrite in_mset1D in IH21. move/predU1P: IH21 => [|] H2.
+      * subst.
+        exists (a `/\ b).
         simpl; split; eauto.
-        - by rewrite in_mset1D eq_refl orTb.
+        - by rewrite in_mset1D eqxx orTb.
         - rewrite !big_ord_recl big_ord0 !tnthS !tnth0.
           by rewrite IH12 IH22.
-      * exists y. rewrite IH22 in_mset1D H2 orbT. eauto.
-    +  exists x.  rewrite IH12 in_mset1D H2 orbT. eauto.
-- have H1 := (H0 (a `/\ b)).
-  rewrite in_mset1D eq_refl orTb in H1.
-  simpl in H1.
-  rewrite !big_ord_recl big_ord0 !tnthS !tnth0 in H1.
-  apply  IHseq_calc_bool_ms.
-  intros. rewrite in_mset1D in H2. move/orP: H2.
-      move => H2. destruct H2.
-      * move/eqP: H2. move => H2.
-        subst. apply andb_prop in H1.
-        + destruct H1 as [ha hb].
-          by apply ha.
-        + by [].
+      * by exists y; rewrite IH22 in_mset1D H2 orbT.
+    + by exists x; rewrite IH12 in_mset1D H2 orbT.
+- have := H0 (a `/\ b).
+  rewrite in_mset1D eqxx orTb /=.
+  rewrite !big_ord_recl big_ord0 !tnthS !tnth0 => /(_ isT) H1.
+  apply IHseq_calc_bool_ms.
+  intros. rewrite in_mset1D in H2. move/predU1P: H2 => [|] H2.
+      * subst.
+        by case/andP: H1.
       * apply H0. by rewrite in_mset1D H2 orbT.
-- have H1 := (H0 (a `/\ b)).
-  rewrite in_mset1D eq_refl orTb in H1.
-  simpl in H1.
-  rewrite !big_ord_recl big_ord0 !tnthS !tnth0 in H1.
-  apply  IHseq_calc_bool_ms.
-  intros. rewrite in_mset1D in H2. move/orP: H2.
-      move => H2. destruct H2.
-      * move/eqP: H2. move => H2.
-        subst. apply andb_prop in H1.
-        + destruct H1 as [ha hb].
-          rewrite andbT in hb.
-          by apply hb.
-        + by [].
+- have := H0 (a `/\ b).
+  rewrite in_mset1D eq_refl orTb /=.
+  rewrite !big_ord_recl big_ord0 !tnthS !tnth0 => /(_ isT) H1.
+  apply IHseq_calc_bool_ms.
+  intros. rewrite in_mset1D in H2. move/predU1P: H2 => [|] H2.
+      * subst.
+        by case/andP : H1 => _ /andP[].
       * apply H0. by rewrite in_mset1D H2 orbT.
 - destruct (IHseq_calc_bool_ms H0) as [x [IH1 IH2]].
-  rewrite in_mset1D in IH1. move/orP: IH1.
-  move => IH1.
-  destruct IH1.
-    + move/eqP: H1. move => H1. subst.
+  rewrite in_mset1D in IH1. move/predU1P: IH1 => [|] H1.
+    + subst.
       exists (a `\/ b).
-      rewrite in_mset1D eq_refl orTb//= !big_ord_recl big_ord0 !tnthS !tnth0 IH2.
-      by rewrite orTb//.
+      rewrite in_mset1D eqxx orTb//= !big_ord_recl big_ord0 !tnthS !tnth0 IH2.
+      by rewrite orTb.
     + exists x.
-      by rewrite IH2 in_mset1D H1 orbT//.
+      by rewrite IH2 in_mset1D H1 orbT.
 - destruct (IHseq_calc_bool_ms H0) as [x [IH1 IH2]].
-  rewrite in_mset1D in IH1. move/orP: IH1.
-  move => IH1.
-  destruct IH1.
-    + move/eqP: H1. move => H1. subst.
+  rewrite in_mset1D in IH1. move/predU1P : IH1 => [|] H1.
+    + subst.
       exists (a `\/ b).
-      rewrite in_mset1D eq_refl orTb//= !big_ord_recl big_ord0 !tnthS !tnth0 IH2.
-      by rewrite orbT//.
+      rewrite in_mset1D eqxx orTb/= !big_ord_recl big_ord0 !tnthS !tnth0 IH2.
+      by rewrite orbT.
     + exists x.
-      by rewrite IH2 in_mset1D H1 orbT//.
-- have H2 := (H1 (a `\/ b)).
-  rewrite in_mset1D eq_refl orTb in H2.
-  simpl in H2.
-  rewrite !big_ord_recl big_ord0 !tnthS !tnth0 in H2.
-  apply Bool.orb_prop in H2; rewrite//=.
-  destruct H2 as [ha | hb].
-  + apply  IHseq_calc_bool_ms1.
-    intros. rewrite in_mset1D in H2. move/orP: H2.
-      move => H2. destruct H2.
-      * move/eqP: H2. move => H2.
-        subst. by apply ha.
+      by rewrite IH2 in_mset1D H1 orbT.
+- have := H1 (a `\/ b).
+  rewrite in_mset1D eqxx orTb/= => /(_ isT).
+  rewrite !big_ord_recl big_ord0 !tnthS !tnth0 orbF => /orP[ha|hb].
+  + apply IHseq_calc_bool_ms1.
+    intros. rewrite in_mset1D in H2. move/predU1P: H2 => [|] H2.
+      * subst. by apply ha.
       * apply H1. by rewrite in_mset1D H2 orbT.
-  + apply  IHseq_calc_bool_ms2.
-    intros. rewrite in_mset1D in H2. move/orP: H2.
-    move => H2. destruct H2.
-    * move/eqP: H2. move => H2.
-      subst. rewrite orbF in hb. by apply hb.
+  + apply IHseq_calc_bool_ms2.
+    intros. rewrite in_mset1D in H2. move/predU1P: H2 => [|] H2.
+    * subst. by apply hb.
     * apply H1. by rewrite in_mset1D H2 orbT.
-- have H1 := H0 (`~ a).
-  rewrite in_mset1D eq_refl orTb in H1.
+- have := H0 (`~ a).
+  rewrite in_mset1D eq_refl orTb => /(_ isT) H1.
   destruct IHseq_calc_bool_ms as [x y].
   + intros. apply H0.
     by rewrite in_mset1D H2 orbT.
   + exists x. destruct y as [h1 h2].
     rewrite h2.
-    rewrite in_mset1D in h1. move/orP: h1. move => [h1 | h3].
-    * move/eqP: h1. move => h1.
-      subst. rewrite //= in H1.
-      rewrite h2//= in H1.
-      exfalso.
-      move: H1. by auto.
+    rewrite in_mset1D in h1. move/predU1P: h1 => [h1 | h3].
+    * subst. rewrite /= in H1.
+      by rewrite h2 in H1.
     * by rewrite h3.
 Qed.
 

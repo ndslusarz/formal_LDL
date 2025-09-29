@@ -167,7 +167,7 @@ intros; rewrite//=. dependent induction H.
   + by exists q => //; rewrite in_cons h orbT.
 - case IHseq_calc_dl2_1 => [q1].
   case IHseq_calc_dl2_2 => [q2].
-  rewrite !in_cons //= => /orP [/eqP h2 | h2] IH12 /orP[/eqP h1 | h1] IH22.
+  rewrite !in_cons //= => /predU1P[h2 | h2] IH12 /predU1P[h1 | h1] IH22.
   + subst.
     rewrite //= !eval_dl2_cat in IH12 IH22.
     have temp : eval_dl2 A2 <= eval_dl2 B1 \/ eval_dl2 A2 > eval_dl2 B1. lra.
@@ -203,7 +203,7 @@ intros; rewrite//=. dependent induction H.
   + by exists q => //; rewrite in_cons h orbT.
 - case IHseq_calc_dl2_1 => [q1].
   case IHseq_calc_dl2_2 => [q2].
-  rewrite !in_cons //= => /predU1P [h2 | h2] IH22 /orP[/eqP h1 | h1] IH12.
+  rewrite !in_cons //= => /predU1P[h2 | h2] IH22 /predU1P[h1 | h1] IH12.
   + subst. exists (A1 ++ A2 |- (a `** b) :: B1 ++ B2); first by rewrite mem_head.
     have ev_0 : eval_dl2 [::] = 0.
       rewrite /eval_dl2/= big_nil//=.
@@ -214,7 +214,7 @@ intros; rewrite//=. dependent induction H.
   + by exists q1 => //; rewrite !in_cons h1 !orbT.
 - case IHseq_calc_dl2_1 => [q1].
   case IHseq_calc_dl2_2 => [q2].
-  rewrite !in_cons //= => /orP [/eqP h2 | h2] IH22 /orP[/eqP h1 | h1] IH12.
+  rewrite !in_cons //= => /predU1P[h2 | h2] IH22 /predU1P[h1 | h1] IH12.
   + subst. exists (A |- (a `=> b) :: B); first by rewrite mem_head.
     rewrite//= in IH12.
     rewrite//= eval_dl2_cons eval_dl2_cons in IH22.
@@ -225,7 +225,7 @@ intros; rewrite//=. dependent induction H.
   + by exists q1 => //; rewrite !in_cons h1 !orbT.
 - case IHseq_calc_dl2_1 => [q1].
   case IHseq_calc_dl2_2 => [q2].
-  rewrite !in_cons //= => /orP [/eqP h2 | h2] IH22 /orP[/eqP h1 | h1] IH12.
+  rewrite !in_cons //= => /predU1P[h2 | h2] IH22 /predU1P[h1 | h1] IH12.
   + subst. exists ((a `=> b) :: A |- B); first by rewrite mem_head.
     rewrite//= in IH12.
     rewrite//= eval_dl2_cons eval_dl2_cons in IH22.
@@ -248,7 +248,7 @@ intros; rewrite//=. dependent induction H.
   + by exists q => //; rewrite in_cons h orbT.
 - case IHseq_calc_dl2_1 => [q1].
   case IHseq_calc_dl2_2 => [q2].
-  rewrite !in_cons //= => /orP [/eqP h2 | h2] IH22 /orP[/eqP h1 | h1] IH12.
+  rewrite !in_cons //= => /predU1P[h2 | h2] IH22 /predU1P[h1 | h1] IH12.
   + subst. exists (A |- (a `/\ b) :: B); first by rewrite mem_head.
     rewrite//= !eval_dl2_cons in IH12 IH22.
     rewrite//= eval_dl2_cons//= !big_ord_recl big_ord0 !tnthS !tnth0 /minr//=;
@@ -259,7 +259,7 @@ intros; rewrite//=. dependent induction H.
   + by exists q1 => //; rewrite !in_cons h1 !orbT.
 - case IHseq_calc_dl2_1 => [q1].
   case IHseq_calc_dl2_2 => [q2].
-  rewrite !in_cons //= => /orP [/eqP h2 | h2] IH22 /orP[/eqP h1 | h1] IH12.
+  rewrite !in_cons //= => /predU1P[h2 | h2] IH22 /predU1P[h1 | h1] IH12.
   + subst. exists ((a `\/ b) :: B |- A); first by rewrite mem_head.
     rewrite//= !eval_dl2_cons in IH12 IH22.
     rewrite//= eval_dl2_cons//= !big_ord_recl big_ord0 !tnthS !tnth0 /maxr.

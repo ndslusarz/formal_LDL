@@ -138,7 +138,7 @@ Lemma stl_infty_residuation (e1 e2 e3 : expr boolT_stli) :
 Proof.
 split; rewrite//= /minR !big_ord_recl !big_ord0 !tnthS !tnth0 !miney /mine; repeat case: ifPn; rewrite ?leey//=.
 - move => h1 h2 _.
-  rewrite ltNge Bool.negb_involutive in h1.
+  rewrite -leNgt in h1.
   by rewrite (le_trans h1 h2).
 - move => /ltW h1 _ h3.
   by rewrite (le_trans h1 h3).
@@ -158,8 +158,8 @@ rewrite /= /mine /maxe; repeat case: ifP; rewrite//= => h1 h2. move/ltW in h1.
   have Heq : [[e1]]_stli = [[e2]]_stli.  apply le_anti; by rewrite h1 h2//=.
   by rewrite eqe_oppP Heq.
 - move/negP/negP in h1. move/negP/negP in h2.
-  rewrite ltNge Bool.negb_involutive neg_swap_ineq in h1.
-  rewrite ltNge Bool.negb_involutive in h2.
+  rewrite -leNgt neg_swap_ineq in h1.
+  rewrite -leNgt in h2.
   have Heq : [[e1]]_stli = [[e2]]_stli.  apply le_anti; by rewrite h1 h2//=.
   by rewrite eqe_oppP Heq.
 Qed.
@@ -172,8 +172,8 @@ rewrite /= /mine /maxe; repeat case: ifP; rewrite//= => h1 h2. move/ltW in h1.
   have Heq : [[e1]]_stli = [[e2]]_stli.  apply le_anti; by rewrite h1 h2//=.
   by rewrite eqe_oppP Heq.
 - move/negP/negP in h1. move/negP/negP in h2.
-  rewrite ltNge Bool.negb_involutive neg_swap_ineq in h1.
-  rewrite ltNge Bool.negb_involutive in h2.
+  rewrite -leNgt neg_swap_ineq in h1.
+  rewrite -leNgt in h2.
   have Heq : [[e1]]_stli = [[e2]]_stli.  apply le_anti; by rewrite h1 h2//=.
   by rewrite eqe_oppP Heq.
 Qed.
@@ -235,10 +235,10 @@ repeat case: ifP => //=.
   by rewrite ltNge leey in h3.
 - move => /negP h1 _ /ltW h3. by [].
 - move => h1 h2 /negP/negP h. 
-  rewrite ltNge Bool.negb_involutive leye_eq in h. move /eqP in h.
+  rewrite -leNgt leye_eq in h. move /eqP in h.
   by rewrite h le0y.
-- move => _ /negP h2 /negP/negP h3. 
-  rewrite ltNge Bool.negb_involutive in h3. rewrite//=.
+- move => _ /negP h2 /negP/negP h3.
+  by rewrite -leNgt in h3.
 Qed.
 
 End stl_infty_lemmas.

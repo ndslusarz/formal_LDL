@@ -214,7 +214,7 @@ dependent induction e using expr_ind'.
     have h' := @h ([[e1]]_Lukasiewicz) ([[e2]]_Lukasiewicz) (H2 _ p1) (H1 _ p1). lra.
   + rewrite /minr. repeat case: ifP; first by lra.
     have p0 : 0 <= p by rewrite (le_trans ler01 p1).
-    move => /negP/negP h. rewrite ltNge Bool.negb_involutive in h.
+    move => /negP/negP h. rewrite -leNgt in h.
     have powRpinv : 1 = 1 `^ p^-1.
       by rewrite powR1.
     have powRle1 : forall x, 0 <= x ->  x <= 1 -> x `^ p^-1 <= 1.
@@ -611,7 +611,7 @@ dependent induction e using expr_ind' => ll ly lg lp.
     exact/H.
   + move/nary_inversion_orE0 => h /=.
     rewrite big_orE; apply/existsPn => /= i.
-    exact/Bool.negb_true_iff/H.
+    exact/negbT/H.
 - move=>/=h; rewrite (IHe e erefl JMeq_refl (~~ b) ll ly lg lp) ?negbK//.
   move: ll ly lg lp h; case: l; rewrite//=;case: b => //=; lra.
 - rewrite [ [[dl_bool _ _ _ _ b]]_l]/=.
@@ -620,7 +620,7 @@ dependent induction e using expr_ind' => ll ly lg lp.
     * by rewrite implybE (IHe1 e1 erefl JMeq_refl false ll ly lg lp H1).
     * by rewrite implybE (IHe2 e2 erefl JMeq_refl (true) ll ly lg lp H2) orbT.
   + move/(inversion_implE0 _ _ _ _ ll ly lg lp); rewrite//=; move/andP => [/eqP H1  /eqP H2].
-    rewrite implybE Bool.orb_false_intro//=.
+    apply/negbTE; rewrite negb_imply; apply/andP; split.
     * by rewrite (IHe1 e1 erefl JMeq_refl true ll ly lg lp H1).
     * by rewrite (IHe2 e2 erefl JMeq_refl false ll ly lg lp H2).
 - rewrite [ [[dl_bool _ _ _ _ b]]_l ]/=.
@@ -630,7 +630,7 @@ dependent induction e using expr_ind' => ll ly lg lp.
     exact/H.
   + move/(nary_inversion_mandE0 _ _ _ _ ll ly) => [i h]/=.
     rewrite big_andE; apply/forallPn => /=; exists i.
-    exact/Bool.negb_true_iff/H.
+    exact/negbT/H.
 - rewrite [ [[dl_bool _ _ _ _ b]]_l]/=.
   move: b => [].
   + move/(nary_inversion_morE1 _ _ _ _ ll ly) => [i h]/=.
@@ -638,7 +638,7 @@ dependent induction e using expr_ind' => ll ly lg lp.
     exact/H.
   + move/nary_inversion_morE0 => h/=.
     rewrite big_orE; apply/existsPn => i/=.
-    exact/Bool.negb_true_iff/H.
+    exact/negbT/H.
 - case: c; rewrite //=; rewrite -!translations_Real_coincide;
   set t1 := _ e1; set t2 := _ e2.
   + case: ifPn => [/eqP ->|e12eq].
@@ -1165,7 +1165,7 @@ split; case: ifP; case: ifP; rewrite//=; try lra.
     + by rewrite addr_ge0 ?powR_ge0//=.
     + lra.
 - move => /negP/negP h1 h2 h3.
-  rewrite ltNge Bool.negb_involutive in h1.
+  rewrite -leNgt in h1.
   rewrite lerBlDr -(lerBlDl _ t3).
   rewrite powRgt//=.
   + by rewrite addr_ge0 ?powR_ge0//=.
