@@ -17,13 +17,25 @@ Import numFieldTopology.Exports.
 
 (**md**************************************************************************)
 (* # Hypersequent calculi for STLinfty - a version of STL where               *)
-(*     nu tends to infinity - using ereals                                    *)
 (*                                                                            *)
+(*     nu tends to infinity - using ereals                                    *)
 (*                                                                            *)
 (* - seq_calc_stli == hypersequent calculus STLinfty                          *)
 (* - sound_stli == soundness of seq_calc_stli                                 *)
 (*                                                                            *)
 (******************************************************************************)
+
+Lemma cat_cons4 T (I L M N : seq T * seq T):
+ [:: I; L; M; N] = [:: I] ++ [:: L] ++ [:: M] ++ [:: N].
+Proof. by []. Qed.
+
+Lemma cat_cons_xyz_xy T (I L M N : seq T * seq T):
+ [:: I; L; M; N] = [:: I; L] ++ [:: M; N].
+Proof. by []. Qed.
+
+Lemma cat_cons_xyz_xyz T (I L M N : seq T * seq T):
+  [:: I; L; M; N] = [:: I; L; M] ++ [:: N].
+Proof. by []. Qed.
 
 Section stl_hypersequent_calc.
 Local Open Scope ereal_scope.
@@ -41,10 +53,11 @@ Let hypersequent := seq (seq formula * seq formula).
 
 Implicit Type Q P S : hypersequent.
 Implicit Type A B C D X Y : seq formula.
+Implicit Types a b c : formula.
 
 Inductive seq_calc_stli : hypersequent -> Prop :=
-| id_stli : forall Q (a : formula),
-    seq_calc_stli (([::a] |- [::a]) :: Q)
+| id_stli : forall Q a,
+    seq_calc_stli (([:: a] |- [:: a]) :: Q)
 (*structural*)
 | eex_stli : forall Q P S1 S2,
     seq_calc_stli (S1 ++ P ++ Q ++ S2) ->
@@ -56,18 +69,18 @@ Inductive seq_calc_stli : hypersequent -> Prop :=
     seq_calc_stli (Q ++ P ++ P) ->
     seq_calc_stli (Q ++ P)
 | comm_hyper_stli : forall Q A1 A2 B1 B2 C D,
-    seq_calc_stli (((A1 ++ B1) |- C) :: Q) ->
-    seq_calc_stli (((A2 ++ B2) |- D) :: Q) ->
-    seq_calc_stli (((A1 ++ A2) |- C) :: ((B1 ++ B2) |- D) :: Q)
+    seq_calc_stli ((A1 ++ B1 |- C) :: Q) ->
+    seq_calc_stli ((A2 ++ B2 |- D) :: Q) ->
+    seq_calc_stli ((A1 ++ A2 |- C) :: ((B1 ++ B2) |- D) :: Q)
 | comm_stli : forall Q A B C,
-    seq_calc_stli (((A ++ B ++ B) |- C) :: Q) ->
-    seq_calc_stli (((A ++ B) |- C) :: Q)
+    seq_calc_stli ((A ++ B ++ B |- C) :: Q) ->
+    seq_calc_stli ((A ++ B |- C) :: Q)
 | weak_stli : forall Q A B C,
     seq_calc_stli ((A |- C) :: Q ) ->
-    seq_calc_stli (((A ++ B) |- C) :: Q )
+    seq_calc_stli ((A ++ B |- C) :: Q )
 | exL_stli : forall Q A B C X Y,
-    seq_calc_stli (((X ++ A ++ B ++ Y) |- C) :: Q) ->
-    seq_calc_stli (((X ++ B ++ A ++ Y) |- C) :: Q)
+    seq_calc_stli ((X ++ A ++ B ++ Y |- C) :: Q) ->
+    seq_calc_stli ((X ++ B ++ A ++ Y |- C) :: Q)
 | exR_stli : forall Q A B C X Y,
     seq_calc_stli ((C |- (X ++ A ++ B ++ Y)) :: Q) ->
     seq_calc_stli ((C |- (X ++ B ++ A ++ Y)) :: Q)
@@ -76,37 +89,40 @@ Inductive seq_calc_stli : hypersequent -> Prop :=
     seq_calc_stli ((dl_bool _ _ _ _ false :: A |- B) :: Q)
 | top_stli : forall Q A B,
     seq_calc_stli ((A |- dl_bool _ _ _ _ true :: B) :: Q )
-| andL_stli : forall Q A B (a b : formula),
+| andL_stli : forall Q A B a b,
     seq_calc_stli (((a :: B) |- A) :: ((b :: B) |- A):: Q ) ->
     seq_calc_stli ((((a `/\ b) :: B) |- A) :: Q)
-| andR_stli : forall Q A B (a b : formula),
+| andR_stli : forall Q A B a b,
     seq_calc_stli ((A |- a :: B) :: Q ) ->
     seq_calc_stli ((A |- b :: B) :: Q) ->
     seq_calc_stli ((A |- (a `/\ b) :: B) :: Q )
-| orL_stli : forall Q A B (a b : formula),
+| orL_stli : forall Q A B a b,
     seq_calc_stli (((b :: B) |- A) :: Q) ->
     seq_calc_stli (((a :: B) |- A) :: Q) ->
     seq_calc_stli (((a `\/ b) :: B |- A) :: Q)
-| orR_stli : forall Q A B (a b : formula),
+| orR_stli : forall Q A B a b,
     seq_calc_stli ((A |- a :: B ) :: ( A |- b :: B) :: Q ) ->
     seq_calc_stli ((A |- (a `\/ b) :: B ) :: Q)
-| negR_stli : forall Q A (a : formula),
+| negR_stli : forall Q A a,
     seq_calc_stli ((a :: A |- [:: dl_bool _ _ _ _ false]) :: Q) ->
     seq_calc_stli ((A |- [:: (`~ a)]) :: Q)
-| negL_stli : forall Q A B (a : formula),
+| negL_stli : forall Q A B a,
     seq_calc_stli ((A |- [:: a]) :: Q) ->
     seq_calc_stli ((A |- B) :: Q) ->
     seq_calc_stli (((`~ a) :: A |- B) :: Q)
 (*| negL_stli : forall Q A B (a : formula),
     seq_calc_stli ((A |- a :: B) :: Q) ->
     seq_calc_stli (((`~ a) :: A |- B) :: Q)*)
-| implR_stli : forall Q A (a b : formula),
+| implR_stli : forall Q A a b,
     seq_calc_stli ((a :: A |- [:: b] ) :: Q) ->
     seq_calc_stli ((A |- [:: (a `=> b)]) :: Q)
-| implL_stli : forall Q A1 A2 B (a b: formula),
+| implL_stli : forall Q A1 A2 B a b,
     seq_calc_stli ((A1 |- [:: a]) :: Q) ->
     seq_calc_stli ((b :: A2 |- B) :: Q) ->
-    seq_calc_stli (( (a `=> b) :: A1 ++ A2 |- B) :: Q).
+    seq_calc_stli (((a `=> b) :: A1 ++ A2 |- B) :: Q).
+
+Local Hint Extern 0 (seq_calc_stli (([:: _] |- [:: _]) :: _)) =>
+  solve [apply: id_stli] : core.
 
 Lemma sound_stli Q : seq_calc_stli Q ->
   exists2 q : seq formula * seq formula, q \in Q &
@@ -158,8 +174,8 @@ intros; rewrite//=. dependent induction H.
 - move: IHseq_calc_stli => [q + IH2].
   rewrite in_cons => /predU1P[|IH1].
   + exists (A ++ B |- C); subst; first by rewrite mem_head.
-    rewrite //= !big_map.
-    rewrite //= !big_map in IH2.
+    rewrite /= !big_map.
+    rewrite /= !big_map in IH2.
     have := le_total_ereal (\big[mine/+oo]_(j <- A) [[j ]]_stli)
                           (\big[mine/+oo]_(j <- B) [[j ]]_stli).
     move => /orP[|] h; rewrite !big_cat/= {1}/mine; case: ifPn => //=.
@@ -169,8 +185,8 @@ intros; rewrite//=. dependent induction H.
 - move: IHseq_calc_stli => [q + IH2].
   rewrite in_cons => /predU1P[|IH1].
   + exists (X ++ B ++ A ++ Y |- C); subst; first by rewrite mem_head.
-    rewrite //= !big_map !big_cat/=.
-    rewrite //= !big_map !big_cat/= in IH2.
+    rewrite /= !big_map !big_cat/=.
+    rewrite /= !big_map !big_cat/= in IH2.
     rewrite (minA (\big[mine/+oo]_(j <- A) [[j ]]_stli)) in IH2.
     rewrite (minC (\big[mine/+oo]_(j <- A) [[j ]]_stli)) in IH2.
     by rewrite (minA (\big[mine/+oo]_(j <- B) [[j ]]_stli)).
@@ -178,15 +194,16 @@ intros; rewrite//=. dependent induction H.
 - move: IHseq_calc_stli => [q + IH2].
   rewrite in_cons => /predU1P[|IH1].
   + exists (C |- X ++ B ++ A ++ Y); subst; first by rewrite mem_head.
-    rewrite //= !big_map !big_cat/=.
-    rewrite //= !big_map !big_cat/= in IH2.
+    rewrite /= !big_map !big_cat/=.
+    rewrite /= !big_map !big_cat/= in IH2.
     rewrite (maxA (\big[maxe/-oo]_(j <- A) [[j ]]_stli)) in IH2.
     rewrite (maxC (\big[maxe/-oo]_(j <- A) [[j ]]_stli)) in IH2.
     by rewrite (maxA (\big[maxe/-oo]_(j <- B) [[j ]]_stli)).
   + by exists q => //; rewrite !in_cons IH1 !orbT.
 - exists (dl_bool _ _ _ _ false :: A |- B); first by rewrite mem_head.
   by rewrite /minR/maxR//= !big_cons !big_map ge_min leNye orTb.
-- exists (A |- dl_bool neg_def impl_def m_def l_def true :: B); first by rewrite mem_head.
+- exists (A |- dl_bool neg_def impl_def m_def l_def true :: B).
+    by rewrite mem_head.
   by rewrite /= !big_cons !big_map maxye leey.
 - move: IHseq_calc_stli => [q + IH2].
   rewrite !in_cons => /predU1P[|IH1].
@@ -194,9 +211,8 @@ intros; rewrite//=. dependent induction H.
     rewrite //= !big_ord_recl big_ord0 !tnthS !tnth0 big_cons !big_map miney.
     rewrite //= !big_cons !big_map in IH2.
     rewrite {2}/mine; case: ifP; rewrite//=.
-    move => /negP/negP h. rewrite -leNgt in h.
-    apply (mine_gexy (\big[mine/+oo]_(j <- B) [[j ]]_stli)) in h.
-    by rewrite (le_trans h).
+    move/negbT; rewrite -leNgt.
+    by move/(mine_gexy (\big[mine/+oo]_(j <- B) [[j ]]_stli)) => /le_trans; exact.
   + move/predU1P : IH1 => [|IH1].
     exists ((a `/\ b) :: B |- A); subst; first by rewrite mem_head.
     rewrite //= !big_ord_recl big_ord0 !tnthS !tnth0 big_cons !big_map miney.
@@ -221,9 +237,9 @@ intros; rewrite//=. dependent induction H.
   rewrite !in_cons //= => /predU1P[|]h2 IH12 /predU1P[|]h1 IH22.
   + subst.
     exists ((a `\/ b) :: B |- A); subst; first by rewrite mem_head.
-    rewrite //= big_cons !big_map in IH12.
-    rewrite //= big_cons !big_map in IH22.
-    rewrite //= !big_ord_recl big_ord0 !tnthS !tnth0 big_cons !big_map maxeNy.
+    rewrite /= big_cons !big_map in IH12.
+    rewrite /= big_cons !big_map in IH22.
+    rewrite /= !big_ord_recl big_ord0 !tnthS !tnth0 big_cons !big_map maxeNy.
     by rewrite {1}/maxe; case: ifP.
   + by exists q1 => //; rewrite !in_cons h1 !orbT.
   + by exists q2 => //; rewrite !in_cons h2 !orbT.
@@ -245,7 +261,7 @@ intros; rewrite//=. dependent induction H.
 - move: IHseq_calc_stli => [q + IH2].
   rewrite !in_cons => /predU1P[|IH1].
   + exists (A |- [:: (`~ a)]); subst; first by rewrite mem_head.
-    rewrite //= !big_cons big_nil maxNye in IH2.
+    rewrite /= !big_cons big_nil maxNye in IH2.
     rewrite leeNy_eq {1}/mine in IH2; move/eqP in IH2.
     rewrite /= !big_map !big_cons big_nil maxeNy.
     move: IH2. case: ifP.
@@ -257,8 +273,8 @@ intros; rewrite//=. dependent induction H.
   rewrite !in_cons //= => /predU1P[|]h2 IH12 /predU1P[|]h1 IH22.
   + subst.
     exists ((`~ a) :: A |- B); subst; first by rewrite mem_head.
-    rewrite //=!big_map !big_cons ?big_nil ?maxeNy ?minNye in IH12 IH22.
-    rewrite //=!big_map !big_cons {1}/mine; case: ifP; rewrite !big_map//=.
+    rewrite /= !big_map !big_cons ?big_nil ?maxeNy ?minNye in IH12 IH22.
+    rewrite /= !big_map !big_cons {1}/mine; case: ifP; rewrite !big_map//=.
     by move => /ltW /le_trans; exact.
   + by exists q1 => //; rewrite !in_cons h1 !orbT.
   + by exists q2 => //; rewrite !in_cons h2 !orbT.
@@ -266,32 +282,30 @@ intros; rewrite//=. dependent induction H.
 - move: IHseq_calc_stli => [q + IH2].
   rewrite !in_cons => /predU1P[|IH1].
   + exists (A |- [:: (a `=> b)]); subst; first by rewrite mem_head.
-    rewrite //= !big_cons big_nil maxeNy in IH2.
-    rewrite //=!big_map !big_cons big_nil maxeNy; repeat case: ifP.
+    rewrite /= !big_cons big_nil maxeNy in IH2.
+    rewrite /= !big_map !big_cons big_nil maxeNy; repeat case: ifP.
     - by rewrite leey.
     - move => /negP h.
-      rewrite {1}/mine big_map in IH2. move: IH2. case: ifPn => //=.
+      by move: IH2; rewrite {1}/mine big_map; case: ifPn.
   + by exists q => //; rewrite !in_cons IH1 !orbT.
 - case IHseq_calc_stli1 => [q1].
   case IHseq_calc_stli2 => [q2].
   rewrite !in_cons //= => /predU1P[|]h2 IH12 /predU1P[|] h1 IH22.
   + subst.
     exists ((a `=> b) :: A1 ++ A2 |- B); subst; first by rewrite mem_head.
-    rewrite //=!big_map big_cons {1}/mine in IH12.
-    rewrite //= !big_map big_cons big_nil maxeNy in IH22.
-    rewrite //= !big_map !big_cons. move: IH12.
+    rewrite /= !big_map big_cons big_nil maxeNy in IH22.
+    rewrite /= !big_map big_cons {1}/mine in IH12.
+    rewrite /= !big_map !big_cons. move: IH12.
     repeat case: ifP; rewrite ?minye !big_map ?big_cat/= => h1 h2 h3;
-    rewrite {1}/mine; case: ifP; rewrite//= => h4.
-    * move /ltW in h2. have h5 := le_trans IH22 h1.
-      by rewrite (le_trans h5).
+    rewrite {1}/mine; case: ifP => //= h4.
+    * by move /ltW in h2; have /le_trans -> := le_trans IH22 h1.
     * move/negbT in h4; rewrite -leNgt in h4.
       by rewrite (le_trans (le_trans (le_trans h4 IH22) h1)).
     * rewrite {1}/mine; case: ifP; move: h4; rewrite {1}/mine; case: ifP; rewrite//=;
-      move => _ /negbT h5 _; rewrite -leNgt in h5;
-      by rewrite (le_trans h5).
-    * by move /ltW in h4; rewrite (le_trans h4).
+      by move => _ /negbT + _; rewrite -leNgt => /le_trans ->.
+    * by move /ltW : h4 => /le_trans ->.
     * move: h4; rewrite {1}/mine; case: ifP; rewrite//= =>  h4 /ltW h5.
-      - move /ltW in h4. by rewrite (le_trans (le_trans h5 h4) h3).
+      - by move /ltW in h4; rewrite (le_trans (le_trans h5 h4) h3).
       - by rewrite (le_trans h5).
     * by rewrite {1}/mine; case: ifP; rewrite//= => /ltW/le_trans ->.
   + by exists q1 => //; rewrite !in_cons h1 !orbT.
@@ -299,206 +313,183 @@ intros; rewrite//=. dependent induction H.
   + by exists q1 => //; rewrite !in_cons h1 !orbT.
 Qed.
 
-Lemma stli_cat1C Q a : seq_calc_stli (a :: Q) = seq_calc_stli ([::a] ++ Q).
+Lemma stli_cat1C Q (I : seq formula * seq formula) :
+  seq_calc_stli (I :: Q) = seq_calc_stli ([:: I] ++ Q).
 Proof. by []. Qed.
 
 Lemma eex_nil Q P : seq_calc_stli (P ++ Q) <-> seq_calc_stli (Q ++ P).
 Proof.
-intros.
-have hxy M L : M ++ L = [::] ++ M ++ L ++ [::] by rewrite /= cats0.
-rewrite (hxy _  Q P). split => ih.
+rewrite -(cat0s (Q ++ P)) -(cats0 (_ ++ P)) -!catA; split => [h|].
 - by apply: eex_stli; rewrite cats0.
-- apply eex_stli in ih. by rewrite cats0//= in ih.
+- by move/eex_stli; rewrite cats0.
 Qed.
 
 Lemma exL_nil Q A B C :
-    seq_calc_stli (((A ++ B) |- C) :: Q) <->
-    seq_calc_stli (((B ++ A) |- C) :: Q).
+  seq_calc_stli (((A ++ B) |- C) :: Q) <-> seq_calc_stli (((B ++ A) |- C) :: Q).
 Proof.
-intros.
 have hxy M L : M ++ L = [::] ++ M ++ L ++ [::] by rewrite /= cats0.
-split; rewrite (hxy _  A B) (hxy _  B A);
-exact/exL_stli.
+by split; rewrite (hxy _  A B) (hxy _  B A); exact/exL_stli.
 Qed.
 
 Lemma exR_nil Q A B C :
-    seq_calc_stli ((C |- (A ++ B)) :: Q) <->
-    seq_calc_stli ((C |- (B ++ A)) :: Q).
+  seq_calc_stli ((C |- A ++ B) :: Q) <-> seq_calc_stli ((C |- B ++ A) :: Q).
 Proof.
-intros.
 have hxy M L : M ++ L = [::] ++ M ++ L ++ [::] by rewrite /= cats0.
-split; rewrite (hxy _  A B) (hxy _  B A);
-exact/exR_stli.
+by split; rewrite (hxy _  A B) (hxy _  B A); exact/exR_stli.
 Qed.
 
-Lemma cat_cons_xyz_xy (I L M N : seq formula * seq formula):
- [:: I; L; M; N] = [:: I; L] ++ [::M; N] .
-Proof. by []. Qed.
-
-Lemma cat_cons_xyz_xyz (I L M N : seq formula * seq formula):
-  [:: I; L; M; N] = [:: I; L; M] ++ [:: N] .
-Proof. by []. Qed.
-
-Lemma comm_xy (a c : formula) :
+Lemma comm_xy a c :
   [:: [:: c] |- [:: a]] ++ [:: [:: a] |- [:: c]] =
   [:: [::] ++ [:: c] |- [:: a], [:: a] ++ [::] |- [:: c] & [::]].
 Proof. by []. Qed.
 
-Lemma comm_hyper_xy (a b : formula):
+Lemma comm_hyper_xy a b :
   seq_calc_stli [:: [:: b] |- [:: a]; [:: a] |- [:: b]].
 Proof.
 rewrite stli_cat1C. rewrite -(cat0s [:: b]) -{2}((cat0s [:: a])).
 rewrite comm_xy.
-apply comm_hyper_stli; rewrite ?cat0s ?cats0; by apply id_stli.
+apply comm_hyper_stli; rewrite ?cat0s ?cats0//.
 Qed.
 
-Lemma stli_prelinearity (a b : formula) :
+Lemma stli_prelinearity a b :
   seq_calc_stli ([:: ([::] |- [:: ((a `=> b) `\/ (b `=> a))])]).
 Proof.
-apply orR_stli.
-apply implR_stli.
-have cat_cons : [:: [:: a] |- [:: b]; [::] |- [:: b `=> a]] =
-                  [:: [:: a] |- [:: b]] ++ [:: [::] |- [:: b `=> a]] by [].
-rewrite cat_cons eex_nil.
-apply implR_stli.
-exact: comm_hyper_xy.
+apply/orR_stli/implR_stli.
+have -> : [:: [:: a] |- [:: b]; [::] |- [:: b `=> a]] =
+         [:: [:: a] |- [:: b]] ++ [:: [::] |- [:: b `=> a]] by [].
+rewrite  eex_nil.
+exact/implR_stli/comm_hyper_xy.
 Qed.
 
-Lemma cat_cons4 (I L M N : seq formula * seq formula):
- [:: I; L; M; N] = [:: I]++ [:: L] ++ [:: M] ++ [:: N].
-Proof. by []. Qed.
-
-Lemma stli_seq_distributivity (a b c : formula) :
-  seq_calc_stli ([:: ([::] |- [:: ((a `/\ (b `\/ c)) `=> ((a `/\ b) `\/ (a `/\ c)))])]).
+Lemma stli_seq_distributivity a b c :
+  seq_calc_stli ([:: ([::] |- [:: ((a `/\ (b `\/ c)) `=>
+                               ((a `/\ b) `\/ (a `/\ c)))])]).
 Proof.
 apply implR_stli. apply andL_stli. apply orR_stli.
-apply andR_stli; first by rewrite stli_cat1C; apply ew_stli; exact: id_stli.
+apply andR_stli; first by rewrite stli_cat1C; exact/ew_stli.
 rewrite stli_cat1C; apply eex_nil.
-apply andR_stli; first by rewrite stli_cat1C; apply ew_stli; exact: id_stli.
+apply andR_stli; first by rewrite stli_cat1C; exact/ew_stli.
 rewrite stli_cat1C; apply eex_nil.
-apply orR_stli; apply andR_stli; apply orL_stli; last  by rewrite stli_cat1C; apply ew_stli; exact: id_stli.
+apply orR_stli; apply andR_stli; apply orL_stli.
 - rewrite stli_cat1C; apply eex_nil.
   apply orL_stli; apply andR_stli.
   * rewrite cat_cons_xyz_xy; apply eex_nil; apply ew_stli; apply comm_hyper_xy.
-  * rewrite stli_cat1C; apply ew_stli; exact: id_stli.
+  * by rewrite stli_cat1C; exact/ew_stli.
   * rewrite cat_cons_xyz_xy; apply ew_stli; apply comm_hyper_xy.
   * rewrite cat_cons_xyz_xy; apply eex_nil; apply ew_stli; apply comm_hyper_xy.
-- rewrite stli_cat1C; apply eex_nil.
+- rewrite stli_cat1C; apply/eex_nil.
   apply orL_stli; apply andR_stli.
   * rewrite cat_cons4.
-    apply eex_stli. rewrite//= cat_cons_xyz_xy; apply ew_stli; apply comm_hyper_xy.
-  * rewrite stli_cat1C; apply ew_stli; exact: id_stli.
-  * rewrite//= cat_cons_xyz_xy; apply ew_stli; apply comm_hyper_xy.
-  * rewrite cat_cons4; apply eex_stli; rewrite//= cat_cons_xyz_xy;
-      apply eex_nil; apply ew_stli; apply comm_hyper_xy.
+    by apply eex_stli; rewrite /= cat_cons_xyz_xy; exact/ew_stli/comm_hyper_xy.
+  * by rewrite stli_cat1C; exact/ew_stli.
+  * by rewrite /= cat_cons_xyz_xy; exact/ew_stli/comm_hyper_xy.
+  * rewrite cat_cons4; apply eex_stli; rewrite /= cat_cons_xyz_xy.
+    exact/eex_nil/ew_stli/comm_hyper_xy.
 - rewrite stli_cat1C; apply eex_nil.
   apply orL_stli; apply andR_stli.
-  * rewrite cat_cons4; apply eex_stli; rewrite//= cat_cons_xyz_xy; apply ew_stli; apply comm_hyper_xy.
-  * rewrite cat_cons4; apply eex_stli; apply ew_stli; exact: id_stli.
-  * rewrite//= cat_cons_xyz_xy; apply ew_stli; apply comm_hyper_xy.
-  * rewrite stli_cat1C; apply eex_nil; rewrite//= cat_cons_xyz_xy; apply eex_nil;
-      apply ew_stli; apply comm_hyper_xy.
+  * rewrite cat_cons4; apply eex_stli.
+    by rewrite /= cat_cons_xyz_xy; exact/ew_stli/comm_hyper_xy.
+  * by rewrite cat_cons4; exact/eex_stli/ew_stli.
+  * by rewrite /= cat_cons_xyz_xy; exact/ew_stli/comm_hyper_xy.
+  * rewrite stli_cat1C; apply eex_nil; rewrite /= cat_cons_xyz_xy.
+    exact/eex_nil/ew_stli/comm_hyper_xy.
+- by rewrite stli_cat1C; exact/ew_stli.
 Qed.
 
-Lemma stl_seq_andC (a b : formula) :
-  seq_calc_stli [:: ([:: a `/\ b] |- [:: b`/\ a])].
+Lemma stl_seq_andC a b : seq_calc_stli [:: ([:: a `/\ b] |- [:: b `/\ a])].
 Proof.
 apply andR_stli; apply andL_stli.
-- by rewrite stli_cat1C; apply eex_nil; apply ew_stli; exact: id_stli.
-- by rewrite stli_cat1C; apply ew_stli; exact: id_stli.
+- by rewrite stli_cat1C; exact/eex_nil/ew_stli.
+- by rewrite stli_cat1C; exact/ew_stli.
 Qed.
 
-Lemma stli_seq_orC (a b : formula) :
-  seq_calc_stli [:: ([:: a `\/ b] |- [:: b`\/ a])].
+Lemma stli_seq_orC a b : seq_calc_stli [:: ([:: a `\/ b] |- [:: b `\/ a])].
 Proof.
 apply orL_stli; apply orR_stli.
-- by rewrite stli_cat1C; apply ew_stli; exact: id_stli.
-- by rewrite stli_cat1C; apply eex_nil; apply ew_stli; exact: id_stli.
+- by rewrite stli_cat1C; exact/ew_stli.
+- by rewrite stli_cat1C; exact/eex_nil/ew_stli.
 Qed.
 
-Lemma stli_seq_andA1 (a b c : formula) :
+Lemma stli_seq_andA1 a b c :
   seq_calc_stli [:: ([:: a `/\ (b `/\ c)] |- [:: (a `/\ b) `/\ c])].
 Proof.
 apply andR_stli; apply andL_stli.
-- apply andR_stli; first by rewrite stli_cat1C; apply ew_stli; exact: id_stli.
+- apply andR_stli; first by rewrite stli_cat1C; exact/ew_stli.
   rewrite stli_cat1C; apply eex_nil.
-  apply andR_stli; apply andL_stli; last by rewrite stli_cat1C; apply ew_stli; exact: id_stli.
-  rewrite stli_cat1C; apply eex_nil; rewrite stli_cat1C; apply eex_nil; apply ew_stli.
-  exact: comm_hyper_xy.
-- rewrite stli_cat1C; apply eex_nil.
-  apply andL_stli.
-  by rewrite stli_cat1C; apply eex_nil; apply ew_stli; exact: id_stli.
+  apply andR_stli; apply andL_stli; last first.
+    by rewrite stli_cat1C; exact/ew_stli.
+  rewrite stli_cat1C; apply eex_nil; rewrite stli_cat1C.
+  exact/eex_nil/ew_stli/comm_hyper_xy.
+- rewrite stli_cat1C; apply/eex_nil/andL_stli.
+  by rewrite stli_cat1C; exact/eex_nil/ew_stli.
 Qed.
 
-Lemma stli_seq_andA2 (a b c : formula) :
+Lemma stli_seq_andA2 a b c :
   seq_calc_stli [:: ([:: (a `/\ b) `/\ c] |- [:: a `/\ (b `/\ c)])].
 Proof.
 apply andR_stli; apply andL_stli.
-- apply andL_stli; by rewrite stli_cat1C; apply ew_stli; exact: id_stli.
-- apply andR_stli; apply andL_stli; first by rewrite stli_cat1C; apply eex_nil; apply ew_stli; exact: id_stli.
+- apply andL_stli; by rewrite stli_cat1C; exact/ew_stli.
+- apply andR_stli; apply andL_stli.
+    by rewrite stli_cat1C; exact/eex_nil/ew_stli.
   rewrite stli_cat1C; apply eex_nil. rewrite stli_cat1C; apply eex_nil.
-  apply andR_stli; last by rewrite stli_cat1C; apply ew_stli; exact: id_stli.
+  apply andR_stli; last by rewrite stli_cat1C; exact/ew_stli.
   rewrite stli_cat1C; apply eex_nil; rewrite stli_cat1C; apply eex_nil; apply ew_stli.
   exact: comm_hyper_xy.
 Qed.
 
-Lemma stli_seq_orA1 (a b c : formula) :
+Lemma stli_seq_orA1 a b c :
   seq_calc_stli [:: ([:: a `\/ (b `\/ c)] |- [:: (a `\/ b) `\/ c])].
 Proof.
 apply orL_stli; apply orR_stli.
-- apply orL_stli; apply orR_stli; last by rewrite stli_cat1C; apply eex_nil; apply ew_stli; exact: id_stli.
+- apply orL_stli; apply orR_stli; last by rewrite stli_cat1C; exact/eex_nil/ew_stli.
   rewrite stli_cat1C; apply eex_nil; rewrite stli_cat1C; apply eex_nil.
-  apply orL_stli; first by rewrite stli_cat1C; apply ew_stli; exact: id_stli.
+  apply orL_stli; first by rewrite stli_cat1C; exact/ew_stli.
   rewrite stli_cat1C; apply eex_nil; rewrite stli_cat1C; apply eex_nil; apply ew_stli.
   exact: comm_hyper_xy.
 - apply orR_stli.
-  by rewrite stli_cat1C; apply ew_stli; exact: id_stli.
+  by rewrite stli_cat1C; exact/ew_stli.
 Qed.
 
-Lemma stli_seq_orA2 (a b c : formula) :
+Lemma stli_seq_orA2 a b c :
   seq_calc_stli [:: ([:: (a `\/ b) `\/ c] |- [:: a `\/ (b `\/ c)])].
 Proof.
 apply orL_stli; apply orR_stli.
 - rewrite stli_cat1C; apply eex_nil. apply orR_stli.
-  by rewrite stli_cat1C; apply eex_nil; apply ew_stli; exact: id_stli.
-- apply orL_stli; last by rewrite stli_cat1C; apply ew_stli; exact: id_stli.
+  by rewrite stli_cat1C; apply eex_nil; exact/ew_stli.
+- apply orL_stli; last by rewrite stli_cat1C; exact/ew_stli.
   rewrite stli_cat1C; apply eex_nil; apply orL_stli; apply orR_stli;
-    first by rewrite stli_cat1C; apply ew_stli; exact: id_stli.
+    first by rewrite stli_cat1C; exact/ew_stli.
   rewrite stli_cat1C; apply eex_nil; rewrite stli_cat1C; apply eex_nil; apply ew_stli.
   exact: comm_hyper_xy.
 Qed.
 
-Lemma stli_seq_and1 (a b : formula) :
-  seq_calc_stli [:: ([:: a `/\ (a `\/ b)] |- [:: a])].
+Lemma stli_seq_and1 a b : seq_calc_stli [:: ([:: a `/\ (a `\/ b)] |- [:: a])].
 Proof.
-apply andL_stli; by rewrite stli_cat1C; apply ew_stli; exact: id_stli.
+apply andL_stli; by rewrite stli_cat1C; exact/ew_stli.
 Qed.
 
-Lemma stli_seq_and2 (a b : formula) :
-  seq_calc_stli [:: ([:: a] |- [:: a `/\ (a `\/ b)])].
+Lemma stli_seq_and2 a b : seq_calc_stli [:: ([:: a] |- [:: a `/\ (a `\/ b)])].
 Proof.
-apply andR_stli; first exact: id_stli.
-apply orR_stli; first by rewrite stli_cat1C; apply ew_stli; exact: id_stli.
+apply andR_stli => //.
+apply orR_stli; first by rewrite stli_cat1C; exact/ew_stli.
 Qed.
 
-Lemma stli_seq_or1 (a b : formula) :
-  seq_calc_stli [:: ([:: a `\/ (a `/\ b)] |- [:: a])].
+Lemma stli_seq_or1 a b : seq_calc_stli [:: ([:: a `\/ (a `/\ b)] |- [:: a])].
 Proof.
-apply orL_stli; last exact: id_stli.
-apply andL_stli; by rewrite stli_cat1C; apply ew_stli; exact: id_stli.
+apply orL_stli => //.
+by apply: andL_stli; rewrite stli_cat1C; exact/ew_stli.
 Qed.
 
-Lemma stli_seq_or2 (a b : formula) :
-  seq_calc_stli [:: ([:: a] |- [:: a `\/ (a `/\ b)])].
-Proof. exact/orR_stli/id_stli. Qed.
+Lemma stli_seq_or2 a b : seq_calc_stli [:: ([:: a] |- [:: a `\/ (a `/\ b)])].
+Proof. exact/orR_stli. Qed.
 
-Lemma stli_seq_unit_el1 (a : formula) :
+Lemma stli_seq_unit_el1 a :
   seq_calc_stli [:: ([:: a `/\ dl_bool _ _ _ _ true] |- [:: a ])].
 Proof.
-by apply: andL_stli; rewrite -cat1s; exact/ew_stli/id_stli.
+by apply: andL_stli; rewrite -cat1s; exact/ew_stli.
 Qed.
 
-Lemma stli_seq_unit_el2 (a : formula) :
+Lemma stli_seq_unit_el2 a :
   seq_calc_stli [:: ([:: a ] |- [:: a `/\ dl_bool _ _ _ _ true ])].
 Proof.
 rewrite -(cats0 [:: a]) stli_cat1C.
