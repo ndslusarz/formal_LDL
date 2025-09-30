@@ -19,6 +19,6 @@ stl_ereal.v
 stl_infty.v
 example.v
 seq_calc.v
-bool_seq_calc.v
-dl2_seq_calc.v
-stl_infty_seq_calc.v
+seq_calc_bool.v
+seq_calc_dl2.v
+seq_calc_stli.v

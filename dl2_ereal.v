@@ -1,5 +1,5 @@
 From HB Require Import structures.
-Require Import Coq.Program.Equality.
+Require Import Stdlib.Program.Equality.
 From mathcomp Require Import all_ssreflect all_algebra.
 From mathcomp Require Import lra perm.
 From mathcomp Require Import all_classical.
@@ -37,14 +37,6 @@ Require Import mathcomp_extra analysis_extra dl dl2.
 Import Num.Def Num.Theory GRing.Theory.
 Import Order.TTheory.
 Import numFieldTopology.Exports.
-
-Local Open Scope ereal_scope.
-
-Lemma adde_eq_pinfty {R : numDomainType} (x y : \bar R) :
-  (x + y == +oo) = ((x == +oo) && (y != -oo)) || ((y == +oo) && (x != -oo)).
-Proof. by move: x y => [?| |] [?| |]. Qed.
-
-Local Close Scope ereal_scope.
 
 Section dl2_lemmas.
 Local Open Scope dl_scope.

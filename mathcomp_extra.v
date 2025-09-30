@@ -1,4 +1,4 @@
-Require Import Coq.Program.Equality.
+Require Import Stdlib.Program.Equality.
 From mathcomp Require Import all_ssreflect all_algebra.
 From mathcomp Require Import lra.
 From mathcomp Require Import perm.
@@ -35,16 +35,8 @@ Lemma cat_cons_xyz_xy {T} (I L M N : seq T * seq T):
 Proof. by rewrite //=. Qed.
 
 Lemma cat_cons_xyz_xyz {T} (I L M N : seq T * seq T):
- [:: I; L; M; N] = [:: I; L; M] ++ [:: N] .
+  [:: I; L; M; N] = [:: I; L; M] ++ [:: N] .
 Proof. by rewrite //=. Qed.
-
-Lemma In_in (I : eqType) (s : seq I) e : e \in s <-> List.In e s.
-Proof.
-elim: s => //= h t ih; split=> [|[<-|/ih] ].
-- by rewrite inE => /predU1P[->|/ih]; [left|right].
-- by rewrite mem_head.
-- by rewrite inE => ->; rewrite orbT.
-Qed.
 
 Lemma map_cons T1 T2 (f : T1 -> T2) a l :
   f a :: [seq f x | x <- l] = [seq f x | x <- a :: l].
@@ -60,9 +52,6 @@ rewrite inE; apply/idP/idP.
   by rewrite inE andbT.
 by move=> /andP[xi _].
 Qed.
-
-Lemma invrM' {R : realFieldType} (x y : R) : x != 0 -> (x * y)^-1 = x^-1 * y^-1.
-Proof. nra. Qed.
 
 (* TODO: PR to MathComp *)
 Lemma scalerN1 {R : ringType} (p : R^o) : p *: -1 = - p.

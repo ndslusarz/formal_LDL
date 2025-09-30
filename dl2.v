@@ -1,6 +1,6 @@
 From HB Require Import structures.
-Require Import Coq.Program.Equality.
-From mathcomp Require Import all_ssreflect all_algebra.
+Require Import Stdlib.Program.Equality.
+From mathcomp Require Import all_ssreflect all_algebra perm.
 From mathcomp Require Import lra.
 From mathcomp Require Import all_classical.
 From mathcomp Require Import reals ereal interval_inference.
@@ -52,8 +52,6 @@ Context {R : realType}.
 Variable p : R.
 
 Local Notation "[[ e ]]_dl2" := (@dl2_translation R _ e).
-
-From mathcomp Require Import perm.
 
 Lemma dl2_mandC_nary f1 f2 n (pi : {perm 'I_n})
     (s : 'I_n -> expr (boolT_def f1 m_def f2)) :
@@ -107,8 +105,7 @@ Theorem dl2_mand_unit f1 f2 (e : expr (boolT_def f1 m_def f2)) :
 Proof. by rewrite /= !big_ord_recl big_ord0 !addr0. Qed.
 
 Theorem dl2_residuation (e1 e2 e3 : expr boolT_dl2) :
-  [[ e1 `** e2 ]]_dl2 <= [[ e3 ]]_dl2 <->
-    [[ e2 ]]_dl2 <= [[ e1 `=> e3 ]]_dl2.
+  [[ e1 `** e2 ]]_dl2 <= [[ e3 ]]_dl2 <-> [[ e2 ]]_dl2 <= [[ e1 `=> e3 ]]_dl2.
 Proof.
 split; move => /= H.
 - rewrite !big_ord_recl big_ord0 addr0 in H.
@@ -241,31 +238,31 @@ Lemma dl2_translations_coincide t (e : @expr R t) n m j :
   [[ e ]]_dl2 ~= [[ e ]]_B.
 Proof.
 dependent induction e using expr_ind' => //=; move=> [|[|[|[|]]]]t0//.
-- rewrite (JMeq_eq (IHe1 n m j _)); last by (right; right; right; left).
-  by rewrite (JMeq_eq (IHe2 n m j _)); last by (right; left).
-- rewrite (JMeq_eq (IHe1 n m l _)); last by (right; right; right; right).
-  rewrite (JMeq_eq (IHe2 n m l _)); last by (right; left).
-  by rewrite (JMeq_eq (IHe3 m n l _)); last by (right; left).
-- rewrite (JMeq_eq (IHe1 n m j _)); last by (right; left).
-  by rewrite (JMeq_eq (IHe2 n m j _)); last by (right; right; left).
+- rewrite (JMeq_eq (IHe1 n m j _)); last by right; right; right; left.
+  by rewrite (JMeq_eq (IHe2 n m j _)); last by right; left.
+- rewrite (JMeq_eq (IHe1 n m l _)); last by right; right; right; right.
+  rewrite (JMeq_eq (IHe2 n m l _)); last by right; left.
+  by rewrite (JMeq_eq (IHe3 m n l _)); last by right; left.
+- rewrite (JMeq_eq (IHe1 n m j _)); last by right; left.
+  by rewrite (JMeq_eq (IHe2 n m j _)); last by right; right; left.
 Qed.
 
 Lemma dl2_translations_Fun_coincide n m (e : expr (funT n m)) :
   [[ e ]]_dl2 = [[ e ]]_B.
 Proof.
-by apply/JMeq_eq/(dl2_translations_coincide _ _ n m 0); right;right;right;left.
+by apply/JMeq_eq/(dl2_translations_coincide _ _ n m 0); right; right; right; left.
 Qed.
 
 Lemma dl2_translations_Vector_coincide n (e : @expr R (vectorT n)) :
   [[ e ]]_dl2 = [[ e ]]_B.
 Proof.
-by apply/JMeq_eq/(dl2_translations_coincide _ _ n 0 0); right;left.
+by apply/JMeq_eq/(dl2_translations_coincide _ _ n 0 0); right; left.
 Qed.
 
 Lemma dl2_translations_Index_coincide n (e : expr (indexT n)) :
   [[ e ]]_dl2 = [[ e ]]_B.
 Proof.
-by apply/JMeq_eq/(dl2_translations_coincide _ _ n 0 0); right;right;left.
+by apply/JMeq_eq/(dl2_translations_coincide _ _ n 0 0); right; right; left.
 Qed.
 
 Lemma dl2_translations_Real_coincide (e : expr realT):
@@ -283,8 +280,7 @@ Context {R : realType}.
 Variable M : nat.
 Hypothesis M0 : M != 0%N.
 
-Definition dl2_and {R' : fieldType} {n} (v : 'rV[R']_n) :=
-  (\sum_(i < n) v ``_ i)%R.
+Definition dl2_and {n} (v : 'rV[R]_n) := (\sum_(i < n) v ``_ i)%R.
 
 Import MatrixFormula.
 
@@ -296,7 +292,7 @@ by under [in RHS]eq_bigr do rewrite ffunE.
 Qed.
 
 Lemma shadowlifting_dl2_andE (p : R) : p > 0 ->
-  forall i, ('d (@dl2_and _ M.+1) '/d i) (const_mx p) = 1.
+  forall i, ('d (@dl2_and M.+1) '/d i) (const_mx p) = 1.
 Proof.
 move=> p0 i.
 rewrite /partial.
@@ -316,14 +312,14 @@ have /cvg_lim : h^-1 * (dl2_and (const_mx p + h *: err_vec i) -
   have : h^-1 * h @[h --> (0:R)^'] --> (1:R)%R.
     have : {near (0:R)^', (fun=> 1) =1 (fun h => h^-1 * h)}.
       near=> h; rewrite mulVf//.
-      by near: h;  exact: nbhs_dnbhs_neq.
+      by near: h; exact: nbhs_dnbhs_neq.
     by move/near_eq_cvg/cvg_trans; apply; exact: cvg_cst.
   apply: cvg_trans; apply: near_eq_cvg => /=; near=> k.
-  by rewrite H//; near: k; exact: nbhs_dnbhs_neq.
+  by rewrite// H//; near: k; exact: nbhs_dnbhs_neq.
 by apply; exact: Rhausdorff.
 Unshelve. all: by end_near. Qed.
 
-Corollary shadow_lifting_dl2_and : shadow_lifting (@dl2_and R M.+1).
+Corollary shadow_lifting_dl2_and : shadow_lifting (@dl2_and M.+1).
 Proof. by move=> p p0 i; rewrite shadowlifting_dl2_andE. Qed.
 
 End shadow_lifting_dl2_and.

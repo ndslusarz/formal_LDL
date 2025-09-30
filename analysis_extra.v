@@ -32,15 +32,6 @@ Import numFieldNormedType.Exports.
 Local Open Scope ring_scope.
 Local Open Scope classical_set_scope.
 
-Notation "'nondecreasing_fun' f" := ({homo f : n m / (n <= m)%O >-> (n <= m)%O})
-  (at level 10).
-Notation "'nonincreasing_fun' f" := ({homo f : n m / (n <= m)%O >-> (n >= m)%O})
-  (at level 10).
-Notation "'increasing_fun' f" := ({mono f : n m / (n <= m)%O >-> (n <= m)%O})
-  (at level 10).
-Notation "'decreasing_fun' f" := ({mono f : n m / (n <= m)%O >-> (n >= m)%O})
-  (at level 10).
-
 Reserved Notation "'d f '/d i" (at level 10, f, i at next level,
   format "''d'  f  ''/d'  i").
 
@@ -113,6 +104,21 @@ Lemma inve_eqNy {K : realDomainType} (x : \bar K) : (x^-1 == -oo) = (x == -oo).
 Proof.
 by case: x => [r| |] //=; rewrite inver; case: ifPn.
 Qed.
+
+(*move to analysis/mathcomp*)
+Lemma powRpinv {R : realType} (r : R) : (1 = 1 `^ r)%R.
+Proof. by rewrite powR1. Qed.
+
+Lemma powR_le1 {R : realType} (x r : R) :
+  (r >= 0 -> 0 <= x ->  x <= 1 -> x `^ r <= 1)%R.
+Proof.
+move=> r0 x0 x1; rewrite (powRpinv r)//=.
+by apply ge0_ler_powR; rewrite ?nnegrE ?invr_ge0//=.
+Qed.
+
+Lemma pow_le01 {R : realType} (x r : R) :
+  (r > 0 -> 0 <= x <= 1 -> 0 <= x `^ r <= 1)%R.
+Proof. by move=> r0 H; rewrite powR_ge0/= powR_le1//=; lra. Qed.
 
 Lemma mine_gexy {R : realDomainType} (a b c : \bar R) :
   a <= b -> mine a c <= mine b c.
@@ -651,6 +657,10 @@ Lemma oppeey (x : \bar R) : ((- x == +oo) = (x == -oo)).
 Proof. by case: x. Qed.
 
 End ereal_extra.
+
+Lemma adde_eq_pinfty {R : numDomainType} (x y : \bar R) :
+  ((x + y == +oo) = ((x == +oo) && (y != -oo)) || ((y == +oo) && (x != -oo)))%E.
+Proof. by move: x y => [?| |] [?| |]. Qed.
 
 Lemma expeR_lty {R : realType} (x : \bar R) : (x < +oo -> expeR x < +oo)%E.
 Proof. by case: x => //=x; rewrite !ltry. Qed.

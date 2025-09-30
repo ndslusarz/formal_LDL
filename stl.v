@@ -1,6 +1,6 @@
 From HB Require Import structures.
 Require Import Stdlib.Program.Equality.
-From mathcomp Require Import all_ssreflect all_algebra.
+From mathcomp Require Import all_ssreflect all_algebra perm.
 From mathcomp Require Import lra.
 From mathcomp Require Import all_classical.
 From mathcomp Require Import reals ereal interval_inference.
@@ -115,13 +115,13 @@ Qed.
 Lemma stl_translations_Vector_coincide n (e : @expr R (vectorT n)) :
   nu.-[[ e ]]_stl = [[ e ]]_B.
 Proof.
-by apply/JMeq_eq/(stl_translations_coincide _ _ n 0 0); right;left.
+by apply/JMeq_eq/(stl_translations_coincide _ _ n 0 0); right; left.
 Qed.
 
 Lemma stl_translations_Index_coincide n (e : expr (indexT n)) :
   nu.-[[ e ]]_stl = [[ e ]]_B.
 Proof.
-by apply/JMeq_eq/(stl_translations_coincide _ _ n 0 0); right;right;left.
+by apply/JMeq_eq/(stl_translations_coincide _ _ n 0 0); right; right; left.
 Qed.
 
 Lemma stl_translations_Real_coincide (e : expr realT):
@@ -237,8 +237,6 @@ dependent induction e using expr_ind'.
     by rewrite oppr_ge0 normr_le0 subr_eq0.
     by rewrite oppr_lt0 normr_gt0 subr_eq0 => /negbTE.
 Qed.
-
-From mathcomp Require Import perm.
 
 Lemma andC_stl_nary n (pi : {perm 'I_n})
     (s : 'I_n -> expr (boolT_def impl_undef m_undef l_def)) :
@@ -1026,8 +1024,8 @@ rewrite [X in normr (_ - X)](_ : _ =
   rewrite mulrA (mulrDr (x^-1)) mulrDl addrC.
   congr (_ + _).
     by rewrite mulVf// mul1r.
-  rewrite !invrM'// (mulrC (a x)) !mulrA; congr(_/_).
-  rewrite -mulrA mulfV// mulr1 mulrC; congr(_/_).
+  rewrite !invfM// (mulrC (a x)) !mulrA; congr (_/_).
+  rewrite -mulrA mulfV// mulr1 mulrC; congr (_/_).
   by rewrite /num; lra.
 near: x; move: eps eps0; apply/cvgrPdist_le.
 have a01 : a x @[x --> nbhs 0^'-] --> (1:R).
@@ -1040,12 +1038,11 @@ have a01 : a x @[x --> nbhs 0^'-] --> (1:R).
     exact/cvg_at_left_filter/cvg_id.
   rewrite -{2}(mulr0 nu) -{2}oppr0.
   apply: cvgM; first exact: cvg_cst.
-  apply: cvgN.
-  exact/cvg_at_left_filter/cvg_id.
+  by apply: cvgN; exact/cvg_at_left_filter/cvg_id.
 rewrite -[X in _ --> X]addr0.
 apply: cvgD.
   apply: cvgV; first by [].
-  rewrite -(mul1r (M.+2%:R)).
+  rewrite -(mul1r M.+2%:R).
   apply: cvgM; first exact: a01.
   rewrite -(natr1 M.+1).
   apply: cvgD; first exact: cvg_cst.
@@ -1176,7 +1173,7 @@ apply: (@lhopital_at_left R _ (num' p) _ (den' p) (- q)).
     rewrite (mulrC x) mulrA -mulrDr.
     rewrite -mulrA mulrDr mulrN mulfV; last by rewrite addrC px_neq0'.
     rewrite mulrDr mulrN1 addrCA (mulrC _ M.+1%:R) subrr addr0.
-    rewrite mulrA (mulrC x) expr2 invrM'; last by rewrite addrC px_neq0'.
+    rewrite mulrA (mulrC x) expr2 invfM.
     by rewrite !mulrA -(mulrA _ (x + p)) mulfV ?mulr1// addrC px_neq0'.
   apply: cvgM; last first. exact/cvg_at_left_filter/cvg_id.
   apply: cvgM; last first.
@@ -1194,8 +1191,7 @@ Lemma shadowlifting_stl_and_lt0_cvg (p : R) i : p > 0 ->
   (stl_and_lt0 (fun_of_rV M.+1 (const_mx p + h *: err_vec i)) -
    stl_and_lt0 (fun_of_rV M.+1 (const_mx p))) @[h --> 0^'] --> (M.+2%:R : R)^-1.
 Proof.
-move=> p0.
-apply/cvg_at_right_left_dnbhs.
+move=> p0; apply/cvg_at_right_left_dnbhs.
 - exact/shadowlifting_stl_and_lt0_cvg_at_right.
 - exact/shadowlifting_stl_and_lt0_cvg_at_left.
 Unshelve. all: end_near. Qed.
@@ -1203,10 +1199,8 @@ Unshelve. all: end_near. Qed.
 Lemma shadowlifting_stl_and_lt0 (p : R) : p > 0 -> forall i,
   ('d (@stl_and_lt0 M.+1 \o @fun_of_rV _ _) '/d i) (const_mx p) = M.+2%:R^-1.
 Proof.
-move=> p0 i.
-rewrite /partial.
-apply/cvg_lim => //=.
-by apply: shadowlifting_stl_and_lt0_cvg.
+move=> p0 i; apply/cvg_lim => //=.
+exact: shadowlifting_stl_and_lt0_cvg.
 Qed.
 
 End shadow_lifting_stl_and.
