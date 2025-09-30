@@ -38,10 +38,6 @@ Lemma cat_cons_xyz_xyz {T} (I L M N : seq T * seq T):
   [:: I; L; M; N] = [:: I; L; M] ++ [:: N] .
 Proof. by rewrite //=. Qed.
 
-Lemma map_cons T1 T2 (f : T1 -> T2) a l :
-  f a :: [seq f x | x <- l] = [seq f x | x <- a :: l].
-Proof. by []. Qed.
-
 Lemma card_ordS (n : nat) (i : 'I_n.+1) : #|(fun j : 'I_n.+1 => j != i)| = n.
 Proof.
 have := card_ord n.+1.
@@ -85,8 +81,6 @@ Section alias_for_bigops.
 Context {R : numDomainType}.
 Implicit Types s : seq R.
 
-(*Definition sumR s := \sum_(i <- s) i.*)
-(*Definition prodR s := \prod_(i <- s) i.*)
 Definition minR n f : R := \big[minr/1]_(i < n) f i.
 Definition maxR n f : R := \big[maxr/0]_(i < n) f i.
 

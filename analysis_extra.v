@@ -182,16 +182,6 @@ Section mine_extra.
 Local Open Scope ereal_scope.
 Context {R : realDomainType}.
 
-(*
-(* TODO: PR? *)
-Lemma mineC : commutative (fun x y : \bar R => mine x y).
-Proof. exact: minC. Qed.
-
-(* TODO: PR *)
-Lemma mineA : associative (fun x y : \bar R => mine x y).
-Proof. exact: minA. Qed.
-*)
-
 Lemma mine_eqyP (T : eqType) (s : seq T) (P : pred T) (f : T -> \bar R) :
   \big[mine/+oo]_(i <- s | P i) f i = +oo <->
   forall i, i \in s -> P i -> f i = +oo.
@@ -653,7 +643,7 @@ rewrite IH//.
 by exists x; rewrite xl Px Fxlt0.
 Qed.
 
-Lemma oppeey (x : \bar R) : ((- x == +oo) = (x == -oo)).
+Lemma oppeey (x : \bar R) : (- x == +oo) = (x == -oo).
 Proof. by case: x. Qed.
 
 End ereal_extra.
