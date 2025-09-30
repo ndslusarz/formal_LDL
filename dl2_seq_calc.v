@@ -49,13 +49,14 @@ Let hypersequent := seq (seq formula * seq formula).
 
 Implicit Type Q P S : hypersequent.
 Implicit Type A B C D X Y : seq formula.
+Implicit Type a b c : formula.
 
 Reserved Notation "Q |- P" (no associativity, at level 61).
 Notation "Q |- P" := (Q, P).
 
 Inductive seq_calc_dl2 :  hypersequent -> Prop :=
-| id_dl2 : forall Q (a : formula),
-    seq_calc_dl2 ( ([::a] |- [:: a]) :: Q)
+| id_dl2 : forall Q a,
+    seq_calc_dl2 (([:: a] |- [:: a]) :: Q)
 | empty : forall Q,
     seq_calc_dl2 (([::] |- [::]) :: Q)
 (*structural*)
@@ -85,46 +86,44 @@ Inductive seq_calc_dl2 :  hypersequent -> Prop :=
 (*logical*)
 | top_dl2 : forall Q A,
     seq_calc_dl2 ((A |- [:: dl_bool _ _ _ _ true]) :: Q)
-| mandL_dl2 : forall Q A B (a b : formula),
-    seq_calc_dl2 ((a::b :: A |- B) :: Q) ->
+| mandL_dl2 : forall Q A B a b,
+    seq_calc_dl2 ((a :: b :: A |- B) :: Q) ->
     seq_calc_dl2 (((a `** b) :: A |- B) :: Q)
-| mandR_dl2 : forall Q A1 A2 B1 B2 (a b : formula),
-    seq_calc_dl2 ((A1 |- a  :: B1 ) :: Q) ->
-    seq_calc_dl2 ((A2 |-  b :: B2 ) :: Q) ->
-    seq_calc_dl2 (( A1 ++ A2 |- (a `** b) :: B1 ++ B2) :: Q)
-| implR_dl2 : forall Q A B (a b : formula),
-    seq_calc_dl2 ((A|- B) :: Q ) ->
+| mandR_dl2 : forall Q A1 A2 B1 B2 a b,
+    seq_calc_dl2 ((A1 |- a  :: B1) :: Q) ->
+    seq_calc_dl2 ((A2 |-  b :: B2) :: Q) ->
+    seq_calc_dl2 ((A1 ++ A2 |- (a `** b) :: B1 ++ B2) :: Q)
+| implR_dl2 : forall Q A B a b,
+    seq_calc_dl2 ((A |- B) :: Q ) ->
     seq_calc_dl2 ((a :: A |- b :: B) :: Q) ->
     seq_calc_dl2 ((A |- (a `=> b) :: B) :: Q)
-| implL_dl2 : forall Q A B (a b : formula),
-    seq_calc_dl2 ((A|- B) :: Q ) ->
+| implL_dl2 : forall Q A B a b,
+    seq_calc_dl2 ((A |- B) :: Q ) ->
     seq_calc_dl2 ((b :: A |- a :: B) :: Q) ->
     seq_calc_dl2 (( (a `=> b) :: A |- B) :: Q)
-| andL_dl2 : forall Q A B (a b : formula),
+| andL_dl2 : forall Q A B a b,
     seq_calc_dl2 (((a :: B) |- A) :: ((b :: B) |- A):: Q ) ->
     seq_calc_dl2 ((((a `/\ b) :: B) |- A) :: Q)
-| andR_dl2 : forall Q A B (a b : formula),
+| andR_dl2 : forall Q A B a b,
     seq_calc_dl2 ( (A |- a :: B) :: Q ) ->
     seq_calc_dl2 ( (A |- b :: B) :: Q) ->
     seq_calc_dl2 ((A |- (a `/\ b) :: B) :: Q )
-| orL_dl2 : forall  Q A B (a b : formula),
-    seq_calc_dl2 ( ((b :: B) |- A) :: Q) ->
-    seq_calc_dl2 ( ((a :: B) |- A) :: Q) ->
+| orL_dl2 : forall Q A B a b,
+    seq_calc_dl2 (((b :: B) |- A) :: Q) ->
+    seq_calc_dl2 (((a :: B) |- A) :: Q) ->
     seq_calc_dl2 (((a `\/ b) :: B |- A) :: Q)
-| orR_dl2 : forall Q A B (a b : formula),
-    seq_calc_dl2 (( A |- a :: B ) :: ( A |- b :: B) :: Q ) ->
-    seq_calc_dl2 (( A |- (a `\/ b):: B ) :: Q)
+| orR_dl2 : forall Q A B a b,
+    seq_calc_dl2 ((A |- a :: B ) :: ( A |- b :: B) :: Q ) ->
+    seq_calc_dl2 ((A |- (a `\/ b):: B ) :: Q)
 .
 
 Definition eval_dl2 A := \sum_(i <- map dl2_translation A) i.
 (*Definition eval_dl2 A := [[(dl_mand A)]]_dl2 .*)
 
-Lemma eval_dl2_cat A B :
- eval_dl2 (A ++ B) = eval_dl2 A + eval_dl2 B.
+Lemma eval_dl2_cat A B : eval_dl2 (A ++ B) = eval_dl2 A + eval_dl2 B.
 Proof. by rewrite /eval_dl2/= !big_map !big_cat. Qed.
 
-Lemma eval_dl2_cons  A (q: formula):
- eval_dl2 (q :: A) = [[q]]_dl2 + eval_dl2 A.
+Lemma eval_dl2_cons A a : eval_dl2 (a :: A) = [[ a ]]_dl2 + eval_dl2 A.
 Proof. by rewrite /eval_dl2/= !big_cons. Qed.
 
 Lemma eval_dl2_and_le0 A : eval_dl2 A <= 0.
@@ -136,12 +135,11 @@ rewrite /eval_dl2; elim: A => [|a l ih].
   by rewrite big_map big_cons; lra.
  Qed.
 
-Lemma sound_dl2 Q :
-seq_calc_dl2 Q ->
+Lemma sound_dl2 Q : seq_calc_dl2 Q ->
   exists2 q : (seq formula) * (seq formula), q \in Q
     & eval_dl2 (fst q)  <=  eval_dl2 (snd q).
 Proof.
-intros; rewrite//=. dependent induction H.
+move=> H; dependent induction H.
 - by exists ([:: a] |- [:: a]) => //; rewrite mem_head.
 - by exists ([::] |- [::]).
 - case: IHseq_calc_dl2 => [M].
@@ -155,7 +153,7 @@ intros; rewrite//=. dependent induction H.
   by exists q => //; rewrite mem_cat IH1 orTb.
 - case IHseq_calc_dl2 => [q + IH2].
   rewrite !mem_cat => /orP [h |/orP [h | h]];
-  exists q; rewrite ?mem_cat ?h ?orTb ?orbT//=.
+  by exists q; rewrite ?mem_cat ?h ?orTb ?orbT.
 - move: IHseq_calc_dl2 => [q + IH2].
   rewrite in_cons => /predU1P[h|h].
   + exists (A ++ C |- B) => //; subst.
@@ -281,18 +279,11 @@ intros; rewrite//=. dependent induction H.
   + by exists q => //; rewrite in_cons h orbT.
 Qed.
 
-Lemma dl2_cat1C Q a :
-  seq_calc_dl2 (a :: Q) =
-  seq_calc_dl2 ([::a] ++ Q).
-Proof.
-rewrite//=.
-Qed.
+Lemma dl2_cat1C Q I : seq_calc_dl2 (I :: Q) = seq_calc_dl2 ([:: I] ++ Q).
+Proof. by []. Qed.
 
-Lemma eex_nil Q P :
-    seq_calc_dl2 (P ++ Q) <->
-    seq_calc_dl2 (Q ++ P).
+Lemma eex_nil Q P : seq_calc_dl2 (P ++ Q) <-> seq_calc_dl2 (Q ++ P).
 Proof.
-intros. 
 have hxy M L : M ++ L = [::] ++ M ++ L ++ [::] by rewrite /= cats0.
 rewrite (hxy _  Q P). split => ih.
 - apply eex_dl2; by rewrite cats0//=.
@@ -300,18 +291,17 @@ rewrite (hxy _  Q P). split => ih.
 Qed.
 
 Lemma exL_nil Q A B C :
-    seq_calc_dl2 (((A ++ B) |- C) :: Q) <->
-    seq_calc_dl2 (((B ++ A) |- C) :: Q).
+  seq_calc_dl2 (((A ++ B) |- C) :: Q) <->
+  seq_calc_dl2 (((B ++ A) |- C) :: Q).
 Proof.
-intros.
 have hxy M L : M ++ L = [::] ++ M ++ L ++ [::] by rewrite /= cats0.
 split; rewrite (hxy _  A B) (hxy _  B A);
-by exact/exL_dl2.
+exact/exL_dl2.
 Qed.
 
 Lemma exR_nil Q A B C :
-    seq_calc_dl2 ((C |- (A ++ B)) :: Q) <->
-    seq_calc_dl2 ((C |- (B ++ A)) :: Q).
+  seq_calc_dl2 ((C |- (A ++ B)) :: Q) <->
+  seq_calc_dl2 ((C |- (B ++ A)) :: Q).
 Proof.
 intros.
 have hxy M L : M ++ L = [::] ++ M ++ L ++ [::] by rewrite /= cats0.
@@ -319,16 +309,8 @@ split; rewrite (hxy _  A B) (hxy _  B A);
 exact/exR_dl2.
 Qed.
 
-Lemma cat_cons_xyz_xy (I L M N : (seq formula * seq formula)):
- [:: I; L; M; N] = [:: I; L] ++ [::M; N] .
-Proof. by rewrite //=. Qed.
-
-Lemma cat_cons_xyz_xyz (I L M N : (seq formula * seq formula)):
- [:: I; L; M; N] = [:: I; L; M] ++ [:: N] .
-Proof. by rewrite //=. Qed.
-
-Lemma dl2_prelinearity (a b : formula) :
-seq_calc_dl2 ([:: ([::] |- [:: ((a `=> b) `\/ (b `=> a))])]).
+Lemma dl2_prelinearity a b :
+  seq_calc_dl2 ([:: ([::] |- [:: ((a `=> b) `\/ (b `=> a))])]).
 Proof.
 apply orR_dl2.
 apply implR_dl2.
@@ -347,12 +329,12 @@ apply implR_dl2.
     apply comm_hyper_dl2; rewrite ?cat0s ?cats0; by apply id_dl2.
 Qed.
 
-Lemma comm_xy (a c : formula):
+Lemma comm_xy a c :
   [:: [:: c] |- [:: a]] ++ [:: [:: a] |- [:: c]] =
-                   [:: [::] ++ [:: c] |- [:: a], [:: a] ++ [::] |- [:: c] & [::]]. 
-Proof. by rewrite//=. Qed.
+                   [:: [::] ++ [:: c] |- [:: a], [:: a] ++ [::] |- [:: c] & [::]].
+Proof. by []. Qed.
 
-Lemma comm_hyper_xy (a b : formula):
+Lemma comm_hyper_xy a b :
 seq_calc_dl2 [:: [:: b] |- [:: a]; [:: a] |- [:: b]].
 Proof.
 rewrite dl2_cat1C. rewrite -(cat0s [:: b]) -{2}((cat0s [:: a])).
@@ -360,7 +342,7 @@ rewrite comm_xy.
 apply comm_hyper_dl2; rewrite ?cat0s ?cats0; by apply id_dl2.
 Qed.
 
-Lemma dl2_seq_distributivity (a b c : formula) :
+Lemma dl2_seq_distributivity a b c :
   seq_calc_dl2 ([:: ([::] |- [:: ((a `/\ (b `\/ c)) `=> ((a `/\ b) `\/ (a `/\ c)))])]).
 Proof.
 apply implR_dl2; first by apply empty.
@@ -376,7 +358,7 @@ apply andR_dl2.
   rewrite !dl2_cat1C.
   apply eex_nil.
   apply orL_dl2; apply andR_dl2.
-  + rewrite cat_cons_xyz_xy. apply eex_nil. 
+  + rewrite cat_cons_xyz_xy. apply eex_nil.
     apply orL_dl2; apply andR_dl2.
     * rewrite cat_cons_xyz_xy.
       apply ew_dl2.
@@ -390,7 +372,7 @@ apply andR_dl2.
     * by repeat rewrite dl2_cat1C; apply ew_dl2; exact: id_dl2.
   + by repeat rewrite dl2_cat1C; apply ew_dl2; exact: id_dl2.
   + rewrite cat_cons_xyz_xy.
-    apply ew_dl2. 
+    apply ew_dl2.
     exact: comm_hyper_xy.
   + rewrite dl2_cat1C; apply eex_nil.
     rewrite dl2_cat1C; apply eex_nil.
@@ -407,18 +389,18 @@ apply andR_dl2.
     * by repeat rewrite dl2_cat1C; apply ew_dl2; exact: id_dl2.
 Qed.
 
-Lemma dl2_seq_andC (a b : formula) :
+Lemma dl2_seq_andC a b :
   seq_calc_dl2 [:: ([:: a `/\ b] |- [:: b`/\ a])].
 Proof.
-apply andR_dl2; apply andL_dl2. 
+apply andR_dl2; apply andL_dl2.
 - by rewrite dl2_cat1C; apply eex_nil; apply ew_dl2; exact: id_dl2.
 - by rewrite dl2_cat1C; apply ew_dl2; exact: id_dl2.
 Qed.
 
-Lemma dl2_seq_orC (a b : formula) :
+Lemma dl2_seq_orC a b :
   seq_calc_dl2 [:: ([:: a `\/ b] |- [:: b`\/ a])].
 Proof.
-apply orL_dl2; apply orR_dl2. 
+apply orL_dl2; apply orR_dl2.
 - by rewrite dl2_cat1C; apply ew_dl2; exact: id_dl2.
 - by rewrite dl2_cat1C; apply eex_nil; apply ew_dl2; exact: id_dl2.
 Qed.
@@ -437,7 +419,7 @@ apply andR_dl2; apply andL_dl2.
   by rewrite dl2_cat1C; apply eex_nil; apply ew_dl2; exact: id_dl2.
 Qed.
 
-Lemma dl2_seq_andA2 (a b c : formula) :
+Lemma dl2_seq_andA2 a b c :
   seq_calc_dl2 [:: ([:: (a `/\ b) `/\ c] |- [:: a `/\ (b `/\ c)])].
 Proof.
 apply andR_dl2; apply andL_dl2.
@@ -449,7 +431,7 @@ apply andR_dl2; apply andL_dl2.
   exact: comm_hyper_xy.
 Qed.
 
-Lemma dl2_seq_orA1 (a b c : formula) :
+Lemma dl2_seq_orA1 a b c :
   seq_calc_dl2 [:: ([:: a `\/ (b `\/ c)] |- [:: (a `\/ b) `\/ c])].
 Proof.
 apply orL_dl2; apply orR_dl2.
@@ -462,68 +444,66 @@ apply orL_dl2; apply orR_dl2.
   by rewrite dl2_cat1C; apply ew_dl2; exact: id_dl2.
 Qed.
 
-Lemma dl2_seq_orA2 (a b c : formula) :
+Lemma dl2_seq_orA2 a b c :
   seq_calc_dl2 [:: ([:: (a `\/ b) `\/ c] |- [:: a `\/ (b `\/ c)])].
 Proof.
 apply orL_dl2; apply orR_dl2.
 - rewrite dl2_cat1C; apply eex_nil. apply orR_dl2.
   by rewrite dl2_cat1C; apply eex_nil; apply ew_dl2; exact: id_dl2.
-- apply orL_dl2; last by rewrite dl2_cat1C; apply ew_dl2; exact: id_dl2. 
+- apply orL_dl2; last by rewrite dl2_cat1C; apply ew_dl2; exact: id_dl2.
   rewrite dl2_cat1C; apply eex_nil; apply orL_dl2; apply orR_dl2;
     first by rewrite dl2_cat1C; apply ew_dl2; exact: id_dl2.
   rewrite dl2_cat1C; apply eex_nil; rewrite dl2_cat1C; apply eex_nil; apply ew_dl2.
   exact: comm_hyper_xy.
 Qed.
 
-Lemma dl2_seq_and1 (a b : formula) :
+Lemma dl2_seq_and1 a b :
   seq_calc_dl2 [:: ([:: a `/\ (a `\/ b)] |- [:: a])].
 Proof.
 apply andL_dl2; by rewrite dl2_cat1C; apply ew_dl2; exact: id_dl2.
 Qed.
 
-Lemma dl2_seq_and2 (a b : formula) :
+Lemma dl2_seq_and2 a b :
   seq_calc_dl2 [:: ([:: a] |- [:: a `/\ (a `\/ b)])].
 Proof.
-apply andR_dl2; first by exact: id_dl2.
+apply andR_dl2; first exact: id_dl2.
 apply orR_dl2; first by rewrite dl2_cat1C; apply ew_dl2; exact: id_dl2.
 Qed.
 
-Lemma dl2_seq_or1 (a b : formula) :
+Lemma dl2_seq_or1 a b :
   seq_calc_dl2 [:: ([:: a `\/ (a `/\ b)] |- [:: a])].
 Proof.
 apply orL_dl2; last by exact: id_dl2.
 apply andL_dl2; by rewrite dl2_cat1C; apply ew_dl2; exact: id_dl2.
 Qed.
 
-Lemma dl2_seq_or2 (a b : formula) :
-  seq_calc_dl2 [:: ([:: a] |- [:: a `\/ (a `/\ b)])].
+Lemma dl2_seq_or2 a b : seq_calc_dl2 [:: ([:: a] |- [:: a `\/ (a `/\ b)])].
 Proof.
-apply orR_dl2;  by exact: id_dl2.
+by apply orR_dl2; exact: id_dl2.
 Qed.
 
-Lemma dl2_seq_unit_el1 (a : formula) :
+Lemma dl2_seq_unit_el1 a :
   seq_calc_dl2 [:: ([:: a `** dl_bool _ _ _ _ true] |- [:: a ])].
 Proof.
 apply mandL_dl2.
-have h : [:: a; dl_bool neg_undef impl_def m_def l_def true] =
-           [:: a] ++ [:: dl_bool neg_undef impl_def m_def l_def true]. by rewrite//=.
-rewrite h.
+have -> : [:: a; dl_bool neg_undef impl_def m_def l_def true] =
+         [:: a] ++ [:: dl_bool neg_undef impl_def m_def l_def true] by [].
 apply w_dl2. rewrite dl2_cat1C.
 apply id_dl2.
 Qed.
 
-Lemma dl2_seq_unit_el2 (a : formula) :
+Lemma dl2_seq_unit_el2 a :
   seq_calc_dl2 [:: ([:: a ] |- [:: a `** dl_bool _ _ _ _ true])].
 Proof.
-rewrite -( cats0 [:: a]) dl2_cat1C.
-rewrite-( cats0 [:: dl_mand (tnth [:: a; dl_bool neg_undef impl_def m_def l_def true])]).
-rewrite-( cats0 [:: dl_mand (tnth [:: a; dl_bool neg_undef impl_def m_def l_def true])]).
+rewrite -(cats0 [:: a]) dl2_cat1C.
+rewrite -(cats0 [:: dl_mand (tnth [:: a; dl_bool neg_undef impl_def m_def l_def true])]).
+rewrite -(cats0 [:: dl_mand (tnth [:: a; dl_bool neg_undef impl_def m_def l_def true])]).
 apply mandR_dl2.
 - by apply id_dl2.
 - by apply top_dl2.
 Qed.
 
-Lemma dl2_seq_mandA1 (a b c : formula) :
+Lemma dl2_seq_mandA1 a b c :
   seq_calc_dl2 [:: ([:: a `** (b `** c)] |- [:: (a `** b) `** c])].
 Proof.
 apply mandL_dl2.
@@ -544,7 +524,7 @@ rewrite -(cats0 [:: dl_mand (tnth [:: a; b])]).
 apply mandR_dl2; by apply id_dl2.
 Qed.
 
-Lemma dl2_seq_mandA2 (a b c : formula) :
+Lemma dl2_seq_mandA2 a b c :
   seq_calc_dl2 [:: ([:: (a `** b) `** c] |- [:: a `** (b `** c)])].
 Proof.
 apply mandL_dl2; apply mandL_dl2.

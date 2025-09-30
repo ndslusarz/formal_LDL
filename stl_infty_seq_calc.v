@@ -25,18 +25,6 @@ Import numFieldTopology.Exports.
 (*                                                                            *)
 (******************************************************************************)
 
-Lemma cat_cons4 T (I L M N : seq T * seq T):
- [:: I; L; M; N] = [:: I] ++ [:: L] ++ [:: M] ++ [:: N].
-Proof. by []. Qed.
-
-Lemma cat_cons_xyz_xy T (I L M N : seq T * seq T):
- [:: I; L; M; N] = [:: I; L] ++ [:: M; N].
-Proof. by []. Qed.
-
-Lemma cat_cons_xyz_xyz T (I L M N : seq T * seq T):
-  [:: I; L; M; N] = [:: I; L; M] ++ [:: N].
-Proof. by []. Qed.
-
 Section stl_hypersequent_calc.
 Local Open Scope ereal_scope.
 Local Open Scope dl_scope.
