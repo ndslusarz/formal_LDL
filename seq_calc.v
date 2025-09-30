@@ -119,8 +119,6 @@ Implicit Type a b c : formula.
 Inductive seq_calc_luka_impl : hypersequent -> Prop :=
 | id_l : forall Q A,
     seq_calc_luka_impl ((A |- A) :: Q)
-(*| empty : forall Q,
-    seq_calc_luka_impl (([::] |- [::]) :: Q)*)
 (*structural*)
 | eex_l : forall Q P S1 S2,
     seq_calc_luka_impl (S1 ++ P ++ Q ++ S2) ->
@@ -181,8 +179,6 @@ Local Hint Extern 0 (seq_calc_luka_impl ((_ |- _) :: _)) =>
 Inductive seq_calc_luka : hypersequent -> Prop :=
 | id_l' : forall Q A,
     seq_calc_luka ((A |- A) :: Q)
-(*| empty' : forall Q,
-    seq_calc_luka (([::] |- [::]) :: Q)*)
 (*structural*)
 | eex_l' : forall Q P S1 S2,
     seq_calc_luka (S1 ++ P ++ Q ++ S2) ->
@@ -956,8 +952,6 @@ Notation "Q |- P" := (Q, P).
 Inductive seq_calc_product : hypersequent -> Prop :=
 | id_p : forall Q A,
     seq_calc_product ((A |- A) :: Q)
-| empty_p : forall Q,
-    seq_calc_product (([::] |- [::]) :: Q)
 (*structural*)
 | eex_p : forall Q P S1 S2,
     seq_calc_product (S1 ++ P ++ Q ++ S2) ->
@@ -1024,8 +1018,6 @@ Inductive seq_calc_product : hypersequent -> Prop :=
 Inductive seq_calc_product' : hypersequent -> Prop :=
 | id_p' : forall Q A,
     seq_calc_product' ((A |- A) :: Q)
-| empty_p' : forall Q,
-     seq_calc_product' (([::] |- [::]) :: Q)
 (*structural*)
 | eex_p' : forall Q P S1 S2,
     seq_calc_product' (S1 ++ P ++ Q ++ S2) ->
@@ -1116,7 +1108,6 @@ Lemma sound_product Q : seq_calc_product Q ->
 Proof.
 intros; rewrite//=. dependent induction H.
 - by exists (A |- A) => //; rewrite mem_head.
-- by exists ([::] |- [::]).
 - case: IHseq_calc_product => [M].
   rewrite !mem_cat => IH1 IH2.
   exists M => //.
@@ -1355,7 +1346,6 @@ Lemma sound_product' Q : seq_calc_product' Q ->
 Proof.
 intros; rewrite//=. dependent induction H.
 - by exists (A |- A) => //; rewrite mem_head.
-- by exists ([::] |- [::]).
 - case: IHseq_calc_product' => [M].
   rewrite !mem_cat => IH1 IH2.
   exists M => //.
@@ -1603,7 +1593,6 @@ Proof.
 intros.
 dependent induction H.
 - apply id_p.
-- apply empty_p.
 - apply eex_p. by exact IHseq_calc_product'.
 - apply ew_p. by exact IHseq_calc_product'.
 - apply ec_p. by exact IHseq_calc_product'.
@@ -1617,7 +1606,7 @@ dependent induction H.
 - by apply bot_p.
 - rewrite true_false_product neg_impl_product. apply implR_p.
   + rewrite -(cat0s A).
-    apply w_p. exact: empty_p.
+    by apply w_p; exact: id_p.
   + have -> : dl_bool _ _ _ _ false :: A = [:: dl_bool _ _ _ _ false] ++ A by [].
     apply w_p. exact: id_p.
 - apply mandL_p. by exact IHseq_calc_product'.
