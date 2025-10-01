@@ -712,16 +712,18 @@ Hypothesis p1 : 1 <= p.
 
 Local Notation "[[ e ]]_ l" := (translation l p e).
 
+Lemma h1neq2 l : [[dl_real 1 `== dl_real 2 : expr boolT_fuzzy ]]_l = 2/3.
+Proof.
+rewrite /= -subr_eq0 opprK !nat1r pnatr_eq0/=.
+rewrite (_ : 1 - 2 = -1); last by lra.
+rewrite normrM normrN normr1 mul1r ger0_norm//.
+by rewrite /maxr; case: ifPn; lra.
+Qed.
+
 Lemma Lukasiewicz_not_idempotent :
   exists e : expr boolT_fuzzy, [[ e `** e ]]_Lukasiewicz <> [[ e ]]_Lukasiewicz.
 Proof.
 exists (dl_real 1 `== dl_real 2).
-have h1neq2 : [[dl_real 1 `== dl_real 2]]_Lukasiewicz = 2/3.
-  move=> f1 f2 f3 f4 /=.
-  rewrite -subr_eq0 opprK !nat1r pnatr_eq0/=.
-  rewrite (_ : 1 - 2 = -1); last by lra.
-  rewrite normrM normrN normr1 mul1r ger0_norm//.
-  by rewrite /maxr; case: ifPn; lra.
 rewrite h1neq2 /= !big_ord_recl !big_ord0 !tnthS !tnth0 h1neq2.
 rewrite addr0 /maxr.
 by case: ifPn; lra.
@@ -1196,10 +1198,12 @@ Hypothesis p1 : 1 <= p.
 
 Local Notation "[[ e ]]_ l" := (translation l p e).
 
-Lemma Godel_negation_not_involutive e :
-  [[ e ]]_Godel = 2%:R^-1 :> @type_translation R boolT_fuzzy -> [[ `~ `~ e ]]_Godel = 1.
+Lemma Godel_negation_not_involutive :
+  exists e : expr boolT_fuzzy, [[ `~ `~ e ]]_Godel != [[ e ]]_Godel.
 Proof.
-by rewrite /= => ->; rewrite ifF// ifT//.
+exists (dl_real 1 `== dl_real 2).
+rewrite [_ `== _]lock /= -lock h1neq2.
+by case: ifPn; case: ifPn; lra.
 Qed.
 
 Lemma Godel_mandI f1 f2 (e : expr (boolT_def f1 m_def f2)) :
@@ -1334,20 +1338,15 @@ Lemma product_not_idempotent :
   exists e : expr boolT_fuzzy, [[ (e `** e) ]]_product <> [[ e ]]_product.
 Proof.
 exists (dl_real 1 `== dl_real 2).
-have h1neq2 : [[dl_real 1 `== dl_real 2]]_product = 2/3.
-  move=> f1 f2 f3 f4 /=.
-  rewrite -subr_eq0 opprK !nat1r pnatr_eq0/=.
-  rewrite (_ : 1 - 2 = -1); last by lra.
-  rewrite normrM normrN normr1 mul1r ger0_norm//.
-  by rewrite /maxr; case: ifPn; lra.
 rewrite h1neq2 /= !big_ord_recl !big_ord0 !tnthS !tnth0 h1neq2.
 lra.
 Qed.
 
-Lemma product_negation_not_involutive e :
-  [[ e ]]_product = 2%:R^-1 :> @type_translation R boolT_fuzzy -> [[ `~ `~ e ]]_product = 1.
+Lemma product_negation_not_involutive :
+  exists e : expr boolT_fuzzy, [[ `~ `~ e ]]_product != [[ e ]]_product.
 Proof.
-by rewrite /= => ->; rewrite ifF// ifT//.
+exists (dl_real 1 `== dl_real 2).
+by rewrite h1neq2/=; case: ifPn; case: ifPn; lra.
 Qed.
 
 Lemma product_mandC_nary f1 f2 n (pi : {perm 'I_n})
