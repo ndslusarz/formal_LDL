@@ -543,16 +543,12 @@ Qed.
 
 End stl_and_lemmas.
 
-Section shadow_lifting_stl_and.
+Section technical_lemmas.
 Local Open Scope ring_scope.
 Local Open Scope classical_set_scope.
 Context {R : realType}.
-Variables (nu : R) (M : nat).
+Variable M : nat.
 
-Local Notation stl_and_gt0 := (stl_and_gt0 nu).
-Local Notation stl_and_lt0 := (stl_and_lt0 nu).
-
-(* technical lemmas *)
 Lemma mip_at_right (p h : R) i : 0 < h ->
   let v := (const_mx p + h *: err_vec i)%E ord0 in
   \big[minr/v ord0]_(i0 < M.+2) v i0 = p.
@@ -614,6 +610,17 @@ have [_|_]/= := eqVneq i ord0.
   by rewrite !mulr1.
 by rewrite !mulr0 !addr0 gtrDl h0.
 Qed.
+
+End technical_lemmas.
+
+Section shadow_lifting_stl_and.
+Local Open Scope ring_scope.
+Local Open Scope classical_set_scope.
+Context {R : realType}.
+Variables (nu : R) (M : nat).
+
+Local Notation stl_and_gt0 := (stl_and_gt0 nu).
+Local Notation stl_and_lt0 := (stl_and_lt0 nu).
 
 Lemma shadowlifting_stl_and_gt0_cvg_at_right (p : R) i : 0 < p ->
   h^-1 *

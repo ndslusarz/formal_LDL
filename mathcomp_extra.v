@@ -38,8 +38,9 @@ Lemma cat_cons_xyz_xyz {T} (I L M N : seq T * seq T):
   [:: I; L; M; N] = [:: I; L; M] ++ [:: N] .
 Proof. by rewrite //=. Qed.
 
-Lemma card_ordS (n : nat) (i : 'I_n.+1) : #|(fun j : 'I_n.+1 => j != i)| = n.
+Lemma card_ordS (n : nat) (i : 'I_n) : #|(fun j : 'I_n => j != i)| = n.-1.
 Proof.
+case: n i => [[]//|n i].
 have := card_ord n.+1.
 rewrite (cardD1 i) inE add1n => -[] hn.
 rewrite -[RHS]hn.
