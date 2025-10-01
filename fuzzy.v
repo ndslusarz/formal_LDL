@@ -712,6 +712,21 @@ Hypothesis p1 : 1 <= p.
 
 Local Notation "[[ e ]]_ l" := (translation l p e).
 
+Lemma Lukasiewicz_not_idempotent :
+  exists e : expr boolT_fuzzy, [[ e `** e ]]_Lukasiewicz <> [[ e ]]_Lukasiewicz.
+Proof.
+exists (dl_real 1 `== dl_real 2).
+have h1neq2 : [[dl_real 1 `== dl_real 2]]_Lukasiewicz = 2/3.
+  move=> f1 f2 f3 f4 /=.
+  rewrite -subr_eq0 opprK !nat1r pnatr_eq0/=.
+  rewrite (_ : 1 - 2 = -1); last by lra.
+  rewrite normrM normrN normr1 mul1r ger0_norm//.
+  by rewrite /maxr; case: ifPn; lra.
+rewrite h1neq2 /= !big_ord_recl !big_ord0 !tnthS !tnth0 h1neq2.
+rewrite addr0 /maxr.
+by case: ifPn; lra.
+Qed.
+
 Lemma Lukasiewicz_mandC_nary f1 f2 n (pi : {perm 'I_n})
     (s : 'I_n -> expr (boolT_def f1 m_def f2)) :
   [[dl_mand s]]_Lukasiewicz = [[dl_mand (s \o pi)]]_Lukasiewicz.
@@ -1181,6 +1196,12 @@ Hypothesis p1 : 1 <= p.
 
 Local Notation "[[ e ]]_ l" := (translation l p e).
 
+Lemma Godel_negation_not_involutive e :
+  [[ e ]]_Godel = 2%:R^-1 :> @type_translation R boolT_fuzzy -> [[ `~ `~ e ]]_Godel = 1.
+Proof.
+by rewrite /= => ->; rewrite ifF// ifT//.
+Qed.
+
 Lemma Godel_mandI f1 f2 (e : expr (boolT_def f1 m_def f2)) :
   [[ e `** e ]]_Godel = [[ e ]]_Godel.
 Proof.
@@ -1309,11 +1330,31 @@ Hypothesis p1 : 1 <= p.
 
 Local Notation "[[ e ]]_ l" := (translation l p e).
 
+Lemma product_not_idempotent :
+  exists e : expr boolT_fuzzy, [[ (e `** e) ]]_product <> [[ e ]]_product.
+Proof.
+exists (dl_real 1 `== dl_real 2).
+have h1neq2 : [[dl_real 1 `== dl_real 2]]_product = 2/3.
+  move=> f1 f2 f3 f4 /=.
+  rewrite -subr_eq0 opprK !nat1r pnatr_eq0/=.
+  rewrite (_ : 1 - 2 = -1); last by lra.
+  rewrite normrM normrN normr1 mul1r ger0_norm//.
+  by rewrite /maxr; case: ifPn; lra.
+rewrite h1neq2 /= !big_ord_recl !big_ord0 !tnthS !tnth0 h1neq2.
+lra.
+Qed.
+
+Lemma product_negation_not_involutive e :
+  [[ e ]]_product = 2%:R^-1 :> @type_translation R boolT_fuzzy -> [[ `~ `~ e ]]_product = 1.
+Proof.
+by rewrite /= => ->; rewrite ifF// ifT//.
+Qed.
+
 Lemma product_mandC_nary f1 f2 n (pi : {perm 'I_n})
     (s : 'I_n -> expr (boolT_def f1 m_def f2)) :
-  [[dl_mand s]]_Godel = [[dl_mand (s \o pi)]]_Godel.
+  [[dl_mand s]]_product = [[dl_mand (s \o pi)]]_product.
 Proof.
-by rewrite /= /minR (perm_big (map pi (index_enum 'I_n))) ?big_map//= perm_eq_fun.
+by rewrite /= (perm_big (map pi (index_enum 'I_n))) ?big_map//= perm_eq_fun.
 Qed.
 
 Lemma product_mandC f1 f2 (e1 e2 : expr (boolT_def f1 m_def f2)) :
@@ -1322,11 +1363,40 @@ Proof.
 by rewrite /= !big_ord_recl !big_ord0 /= mulr1 mulr1 mulrC.
 Qed.
 
+
+(* Move to analysis-extra *)
+Lemma product_dl_mulA : associative (@product_dl_mul R).
+Proof.
+move=> x y z; rewrite /product_dl_mul; lra.
+Qed.
+
+Lemma product_dl_mulC : commutative (@product_dl_mul R).
+Proof.
+move=> x y; rewrite /product_dl_mul; lra.
+Qed.
+
+Lemma product_dl_mul1m : left_id 0 (@product_dl_mul R).
+Proof.
+by move=> x; rewrite /product_dl_mul; lra.
+Qed.
+
+Lemma product_dl_mulm1 : right_id 0 (@product_dl_mul R).
+Proof.
+by move=> x; rewrite /product_dl_mul; lra.
+Qed.
+
+HB.instance Definition _ :=
+  Monoid.isLaw.Build R 0 product_dl_mul product_dl_mulA product_dl_mul1m product_dl_mulm1.
+
+HB.instance Definition _ :=
+  SemiGroup.isComLaw.Build R product_dl_mul product_dl_mulA product_dl_mulC.
+(* end move *)
+
 Lemma product_morC_nary f1 f2 n (pi : {perm 'I_n})
     (s : 'I_n -> expr (boolT_def f1 m_def f2)) :
-  [[dl_mor s]]_Godel = [[dl_mor (s \o pi)]]_Godel.
+  [[dl_mor s]]_product = [[dl_mor (s \o pi)]]_product.
 Proof.
-by rewrite /= /maxR (perm_big (map pi (index_enum 'I_n))) ?big_map//= perm_eq_fun.
+by rewrite /=/product_dl_prod (@perm_big _ product_dl_mul _ _ _ (map pi (index_enum 'I_n))) ?big_map//= perm_eq_fun.
 Qed.
 
 Lemma product_morC f1 f2 (e1 e2 : expr (boolT_def f1 m_def f2)) :
