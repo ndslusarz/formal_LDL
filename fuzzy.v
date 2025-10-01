@@ -839,6 +839,24 @@ Section Yager_lemmas.
 Local Open Scope dl_scope.
 Local Open Scope ring_scope.
 Context {R : realType}.
+
+Local Notation "[[ e ]]_ l" := (@translation R l 1%:R _ e).
+
+Lemma Yager_not_idempotent :
+  exists e : expr boolT_fuzzy, [[ (e `** e) : expr boolT_fuzzy ]]_Yager <> [[ e ]]_Yager.
+Proof.
+exists (dl_real 1 `== dl_real 2).
+rewrite h1neq2 /= !big_ord_recl !big_ord0 !tnthS !tnth0 h1neq2.
+rewrite addr0 /maxr invr1 !powRr1; [| lra | lra | lra].
+by case: ifPn; lra.
+Qed.
+
+End Yager_counterexapmle.
+
+Section Yager_lemmas.
+Local Open Scope dl_scope.
+Local Open Scope ring_scope.
+Context {R : realType}.
 Variable p : R.
 Hypothesis p1 : 1 <= p.
 
