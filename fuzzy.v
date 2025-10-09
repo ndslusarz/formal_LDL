@@ -835,7 +835,7 @@ Qed.
 
 End Lukasiewicz_lemmas.
 
-Section Yager_lemmas.
+Section Yager_counterexapmle.
 Local Open Scope dl_scope.
 Local Open Scope ring_scope.
 Context {R : realType}.
