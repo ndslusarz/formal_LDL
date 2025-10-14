@@ -231,4 +231,17 @@ repeat case: ifPn => //=.
 - by move => _ /negP h2 /negP/negP; rewrite -leNgt.
 Qed.
 
+Lemma h1neq2 : [[dl_real 0 `<= dl_real 1 : expr boolT_fuzzy ]]_stli = 1.
+Proof.
+rewrite //= subr0//=.
+Qed.
+
+Lemma stl_infty_not_neg_impl :
+  exists e : expr boolT_fuzzy, 
+    [[ `~e : expr boolT_fuzzy ]]_stli <> [[ e `=> (dl_bool _ _ _ _ false)]]_stli.
+Proof.
+exists (dl_real 0 `<= dl_real 1).
+rewrite//=.
+Qed.
+
 End stl_infty_lemmas.

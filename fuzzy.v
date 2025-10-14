@@ -176,10 +176,18 @@ dependent induction e using expr_ind'.
   * rewrite /maxR bigmax_le ?ler01// => i il0.
     exact: (andP (H _ _ _ _ _ _ _ _ _)).2.
 - move: IHe => /(_ _ _ _ _ _ e erefl JMeq_refl).
+  
   have h' : forall (x : R), 0 <= x <= 1 ->
            0 <= 1 - x <= 1 by intros; lra.
-  by case dl => //=; move => h; apply h in p1; set (a := [[e]]_ _) in *;
-    apply h' in p1 => //=; case: ifP; lra.
+  have hy : forall (x : R), 0 <= x <= 1 ->
+           0 <= 1 - (1 - (1 - x)`^p)`^p^-1 <= 1.
+  intros. apply /andP; split. 
+  + rewrite subr_ge0 powR_le1//= ?invr_ge0 ?(le_trans _ p1)//=;
+      first by rewrite subr_ge0 powR_le1//= ?invr_ge0 ?(le_trans _ p1)//=; lra.
+    rewrite lerBlDr lerDl powR_ge0//=.
+  + rewrite lerBlDr lerDl powR_ge0//=.
+  case dl => //=; move => h; rewrite ?hy ?h//=; apply h in p1; set (a := [[e]]_ _) in *;
+    apply h' in p1 => //=; try case: ifP; lra.
 - move: IHe1 => /(_ _ _ _ _ _ e1 erefl JMeq_refl).
   move: IHe2 => /(_ _ _ _ _ _  e2 erefl JMeq_refl).
   case: dl; rewrite /=; move => H1 H2.
@@ -833,6 +841,13 @@ Proof.
 rewrite//= !big_ord_recl !big_ord0/= !addr0 /maxr /minr; repeat case: ifP; intros; lra.
 Qed.
 
+Lemma Lukasiewicz_neg_impl (e : expr boolT_fuzzy) :
+  [[`~e]]_Lukasiewicz = [[ e `=> (dl_bool _ _ _ _ false) ]]_Lukasiewicz.
+Proof.
+have h := translate_boolT_01 p1 Lukasiewicz e.
+by rewrite /= addr0 /minr; case: ifP; lra.
+Qed.
+
 End Lukasiewicz_lemmas.
 
 Section Yager_counterexapmle.
@@ -1190,7 +1205,26 @@ Qed.
 
 Lemma Yager_involution (e : expr boolT_fuzzy) :
   [[`~ (`~e)]]_Yager = [[ e ]]_Yager.
-Proof. by rewrite /=; lra. Qed.
+Proof. 
+rewrite //=. 
+have he := translate_boolT_01 p1 Yager e.
+have h : forall (a b c : R), a - (b - c) = a - b + c. intros; lra.
+rewrite h subrr add0r -powRrM mulVf ?powRr1; 
+last by apply: lt0r_neq0; apply: (lt_le_trans _ p1); rewrite ltr01. 
+rewrite h subrr add0r -powRrM mulfV ?powRr1; try lra.
+- by apply: lt0r_neq0; apply: (lt_le_trans _ p1); rewrite ltr01.
+- rewrite lerBrDl addr0 powR_le1//=; try lra.
+  by apply: (le_trans _ p1); rewrite ler01.
+Qed.
+
+Lemma Yager_neg_impl (e : expr boolT_fuzzy) :
+  [[`~e]]_Yager = [[ e `=> (dl_bool _ _ _ _ false) ]]_Yager.
+Proof.
+have h := translate_boolT_01 p1 Yager e.
+rewrite /=; case: ifP.
+- lra.
+- move => _. rewrite subr0 -powRpinv//=.
+Qed.
 
 Lemma Yager_demorgan_mand (e1 e2 : expr boolT_fuzzy) :
   [[`~ (e1 `** e2)]]_Yager = [[(`~ e1) `++ (`~ e2)]]_Yager.
@@ -1204,6 +1238,7 @@ Proof.
 rewrite /= !big_ord_recl !big_ord0 !tnthS !tnth0 !addr0 /maxr /minr/=.
 by rewrite -!/(onem _) !onemK; repeat case: ifP; rewrite /onem; lra.
 Qed.
+
 
 End Yager_lemmas.
 
@@ -1339,6 +1374,12 @@ Proof.
 have := translate_boolT_01 p1 Godel e1.
 have := translate_boolT_01 p1 Godel e2.
 rewrite//= /minR /maxR !big_ord_recl !big_ord0 !tnthS !tnth0/= /maxr /minr; repeat case: ifP; lra.
+Qed.
+
+Lemma Godel_neg_impl (e : expr boolT_fuzzy) :
+  [[`~e]]_Godel = [[ e `=> (dl_bool _ _ _ _ false) ]]_Godel.
+Proof.
+rewrite /=; case: ifP; lra.
 Qed.
 
 End Godel_lemmas.
@@ -1511,6 +1552,12 @@ rewrite /= /product_dl_prod /product_dl_mul !big_ord_recl !big_ord0.
 case: ifP;
   rewrite ?(mulr1,mulr0,addr0,subr0,mulr0,mul0r,addr0,add0r,subr0,mulr1,oppr0) => h1/=.
 all: repeat case: ifP => /=; nra.
+Qed.
+
+Lemma product_neg_impl (e : expr boolT_fuzzy) :
+  [[`~e]]_product = [[ e `=> (dl_bool _ _ _ _ false) ]]_product.
+Proof.
+rewrite /=; case: ifP; lra.
 Qed.
 
 End product_lemmas.

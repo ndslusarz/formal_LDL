@@ -353,7 +353,9 @@ Fixpoint translation {t} (e : @expr R t) {struct e} : type_translation t :=
   | dl_not _ _ _ E1 =>
       match l with
       | Lukasiewicz => 1 - {[ E1 ]}
-      | Yager => 1 - {[ E1 ]}
+      | Yager => 1 - (1 - (1 - {[ E1 ]})`^p)`^p^-1
+
+(*1 - {[ E1 ]}*)
       | Godel => if {[ E1 ]} > 0 then 0 else 1
       | product => if {[ E1 ]} > 0 then 0 else 1
       | GodelS => 1 - {[ E1 ]}
