@@ -57,6 +57,7 @@ Require Import mathcomp_extra analysis_extra dl.
 (* - Yager_mand_unit == unit element conjunction                              *)
 (* - Yager_mor_unit == unit element monoidal disjunction                      *)
 (* - Yager_involution == involution of negation                               *)
+(* - Yager_prelinearity == prelinearity                                       *)
 (*                                                                            *)
 (* ## Structural properties for Godel                                         *)
 (* - Godel_mandI == idempotence of conjunction                                *)
@@ -1101,6 +1102,37 @@ have p_nq : forall (x : R), 1 <= x -> x != 0 by intros; lra.
 rewrite powR0 ?addr0 ?p_nq//=.
 rewrite -powRrM divff//= ?powRr1 ?p_nq//=; try lra.
 rewrite /minr; case: ifP; move => hy; lra.
+Qed.
+
+Lemma Yager_prelinearity (e1 e2 e3 : @expr R boolT_fuzzy) :
+  [[(e1 `=> e2) `\/ (e2 `=> e1)]]_Yager = [[dl_bool  _ _ _ _ true]]_Yager.
+Proof.
+rewrite//=. 
+rewrite /maxR !big_ord_recl big_ord0 tnthS !tnth0. 
+have hypo : forall (a b : R), a < b \/ b < a \/ a = b.
+  intros; lra.
+have := hypo ([[e1]]_Yager) ([[e2]]_Yager).
+move => [h | [h | h]].
+- have himpl : [[e1 `=> e2]]_Yager = 1
+    by rewrite //=; case: ifP; rewrite//=; lra.
+  rewrite himpl.
+  have := translate_boolT_01 p1 Yager (e2 `=> e1).
+  set s := ([[e2 `=> e1]]_Yager).
+  rewrite /maxr; repeat case: ifP; lra.
+- have himpl : [[e2 `=> e1]]_Yager = 1
+    by rewrite //=; case: ifP; rewrite//=; lra.
+  rewrite himpl.
+  have := translate_boolT_01 p1 Yager (e1 `=> e2).
+  set s := ([[e1 `=> e2]]_Yager).
+  rewrite /maxr; repeat case: ifP; lra.
+- have himpl : [[e2 `=> e1]]_Yager = 1.
+  rewrite //=; case: ifP; rewrite//=; try lra.
+  have p_nq : forall (x : R), 1 <= x -> x != 0 by intros; lra.
+  move => _. rewrite h//= subrr powR0 ?subr0 ?invr_neq0 ?p_nq//=. 
+  rewrite himpl.
+  have := translate_boolT_01 p1 Yager (e1 `=> e2).
+  set s := ([[e1 `=> e2]]_Yager).
+  rewrite /maxr; repeat case: ifP; lra.
 Qed.
 
 Lemma Yager_residuation (e1 e2 e3 : expr boolT_fuzzy) : (0 < p) ->
