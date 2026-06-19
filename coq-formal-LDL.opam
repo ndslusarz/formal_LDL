@@ -8,9 +8,9 @@ version: "dev"
 homepage: "https://github.com/formal-LDL/formal-LDL"
 dev-repo: "git+https://github.com/formal-LDL/formal-LDL.git"
 bug-reports: "https://github.com/formal-LDL/formal-LDL/issues"
-license: "MIT License"
+license: "MIT"
 
-synopsis: "Formalization of the Logic of Differentiable Logics (LDL) using the Rocq prover and the Mathematical Components library."
+synopsis: "Formalization of the Logic of Differentiable Logics (LDL) using the Rocq prover and the Mathematical Components library"
 description: """
 This repository contains the formalization of the Logic of
 Differentiable Logics (LDL) using the Rocq prover and the
@@ -33,7 +33,7 @@ depends: [
   "coq" 
   "rocq-mathcomp-ssreflect" {>= "2.5.0"}
   "rocq-mathcomp-analysis" {>= "1.16.0"}
-  "rocq-mathcomp-algebra-tactics" {>= "1.2.7"}
+  "coq-mathcomp-algebra-tactics" {>= "1.2.7"}
 ]
 
 tags: [
