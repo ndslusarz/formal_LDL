@@ -13,7 +13,7 @@ Follow the instructions on https://github.com/coq-community/templates to regener
 
 
 This repository contains the formalization of the Logic of
-Differentiable Logics (LDL) using the Coq proof-assistant and the
+Differentiable Logics (LDL) using the Rocq prover and the
 Mathematical Components library.
 The LDL language is defined in `ldl.v`, along with its fuzzy, DL2, STL, STLinfty
 and Boolean interpretations.  The files `fuzzy.v`, `dl2.v`,
@@ -36,13 +36,13 @@ in `stl_infty_seq_calc.v`.
   - Kathrin Stark (initial)
   - Ekaterina Komendantskaya (initial)
 - License: [MIT License](LICENSE)
-- Compatible Rocq/Coq versions: 8.20 or later
 - Additional dependencies:
-  - [MathComp](https://math-comp.github.io) 2.4.0
-  - [MathComp Analysis](https://github.com/math-comp/analysis) 1.12.0
-  - [MathComp Algebra Tactics](https://github.com/math-comp/algebra-tactics) 1.2.5
+  - [MathComp](https://math-comp.github.io)
+  - [MathComp Analysis](https://github.com/math-comp/analysis)
+  - [MathComp Algebra Tactics](https://github.com/math-comp/algebra-tactics)
 - Related publication(s):
-  - [Taming Differentiable Logics with Coq Formalisation](https://arxiv.org/abs/2403.13700) 
+  - [Taming Differentiable Logics with Coq Formalisation (arXiv)](https://arxiv.org/abs/2403.13700) 
+  - [Taming Differentiable Logics with Coq Formalisation (LIPIcs)](https://doi.org/10.4230/LIPIcs.ITP.2024.4) 
 
 ## Building and installation instructions
 
@@ -50,15 +50,19 @@ The easiest way to install the latest released version of Formalisation of Diffe
 is via [OPAM](https://opam.ocaml.org/doc/Install.html):
 
 ```shell
-opam repo add coq-released https://coq.inria.fr/opam/released
+opam repo add rocq-released https://rocq-prover.org/opam/released
 opam install coq-formal-LDL
 ```
 
-To instead build and install manually, do:
+To instead build and install manually, you need to make sure that all the
+libraries this development depends on are installed.  The easiest way to do that
+is still to rely on opam:
 
 ``` shell
 git clone https://github.com/formal-LDL/formal-LDL.git
 cd formal-LDL
+opam repo add rocq-released https://rocq-prover.org/opam/released
+opam install --deps-only .
 make   # or make -j <number-of-cores-on-your-machine> 
 make install
 ```

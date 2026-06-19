@@ -1,6 +1,6 @@
 From HB Require Import structures.
 Require Import Stdlib.Program.Equality.
-From mathcomp Require Import all_ssreflect all_algebra.
+From mathcomp Require Import all_boot all_order all_algebra.
 From mathcomp Require Import lra.
 From mathcomp Require Import all_classical reals.
 From mathcomp Require Import reals ereal interval_inference.
@@ -41,42 +41,43 @@ Local Notation "<< e >>" := (@bool_translation R _ e).
 
 Inductive seq_calc_bool_ms : {mset (@expr R (boolT_def impl_def m_undef l_def))}
   -> {mset (@expr R (boolT_def impl_def m_undef l_def))} -> Prop :=
-| init : forall (Q P : {mset (@expr R (boolT_def impl_def m_undef l_def))}) (a : @expr R (boolT_def impl_def m_undef l_def)),
-     a +` Q |= a +` P
-| bot : forall (Q P : {mset (@expr R (boolT_def impl_def m_undef l_def))}),
+| init : forall (Q P : {mset (@expr R (boolT_def impl_def m_undef l_def))})
+  (a : @expr R (boolT_def impl_def m_undef l_def)),
+    a +` Q |= a +` P
+| bot : forall Q P : {mset (@expr R (boolT_def impl_def m_undef l_def))},
     (dl_bool neg_def _ _ _ false) +` Q |= P
-| top : forall (Q P : {mset (@expr R (boolT_def impl_def m_undef l_def))}),
+| top : forall Q P : {mset (@expr R (boolT_def impl_def m_undef l_def))},
     Q |= (dl_bool neg_def _ _ _ true) +` P
-| and_R : forall (Q P : {mset (@expr R (boolT_def impl_def m_undef l_def))}) (a : @expr R (boolT_def impl_def m_undef l_def))
-                 (b : (@expr R (boolT_def impl_def m_undef l_def))),
+| and_R : forall (Q P : {mset (@expr R (boolT_def impl_def m_undef l_def))})
+  (a : @expr R (boolT_def impl_def m_undef l_def))
+  (b : @expr R (boolT_def impl_def m_undef l_def)),
     Q |= a +` P  ->  Q |= ( b) +` P ->
-      Q |=  (a `/\ b) +` P
-| andL1 :  forall (Q P : {mset (@expr R (boolT_def impl_def m_undef l_def))}) (a b : @expr R (boolT_def impl_def m_undef l_def)),
+      Q |= (a `/\ b) +` P
+| andL1 :  forall (Q P : {mset (@expr R (boolT_def impl_def m_undef l_def))})
+  (a b : @expr R (boolT_def impl_def m_undef l_def)),
     a +` Q  |= P ->
       (a `/\ b) +` Q |= P
-| andL2 :  forall (Q P : {mset (@expr R (boolT_def impl_def m_undef l_def))}) (a b : @expr R (boolT_def impl_def m_undef l_def)),
-    b +` Q  |= P ->
+| andL2 :  forall (Q P : {mset (@expr R (boolT_def impl_def m_undef l_def))})
+  (a b : @expr R (boolT_def impl_def m_undef l_def)),
+    b +` Q |= P ->
       (a `/\ b) +` Q |= P
 | orR1 : forall (Q P : {mset (@expr R (boolT_def impl_def m_undef l_def))})
                 (a : @expr R (boolT_def impl_def m_undef l_def))
-                 (b : (@expr R (boolT_def impl_def m_undef l_def))),
-    Q |=  a +` P ->
+                (b : @expr R (boolT_def impl_def m_undef l_def)),
+    Q |= a +` P ->
       Q |=  (a `\/ b) +` P
 | orR2 : forall (Q P : {mset (@expr R (boolT_def impl_def m_undef l_def))})
                 (a : @expr R (boolT_def impl_def m_undef l_def))
-                 (b : (@expr R (boolT_def impl_def m_undef l_def))),
-    Q |=  b +` P ->
-      Q |=  (a `\/ b) +` P
+                (b : @expr R (boolT_def impl_def m_undef l_def)),
+    Q |= b +` P ->
+      Q |= (a `\/ b) +` P
 | orL :  forall (Q P : {mset (@expr R (boolT_def impl_def m_undef l_def))})
                 (a : @expr R (boolT_def impl_def m_undef l_def))
-                 (b : (@expr R (boolT_def impl_def m_undef l_def))),
-    a+`Q  |= P ->  b +` Q |= P ->
-      (a `\/ b)+`Q |= P
-| negL : forall Q P a,
-    Q |= a +` P ->
-      (`~ a)+`Q|= P
+                (b : @expr R (boolT_def impl_def m_undef l_def)),
+    a+`Q |= P ->  b +` Q |= P ->
+      (a `\/ b) +` Q |= P
+| negL : forall Q P a, Q |= a +` P -> (`~ a) +` Q |= P
 where "Q |= P" := (seq_calc_bool_ms Q P).
-
 
 Lemma sound_sc_bool_mseq (Q P : {mset expr (boolT_def impl_def m_undef l_def)}) :
   Q |= P ->
@@ -92,7 +93,7 @@ Proof.
   by auto.
 - exfalso.  move: H0.
   rewrite//=. apply contrapT. rewrite  not_implyE.
-  rewrite not_andE notE. left.
+  rewrite not_andE not_notE. left.
   rewrite -existsNP.
   exists (dl_bool neg_def _ _ _ false).
   rewrite in_mset1D eqxx orTb//=.
@@ -162,9 +163,8 @@ Proof.
     by rewrite in_mset1D H2 orbT.
   + exists x. destruct y as [h1 h2].
     rewrite h2.
-    rewrite in_mset1D in h1. move/predU1P: h1 => [h1 | h3].
-    * subst. rewrite /= in H1.
-      by rewrite h2 in H1.
+    move: h1; rewrite in_mset1D => /predU1P[h1 | h3].
+    * by subst; rewrite /= h2 in H1.
     * by rewrite h3.
 Qed.
 

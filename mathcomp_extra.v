@@ -1,5 +1,5 @@
 Require Import Stdlib.Program.Equality.
-From mathcomp Require Import all_ssreflect all_algebra.
+From mathcomp Require Import all_boot all_order all_algebra.
 From mathcomp Require Import lra.
 From mathcomp Require Import perm.
 
@@ -51,7 +51,7 @@ by move=> /andP[xi _].
 Qed.
 
 (* TODO: PR to MathComp *)
-Lemma scalerN1 {R : ringType} (p : R^o) : p *: -1 = - p.
+Lemma scalerN1 {R : nzRingType} (p : R^o) : p *: -1 = - p.
 Proof. by transitivity (p * -1) => //; rewrite mulrN1. Qed.
 
 (* TODO: PR to MathComp *)

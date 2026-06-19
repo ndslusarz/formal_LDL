@@ -1,6 +1,6 @@
 From HB Require Import structures.
 Require Import Stdlib.Program.Equality.
-From mathcomp Require Import all_ssreflect all_algebra.
+From mathcomp Require Import all_boot all_order all_algebra.
 From mathcomp Require Import lra.
 From mathcomp Require Import all_classical reals.
 From mathcomp Require Import reals ereal interval_inference.
@@ -369,7 +369,7 @@ move=> H /=; dependent induction H.
     rewrite //= !eval_luka_add_el in IH2.
     rewrite //= !eval_luka_add_el//=/minr; case: ifPn => h.
     * by rewrite addrA; lra.
-    * have H1 : (eval_luka B + [[b]]_Lukasiewicz) - 1 <= (eval_luka A + [[a]]_Lukasiewicz)%E - 1 ->
+    * have H1 : (eval_luka B + [[b]]_Lukasiewicz) - 1 <= (eval_luka A + [[a]]_Lukasiewicz) - 1 ->
                 (eval_luka B + [[b]]_Lukasiewicz) - [[a]]_Lukasiewicz <= eval_luka A by intros; lra.
       apply H1 in IH2; clear H1.
       by move: h; rewrite -leNgt; lra.
@@ -2330,19 +2330,15 @@ dependent induction H.
 - apply comm_hyper_g.
   + exact: IHseq_calc_godel'1.
   + exact: IHseq_calc_godel'2.
-- by apply comm_g; exact: IHseq_calc_godel'.
-- by apply weak_g; exact: IHseq_calc_godel'.
-- by apply exL_g; exact: IHseq_calc_godel'.
-- by apply exR_g; exact: IHseq_calc_godel'.
+- by apply: comm_g; exact: IHseq_calc_godel'.
+- by apply: weak_g; exact: IHseq_calc_godel'.
+- by apply: exL_g; exact: IHseq_calc_godel'.
+- by apply: exR_g; exact: IHseq_calc_godel'.
 - exact: bot_g.
 - exact: top_g.
-- apply andL_g. by exact IHseq_calc_godel'.
-- apply andR_g.
-  + exact: IHseq_calc_godel'1.
-  + exact: IHseq_calc_godel'2.
-- apply orL_g.
-  + exact: IHseq_calc_godel'1.
-  + exact: IHseq_calc_godel'2.
+- by apply: andL_g; exact IHseq_calc_godel'.
+- by apply: andR_g; [exact: IHseq_calc_godel'1|exact: IHseq_calc_godel'2].
+- by apply: orL_g; [exact: IHseq_calc_godel'1|exact: IHseq_calc_godel'2].
 - by apply/orR_g; exact: IHseq_calc_godel'.
 - by rewrite neg_impl_godel; exact: implR_g.
 - by rewrite neg_impl_godel; exact: implL_g.

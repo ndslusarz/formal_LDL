@@ -1,6 +1,6 @@
 From HB Require Import structures.
 Require Import Stdlib.Program.Equality.
-From mathcomp Require Import all_ssreflect all_algebra perm.
+From mathcomp Require Import all_boot all_order all_algebra perm.
 From mathcomp Require Import lra.
 From mathcomp Require Import all_classical.
 From mathcomp Require Import reals ereal interval_inference.
@@ -550,7 +550,7 @@ Context {R : realType}.
 Variable M : nat.
 
 Lemma mip_at_right (p h : R) i : 0 < h ->
-  let v := (const_mx p + h *: err_vec i)%E ord0 in
+  let v := (const_mx p + h *: err_vec i) ord0 in
   \big[minr/v ord0]_(i0 < M.+2) v i0 = p.
 Proof.
 move=> h0/=.
@@ -564,7 +564,7 @@ by rewrite /minr ltNge lerDl (ltW h0).
 Qed.
 
 Lemma mip_at_left (p h : R) i : h < 0 ->
-  let v := (const_mx p + h *: err_vec i)%E ord0 in
+  let v := (const_mx p + h *: err_vec i) ord0 in
   \big[minr/v ord0]_(i < M.+2) v i = p + h.
 Proof.
 move=> h0 /=.
@@ -581,7 +581,7 @@ by rewrite !mulr0 !addr0 gtrDl h0.
 Qed.
 
 Lemma mip'_at_right (p h : R) i : h > 0 ->
-  let v := (const_mx p + h *: err_vec i)%E ord0 in
+  let v := (const_mx p + h *: err_vec i) ord0 in
   \big[minr/v ord0]_(i0 < M.+2) v i0 = p.
 Proof.
 move=> h0 /=.
@@ -595,7 +595,7 @@ by rewrite /minr ltNge lerDl (ltW h0).
 Qed.
 
 Lemma mip'_at_left (p h : R) i : h < 0 ->
-  let v := (const_mx p + h *: err_vec i)%E ord0 in
+  let v := (const_mx p + h *: err_vec i) ord0 in
   \big[minr/v ord0]_(i0 < M.+2) v i0 = p + h.
 Proof.
 move=> h0 /=.
@@ -738,7 +738,8 @@ Lemma shadowlifting_stl_and_gt0_cvg (p : R) i : 0 < p ->
   (stl_and_gt0 (fun_of_rV M.+1 (const_mx p + h *: err_vec i)) -
    stl_and_gt0 (fun_of_rV M.+1 (const_mx p))) @[h --> 0^'] --> (M.+2%:R : R)^-1.
 Proof.
-move=> p0; apply/cvg_at_right_left_dnbhs.
+move=> p0.
+apply/(@cvg_at_right_left_dnbhs R R^o).
 - exact/shadowlifting_stl_and_gt0_cvg_at_right.
 - exact/shadowlifting_stl_and_gt0_cvg_at_left.
 Qed.
@@ -1028,8 +1029,8 @@ rewrite [X in normr (_ - X)](_ : _ =
     rewrite !mulrDr (mulrC (a x) (_ / _)) -(mulrA x) (@mulVf _ (a x))// mulr1.
     by rewrite !mulrN {1}(mulrC (a x)) [in RHS](mulrC (a x)) -!mulrA (mulrC p).
   rewrite -addrAC mulrDr (mulrC (a x) (_ / _)) -(mulrA x) (@mulVf _ (a x))// mulr1.
-  rewrite mulrA (mulrDr (x^-1)) mulrDl addrC.
-  congr (_ + _).
+  rewrite [in LHS]mulrA [in LHS](mulrDr (x^-1)) [in LHS]mulrDl [in RHS]addrC.
+  congr (_ + _); last first.
     by rewrite mulVf// mul1r.
   rewrite !invfM// (mulrC (a x)) !mulrA; congr (_/_).
   rewrite -mulrA mulfV// mulr1 mulrC; congr (_/_).
@@ -1102,7 +1103,7 @@ have H2 : (*(expR (nu * (x / (x + p))) + M.+1%:R +
   rewrite -[X in _ --> X](add0r p).
   apply: cvgD; last exact: cvg_cst.
   exact/continuous_withinNx/cvg_id.
-have M10 : (1%R + M.+1%:R)%E != 0 :> R by rewrite gt_eqF.
+have M10 : 1 + M.+1%:R != 0 :> R by rewrite gt_eqF.
 have [e/= e0 ep] := @cvgr_neq0 _ _ _ _ (dnbhs_filter 0) _ _ H2 M10.
 near (0:R)^'+ => q.
 apply: (@lhopital_at_left R _ (num' p) _ (den' p) (- q)).
@@ -1198,7 +1199,7 @@ Lemma shadowlifting_stl_and_lt0_cvg (p : R) i : p > 0 ->
   (stl_and_lt0 (fun_of_rV M.+1 (const_mx p + h *: err_vec i)) -
    stl_and_lt0 (fun_of_rV M.+1 (const_mx p))) @[h --> 0^'] --> (M.+2%:R : R)^-1.
 Proof.
-move=> p0; apply/cvg_at_right_left_dnbhs.
+move=> p0; apply/(@cvg_at_right_left_dnbhs R R^o).
 - exact/shadowlifting_stl_and_lt0_cvg_at_right.
 - exact/shadowlifting_stl_and_lt0_cvg_at_left.
 Unshelve. all: end_near. Qed.

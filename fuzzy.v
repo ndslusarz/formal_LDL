@@ -1,6 +1,7 @@
 From HB Require Import structures.
 Require Import Stdlib.Program.Equality.
-From mathcomp Require Import all_ssreflect all_algebra.
+From mathcomp Require Import all_boot all_order all_algebra.
+From mathcomp Require Import unstable.
 From mathcomp Require Import lra.
 From mathcomp Require Import all_classical reals ereal interval_inference.
 From mathcomp Require Import topology derive.
@@ -187,7 +188,7 @@ dependent induction e using expr_ind'.
     intros.
     have h : forall (a b: R), (0 <= a <= 1) ->
                               0 <= b <= 1 ->
-                              0 <= ((1 - a)%R + b)%E. intros. lra.
+                              0 <= ((1 - a)%R + b). intros. lra.
     have h' := @h ([[e1]]_Lukasiewicz) ([[e2]]_Lukasiewicz) (H2 _ p1) (H1 _ p1). lra.
   + rewrite /minr. repeat case: ifP; first by lra.
     have p0 : 0 <= p by rewrite (le_trans ler01 p1).

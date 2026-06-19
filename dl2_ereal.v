@@ -1,6 +1,6 @@
 From HB Require Import structures.
 Require Import Stdlib.Program.Equality.
-From mathcomp Require Import all_ssreflect all_algebra.
+From mathcomp Require Import all_boot all_order all_algebra.
 From mathcomp Require Import lra perm.
 From mathcomp Require Import all_classical.
 From mathcomp Require Import reals ereal interval_inference.

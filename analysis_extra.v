@@ -1,9 +1,10 @@
 From HB Require Import structures.
-From mathcomp Require Import all_ssreflect ssralg ssrnum matrix interval.
+From mathcomp Require Import all_boot all_order ssralg ssrnum matrix interval.
+From mathcomp Require Import unstable.
 From mathcomp Require Import mathcomp_extra boolp classical_sets functions.
-From mathcomp Require Import reals topology prodnormedzmodule.
-From mathcomp Require Import constructive_ereal ereal normedtype ereal_normedtype landau forms.
-From mathcomp Require Import derive sequences exp realfun.
+From mathcomp Require Import reals constructive_ereal.
+From mathcomp Require Import topology prodnormedzmodule ereal normedtype
+  ereal_normedtype landau derive sequences exp realfun.
 From mathcomp Require Import lra.
 
 (**md**************************************************************************)
@@ -22,6 +23,7 @@ From mathcomp Require Import lra.
 (*                                                                            *)
 (******************************************************************************)
 
+Unset SsrOldRewriteGoalsOrder.  (* remove the line when requiring MathComp >= 2.6 *)
 Set Implicit Arguments.
 Unset Strict Implicit.
 Unset Printing Implicit Defensive.
@@ -538,14 +540,12 @@ Proof.
 move: x => [x| |]//=.
 - by rewrite lte_fin => /eqP; rewrite sgr_cp0.
 - by move=> /eqP; rewrite -subr_eq0 opprK -(natrD _ 1%N 1%N) pnatr_eq0.
-- by move => _; rewrite ltNge//=.
 Qed.
 
 Lemma sge1_gt0 {R : realDomainType} (x : \bar R) : sge x = 1 -> (0 < x)%E.
 Proof.
 move: x => [x| |]//=.
 - by rewrite lte_fin => /eqP; rewrite sgr_cp0.
-- by move => _; rewrite ltNge//=.
 - by move=> /eqP; rewrite eq_sym -subr_eq0 opprK -(natrD _ 1%N 1%N) pnatr_eq0.
 Qed.
 
@@ -578,7 +578,7 @@ Lemma prodeN1 (T : eqType) (l : seq T) (f : T -> \bar R) :
   sge (\big[*%E/1%E]_(e <- l) f e) = ((- 1) ^+ (size l))%R.
 Proof.
 elim: l => [|h t ih H]; first by rewrite big_nil/= expr0 sgr1.
-rewrite big_cons sgeM ih/=; last first.
+rewrite big_cons sgeM ih/=.
   by move=> e et; rewrite H// inE et orbT.
 by rewrite exprS lte0_sg// H// mem_head.
 Qed.
@@ -591,7 +591,7 @@ elim: r => [|a r ihr hr] /=; rewrite (big_nil, big_cons); first by rewrite eqxx.
 case: ifPn => pa /=; last exact: ihr.
 have [Fa0|Fa0/=] := eqVneq (F a) 0; first by rewrite Fa0 add0r/= ihr.
 by apply/negbTE; rewrite padde_eq0;
-  [rewrite negb_and Fa0|exact: hr|exact: sume_ge0].
+  [exact: hr|exact: sume_ge0|rewrite negb_and Fa0].
 Qed.
 
 Lemma prode_le0 (A : Type) (l : seq A) (f: A -> \bar R) :
@@ -627,8 +627,7 @@ Lemma sume_lt0 (I : eqType) (r : seq I) (P : pred I) (F : I -> \bar R) :
 Proof.
 elim: r; first by move=> _ [x []]; rewrite in_nil.
 move=> a l IH .
-have [->//|] := eqVneq (\sum_(i <- (a :: l) | P i) F i) -oo;
-first by move => _; rewrite ltNge//=.
+have [->//|] := eqVneq (\sum_(i <- (a :: l) | P i) F i) -oo.
 rewrite !big_cons.
 case: ifPn => Pa sumnoo Fi_le0 [x []].
   move: sumnoo; rewrite adde_eq_ninfty negb_or => /andP[Fanoo sumnoo].
@@ -677,10 +676,10 @@ Lemma derive_comp (f g : R^o -> R^o) x :
   derivable f x 1 -> derivable g (f x) 1 ->
   'D_1 (g \o f) x = 'D_1 g (f x) * 'D_1 f x.
 Proof.
-move=> fx1 gfx1; rewrite -derive1E derive1_comp; last 2 first.
-  exact: fx1.
-  exact: gfx1.
-by rewrite !derive1E.
+move=> fx1 gfx1; rewrite -derive1E derive1_comp.
+- exact: fx1.
+- exact: gfx1.
+- by rewrite !derive1E.
 Qed.
 
 End derive.
@@ -699,14 +698,14 @@ Section partial.
 Context {R : realType}.
 Variables (n : nat) (f : 'rV[R]_n.+1 -> R).
 
-Definition err_vec {R : ringType} (i : 'I_n.+1) : 'rV[R]_n.+1 :=
+Definition err_vec {R : pzRingType} (i : 'I_n.+1) : 'rV[R]_n.+1 :=
   \row_(j < n.+1) (i == j)%:R.
 
 Definition partial (i : 'I_n.+1) (a : 'rV[R]_n.+1) :=
   lim (h^-1 * (f (a + h *: err_vec i) - f a) @[h --> (0:R)^']).
 
 Lemma partialE (i : 'I_n.+1) (a : 'rV[R]_n.+1) :
-  partial i a = 'D_(err_vec i) f a .
+  partial i a = 'D_(err_vec i) f a.
 Proof.
 rewrite /partial /derive/=.
 by under eq_fun do rewrite (addrC a).
@@ -717,7 +716,7 @@ Notation "'d f '/d i" := (partial f i).
 
 Lemma monotonous_bounded_is_cvg {R : realType} (f : R -> R) x y :
   (BRight x < y)%O ->
-  monotonous ([set` Interval (BRight x)(*NB(rei): was BSide b x*) y]) f ->
+  monotonic ([set` Interval (BRight x)(*NB(rei): was BSide b x*) y]) f ->
   has_ubound (f @` setT) -> has_lbound (f @` setT) ->
   cvg (f x @[x --> x^'+]).
 Proof.

@@ -4,17 +4,15 @@ shortname: formal-LDL
 organization: formal-LDL
 community: false
 action: true
-nix: false
 coqdoc: false
-dune: false
 
 synopsis:
-  Formalization of the Logic of Differentiable Logics (LDL) using the Coq proof-assistant
+  Formalization of the Logic of Differentiable Logics (LDL) using the Rocq prover
   and the Mathematical Components library.
 
 description: |-
   This repository contains the formalization of the Logic of
-  Differentiable Logics (LDL) using the Coq proof-assistant and the
+  Differentiable Logics (LDL) using the Rocq prover and the
   Mathematical Components library.
   The LDL language is defined in `ldl.v`, along with its fuzzy, DL2, STL, STLinfty
   and Boolean interpretations.  The files `fuzzy.v`, `dl2.v`,
@@ -30,7 +28,10 @@ description: |-
 
 publications:
 - pub_url: https://arxiv.org/abs/2403.13700
-  pub_title: Taming Differentiable Logics with Coq Formalisation
+  pub_title: Taming Differentiable Logics with Coq Formalisation (arXiv)
+- pub_url: https://doi.org/10.4230/LIPIcs.ITP.2024.4
+  pub_title: Taming Differentiable Logics with Coq Formalisation (LIPIcs)
+
 
 authors:
 - name: Reynald Affeldt
@@ -59,24 +60,28 @@ license:
   identifier: MIT License
   file: LICENSE
 
-supported_coq_versions:
-  text: 8.20 or later
-  opam: '{ (>= "8.20") | (= "dev") }'
+supported_rocq_versions:
+  text: 9.1.1 or later
+  opam: '{ (>= "9.1.1") | (= "dev") }'
+
+tested_rocq_opam_versions:
+- version: '9.1.1'
+  repo: rocq/rocq-prover
 
 dependencies:
 - opam:
-    name: coq-mathcomp-ssreflect
-    version: '{>= "2.4.0"}'
+    name: rocq-mathcomp-ssreflect
+    version: '{>= "2.5.0"}'
   description: |-
-    [MathComp](https://math-comp.github.io) 2.4.0
+    [MathComp](https://math-comp.github.io)
 - opam:
-    name: coq-mathcomp-analysis
-    version: '{>= "1.12.0"}'
+    name: rocq-mathcomp-analysis
+    version: '{>= "1.16.0"}'
   description: |-
-    [MathComp Analysis](https://github.com/math-comp/analysis) 1.12.0
+    [MathComp Analysis](https://github.com/math-comp/analysis)
 - opam:
-    name: coq-mathcomp-algebra-tactics
-    version: '{>= "1.2.5"}'
+    name: rocq-mathcomp-algebra-tactics
+    version: '{>= "1.2.7"}'
   description: |-
-    [MathComp Algebra Tactics](https://github.com/math-comp/algebra-tactics) 1.2.5
+    [MathComp Algebra Tactics](https://github.com/math-comp/algebra-tactics)
 ---
