@@ -8,7 +8,7 @@ coqdoc: false
 
 synopsis:
   Formalization of the Logic of Differentiable Logics (LDL) using the Rocq prover
-  and the Mathematical Components library.
+  and the Mathematical Components library
 
 description: |-
   This repository contains the formalization of the Logic of
@@ -31,7 +31,6 @@ publications:
   pub_title: Taming Differentiable Logics with Coq Formalisation (arXiv)
 - pub_url: https://doi.org/10.4230/LIPIcs.ITP.2024.4
   pub_title: Taming Differentiable Logics with Coq Formalisation (LIPIcs)
-
 
 authors:
 - name: Reynald Affeldt
@@ -57,7 +56,7 @@ opam-file-maintainer: Natalia Ślusarz
 
 license:
   fullname: MIT License
-  identifier: MIT License
+  identifier: MIT
   file: LICENSE
 
 supported_rocq_versions:
@@ -80,7 +79,7 @@ dependencies:
   description: |-
     [MathComp Analysis](https://github.com/math-comp/analysis)
 - opam:
-    name: rocq-mathcomp-algebra-tactics
+    name: coq-mathcomp-algebra-tactics
     version: '{>= "1.2.7"}'
   description: |-
     [MathComp Algebra Tactics](https://github.com/math-comp/algebra-tactics)

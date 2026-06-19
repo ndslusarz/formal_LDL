@@ -1,0 +1,48 @@
+# This file was generated from `meta.yml`, please do not edit manually.
+# Follow the instructions on https://github.com/coq-community/templates to regenerate.
+
+opam-version: "2.0"
+maintainer: "Natalia Ślusarz"
+version: "dev"
+
+homepage: "https://github.com/formal-LDL/formal-LDL"
+dev-repo: "git+https://github.com/formal-LDL/formal-LDL.git"
+bug-reports: "https://github.com/formal-LDL/formal-LDL/issues"
+license: "MIT"
+
+synopsis: "Formalization of the Logic of Differentiable Logics (LDL) using the Rocq prover and the Mathematical Components library"
+description: """
+This repository contains the formalization of the Logic of
+Differentiable Logics (LDL) using the Rocq prover and the
+Mathematical Components library.
+The LDL language is defined in `ldl.v`, along with its fuzzy, DL2, STL, STLinfty
+and Boolean interpretations.  The files `fuzzy.v`, `dl2.v`,
+`dl2_ereal.v`, `stl.v`, `stl_ereal.v` and `stl_infty.v` contain the relevant theorems
+that hold for each interpretation: structural properties based on
+residuated lattices (idempotence,
+commutativity and associativity of operators, residuation, prelinearity etc.),
+ adequacy, and shadow-lifting.
+
+The formalisation of soundness of hypersequent calculi for fuzzy logics can
+be found in file `seq_calc.v`, for DL2 in `dl2_seq_calc.v` and for STLinfty
+in `stl_infty_seq_calc.v`."""
+
+build: [make "-j%{jobs}%"]
+install: [make "install"]
+depends: [
+  "coq" 
+  "rocq-mathcomp-ssreflect" {>= "2.5.0"}
+  "rocq-mathcomp-analysis" {>= "1.16.0"}
+  "coq-mathcomp-algebra-tactics" {>= "1.2.7"}
+]
+
+tags: [
+  "logpath:"
+]
+authors: [
+  "Reynald Affeldt"
+  "Alessandro Bruni"
+  "Natalia Ślusarz"
+  "Kathrin Stark"
+  "Ekaterina Komendantskaya"
+]
