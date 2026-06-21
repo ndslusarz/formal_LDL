@@ -12,10 +12,6 @@ Follow the instructions on https://github.com/coq-community/templates to regener
 
 
 
-[![Docker CI][docker-action-shield]][docker-action-link]
-[docker-action-shield]: https://github.com/ndslusarz/formal_LDL/actions/workflows/docker-action.yml/badge.svg?branch=master
-[docker-action-link]: https://github.com/ndslusarz/formal_LDL/actions?query=branch%3Amaster+event%3Apush
-
 This repository contains the formalization of the Logic of
 Differentiable Logics (LDL) using the Rocq prover and the
 Mathematical Components library.
