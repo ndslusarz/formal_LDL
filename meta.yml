@@ -11,6 +11,10 @@ synopsis:
   and the Mathematical Components library
 
 description: |-
+  [![Docker CI][docker-action-shield]][docker-action-link]
+  [docker-action-shield]: https://github.com/ndslusarz/formal_LDL/actions/workflows/docker-action.yml/badge.svg?branch=master
+  [docker-action-link]: https://github.com/ndslusarz/formal_LDL/actions?query=branch%3Amaster+event%3Apush
+
   This repository contains the formalization of the Logic of
   Differentiable Logics (LDL) using the Rocq prover and the
   Mathematical Components library.
@@ -64,8 +68,8 @@ supported_rocq_versions:
   opam: '{ (>= "9.1.1") | (= "dev") }'
 
 tested_rocq_opam_versions:
-- version: '9.1.1'
-  repo: rocq/rocq-prover
+- version: '2.5.0-rocq-prover-9.1'
+  repo: 'mathcomp/mathcomp'
 
 dependencies:
 - opam:

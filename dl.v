@@ -107,20 +107,28 @@ Inductive expr : dl_type -> Type :=
   | dl_real : R -> expr realT
   | dl_vec : forall n, R ^ n -> expr (vectorT n)
   (* connectives *)
-  | dl_and : forall fn fi fm n, ('I_n -> expr (boolT fn fi fm l_def)) -> expr (boolT fn fi fm l_def)
-  | dl_or : forall fn fi fm n, ('I_n -> expr (boolT fn fi fm l_def)) -> expr (boolT fn fi fm l_def)
-  | dl_not : forall fi fm fl, expr (boolT neg_def fi fm fl) -> expr (boolT neg_def  fi fm fl)
-  | dl_impl :forall fn fm fl, expr (boolT fn impl_def fm fl)
-                               -> expr (boolT fn impl_def fm fl) -> expr (boolT fn impl_def fm fl)
-  | dl_mand : forall fn fi fl n, ('I_n -> expr (boolT fn fi m_def fl)) -> expr (boolT fn fi m_def fl)
-  | dl_mor : forall fn fi fl n, ('I_n -> expr (boolT fn fi m_def fl)) -> expr (boolT fn fi m_def fl)
+  | dl_and : forall fn fi fm n, ('I_n -> expr (boolT fn fi fm l_def)) ->
+      expr (boolT fn fi fm l_def)
+  | dl_or : forall fn fi fm n, ('I_n -> expr (boolT fn fi fm l_def)) ->
+      expr (boolT fn fi fm l_def)
+  | dl_not : forall fi fm fl, expr (boolT neg_def fi fm fl) ->
+      expr (boolT neg_def fi fm fl)
+  | dl_impl : forall fn fm fl, expr (boolT fn impl_def fm fl) ->
+      expr (boolT fn impl_def fm fl) ->
+      expr (boolT fn impl_def fm fl)
+  | dl_mand : forall fn fi fl n, ('I_n -> expr (boolT fn fi m_def fl)) ->
+      expr (boolT fn fi m_def fl)
+  | dl_mor : forall fn fi fl n, ('I_n -> expr (boolT fn fi m_def fl)) ->
+      expr (boolT fn fi m_def fl)
   (* comparisons *)
-  | dl_cmp : forall fn fi fm fl, comparison -> expr realT -> expr realT -> expr (boolT fn fi fm fl)
+  | dl_cmp : forall fn fi fm fl, comparison -> expr realT -> expr realT ->
+      expr (boolT fn fi fm fl)
   (* networks and applications *)
   | dl_fun : forall n m, (R ^ n -> R ^ m) -> expr (funT n m)
   | dl_fun2 : forall n m l, (R ^ n -> R ^ m -> R ^ l) -> expr (fun2T n m l)
   | dl_app : forall n m, expr (funT n m) -> expr (vectorT n) -> expr (vectorT m)
-  | dl_app2 : forall n m l, expr (fun2T n m l) -> expr (vectorT n) -> expr (vectorT m) -> expr (vectorT l)
+  | dl_app2 : forall n m l, expr (fun2T n m l) -> expr (vectorT n) ->
+      expr (vectorT m) -> expr (vectorT l)
   | dl_lookup : forall n, expr (vectorT n) -> expr (indexT n) -> expr realT.
 
 End expr.
@@ -207,7 +215,7 @@ Context {R : realType}.
 
 Definition type_translation (t : dl_type) : Type :=
   match t with
-  | boolT x y z v  => R
+  | boolT x y z v => R
   | realT => R
   | vectorT n => R ^ n
   | indexT n => 'I_n
@@ -563,33 +571,29 @@ Variables (p : R) (nu : R).
 Hypothesis p1 : 1 <= p.
 Hypothesis nu0 : 0 < nu.
 
-Definition stl_and_gt0 n (v : 'I_n.+1 -> R) :=
-  (\sum_(a < n.+1) v a * expR (- nu * min_dev a v)) /
-    \sum_(a < n.+1) expR (-nu * min_dev a v).
+Definition stl_and_gt0 n (f : 'I_n.+1 -> R) :=
+  (\sum_(i < n.+1) f i * expR (- nu * min_dev i f)) /
+    \sum_(i < n.+1) expR (- nu * min_dev i f).
 
-Definition stl_and_lt0 n (v : 'I_n.+1 -> R) :=
+Definition stl_and_lt0 n (f : 'I_n.+1 -> R) :=
+  (\sum_(i < n.+1)
+    (\big[minr/f ord0]_(i < n.+1) f i) * expR (min_dev i f) * expR (nu * min_dev i f)) /
+  \sum_(i < n.+1) expR (nu * min_dev i f).
+
+Definition stl_or_gt0 n (f : 'I_n.+1 -> R) :=
   (\sum_(a < n.+1)
-    (\big[minr/v ord0]_(i < n.+1) v i) * expR (min_dev a v) * expR (nu * min_dev a v)) /
-      \sum_(a < n.+1) expR (nu * min_dev a v).
+    (\big[maxr/f ord0]_(i < n.+1) f i) * expR (max_dev a f) * expR (nu * max_dev a f)) /
+    (\sum_(a < n.+1) expR (nu * max_dev a f)).
 
-Definition stl_or_gt0 n (v : 'I_n.+1 -> R) :=
-  (\sum_(a < n.+1)
-    (\big[maxr/v ord0]_(i < n.+1) v i) * expR (max_dev a v) * expR (nu * max_dev a v)) /
-    (\sum_(a < n.+1) expR (nu * max_dev a v)).
+Definition stl_or_lt0 n (f : 'I_n.+1 -> R) :=
+  (\sum_(a < n.+1) f a * expR (-nu * max_dev a f)) /
+    (\sum_(a < n.+1) expR (nu * max_dev a f)).
 
-Definition stl_or_lt0 n (v : 'I_n.+1 -> R) :=
-  (\sum_(a < n.+1) v a * expR (-nu * max_dev a v)) /
-    (\sum_(a < n.+1) expR (nu * max_dev a v)).
+Definition stl_and (r : R) n (f : 'I_n.+1 -> R) : R :=
+  if r < 0 then stl_and_lt0 f else if r > 0 then stl_and_gt0 f else 0.
 
-Definition stl_and (a_min : R) n (t : 'I_n.+1 -> R) : R :=
-  if a_min < 0 then stl_and_lt0 t
-  else if a_min > 0 then stl_and_gt0 t
-  else 0.
-
-Definition stl_or (a_max : R) n (t : 'I_n.+1 -> R) : R :=
-  if a_max > 0 then stl_or_gt0 t
-  else if a_max < 0 then stl_or_lt0 t
-  else 0.
+Definition stl_or (r : R) n (f : 'I_n.+1 -> R) : R :=
+  if r > 0 then stl_or_gt0 f else if r < 0 then stl_or_lt0 f else 0.
 
 Fixpoint stl_translation {t} (e : expr t) : type_translation t :=
   match e in expr t return type_translation t with
@@ -601,21 +605,19 @@ Fixpoint stl_translation {t} (e : expr t) : type_translation t :=
 
   | dl_and _ _ _ 0 _ => 1
   | dl_and _ _ _ n.+1 s =>
-      let A := stl_translation \o s in
-      let a_min : R := \big[minr/A ord0]_(i < n.+1) A i in
-      stl_and a_min A
+      let f := stl_translation \o s in
+      stl_and (\big[minr/f ord0]_(i < n.+1) f i) f
   | dl_or _ _ _ 0 _ => -1
   | dl_or _ _ _ n.+1 s =>
-      let A := stl_translation \o s in
-      let a_max: R := \big[maxr/A ord0]_(i < n.+1) A i in
-      stl_or a_max A
+      let f := stl_translation \o s in
+      stl_or (\big[maxr/f ord0]_(i < n.+1) f i) f
   | dl_mand _ _ _ _ _ => 0 (* default value, all lemmas are for monoid-free formulas *)
   | dl_mor _ _ _ _ _ => 0 (* default value, all lemmas are for monoid-free formulas *)
-  | `~ E1 => - {[ E1 ]}
-  | E1 `=> E2 => 0 (* default value, all lemmas are for implication-free formulas *)
+  | `~ e1 => - {[ e1 ]}
+  | e1 `=> e2 => 0 (* default value, all lemmas are for implication-free formulas *)
 
-  | E1 `== E2 => - `| {[ E1 ]} - {[ E2 ]}|
-  | E1 `<= E2 => {[ E2 ]} - {[ E1 ]}
+  | e1 `== e2 => - `| {[ e1 ]} - {[ e2 ]} |
+  | e1 `<= e2 => {[ e2 ]} - {[ e1 ]}
 
   | dl_fun n m f => f
   | dl_fun2 n m l f => f
@@ -652,21 +654,19 @@ Fixpoint stl_infty_translation {t} (e : @expr R t) {struct e} : ereal_type_trans
   | dl_vec n t => t
 
   | dl_and _ _ _ 0 _ => 0
-  | dl_and _ _ _ n.+1 Es  => \big[mine/+oo]_(i < n.+1) stl_infty_translation (Es i)
+  | dl_and _ _ _ n.+1 es => \big[mine/+oo]_(i < n.+1) stl_infty_translation (es i)
   | dl_or _ _ _ 0 _ => 0
-  | dl_or _ _ _ n.+1 Es  => \big[maxe/-oo]_(i < n.+1) stl_infty_translation (Es i)
+  | dl_or _ _ _ n.+1 es  => \big[maxe/-oo]_(i < n.+1) stl_infty_translation (es i)
   | dl_mand _ _ _ 0 _ => 0
-  | dl_mand _ _ _ n.+1 Es  => \big[mine/+oo]_(i < n.+1) stl_infty_translation (Es i)
+  | dl_mand _ _ _ n.+1 es => \big[mine/+oo]_(i < n.+1) stl_infty_translation (es i)
   | dl_mor _ _ _ 0 _ => 0
-  | dl_mor _ _ _ n.+1 Es => \big[maxe/-oo]_(i < n.+1) stl_infty_translation (Es i)
+  | dl_mor _ _ _ n.+1 es => \big[maxe/-oo]_(i < n.+1) stl_infty_translation (es i)
 
-  | dl_not _ _ _ E1 => - {[ E1 ]}
-  | dl_impl _ _ _ E1 E2 =>
-      if {[ E1 ]} <= {[ E2 ]} then +oo
-      else {[ E2 ]}
+  | dl_not _ _ _ e1 => - {[ e1 ]}
+  | dl_impl _ _ _ e1 e2 => if {[ e1 ]} <= {[ e2 ]} then +oo else {[ e2 ]}
 
-  | E1 `== E2 => (- `| {[ E1 ]} - {[ E2 ]}|)%:E
-  | E1 `<= E2 => ({[ E2 ]} - {[ E1 ]})%:E
+  | e1 `== e2 => (- `| {[ e1 ]} - {[ e2 ]}|)%:E
+  | e1 `<= e2 => ({[ e2 ]} - {[ e1 ]})%:E
 
   | dl_fun n m f => f
   | dl_fun2 n m l f => f
