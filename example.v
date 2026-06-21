@@ -33,16 +33,17 @@ Local Open Scope classical_set_scope.
 Section example_robust.
 Local Open Scope dl_scope.
 Context {R : realType}.
-
 Local Notation expr := (@expr R).
 
-Let dl_norm_infty n : expr (funT n.+1 1) := dl_fun
-  (fun t : R ^ n.+1 => [ffun x : 'I_1 => \big[maxr/t 0]_(i < n.+1) t i ])%R.
+Let dl_norm_infty' n : R ^ n.+1 -> R ^ 1 :=
+  (fun f => [ffun _ => \big[maxr/f 0]_(i < n.+1) `|f i|])%R.
+Let dl_norm_infty n : expr (funT n.+1 1) := dl_fun (@dl_norm_infty' n).
 Let idx0 := @dl_idx R 1 ord0.
 Local Notation "'`|' v '|'" := ((dl_norm_infty _ `@ v) `! idx0).
 
-Let dl_vec_sub n :=
-  dl_fun2 (fun (x y : R ^ n) => [ffun i => x i - y i]%R).
+Let dl_vec_sub' n : R ^ n -> R ^ n -> R ^ n :=
+  fun x y : R ^ n => [ffun i => x i - y i]%R.
+Let dl_vec_sub n : expr (fun2T n n n) := dl_fun2 (@dl_vec_sub' n).
 Local Notation "x `- y" := (dl_vec_sub _ `@2 (x, y)) (at level 42).
 
 Lemma dl_vec_sub0 n (e : expr (vectorT n)) :
@@ -50,8 +51,9 @@ Lemma dl_vec_sub0 n (e : expr (vectorT n)) :
 Proof.
 by dependent induction e => /=; apply/ffunP => i; rewrite !ffunE/= subr0.
 Qed.
+
 Context {n m : nat} (eps delta : expr realT) (f : expr (funT n.+1 m.+1))
-  (v : expr (vectorT n.+1)) (x : expr (vectorT n.+1)).
+  (x v : expr (vectorT n.+1)).
 
 Definition eps_delta_robust fn fm fl : expr (boolT fn impl_def fm fl) :=
   `| x `- v | `<= eps `=> `| (f `@ x) `- (f `@ v) | `<= delta.
