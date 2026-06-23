@@ -33,8 +33,6 @@ in `stl_infty_seq_calc.v`.
   - Reynald Affeldt (initial)
   - Alessandro Bruni (initial)
   - Natalia Ślusarz (initial)
-  - Kathrin Stark (initial)
-  - Ekaterina Komendantskaya (initial)
 - License: [MIT License](LICENSE)
 - Additional dependencies:
   - [MathComp](https://math-comp.github.io)
