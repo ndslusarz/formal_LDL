@@ -34,32 +34,44 @@ Section example_robust.
 Local Open Scope dl_scope.
 Context {R : realType}.
 Local Notation expr := (@expr R).
+Local Open Scope ring_scope.
 
 Let dl_norm_infty' n : R ^ n.+1 -> R ^ 1 :=
-  (fun f => [ffun _ => \big[maxr/f 0]_(i < n.+1) `|f i|])%R.
+  fun f => [ffun _ => \big[maxr/f 0]_(i < n.+1) `|f i|].
 Let dl_norm_infty n : expr (funT n.+1 1) := dl_fun (@dl_norm_infty' n).
-Let idx0 := @dl_idx R 1 ord0.
-Local Notation "'`|' v '|'" := ((dl_norm_infty _ `@ v) `! idx0).
+Let idx0 := @dl_idx R 1 0.
+Local Notation "'`|' v '|'" := ((dl_norm_infty _ `@ v) `! idx0) : dl_scope.
 
 Let dl_vec_sub' n : R ^ n -> R ^ n -> R ^ n :=
-  fun x y : R ^ n => [ffun i => x i - y i]%R.
+  fun x y : R ^ n => [ffun i => x i - y i].
 Let dl_vec_sub n : expr (fun2T n n n) := dl_fun2 (@dl_vec_sub' n).
-Local Notation "x `- y" := (dl_vec_sub _ `@2 (x, y)) (at level 42).
+Local Notation "x `- y" := (dl_vec_sub _ `@2 (x, y)) (at level 61) : dl_scope.
 
 Lemma dl_vec_sub0 n (e : expr (vectorT n)) :
-  [[ (dl_vec_sub n) `@2 (e, dl_vec [ffun x => 0%R]) ]]_B = [[ e ]]_B.
+  [[ (dl_vec_sub n) `@2 (e, dl_vec [ffun _ => 0]) ]]_B = [[ e ]]_B.
 Proof.
 by dependent induction e => /=; apply/ffunP => i; rewrite !ffunE/= subr0.
 Qed.
 
-Context {n m : nat} (eps delta : expr realT) (f : expr (funT n.+1 m.+1))
+Context {n m : nat} (eps delta : expr realT) (N : expr (funT n.+1 m.+1))
   (x v : expr (vectorT n.+1)).
 
-Definition eps_delta_robust fn fm fl : expr (boolT fn impl_def fm fl) :=
-  `| x `- v | `<= eps `=> `| (f `@ x) `- (f `@ v) | `<= delta.
+Definition eps_delta_robust : expr (boolT neg_undef impl_def m_undef l_undef) :=
+  (`| x `- v | `<= eps `=> `| N `@ x `- N `@ v | `<= delta)%DL.
 
-Let eps_delta_robust_dl2 := ([[ eps_delta_robust neg_undef m_undef l_undef ]]_dl2).
-Compute eps_delta_robust_dl2.
+Lemma eps_delta_robust_dl2E : [[ eps_delta_robust ]]_dl2 =
+  - maxr (- maxr ( [[ `| x `- v |%DL ]]_dl2 - [[ eps ]]_dl2) 0 +
+            maxr ( [[ `| N `@ x `- N `@ v |%DL ]]_dl2 - [[ delta ]]_dl2) 0) 0.
+Proof.
+transitivity (
+  - maxr ([[ `|x `- v| `<= eps : expr (boolT neg_undef impl_def m_undef l_undef) ]]_dl2%DL -
+       [[ `|(N `@ x) `- (N `@ v)| `<= delta : expr (boolT neg_undef impl_def m_undef l_undef) ]]_dl2%DL) 0).
+  by [].
+rewrite /=.
+congr (- maxr _ _).
+rewrite opprK.
+by congr (- maxr (_ - _) 0 + maxr (_ - _) 0).
+Qed.
 
 End example_robust.
 
@@ -72,6 +84,6 @@ Definition group_confidence n m x y z eps
     (idx_ : (expr (indexT m.+1)) ^ n) :=
   @dl_and R x y z _
     (fun i => (((dl_app f v) `! (idx_ i)) `<= dl_real eps) `/\
-           ((dl_real (1-eps)) `<= (dl_app f v) `! (idx_ i))).
+           ((dl_real (1 - eps)) `<= (dl_app f v) `! (idx_ i))).
 
 End example_hierarchical.

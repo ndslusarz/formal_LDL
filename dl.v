@@ -451,10 +451,10 @@ Fixpoint dl2_translation {t} (e : @expr R t) {struct e} : type_translation t :=
 
   | dl_and _ _ _ 0 _ => 0
   | dl_and _ _ _ n.+1 Es =>
-    \big[minr/dl2_translation (Es ord0)]_(i < n.+1) dl2_translation (Es i)
+    \big[minr/dl2_translation (Es 0)]_(i < n.+1) dl2_translation (Es i)
   | dl_or _ _ _ 0 _ => 0
   | dl_or _ _ _ n.+1 Es =>
-    \big[maxr/dl2_translation (Es ord0)]_(i < n.+1) dl2_translation (Es i)
+    \big[maxr/dl2_translation (Es 0)]_(i < n.+1) dl2_translation (Es i)
   | dl_mand _ _ _ n Es => \sum_(i < n) dl2_translation (Es i)
   | dl_mor _ _ _ n Es => (-1) ^+ n.+1 * \prod_(i < n) dl2_translation (Es i)
 
@@ -556,10 +556,10 @@ Context {R : realType}.
 Local Open Scope ring_scope.
 
 Definition min_dev n i (f : 'I_n.+1 -> R) : R :=
-  let r := \big[minr/f ord0]_(j < n.+1) f j in (f i - r) / r.
+  let r := \big[minr/f 0]_(j < n.+1) f j in (f i - r) / r.
 
 Definition max_dev {R : realType} n i (f : 'I_n.+1 -> R) : R :=
-  let r := \big[maxr/f ord0]_(i < n.+1) f i in (r - f i) / r.
+  let r := \big[maxr/f 0]_(i < n.+1) f i in (r - f i) / r.
 
 End min_max_dev.
 
@@ -577,12 +577,12 @@ Definition stl_and_gt0 n (f : 'I_n.+1 -> R) :=
 
 Definition stl_and_lt0 n (f : 'I_n.+1 -> R) :=
   (\sum_(i < n.+1)
-    (\big[minr/f ord0]_(i < n.+1) f i) * expR (min_dev i f) * expR (nu * min_dev i f)) /
+    (\big[minr/f 0]_(i < n.+1) f i) * expR (min_dev i f) * expR (nu * min_dev i f)) /
   \sum_(i < n.+1) expR (nu * min_dev i f).
 
 Definition stl_or_gt0 n (f : 'I_n.+1 -> R) :=
   (\sum_(a < n.+1)
-    (\big[maxr/f ord0]_(i < n.+1) f i) * expR (max_dev a f) * expR (nu * max_dev a f)) /
+    (\big[maxr/f 0]_(i < n.+1) f i) * expR (max_dev a f) * expR (nu * max_dev a f)) /
     (\sum_(a < n.+1) expR (nu * max_dev a f)).
 
 Definition stl_or_lt0 n (f : 'I_n.+1 -> R) :=
@@ -606,11 +606,11 @@ Fixpoint stl_translation {t} (e : expr t) : type_translation t :=
   | dl_and _ _ _ 0 _ => 1
   | dl_and _ _ _ n.+1 s =>
       let f := stl_translation \o s in
-      stl_and (\big[minr/f ord0]_(i < n.+1) f i) f
+      stl_and (\big[minr/f 0]_(i < n.+1) f i) f
   | dl_or _ _ _ 0 _ => -1
   | dl_or _ _ _ n.+1 s =>
       let f := stl_translation \o s in
-      stl_or (\big[maxr/f ord0]_(i < n.+1) f i) f
+      stl_or (\big[maxr/f 0]_(i < n.+1) f i) f
   | dl_mand _ _ _ _ _ => 0 (* default value, all lemmas are for monoid-free formulas *)
   | dl_mor _ _ _ _ _ => 0 (* default value, all lemmas are for monoid-free formulas *)
   | `~ e1 => - {[ e1 ]}
