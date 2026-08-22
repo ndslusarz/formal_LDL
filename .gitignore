@@ -47,3 +47,7 @@ time-of-build-pretty.log
 #Agda
 *.agda
 
+# nix
+result
+result-*
+
