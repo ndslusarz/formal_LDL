@@ -6,6 +6,7 @@
 
 { lib, mkCoqDerivation, coq
   , mathcomp, mathcomp-analysis, mathcomp-algebra-tactics
+  , rocqnavi
   , version ? null }:
 
 with lib; mkCoqDerivation {
@@ -36,6 +37,12 @@ with lib; mkCoqDerivation {
     mathcomp-analysis
     mathcomp-algebra-tactics
   ];
+
+  ## Not needed to build the library, only to run `make doc`.  Declaring it
+  ## here is what puts `rocqnavi` on the `nix-shell` PATH: coq-nix-toolbox
+  ## builds the shell by overriding this derivation (see `nativeBuildInputs`
+  ## in the toolbox's default.nix).
+  nativeBuildInputs = [ rocqnavi ];
 
   meta = {
     description = "Formalisation of the Logic of Differentiable Logics (LDL) in Rocq with MathComp";

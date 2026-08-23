@@ -51,3 +51,7 @@ time-of-build-pretty.log
 result
 result-*
 
+
+# rocqnavi output (make doc)
+html/
+__tmp__.dot
