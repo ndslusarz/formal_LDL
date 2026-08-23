@@ -40,6 +40,19 @@ From mathcomp Require Import all_boot all_order all_algebra.
 (*                        The HB class is Fuzzy.                              *)
 (* ```                                                                        *)
 (*                                                                            *)
+(* ## Structures carrying a single linking axiom                              *)
+(*                                                                            *)
+(* These exist so that a builder producing (or requiring) that axiom has a    *)
+(* class to complete; see the note above the hierarchy.  Rarely used directly.*)
+(* ```                                                                        *)
+(* involutiveNegType d == negationType with `~ `~ x = x                       *)
+(*                        The HB class is InvolutiveNegation.                 *)
+(*       negImplType d == fuzzyType with `~ x = x `--> \bot                   *)
+(*                        The HB class is NegImpl.                            *)
+(*         sImplType d == fuzzyType with x `--> y = `~ x `++ y                *)
+(*                        The HB class is SImpl.                              *)
+(* ```                                                                        *)
+(*                                                                            *)
 (* ## Structures with linking axioms                                          *)
 (* ```                                                                        *)
 (*    residuatedType d == `**` and `-->` form an adjoint pair:                *)
@@ -202,9 +215,21 @@ HB.mixin Record Tnorm_isIdempotent d T of Tnorm d T := {
 (* The hierarchy                                                              *)
 (******************************************************************************)
 
+#[short(type="involutiveNegType")]
+HB.structure Definition InvolutiveNegation d :=
+  { T of Negation d T & Negation_isInvolutive d T }.
+
 #[short(type="residuatedType")]
 HB.structure Definition Residuated d :=
   { T of TnormImpl d T & TnormImpl_isResiduated d T }.
+
+#[short(type="negImplType")]
+HB.structure Definition NegImpl d :=
+  { T of Fuzzy d T & Fuzzy_isNegImpl d T }.
+
+#[short(type="sImplType")]
+HB.structure Definition SImpl d :=
+  { T of Fuzzy d T & Fuzzy_isSImpl d T }.
 
 #[short(type="deMorganType")]
 HB.structure Definition DeMorgan d :=
@@ -212,11 +237,11 @@ HB.structure Definition DeMorgan d :=
 
 #[short(type="dlAlgType")]
 HB.structure Definition DLAlgebra d :=
-  { T of DeMorgan d T & Fuzzy_isNegImpl d T }.
+  { T of DeMorgan d T & NegImpl d T }.
 
 #[short(type="involutiveType")]
 HB.structure Definition Involutive d :=
-  { T of DLAlgebra d T & Negation_isInvolutive d T }.
+  { T of DLAlgebra d T & InvolutiveNegation d T }.
 
 #[short(type="flewType")]
 HB.structure Definition FLewAlgebra d :=
@@ -224,7 +249,7 @@ HB.structure Definition FLewAlgebra d :=
 
 #[short(type="sAlgType")]
 HB.structure Definition SAlgebra d :=
-  { T of Involutive d T & Fuzzy_isSImpl d T }.
+  { T of Involutive d T & SImpl d T }.
 
 #[short(type="mtlType")]
 HB.structure Definition MTLAlgebra d :=
@@ -437,6 +462,170 @@ End ResiduatedTheory.
 
 Arguments mandP {d L x y z}.
 Arguments mimplP {d L x y z}.
+
+(******************************************************************************)
+(* Builders                                                                   *)
+(******************************************************************************)
+
+HB.factory Record TBLattice_isMeetTnorm d T of Order.TBLattice d T := {
+  mand : T -> T -> T;
+  mandE : forall x y : T, mand x y = x `&` y;
+}.
+
+HB.builders Context d T of TBLattice_isMeetTnorm d T.
+
+Lemma mandC : commutative mand.
+Proof. by move=> x y; rewrite !mandE meetC. Qed.
+
+Lemma mandA : associative mand.
+Proof. by move=> x y z; rewrite !mandE meetA. Qed.
+
+Lemma mand1x : left_id (\top : T) mand.
+Proof. by move=> x; rewrite mandE meet1x. Qed.
+
+Lemma le_mand2l (x : T) : {homo mand x : y z / y <= z}.
+Proof. by move=> y z yz; rewrite !mandE lexI leIl/= (le_trans _ yz) ?leIr. Qed.
+
+HB.instance Definition _ :=
+  TBLattice_isTnorm.Build d T mandC mandA mand1x le_mand2l.
+
+HB.end.
+
+HB.factory Record TBLattice_isJoinTconorm d T of Order.TBLattice d T := {
+  mor : T -> T -> T;
+  morE : forall x y : T, mor x y = x `|` y;
+}.
+
+HB.builders Context d T of TBLattice_isJoinTconorm d T.
+
+Lemma morC : commutative mor.
+Proof. by move=> x y; rewrite !morE joinC. Qed.
+
+Lemma morA : associative mor.
+Proof. by move=> x y z; rewrite !morE joinA. Qed.
+
+Lemma mor0x : left_id (\bot : T) mor.
+Proof. by move=> x; rewrite morE join0x. Qed.
+
+Lemma le_mor2l (x : T) : {homo mor x : y z / y <= z}.
+Proof. by move=> y z yz; rewrite !morE leUx leUl/= (le_trans yz) ?leUr. Qed.
+
+HB.instance Definition _ :=
+  TBLattice_isTconorm.Build d T morC morA mor0x le_mor2l.
+
+HB.end.
+
+Section Prelinear.
+Variables (d : Order.disp_t) (L : residuatedType d).
+Hypothesis tot : total (<=%O : rel L).
+
+Lemma total_prelinear (x y : L) : (x `--> y) `|` (y `--> x) = \top.
+Proof.
+by have /orP[/[dup] xy|/[dup] xy] := tot x y; rewrite -mimpl_eq1 => /eqP ->;
+  [rewrite join_l | rewrite join_r].
+Qed.
+
+
+End Prelinear.
+
+Section Idempotent.
+Variables (d : Order.disp_t) (L : residuatedType d).
+Hypothesis mandxx : forall x : L, x `** x = x.
+Implicit Types x y z : L.
+
+Lemma idem_mandI x y : x `** y = x `&` y.
+Proof.
+by apply/le_anti; rewrite le_mandI/= -[leLHS]mandxx le_mand2 ?leIl ?leIr.
+Qed.
+
+Lemma idem_divisible x y : x `** (x `--> y) = x `&` y.
+Proof.
+apply/le_anti; rewrite idem_mandI !lexI !leIl/=.
+by rewrite -idem_mandI mand_mimpl/= -mand_residuation idem_mandI meetA meetxx leIr.
+Qed.
+
+End Idempotent.
+
+HB.factory Record Residuated_isNegation d T of Residuated d T := {
+  mneg : T -> T;
+  mnegE : forall x : T, mneg x = x `--> \bot;
+}.
+
+HB.builders Context d T of Residuated_isNegation d T.
+
+Lemma le_mneg : {homo mneg : x y /~ x <= y}.
+Proof. by move=> x y yx; rewrite !mnegE le_mimpl2r. Qed.
+
+Lemma mneg1 : mneg \top = \bot. Proof. by rewrite mnegE mimpl1x. Qed.
+Lemma mneg0 : mneg \bot = \top. Proof. by rewrite mnegE mimplxx. Qed.
+
+HB.instance Definition _ := TBLattice_isNegation.Build d T le_mneg mneg1 mneg0.
+
+HB.end.
+
+HB.factory Record TconormNegation_isImplication d T
+    of Tnorm d T & Tconorm d T & Negation d T := {
+  mimpl : T -> T -> T;
+  mimplE : forall x y : T, mimpl x y = (`~ x) `++ y;
+}.
+
+HB.builders Context d T of TconormNegation_isImplication d T.
+
+Lemma le_mimpl2l (x : T) : {homo mimpl x : y z / y <= z}.
+Proof. by move=> y z yz; rewrite !mimplE le_mor2l. Qed.
+
+Lemma le_mimpl2r (x : T) : {homo mimpl^~ x : y z /~ y <= z}.
+Proof. by move=> y z zy; rewrite !mimplE le_mor2r ?le_mneg. Qed.
+
+Lemma mimpl1x (x : T) : mimpl \top x = x.
+Proof. by rewrite mimplE mneg1 mor0x. Qed.
+
+Lemma mimplx1 (x : T) : mimpl x \top = \top.
+Proof. by rewrite mimplE morx1. Qed.
+
+HB.instance Definition _ :=
+  TBLattice_isImplication.Build d T le_mimpl2l le_mimpl2r mimpl1x mimplx1.
+
+Lemma mnegE (x : T) : `~ x = mimpl x \bot.
+Proof. by rewrite mimplE morx0. Qed.
+
+HB.instance Definition _ := Fuzzy_isSImpl.Build d T mimplE.
+HB.instance Definition _ := Fuzzy_isNegImpl.Build d T mnegE.
+
+HB.end.
+
+HB.factory Record TnormNegation_isTconorm d T
+    of TnormImpl d T & InvolutiveNegation d T := {
+  mor : T -> T -> T;
+  mneg_mor : forall x y : T, `~ (mor x y) = (`~ x) `** (`~ y);
+}.
+
+HB.builders Context d T of TnormNegation_isTconorm d T.
+
+Lemma morE x y : mor x y = `~ ((`~ x) `** (`~ y)).
+Proof. by rewrite -mneg_mor mnegK. Qed.
+
+Lemma morC : commutative mor.
+Proof. by move=> x y; rewrite !morE mandC. Qed.
+
+Lemma morA : associative mor.
+Proof. by move=> x y z; rewrite !morE !mnegK mandA. Qed.
+
+Lemma mor0x : left_id \bot mor.
+Proof. by move=> x; rewrite morE mneg0 mand1x mnegK. Qed.
+
+Lemma le_mor2l (x : T) : {homo mor x : y z / y <= z}.
+Proof. by move=> y z yz; rewrite !morE le_mneg// le_mand2l ?le_mneg. Qed.
+
+HB.instance Definition _ :=
+  TBLattice_isTconorm.Build d T morC morA mor0x le_mor2l.
+
+Lemma mneg_mand x y : `~ (x `** y) = mor (`~ x) (`~ y).
+Proof. by rewrite morE !mnegK. Qed.
+
+HB.instance Definition _ := Fuzzy_isDeMorgan.Build d T mneg_mand mneg_mor.
+
+HB.end.
 
 (******************************************************************************)
 (* Theory of FL_ew-algebras                                                   *)
