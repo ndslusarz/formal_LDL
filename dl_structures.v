@@ -14,6 +14,7 @@ From mathcomp Require Import all_boot all_order all_algebra.
 (*      x `++ y == monoidal disjunction (a t-conorm), i.e., `mor x y`         *)
 (*         `~ x == negation, i.e., `mneg x`                                   *)
 (*     x `--> y == implication, i.e., `mimpl x y`                             *)
+(*    x <=[s] y == graded entailment, i.e., `sle s x y`.                      *)
 (* ```                                                                        *)
 (*                                                                            *)
 (* ## Structures for the individual operations                                *)
@@ -47,6 +48,12 @@ From mathcomp Require Import all_boot all_order all_algebra.
 (* ```                                                                        *)
 (* involutiveNegType d == negationType with `~ `~ x = x                       *)
 (*                        The HB class is InvolutiveNegation.                 *)
+(*     meetTnormType d == tnormType with x `** x = x, equivalently with       *)
+(*                        x `** y = x `&` y (idem_mandI)                      *)
+(*                        The HB class is MeetTnorm.                          *)
+(*   joinTconormType d == tconormType with x `++ x = x, equivalently with     *)
+(*                        x `++ y = x `|` y (idem_morU)                       *)
+(*                        The HB class is JoinTconorm.                        *)
 (*       negImplType d == fuzzyType with `~ x = x `--> \bot                   *)
 (*                        The HB class is NegImpl.                            *)
 (*         sImplType d == fuzzyType with x `--> y = `~ x `++ y                *)
@@ -69,6 +76,12 @@ From mathcomp Require Import all_boot all_order all_algebra.
 (*                        The HB class is Involutive.                         *)
 (*          flewType d == dlAlgType that is residuated                        *)
 (*                        The HB class is FLewAlgebra.                        *)
+(* joinTconormAlgType d == flewType whose `++ is idempotent, hence is the     *)
+(*                        join (join_morU).                                   *)
+(*                        The HB class is JoinTconormAlgebra.                 *)
+(*         iflewType d == involutive flewType, where implication contraposes: *)
+(*                          x `--> y = `~ y `--> `~ x   (mimpl_contra)        *)
+(*                        The HB class is IFLewAlgebra.                       *)
 (*          sAlgType d == involutiveType whose implication is the S-implica-  *)
 (*                        tion x `--> y = `~ x `++ y (not residuated)         *)
 (*                        The HB class is SAlgebra.                           *)
@@ -80,7 +93,7 @@ From mathcomp Require Import all_boot all_order all_algebra.
 (*            blType d == divisible mtlType: x `** (x `--> y) = x `&` y       *)
 (*                        The HB class is BLAlgebra.                          *)
 (*         godelType d == blType with idempotent `**`.                        *)
-(*.                       A BLAlgebra is also a GodelAlgebra.                 *)
+(*                        The HB class is GodelAlgebra.                       *)
 (*            mvType d == involutive blType                                   *)
 (*                        The HB class is MVAlgebra.                          *)
 (* ```                                                                        *)
@@ -178,9 +191,36 @@ HB.structure Definition Fuzzy d :=
   { T of TnormImpl d T & Tconorm d T & Negation d T }.
 
 (******************************************************************************)
-(* Linking axioms                                                             *)
+(* Graded entailment                                                          *)
 (******************************************************************************)
 Open Scope mtl_scope.
+
+Definition sle d (T : implicationType d) (s x y : T) := s <= x `--> y.
+
+Notation "x <=[ s ] y" := (sle s x y)
+  (at level 70, format "x  <=[ s ]  y") : mtl_scope.
+
+Section GradedEntailmentTheory.
+Variables (d : Order.disp_t) (L : implicationType d).
+Implicit Types s t x y : L.
+
+Lemma sle0 x y : x <=[\bot] y.
+Proof. exact: le0x. Qed.
+
+Lemma sle_le s t x y : t <= s -> x <=[s] y -> x <=[t] y.
+Proof. exact: le_trans. Qed.
+
+Lemma sle_le2 s x y x' y' : x' <= x -> y <= y' -> x <=[s] y -> x' <=[s] y'.
+Proof.
+by move=> ? ? sxy; apply: (le_trans sxy);
+  exact: (le_trans (le_mimpl2l _ _ _ _) (le_mimpl2r _ _ _ _)).
+Qed.
+
+End GradedEntailmentTheory.
+
+(******************************************************************************)
+(* Linking axioms                                                             *)
+(******************************************************************************)
 
 HB.mixin Record TnormImpl_isResiduated d T of TnormImpl d T := {
   mand_residuation : forall x y z : T, (z `** x <= y) = (x <= z `--> y);
@@ -215,12 +255,8 @@ HB.mixin Record Tnorm_isIdempotent d T of Tnorm d T := {
   mandxx : forall x : T, x `** x = x;
 }.
 
-HB.mixin Record TnormImpl_isSoftIdem d T of TnormImpl d T := {
-  mand_softidem : exists x : T, forall y : T, x >= (y `** y) `--> y;
-}.
-
-HB.mixin Record TconormImpl_isSoftIdem d T of TconormImpl d T := {
-  mor_softidem : exists x : T, forall y : T, x >= (y `++ y) `--> y;
+HB.mixin Record Tconorm_isIdempotent d T of Tconorm d T := {
+  morxx : forall x : T, x `++ x = x;
 }.
 
 (******************************************************************************)
@@ -231,17 +267,26 @@ HB.mixin Record TconormImpl_isSoftIdem d T of TconormImpl d T := {
 HB.structure Definition InvolutiveNegation d :=
   { T of Negation d T & Negation_isInvolutive d T }.
 
+#[short(type="meetTnormType")]
+HB.structure Definition MeetTnorm d :=
+  { T of Tnorm d T & Tnorm_isIdempotent d T }.
+
+#[short(type="joinTconormType")]
+HB.structure Definition JoinTconorm d :=
+  { T of Tconorm d T & Tconorm_isIdempotent d T }.
+
 #[short(type="residuatedType")]
 HB.structure Definition Residuated d :=
   { T of TnormImpl d T & TnormImpl_isResiduated d T }.
 
+HB.mixin Record Residuated_isSoftIdemTnorm d T of Residuated d T := {
+  mand_slack : T;
+  mand_softidem : forall y : T, y <=[mand_slack] (y `** y);
+}.
+
 #[short(type="softIdemTnormType")]
 HB.structure Definition SoftIdemTnorm d :=
-  { T of TnormImpl d T & TnormImpl_isSoftIdem d T }.
-
-#[short(type="softIdemTconormType")]
-HB.structure Definition SoftIdemTconorm d :=
-  { T of TconormImpl d T & TconormImpl_isSoftIdem d T }.
+  { T of Residuated d T & Residuated_isSoftIdemTnorm d T }.
 
 #[short(type="negImplType")]
 HB.structure Definition NegImpl d :=
@@ -266,6 +311,23 @@ HB.structure Definition Involutive d :=
 #[short(type="flewType")]
 HB.structure Definition FLewAlgebra d :=
   { T of DLAlgebra d T & TnormImpl_isResiduated d T }.
+
+HB.mixin Record FLewAlgebra_isSoftIdemTconorm d T of FLewAlgebra d T := {
+  mor_slack : T;
+  mor_softidem : forall y : T, (y `++ y) <=[mor_slack] y;
+}.
+
+#[short(type="softIdemTconormType")]
+HB.structure Definition SoftIdemTconorm d :=
+  { T of FLewAlgebra d T & FLewAlgebra_isSoftIdemTconorm d T }.
+
+#[short(type="joinTconormAlgType")]
+HB.structure Definition JoinTconormAlgebra d :=
+  { T of FLewAlgebra d T & Tconorm_isIdempotent d T }.
+
+#[short(type="iflewType")]
+HB.structure Definition IFLewAlgebra d :=
+  { T of FLewAlgebra d T & Involutive d T }.
 
 #[short(type="sAlgType")]
 HB.structure Definition SAlgebra d :=
@@ -531,6 +593,58 @@ HB.instance Definition _ d (L : residuatedType d) :=
     (@mandUr d L) (@mandUl d L).
 
 (******************************************************************************)
+(* Theory of graded entailment on residuated t-norm lattices                  *)
+(******************************************************************************)
+
+Section GradedEntailmentResiduatedTheory.
+Variables (d : Order.disp_t) (L : residuatedType d).
+Implicit Types s t x y z : L.
+
+Lemma sleE s x y : (x <=[s] y) = (x `** s <= y).
+Proof. by rewrite /sle mand_residuation. Qed.
+
+Lemma sle1 x y : x <=[\top] y = (x <= y).
+Proof. by rewrite /sle -mimpl_eq1 eq_le lex1. Qed.
+
+Lemma sle_refl s x : x <=[s] x.
+Proof. by rewrite /sle mimplxx lex1. Qed.
+
+Lemma sle_trans s t x y z : x <=[s] y -> y <=[t] z -> x <=[s `** t] z.
+Proof.
+by move=> ? ?; rewrite /sle (le_trans _ (mimpl_trans x y z)) ?le_mand2.
+Qed.
+
+End GradedEntailmentResiduatedTheory.
+
+(******************************************************************************)
+(* Theory of soft idempotency                                                 *)
+(******************************************************************************)
+
+Section SoftIdemTnormTheory.
+Variables (d : Order.disp_t) (L : softIdemTnormType d).
+Implicit Types s y : L.
+
+Lemma mand_softidemE y : y `** mand_slack <= y `** y.
+Proof. by rewrite -sleE; exact: mand_softidem. Qed.
+
+Lemma mand_softidem_le s : s <= mand_slack -> forall y, y <=[s] (y `** y).
+Proof. by move=> hs y; exact: (sle_le hs (mand_softidem y)). Qed.
+
+End SoftIdemTnormTheory.
+
+Section SoftIdemTconormTheory.
+Variables (d : Order.disp_t) (L : softIdemTconormType d).
+Implicit Types s y : L.
+
+Lemma mor_softidemE y : (y `++ y) `** mor_slack <= y.
+Proof. by rewrite -sleE; exact: mor_softidem. Qed.
+
+Lemma mor_softidem_le s : s <= mor_slack -> forall y, (y `++ y) <=[s] y.
+Proof. by move=> hs y; exact: (sle_le hs (mor_softidem y)). Qed.
+
+End SoftIdemTconormTheory.
+
+(******************************************************************************)
 (* Builders                                                                   *)
 (******************************************************************************)
 
@@ -585,6 +699,11 @@ Proof. by move=> y z yz; rewrite !morE leUx leUl/= (le_trans yz) ?leUr. Qed.
 HB.instance Definition _ :=
   TBLattice_isTconorm.Build d T morC morA mor0x le_mor2l.
 
+Lemma morxx (x : T) : mor x x = x.
+Proof. by rewrite morE joinxx. Qed.
+
+HB.instance Definition _ := Tconorm_isIdempotent.Build d T morxx.
+
 HB.end.
 
 Section Prelinear.
@@ -618,6 +737,42 @@ Qed.
 
 End Idempotent.
 
+Section IdempotentTconorm.
+Variables (d : Order.disp_t) (L : tconormType d).
+Hypothesis morxx : forall x : L, x `++ x = x.
+Implicit Types x y z : L.
+
+Lemma idem_morU x y : x `++ y = x `|` y.
+Proof.
+by apply/le_anti; rewrite le_morU andbT -[leRHS]morxx le_mor2 ?leUl ?leUr.
+Qed.
+
+End IdempotentTconorm.
+
+Section ZeroSlack.
+Variables (d : Order.disp_t) (L : residuatedType d).
+
+Lemma zero_slack_idem :
+  (forall y : L, y <=[\top] (y `** y)) <-> (forall y : L, y `** y = y).
+Proof.
+split=> [h y|h y]; last by rewrite h sle1.
+by apply/le_anti; rewrite le_mandl/= -sle1.
+Qed.
+
+End ZeroSlack.
+
+Section ZeroSlackTconorm.
+Variables (d : Order.disp_t) (L : flewType d).
+
+Lemma mor_zero_slack_idem :
+  (forall y : L, (y `++ y) <=[\top] y) <-> (forall y : L, y `++ y = y).
+Proof.
+split=> [h y|h y]; last by rewrite h sle1.
+by apply/le_anti; rewrite le_morl andbT -sle1.
+Qed.
+
+End ZeroSlackTconorm.
+
 HB.factory Record MTLAlgebra_isIdempotent d T of MTLAlgebra d T := {
   mandxx : forall x : T, x `** x = x;
 }.
@@ -628,6 +783,52 @@ HB.instance Definition _ :=
   TnormImpl_isDivisible.Build d T (@idem_divisible d T mandxx).
 
 HB.instance Definition _ := Tnorm_isIdempotent.Build d T mandxx.
+
+Lemma mand_softidem (y : T) : y <=[\top] (y `** y).
+Proof. by rewrite sle1 mandxx. Qed.
+
+HB.instance Definition _ := Residuated_isSoftIdemTnorm.Build d T mand_softidem.
+
+HB.end.
+
+HB.factory Record MTLAlgebra_isZeroSlack d T of MTLAlgebra d T := {
+  mand_zero_slack : forall y : T, y <=[\top] (y `** y);
+}.
+
+HB.builders Context d T of MTLAlgebra_isZeroSlack d T.
+
+Lemma mandxx (x : T) : x `** x = x.
+Proof. by apply/le_anti; rewrite le_mandl -sle1 mand_zero_slack. Qed.
+
+HB.instance Definition _ := MTLAlgebra_isIdempotent.Build d T mandxx.
+
+HB.end.
+
+HB.factory Record FLewAlgebra_isIdempotentTconorm d T of FLewAlgebra d T := {
+  morxx : forall x : T, x `++ x = x;
+}.
+
+HB.builders Context d T of FLewAlgebra_isIdempotentTconorm d T.
+
+HB.instance Definition _ := Tconorm_isIdempotent.Build d T morxx.
+
+Lemma mor_softidem (y : T) : (y `++ y) <=[\top] y.
+Proof. by rewrite sle1 morxx. Qed.
+
+HB.instance Definition _ := FLewAlgebra_isSoftIdemTconorm.Build d T mor_softidem.
+
+HB.end.
+
+HB.factory Record FLewAlgebra_isZeroSlackTconorm d T of FLewAlgebra d T := {
+  mor_zero_slack : forall y : T, (y `++ y) <=[\top] y;
+}.
+
+HB.builders Context d T of FLewAlgebra_isZeroSlackTconorm d T.
+
+Lemma morxx (x : T) : x `++ x = x.
+Proof. by apply/le_anti; rewrite le_morl andbT -sle1 mor_zero_slack. Qed.
+
+HB.instance Definition _ := FLewAlgebra_isIdempotentTconorm.Build d T morxx.
 
 HB.end.
 
@@ -762,7 +963,53 @@ Proof. by rewrite !mnegE -mand_residuation mandC -mnegE mandN. Qed.
 Lemma mneg3 x : (`~ `~ `~ x) = `~ x.
 Proof. by apply/le_anti; rewrite le_mneg le_mnegneg. Qed.
 
+Lemma le_mimpl_contra x y : x `--> y <= (`~ y) `--> (`~ x).
+Proof.
+rewrite mandP// [leRHS]mnegE mandP// mandA (mandC x) -mandA.
+by rewrite (le_trans (le_mand2 (lexx _) (mand_mimpl x y)))// mandC mandN.
+Qed.
+
 End FLewTheory.
+
+(******************************************************************************)
+(* Theory of involutive FL_ew-algebras                                        *)
+(******************************************************************************)
+
+Section IFLewTheory.
+Variables (d : Order.disp_t) (L : iflewType d).
+Implicit Types x y z t : L.
+
+Lemma mimpl_contra x y : x `--> y = (`~ y) `--> (`~ x).
+Proof.
+apply/le_anti; rewrite le_mimpl_contra.
+by have := le_mimpl_contra (`~ y) (`~ x); rewrite !mnegK.
+Qed.
+
+Lemma idem_mand_mor : (forall x, x `** x = x) -> forall x, x `++ x = x.
+Proof. by move=> h x; apply: mneg_inj; rewrite mneg_mor h. Qed.
+
+Lemma idem_mor_mand : (forall x, x `++ x = x) -> forall x, x `** x = x.
+Proof. by move=> h x; apply: mneg_inj; rewrite mneg_mand h. Qed.
+
+End IFLewTheory.
+
+HB.factory Record IFLewAlgebra_isSoftIdem d T of IFLewAlgebra d T := {
+  mand_slack : T;
+  mand_softidem : forall y : T, y <=[mand_slack] (y `** y);
+}.
+
+HB.builders Context d T of IFLewAlgebra_isSoftIdem d T.
+
+HB.instance Definition _ :=
+  Residuated_isSoftIdemTnorm.Build d T mand_softidem.
+
+Lemma mor_softidem (y : T) : (y `++ y) <=[mand_slack] y.
+Proof. by rewrite /sle mimpl_contra mneg_mor; exact: mand_softidem. Qed.
+
+HB.instance Definition _ :=
+  FLewAlgebra_isSoftIdemTconorm.Build d T mor_softidem.
+
+HB.end.
 
 (******************************************************************************)
 (* Theory of MTL-algebras                                                     *)
@@ -776,3 +1023,32 @@ Lemma mand_prelinear x y z : ((x `--> y) `|` (y `--> x)) `** z = z.
 Proof. by rewrite mimpl_prelinear mand1x. Qed.
 
 End MTLTheory.
+
+(******************************************************************************)
+(* Theory of Godel algebras                                                   *)
+(******************************************************************************)
+
+Section GodelTheory.
+Variables (d : Order.disp_t) (L : godelType d).
+Implicit Types x y z t : L.
+
+Lemma godel_softidem y : y <=[\top] (y `** y).
+Proof. by rewrite sle1 mandxx. Qed.
+
+End GodelTheory.
+
+(******************************************************************************)
+(* Theory of algebras whose t-conorm is the join                              *)
+(******************************************************************************)
+
+Section JoinTconormAlgebraTheory.
+Variables (d : Order.disp_t) (L : joinTconormAlgType d).
+Implicit Types x y z t : L.
+
+Lemma join_softidem y : (y `++ y) <=[\top] y.
+Proof. by rewrite sle1 morxx. Qed.
+
+Lemma join_morU x y : x `++ y = x `|` y.
+Proof. exact: idem_morU morxx x y. Qed.
+
+End JoinTconormAlgebraTheory.
