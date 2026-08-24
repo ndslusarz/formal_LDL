@@ -77,10 +77,10 @@ From mathcomp Require Import all_boot all_order all_algebra.
 (*                        The HB class is MTLAlgebra.                         *)
 (*          imtlType d == involutive mtlType                                  *)
 (*                        The HB class is IMTLAlgebra.                        *)
-(*         godelType d == mtlType with idempotent `**`                        *)
-(*                        The HB class is GodelAlgebra.                       *)
 (*            blType d == divisible mtlType: x `** (x `--> y) = x `&` y       *)
 (*                        The HB class is BLAlgebra.                          *)
+(*         godelType d == blType with idempotent `**`.                        *)
+(*.                       A BLAlgebra is also a GodelAlgebra.                 *)
 (*            mvType d == involutive blType                                   *)
 (*                        The HB class is MVAlgebra.                          *)
 (* ```                                                                        *)
@@ -279,13 +279,13 @@ HB.structure Definition MTLAlgebra d :=
 HB.structure Definition IMTLAlgebra d :=
   { T of MTLAlgebra d T & Involutive d T }.
 
-#[short(type="godelType")]
-HB.structure Definition GodelAlgebra d :=
-  { T of MTLAlgebra d T & Tnorm_isIdempotent d T }.
-
 #[short(type="blType")]
 HB.structure Definition BLAlgebra d :=
   { T of MTLAlgebra d T & TnormImpl_isDivisible d T }.
+
+#[short(type="godelType")]
+HB.structure Definition GodelAlgebra d :=
+  { T of BLAlgebra d T & Tnorm_isIdempotent d T }.
 
 #[short(type="mvType")]
 HB.structure Definition MVAlgebra d :=
@@ -335,6 +335,9 @@ Proof. by rewrite mandC mandx0. Qed.
 
 End TnormTheory.
 
+HB.instance Definition _ d (L : tnormType d) :=
+  Monoid.isMulLaw.Build L \bot (@mand d L) (@mand0x d L) (@mandx0 d L).
+
 (******************************************************************************)
 (* Theory of t-conorm lattices                                                *)
 (******************************************************************************)
@@ -368,6 +371,46 @@ Lemma mor1x x : \top `++ x = \top.
 Proof. by rewrite morC morx1. Qed.
 
 End TconormTheory.
+
+HB.instance Definition _ d (L : tconormType d) :=
+  Monoid.isMulLaw.Build L \top (@mor d L) (@mor1x d L) (@morx1 d L).
+
+(******************************************************************************)
+(* Theory of involutive negation                                              *)
+(******************************************************************************)
+
+Section InvolutiveNegationTheory.
+Variables (d : Order.disp_t) (L : involutiveNegType d).
+Implicit Types x y : L.
+
+Lemma mneg_inj : injective (mneg : L -> L).
+Proof. exact: can_inj mnegK. Qed.
+
+Lemma le_mneg2 x y : (`~ x <= `~ y) = (y <= x).
+Proof.
+apply/idP/idP => xy; last exact: le_mneg.
+by rewrite -(mnegK y) -(mnegK x) le_mneg.
+Qed.
+
+Lemma le_mnegl x y : (`~ x <= y) = (`~ y <= x).
+Proof. by rewrite -le_mneg2 mnegK. Qed.
+
+Lemma le_mnegr x y : (x <= `~ y) = (y <= `~ x).
+Proof. by rewrite -le_mneg2 mnegK. Qed.
+
+Lemma mneg_meet x y : `~ (x `&` y) = (`~ x) `|` (`~ y).
+Proof.
+by apply/le_anti;
+  rewrite le_mnegl lexI le_mnegl leUl le_mnegl leUr leUx !le_mneg2 leIl leIr.
+Qed.
+
+Lemma mneg_join x y : `~ (x `|` y) = (`~ x) `&` (`~ y).
+Proof.
+by apply/le_anti;
+  rewrite le_mnegr lexI leUx !le_mneg2 leUl leUr le_mnegr leIl le_mnegr leIr.
+Qed.
+
+End InvolutiveNegationTheory.
 
 (******************************************************************************)
 (* Residuated t-norm lattices                                                 *)
@@ -483,6 +526,10 @@ End ResiduatedTheory.
 Arguments mandP {d L x y z}.
 Arguments mimplP {d L x y z}.
 
+HB.instance Definition _ d (L : residuatedType d) :=
+  Monoid.isAddLaw.Build L (@mand d L) (@Order.join d L)
+    (@mandUr d L) (@mandUl d L).
+
 (******************************************************************************)
 (* Builders                                                                   *)
 (******************************************************************************)
@@ -508,6 +555,11 @@ Proof. by move=> y z yz; rewrite !mandE lexI leIl/= (le_trans _ yz) ?leIr. Qed.
 
 HB.instance Definition _ :=
   TBLattice_isTnorm.Build d T mandC mandA mand1x le_mand2l.
+
+Lemma mandxx (x : T) : mand x x = x.
+Proof. by rewrite mandE meetxx. Qed.
+
+HB.instance Definition _ := Tnorm_isIdempotent.Build d T mandxx.
 
 HB.end.
 
@@ -565,6 +617,19 @@ by rewrite -idem_mandI mand_mimpl/= -mand_residuation idem_mandI meetA meetxx le
 Qed.
 
 End Idempotent.
+
+HB.factory Record MTLAlgebra_isIdempotent d T of MTLAlgebra d T := {
+  mandxx : forall x : T, x `** x = x;
+}.
+
+HB.builders Context d T of MTLAlgebra_isIdempotent d T.
+
+HB.instance Definition _ :=
+  TnormImpl_isDivisible.Build d T (@idem_divisible d T mandxx).
+
+HB.instance Definition _ := Tnorm_isIdempotent.Build d T mandxx.
+
+HB.end.
 
 HB.factory Record Residuated_isNegation d T of Residuated d T := {
   mneg : T -> T;
@@ -642,6 +707,39 @@ HB.instance Definition _ :=
 
 Lemma mneg_mand x y : `~ (x `** y) = mor (`~ x) (`~ y).
 Proof. by rewrite morE !mnegK. Qed.
+
+HB.instance Definition _ := Fuzzy_isDeMorgan.Build d T mneg_mand mneg_mor.
+
+HB.end.
+
+HB.factory Record TconormNegation_isTnorm d T
+    of TconormImpl d T & InvolutiveNegation d T := {
+  mand : T -> T -> T;
+  mneg_mand : forall x y : T, `~ (mand x y) = (`~ x) `++ (`~ y);
+}.
+
+HB.builders Context d T of TconormNegation_isTnorm d T.
+
+Lemma mandE x y : mand x y = `~ ((`~ x) `++ (`~ y)).
+Proof. by rewrite -mneg_mand mnegK. Qed.
+
+Lemma mandC : commutative mand.
+Proof. by move=> x y; rewrite !mandE morC. Qed.
+
+Lemma mandA : associative mand.
+Proof. by move=> x y z; rewrite !mandE !mnegK morA. Qed.
+
+Lemma mand1x : left_id \top mand.
+Proof. by move=> x; rewrite mandE mneg1 mor0x mnegK. Qed.
+
+Lemma le_mand2l (x : T) : {homo mand x : y z / y <= z}.
+Proof. by move=> y z yz; rewrite !mandE le_mneg// le_mor2l ?le_mneg. Qed.
+
+HB.instance Definition _ :=
+  TBLattice_isTnorm.Build d T mandC mandA mand1x le_mand2l.
+
+Lemma mneg_mor x y : `~ (x `++ y) = mand (`~ x) (`~ y).
+Proof. by rewrite mandE !mnegK. Qed.
 
 HB.instance Definition _ := Fuzzy_isDeMorgan.Build d T mneg_mand mneg_mor.
 
