@@ -169,6 +169,10 @@ Notation "x `--> y" := (mimpl x y) : mtl_scope.
 HB.structure Definition TnormImpl d :=
   { T of Tnorm d T & Implication d T }.
 
+#[short(type="tconormImplType")]
+HB.structure Definition TconormImpl d :=
+  { T of Tconorm d T & Implication d T }.
+
 #[short(type="fuzzyType")]
 HB.structure Definition Fuzzy d :=
   { T of TnormImpl d T & Tconorm d T & Negation d T }.
@@ -211,6 +215,14 @@ HB.mixin Record Tnorm_isIdempotent d T of Tnorm d T := {
   mandxx : forall x : T, x `** x = x;
 }.
 
+HB.mixin Record TnormImpl_isSoftIdem d T of TnormImpl d T := {
+  mand_softidem : exists x : T, forall y : T, x >= (y `** y) `--> y;
+}.
+
+HB.mixin Record TconormImpl_isSoftIdem d T of TconormImpl d T := {
+  mor_softidem : exists x : T, forall y : T, x >= (y `++ y) `--> y;
+}.
+
 (******************************************************************************)
 (* The hierarchy                                                              *)
 (******************************************************************************)
@@ -222,6 +234,14 @@ HB.structure Definition InvolutiveNegation d :=
 #[short(type="residuatedType")]
 HB.structure Definition Residuated d :=
   { T of TnormImpl d T & TnormImpl_isResiduated d T }.
+
+#[short(type="softIdemTnormType")]
+HB.structure Definition SoftIdemTnorm d :=
+  { T of TnormImpl d T & TnormImpl_isSoftIdem d T }.
+
+#[short(type="softIdemTconormType")]
+HB.structure Definition SoftIdemTconorm d :=
+  { T of TconormImpl d T & TconormImpl_isSoftIdem d T }.
 
 #[short(type="negImplType")]
 HB.structure Definition NegImpl d :=

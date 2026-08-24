@@ -8,7 +8,7 @@
 -arg -w -arg -redundant-canonical-projection
 -arg -w -arg -projection-no-head-constant
 
-structures.v
+dl_structures.v
 mathcomp_extra.v
 analysis_extra.v
 dl.v
