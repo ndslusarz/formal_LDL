@@ -139,7 +139,7 @@ Delimit Scope dl_scope with DL.
 Notation "a `/\ b" := (dl_and (tnth [:: a; b])) (at level 65) : dl_scope.
 Notation "a `\/ b" := (dl_or (tnth [:: a; b])) (at level 65) : dl_scope.
 Notation "a `** b" := (dl_mand (tnth [:: a; b])) (at level 65) : dl_scope.
-Notation "a `++ b" := (dl_mor (tnth [:: a; b])) (at level 65) : dl_scope.
+Notation "a `++ b" := (dl_mor (tnth [:: a; b])) (at level 50) : dl_scope.
 Notation "a `=> b" := (dl_impl a b) (at level 70) : dl_scope.
 Notation "`~ a"    := (dl_not a) (at level 61) : dl_scope.
 
