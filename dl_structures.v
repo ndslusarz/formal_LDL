@@ -1077,13 +1077,17 @@ End I01Lattice.
 (* Lukasiewicz instances                                                      *)
 (******************************************************************************)
 
+Definition luka_i01 (R : realType) : Type := {i01 R}.
+
 Section Lukasiewicz.
 Variables (R : realType).
 Import I01Lattice.
 
-Definition luka_mand (x y : {i01 R}) : {i01 R} := (maxr (x%:num + y%:num - 1) 0)%:itv.
+HB.instance Definition _ := Order.TBTotal.copy (luka_i01 R) {i01 R}.
 
-Definition luka_mimpl (x y : {i01 R}) : {i01 R} := (minr 1 (1 - x%:num + y%:num))%:itv.
+Definition luka_mand (x y : luka_i01 R) : luka_i01 R := (maxr (x%:num + y%:num - 1) 0)%:itv.
+
+Definition luka_mimpl (x y : luka_i01 R) : luka_i01 R := (minr 1 (1 - x%:num + y%:num))%:itv.
 
 Lemma luka_mandC : commutative luka_mand.
 Proof. by move=> x y; apply: val_inj; rewrite /= (addrC x%:num). Qed.
@@ -1095,65 +1099,65 @@ by apply: val_inj => /=; rewrite /maxr;
    repeat case: ifPn; rewrite -?leNgt => *; lra.
 Qed.
 
-Lemma luka_mand1x : left_id (1%:i01) luka_mand.
+Lemma luka_mand1x : left_id (\top : luka_i01 R) luka_mand.
 Proof.
 by move=> x; apply: val_inj;
    rewrite /= (addrC _ x%:num) -addrA subrr addr0; exact: max_idPl.
 Qed.
 
-Lemma luka_mand_residuation : forall (x y z : {i01 R}),
+Lemma luka_mand_residuation : forall (x y z : luka_i01 R),
     (luka_mand z x <= y)%O = (x <= luka_mimpl z y)%O.
 Proof.
 move=> x y z; rewrite /luka_mand /luka_mimpl/=; apply/idP.
 rewrite -!num_le/= le_min ge_max le1 ge0 andbT/=; case: ifPn; lra.
 Qed.
 
-HB.instance Definition _ := @TBLattice_isResiduated.Build _ {i01 R}
+HB.instance Definition _ := @TBLattice_isResiduated.Build _ (luka_i01 R)
   luka_mand luka_mimpl luka_mandC luka_mandA luka_mand1x luka_mand_residuation.
 
-Definition luka_mneg (x : {i01 R}) : {i01 R} := (1 - x%:num)%:itv.
+Definition luka_mneg (x : luka_i01 R) : luka_i01 R := (1 - x%:num)%:itv.
 
-Lemma luka_mnegE : forall x : {i01 R}, luka_mneg x = x `--> \bot.
+Lemma luka_mnegE : forall x : luka_i01 R, luka_mneg x = x `--> \bot.
 Proof.
 by move=> x; have x0 : 0 <= x%:num by []; apply: val_inj => /=; rewrite /minr;
    repeat case: ifPn; rewrite -?leNgt => *; lra.
 Qed.
 
 HB.instance Definition _ :=
-  @Residuated_isNegation.Build _ {i01 R} luka_mneg luka_mnegE.
+  @Residuated_isNegation.Build _ (luka_i01 R) luka_mneg luka_mnegE.
 
-Lemma luka_mnegK : involutive (mneg : {i01 R} -> {i01 R}).
+Lemma luka_mnegK : involutive (mneg : luka_i01 R -> luka_i01 R).
 Proof. by move=> x; apply: val_inj; rewrite /= opprB addrCA subrr addr0. Qed.
 
-HB.instance Definition _ := @Negation_isInvolutive.Build _ {i01 R} luka_mnegK.
+HB.instance Definition _ := @Negation_isInvolutive.Build _ (luka_i01 R) luka_mnegK.
 
-Definition luka_mor (x y : {i01 R}) : {i01 R} := (minr (x%:num + y%:num) 1)%:itv.
+Definition luka_mor (x y : luka_i01 R) : luka_i01 R := (minr (x%:num + y%:num) 1)%:itv.
 
-Lemma luka_mneg_mor : forall x y : {i01 R}, `~ (luka_mor x y) = (`~ x) `** (`~ y).
+Lemma luka_mneg_mor : forall x y : luka_i01 R, `~ (luka_mor x y) = (`~ x) `** (`~ y).
 Proof.
 by move=> x y; apply: val_inj => /=; rewrite /minr /maxr;
    repeat case: ifPn; rewrite -?leNgt => *; lra.
 Qed.
 
 HB.instance Definition _ :=
-  @TnormNegation_isTconorm.Build _ {i01 R} luka_mor luka_mneg_mor.
+  @TnormNegation_isTconorm.Build _ (luka_i01 R) luka_mor luka_mneg_mor.
 
-HB.instance Definition _ := @Fuzzy_isNegImpl.Build _ {i01 R} luka_mnegE.
+HB.instance Definition _ := @Fuzzy_isNegImpl.Build _ (luka_i01 R) luka_mnegE.
 
-Lemma luka_mimplE : forall x y : {i01 R}, x `--> y = (`~ x) `++ y.
+Lemma luka_mimplE : forall x y : luka_i01 R, x `--> y = (`~ x) `++ y.
 Proof. by move=> x y; apply: val_inj; rewrite /= minC. Qed.
 
-HB.instance Definition _ := @Fuzzy_isSImpl.Build _ {i01 R} luka_mimplE.
+HB.instance Definition _ := @Fuzzy_isSImpl.Build _ (luka_i01 R) luka_mimplE.
 
 Lemma luka_mimpl_prelinear :
-  forall x y : {i01 R}, (x `--> y) `|` (y `--> x) = \top.
+  forall x y : luka_i01 R, (x `--> y) `|` (y `--> x) = \top.
 Proof. by apply: total_prelinear; exact: le_total. Qed.
 
 HB.instance Definition _ :=
-  @Implication_isPrelinear.Build _ {i01 R} luka_mimpl_prelinear.
+  @Implication_isPrelinear.Build _ (luka_i01 R) luka_mimpl_prelinear.
 
 Lemma luka_mand_divisible :
-  forall x y : {i01 R}, x `** (x `--> y) = x `&` y.
+  forall x y : luka_i01 R, x `** (x `--> y) = x `&` y.
 Proof.
 move=> x y; have x0 : 0 <= x%:num by []; have y0 : 0 <= y%:num by [].
 by rewrite meetEtotal; apply: val_inj => /=; rewrite num_min /minr /maxr;
@@ -1161,20 +1165,20 @@ by rewrite meetEtotal; apply: val_inj => /=; rewrite num_min /minr /maxr;
 Qed.
 
 HB.instance Definition _ :=
-  @TnormImpl_isDivisible.Build _ {i01 R} luka_mand_divisible.
+  @TnormImpl_isDivisible.Build _ (luka_i01 R) luka_mand_divisible.
 
 Fact half_num_spec : Itv.spec (@Itv.num_sem R) (Itv.Real `[0%Z, 1%Z]) (2^-1 : R).
 Proof. by apply/andP; split; rewrite ?num_real// in_itv/=; lra. Qed.
 
-Let luka_mand_slack : {i01 R} := Itv.mk half_num_spec.
+Let luka_mand_slack : luka_i01 R := Itv.mk half_num_spec.
 
-Lemma luka_mand_softidem : forall y : {i01 R}, y <=[luka_mand_slack] (y `** y).
+Lemma luka_mand_softidem : forall y : luka_i01 R, y <=[luka_mand_slack] (y `** y).
 Proof.
 move=> y; rewrite /sle -num_le/=.
 by rewrite le_min (addrC (_ - _)) -lerBlDr le_max; lra.
 Qed.
 
 HB.instance Definition _ :=
-  @IFLewAlgebra_isSoftIdem.Build _ {i01 R} luka_mand_slack luka_mand_softidem.
+  @IFLewAlgebra_isSoftIdem.Build _ (luka_i01 R) luka_mand_slack luka_mand_softidem.
 
 End Lukasiewicz.
