@@ -1182,3 +1182,41 @@ HB.instance Definition _ :=
   @IFLewAlgebra_isSoftIdem.Build _ (luka_i01 R) luka_mand_slack luka_mand_softidem.
 
 End Lukasiewicz.
+
+
+(******************************************************************************)
+(* Godel logic                                                                *)
+(******************************************************************************)
+
+Definition godel_i01 (R : realType) : Type := {i01 R}.
+
+Section Godel.
+Variables (R : realType).
+Import I01Lattice.
+
+HB.instance Definition _ := Order.TBTotal.copy (godel_i01 R) {i01 R}.
+
+Definition godel_mand (x y : godel_i01 R) : godel_i01 R := (minr x%:num y%:num)%:itv.
+
+Definition godel_mimpl (x y : godel_i01 R) : godel_i01 R := (maxr x%:num y%:num)%:itv.
+
+Lemma godel_mandC : commutative godel_mand.
+Proof. by move=> x y; apply: val_inj => /=; rewrite minC. Qed.
+
+Lemma godel_mandA : associative godel_mand.
+Proof. by move=> x y z; apply: val_inj => /=; rewrite minA. Qed.
+
+Lemma godel_mand1x : left_id (\top : godel_i01 R) godel_mand.
+Proof. by move=> x; apply: val_inj => /=; apply/eqP; rewrite eq_minr. Qed.
+
+Lemma godel_mand_residuation : forall (x y z : godel_i01 R),
+    (godel_mand z x <= y)%O = (x <= godel_mimpl z y)%O.
+Proof.
+move=> x y z. rewrite /godel_mand /godel_mimpl/=.
+rewrite -!num_le/= num_ge_min num_le_max.
+Admitted.
+
+HB.instance Definition _ := @TBLattice_isResiduated.Build _ (godel_i01 R)
+  godel_mand godel_mimpl godel_mandC godel_mandA godel_mand1x godel_mand_residuation.
+
+End Godel.
