@@ -616,18 +616,16 @@ End technical_lemmas.
 Section shadow_lifting_stl_and.
 Local Open Scope ring_scope.
 Local Open Scope classical_set_scope.
-Context {R : realType}.
-Variables (nu : R) (M : nat).
+Context {R : realType} (nu : R) (M : nat).
 
 Local Notation stl_and_gt0 := (stl_and_gt0 nu).
 Local Notation stl_and_lt0 := (stl_and_lt0 nu).
 
-Lemma shadowlifting_stl_and_gt0_cvg_at_right (p : R) i : 0 < p ->
+Lemma shadowlifting_stl_and_gt0_cvg_at_right (p : R) i :
   h^-1 *
   (stl_and_gt0 (fun_of_rV M.+1 (const_mx p + h *: err_vec i)) -
    stl_and_gt0 (fun_of_rV M.+1 (const_mx p))) @[h --> 0^'+] --> (M.+2%:R : R)^-1.
 Proof.
-move=> p0.
 rewrite /= stl_and_gt0_const.
 have H h : h > 0 ->
   stl_and_gt0 (fun_of_rV _ (const_mx p + h *: err_vec i)) =
@@ -673,7 +671,7 @@ rewrite -!natr1; apply: cvgD; first exact: cvg_cst.
 by under eq_fun do rewrite mulrAC; exact: expR_cvg0.
 Unshelve. all: end_near. Qed.
 
-Lemma shadowlifting_stl_and_gt0_cvg_at_left (p : R) i : 0 < p ->
+Lemma shadowlifting_stl_and_gt0_cvg_at_left (p : R) i : p != 0 ->
   h^-1 *
   (stl_and_gt0 (fun_of_rV M.+1 (const_mx p + h *: err_vec i)) -
    stl_and_gt0 (fun_of_rV M.+1 (const_mx p))) @[h --> 0^'-] --> (M.+2%:R : R)^-1.
@@ -727,13 +725,13 @@ rewrite -[X in (_ / _ - X * _)](@divff _ (M.+1%:R * expR (- nu * (- t / (p + t))
   apply: cvgM.
     apply: cvgN.
     by apply: cvg_at_left_filter; exact: cvg_id.
-  apply: cvgV; first by rewrite gt_eqF.
+  apply: cvgV => //.
   rewrite -[X in _ --> X]addr0.
   apply: cvgD; first exact: cvg_cst.
   by apply: cvg_at_left_filter; exact: cvg_id.
 Unshelve. all: end_near. Qed.
 
-Lemma shadowlifting_stl_and_gt0_cvg (p : R) i : 0 < p ->
+Lemma shadowlifting_stl_and_gt0_cvg (p : R) i : p != 0 ->
   h^-1 *
   (stl_and_gt0 (fun_of_rV M.+1 (const_mx p + h *: err_vec i)) -
    stl_and_gt0 (fun_of_rV M.+1 (const_mx p))) @[h --> 0^'] --> (M.+2%:R : R)^-1.
@@ -744,7 +742,7 @@ apply/(@cvg_at_right_left_dnbhs R R^o).
 - exact/shadowlifting_stl_and_gt0_cvg_at_left.
 Qed.
 
-Lemma shadowlifting_stl_and_gt0 (p : R) : p > 0 -> forall i,
+Lemma shadowlifting_stl_and_gt0 (p : R) : p != 0 -> forall i,
   ('d (@stl_and_gt0 M.+1 \o @fun_of_rV _ M.+1) '/d i) (const_mx p) = M.+2%:R^-1.
 Proof.
 move=> p0 i.
@@ -973,7 +971,7 @@ apply: (@lhopital_at_right R (fun x => expR (x / p) - 1)
   by apply: cvgM; [exact/cvg_at_right_filter|exact: cvg_cst].
 Unshelve. all: end_near. Qed.
 
-Lemma shadowlifting_stl_and_lt0_cvg_at_left (p : R) i : p > 0 ->
+Lemma shadowlifting_stl_and_lt0_cvg_at_left (p : R) i : 0 < p ->
   h^-1 *
   (stl_and_lt0 (fun_of_rV M.+1 (const_mx p + h *: err_vec i)) -
    stl_and_lt0 (fun_of_rV M.+1 (const_mx p))) @[h --> 0^'-] --> (M.+2%:R : R)^-1.
@@ -1111,7 +1109,7 @@ apply: (@lhopital_at_left R _ (num' p) _ (den' p) (- q)).
 - move=> x; rewrite in_itv/= => /andP[px x0].
   apply: is_derive_num'.
   rewrite inE /ball/= sub0r normrN ltr0_norm// ltrNl.
-  by rewrite (lt_trans _ px)// ltrN2//.
+  rewrite (lt_trans _ px)// ltrN2//.
 - move=> x; rewrite in_itv/= => /andP[px x0].
   apply: is_derive_den'.
   rewrite inE /ball/= sub0r normrN ltr0_norm// ltrNl//.
