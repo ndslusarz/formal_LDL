@@ -662,10 +662,10 @@ Local Open Scope classical_set_scope.
 Variable M : nat.
 Hypothesis M0 : M != 0%N.
 
-Lemma shadowlifting_product_andE p : p > 0 ->
+Lemma shadowlifting_product_andE p :
   forall i, ('d (@product_and R M.+1) '/d i) (const_mx p) = p ^+ M.
 Proof.
-move=> p0 i.
+move=> i.
 rewrite /partial.
 have /cvg_lim : h^-1 * (product_and (const_mx p + h *: err_vec i) -
                         @product_and _ M.+1 (const_mx p))
@@ -769,7 +769,6 @@ repeat case: ifP; set a := [[_]]__; set b := [[_]]__; set c := [[_]]__; lra.
 Qed.
 
 Theorem Lukasiewicz_mandA f1 f2 (e1 e2 e3 : expr (boolT_def f1 m_def f2)) :
-  (0 < p)%R ->
   [[ (e1 `** e2) `** e3]]_Lukasiewicz = [[ e1 `** (e2 `** e3) ]]_Lukasiewicz.
 Proof.
 have := translate_boolT_01 p1 Lukasiewicz e1.
@@ -956,10 +955,11 @@ case: ifPn => [h1|].
   by rewrite powR1 lerDl powR_ge0.
 Qed.
 
-Theorem Yager_mandA f1 f2 (e1 e2 e3 : expr (boolT_def f1 m_def f2)) : (0 < p) ->
+Theorem Yager_mandA f1 f2 (e1 e2 e3 : expr (boolT_def f1 m_def f2)) :
   [[ e1 `** (e2 `** e3)]]_Yager = [[ (e1 `** e2) `** e3 ]]_Yager.
 Proof.
-move=> p0. symmetry.
+symmetry.
+have p0 : 0 < p by rewrite (lt_le_trans ltr01).
 have pneq0 : p != 0 by exact: lt0r_neq0.
 have := translate_boolT_01 p1 Yager e1.
 have := translate_boolT_01 p1 Yager e2.
@@ -1089,10 +1089,10 @@ rewrite -powRrM divff//= ?powRr1 ?p_nq//=; try lra.
 rewrite /minr; case: ifP; move => hy; lra.
 Qed.
 
-Lemma Yager_residuation (e1 e2 e3 : expr boolT_fuzzy) : (0 < p) ->
+Lemma Yager_residuation (e1 e2 e3 : expr boolT_fuzzy) :
   [[e1 `** e2]]_Yager <= [[ e3 ]]_Yager <-> [[ e2 ]]_Yager <= [[e1 `=> e3]]_Yager.
 Proof.
-move => p0.
+have p0 : 0 < p by rewrite (lt_le_trans ltr01).
 have pneq0 : p != 0 by exact: lt0r_neq0.
 have := translate_boolT_01 p1 Yager e1.
 have := translate_boolT_01 p1 Yager e2.
@@ -1279,7 +1279,7 @@ rewrite /= /maxR !big_ord_recl !big_ord0 /= !tnthS !tnth0/= /maxR !big_ord_recl 
 repeat case: ifPn => //; lra.
 Qed.
 
-Theorem Godel_mandA f1 f2 (e1 e2 e3 : expr (boolT_def f1 m_def f2)) : 0 < p ->
+Theorem Godel_mandA f1 f2 (e1 e2 e3 : expr (boolT_def f1 m_def f2)) :
   [[ (e1 `** e2) `** e3 ]]_Godel = [[ e1 `** (e2 `** e3) ]]_Godel.
 Proof.
 rewrite /= /minR !big_ord_recl !big_ord0/=/minR !big_ord_recl !big_ord0 !tnthS !tnth0.
@@ -1289,7 +1289,7 @@ have := translate_boolT_01 p1 Godel e3.
 set t1 := _ e1.
 set t2 := _ e2.
 set t3 := _ e3.
-move => h1 h2 h3 p0.
+move => h1 h2 h3.
 rewrite /minr.
 repeat case: ifPn => //; lra.
 Qed.
@@ -1432,7 +1432,7 @@ rewrite /product_dl_mul !addr0 !mulr0 !subr0.
 lra.
 Qed.
 
-Theorem product_mandA f1 f2 (e1 e2 e3 : expr (boolT_def f1 m_def f2)) : 0 < p ->
+Theorem product_mandA f1 f2 (e1 e2 e3 : expr (boolT_def f1 m_def f2)) :
   [[ (e1 `** e2) `** e3 ]]_product = [[ e1 `** (e2 `** e3) ]]_product.
 Proof.
 rewrite /= /maxR /minR /product_dl_prod.
@@ -1580,7 +1580,7 @@ rewrite /= /maxR !big_ord_recl !big_ord0 !tnthS !tnth0 /=/maxR !big_ord_recl !bi
 by repeat case: ifPn => //; lra.
 Qed.
 
-Theorem fuzzy_andA f1 f2 (e1 e2 e3 : expr (boolT_def f1 f2 l_def)) : 0 < p ->
+Theorem fuzzy_andA f1 f2 (e1 e2 e3 : expr (boolT_def f1 f2 l_def)) :
   [[ (e1 `/\ e2) `/\ e3 ]]_ dl = [[ e1 `/\ (e2 `/\ e3) ]]_ dl.
 Proof.
 rewrite /= /minR !big_ord_recl !big_ord0 /=/minR !big_ord_recl !big_ord0 !tnthS !tnth0.
@@ -1590,7 +1590,7 @@ have := translate_boolT_01 p1 dl e3.
 set t1 := _ e1.
 set t2 := _ e2.
 set t3 := _ e3.
-move => h1 h2 h3 p0.
+move => h1 h2 h3.
 rewrite /minr.
 by repeat case: ifPn => //; lra.
 Qed.

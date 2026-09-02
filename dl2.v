@@ -291,10 +291,10 @@ rewrite !big_map /dl2_and -enumT big_enum.
 by under [in RHS]eq_bigr do rewrite ffunE.
 Qed.
 
-Lemma shadowlifting_dl2_andE (p : R) : p > 0 ->
+Lemma shadowlifting_dl2_andE (p : R) :
   forall i, ('d (@dl2_and M.+1) '/d i) (const_mx p) = 1.
 Proof.
-move=> p0 i.
+move=> i.
 rewrite /partial.
 have /cvg_lim : h^-1 * (dl2_and (const_mx p + h *: err_vec i) -
                         dl2_and (n:=M.+1) (const_mx p))
@@ -320,6 +320,6 @@ by apply; exact: Rhausdorff.
 Unshelve. all: by end_near. Qed.
 
 Corollary shadow_lifting_dl2_and : shadow_lifting (@dl2_and M.+1).
-Proof. by move=> p p0 i; rewrite shadowlifting_dl2_andE. Qed.
+Proof. by move=> p _ i; rewrite shadowlifting_dl2_andE. Qed.
 
 End shadow_lifting_dl2_and.
