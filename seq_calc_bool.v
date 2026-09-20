@@ -1,9 +1,9 @@
 From HB Require Import structures.
 Require Import Stdlib.Program.Equality.
-From mathcomp Require Import all_boot all_order all_algebra.
-From mathcomp Require Import lra.
+From mathcomp Require Import boot order algebra interval_inference.
+From mathcomp Require Import arithmetic_tactic.
 From mathcomp Require Import all_classical reals.
-From mathcomp Require Import reals ereal interval_inference.
+From mathcomp Require Import reals ereal.
 From mathcomp Require Import topology derive normedtype sequences
  exp measure lebesgue_measure lebesgue_integral hoelder finmap multiset.
 Require Import mathcomp_extra analysis_extra dl fuzzy.
@@ -97,7 +97,7 @@ Proof.
   rewrite -existsNP.
   exists (dl_bool neg_def _ _ _ false).
   rewrite in_mset1D eqxx orTb//=.
-  by auto.
+  by move/( _ isT).
 - exists (dl_bool neg_def _ _ _ true).
   by rewrite in_mset1D eqxx.
 - destruct (IHseq_calc_bool_ms1 H1) as [x [IH11 IH12]].

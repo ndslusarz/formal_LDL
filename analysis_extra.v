@@ -1,11 +1,11 @@
 From HB Require Import structures.
-From mathcomp Require Import all_boot all_order ssralg ssrnum matrix interval.
+From mathcomp Require Import boot order ssralg ssrnum matrix interval.
 From mathcomp Require Import unstable.
-From mathcomp Require Import mathcomp_extra boolp classical_sets functions.
+From mathcomp Require Import arithmetic_tactic.
+From mathcomp Require Import boolp classical_sets functions.
 From mathcomp Require Import reals constructive_ereal.
-From mathcomp Require Import topology prodnormedzmodule ereal normedtype
+From mathcomp Require Import topology ereal normedtype
   ereal_normedtype landau derive sequences exp realfun.
-From mathcomp Require Import lra.
 
 (**md**************************************************************************)
 (* # Additions to MathComp-Analysis                                           *)
@@ -34,7 +34,7 @@ Import numFieldNormedType.Exports.
 Local Open Scope ring_scope.
 Local Open Scope classical_set_scope.
 
-Reserved Notation "'d f '/d i" (at level 10, f, i at next level,
+Reserved Notation "'d f '/d i" (at level 0, f at level 0, i at next level,
   format "''d'  f  ''/d'  i").
 
 Lemma sumr_lt0 {R : realDomainType} [I : eqType] [r : seq I]
@@ -540,12 +540,14 @@ Proof.
 move: x => [x| |]//=.
 - by rewrite lte_fin => /eqP; rewrite sgr_cp0.
 - by move=> /eqP; rewrite -subr_eq0 opprK -(natrD _ 1%N 1%N) pnatr_eq0.
+- by rewrite ltNy0.
 Qed.
 
 Lemma sge1_gt0 {R : realDomainType} (x : \bar R) : sge x = 1 -> (0 < x)%E.
 Proof.
 move: x => [x| |]//=.
 - by rewrite lte_fin => /eqP; rewrite sgr_cp0.
+- by rewrite lt0y.
 - by move=> /eqP; rewrite eq_sym -subr_eq0 opprK -(natrD _ 1%N 1%N) pnatr_eq0.
 Qed.
 
@@ -627,7 +629,8 @@ Lemma sume_lt0 (I : eqType) (r : seq I) (P : pred I) (F : I -> \bar R) :
 Proof.
 elim: r; first by move=> _ [x []]; rewrite in_nil.
 move=> a l IH .
-have [->//|] := eqVneq (\sum_(i <- (a :: l) | P i) F i) -oo.
+have [->|] := eqVneq (\sum_(i <- (a :: l) | P i) F i) -oo.
+  by rewrite ltNy0.
 rewrite !big_cons.
 case: ifPn => Pa sumnoo Fi_le0 [x []].
   move: sumnoo; rewrite adde_eq_ninfty negb_or => /andP[Fanoo sumnoo].
@@ -659,8 +662,8 @@ Definition expR_cvg0 {R : realType} K :
 Proof.
 rewrite -expR0; apply: continuous_cvg; first exact: continuous_expR.
 rewrite -[X in _ --> X](mulr0 K).
-apply: cvgM; first exact: cvg_cst.
-exact/cvg_at_right_filter/cvg_id.
+apply: cvgM; first by [].
+exact/cvg_at_right_filter.
 Qed.
 
 Section derive.
@@ -695,8 +698,7 @@ exact/derivableP.
 Qed.
 
 Section partial.
-Context {R : realType}.
-Variables (n : nat) (f : 'rV[R]_n.+1 -> R).
+Context {R : realType} (n : nat) (f : 'rV[R]_n.+1 -> R).
 
 Definition err_vec {R : pzRingType} (i : 'I_n.+1) : 'rV[R]_n.+1 :=
   \row_(j < n.+1) (i == j)%:R.
@@ -724,7 +726,7 @@ move=> xy [inc uf lf|dec uf lf].
   apply/cvg_ex; exists (inf (f @` [set` Interval (BRight x) y])).
   apply: nondecreasing_at_right_cvgr => //.
     by move=> a b axy bxy ab;rewrite inc//= inE.
-  (* TODO(rei): need a lemma? *)
+  (* TODO: need a lemma? *)
   case: lf => r fr; exists r => z/= [s].
   by rewrite in_itv/= => /andP[xs _] <-{z}; exact: fr.
 apply/cvg_ex; exists (sup (f @` [set` Interval (BRight x)(*NB(rei): was (BSide b x)*) y])).
@@ -735,7 +737,7 @@ by rewrite in_itv/= => /andP[xs _] <-{z}; exact: fr.
 Qed.
 
 Section hyperbolic_function.
-Variable R : realType.
+Context {R : realType}.
 
 Definition sinh (x : R) := (expR x - expR (- x)) / 2.
 Definition cosh (x : R) := (expR x + expR (- x)) / 2.

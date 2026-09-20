@@ -1,9 +1,9 @@
 From HB Require Import structures.
 Require Import Stdlib.Program.Equality.
-From mathcomp Require Import all_boot all_order all_algebra.
+From mathcomp Require Import boot order algebra interval_inference.
 From mathcomp Require Import unstable.
-From mathcomp Require Import lra.
-From mathcomp Require Import all_classical reals ereal interval_inference.
+From mathcomp Require Import arithmetic_tactic.
+From mathcomp Require Import all_classical reals ereal.
 From mathcomp Require Import topology derive.
 From mathcomp Require Import normedtype sequences exp measure lebesgue_measure.
 From mathcomp Require Import lebesgue_integral hoelder.
@@ -118,8 +118,7 @@ HB.instance Definition _ (R : realType) x y z v :=
 Section translation_lemmas.
 Local Open Scope ring_scope.
 Local Open Scope dl_scope.
-Context {R : realType}.
-Variables (l : DL) (p : R).
+Context {R : realType} (l : DL) (p : R).
 Hypothesis p1 : 1 <= p.
 
 Local Notation "[[ e ]]_ l" := (@translation R l p _ e).
@@ -129,13 +128,13 @@ Lemma translations_coincide t (e : @expr R t) n m j :
   [[ e ]]_l ~= [[ e ]]_B.
 Proof.
 dependent induction e using expr_ind' => //=; move=> [|[|[|[|]]]]t0//.
-- rewrite (JMeq_eq (IHe1 n m j _)); last by right; right; right; left.
-  by rewrite (JMeq_eq (IHe2 n m j _)); last by right; left.
-- rewrite (JMeq_eq (IHe1 n m l0 _)); last by right; right; right; right.
-  rewrite (JMeq_eq (IHe2 n m l0 _)); last by right; left.
-  by rewrite (JMeq_eq (IHe3 m n l0 _)); last by right; left.
-- rewrite (JMeq_eq (IHe1 n m j _)); last by right; left.
-  by rewrite (JMeq_eq (IHe2 n m j _)); last by right; right; left.
+- rewrite (JMeq_eq (IHe1 n m j _)); first by right; right; right; left.
+  by rewrite (JMeq_eq (IHe2 n m j _)); first by right; left.
+- rewrite (JMeq_eq (IHe1 n m l0 _)); first by right; right; right; right.
+  rewrite (JMeq_eq (IHe2 n m l0 _)); first by right; left.
+  by rewrite (JMeq_eq (IHe3 m n l0 _)); first by right; left.
+- rewrite (JMeq_eq (IHe1 n m j _)); first by right; left.
+  by rewrite (JMeq_eq (IHe2 n m j _)); first by right; right; left.
 Qed.
 
 Lemma translations_Fun_coincide n m (e : expr (funT n m)) :
@@ -299,12 +298,12 @@ case: l => /= H.
 - move/eqP.
   rewrite maxr01 eq_sym addrC -subr_eq subrr eq_sym oppr_eq0 powR_eq0 invr_eq0.
   move=> /andP [+ _].
-  rewrite psumr_eq0//=; last by move=> i _; rewrite powR_ge0.
+  rewrite psumr_eq0//=; first by move=> i _; rewrite powR_ge0.
   move=> /allP h i.
   have h' := @pfsumr_eq0 R 'I_n setT (fun i => 1 - [[ s i ]]_Yager) finite_finset _ _ i.
   apply/eqP.
   rewrite eq_sym -subr_eq0 h'//; first by move=> j _; rewrite subr_ge0 (andP (H _ _ _ _)).2.
-  apply/eqP. rewrite psumr_eq0//=; last by move=> j _; rewrite subr_ge0 (andP (H _ _ _ _)).2.
+  apply/eqP. rewrite psumr_eq0//=; first by move=> j _; rewrite subr_ge0 (andP (H _ _ _ _)).2.
   apply/allP => /=j _.
   suff: (1 - [[s j]]_Yager) `^ p == 0.
     by rewrite powR_eq0 (@gt_eqF _ _ p 0) ?(lt_le_trans _ p1)//= andbT.
@@ -403,7 +402,7 @@ case: l => //=; move => H.
 - move/eqP; rewrite minr10 powR_eq0.
   move/andP => [].
   rewrite (@gt_eqF _ _ (p^-1)) ?invr_gt0//=.
-  rewrite psumr_eq0=>[|i]; last by rewrite powR_ge0.
+  rewrite psumr_eq0=>[i|]; first by rewrite powR_ge0.
   move/allP => h _ i.
   apply/eqP.
   suff: ([[Es i]]_Yager == 0) && (p != 0).
@@ -656,10 +655,10 @@ Definition product_and {R : fieldType} {n} (u : 'rV[R]_n) : R :=
   \prod_(i < n) u ``_ i.
 
 Section shadow_lifting_product_and.
-Context {R : realType}.
+Context {R : realType} (M : nat).
 Local Open Scope ring_scope.
 Local Open Scope classical_set_scope.
-Variable M : nat.
+
 Hypothesis M0 : M != 0%N.
 
 Lemma shadowlifting_product_andE p :
@@ -675,9 +674,9 @@ have /cvg_lim : h^-1 * (product_and (const_mx p + h *: err_vec i) -
       \prod_(x < M.+1) (const_mx p + h *: err_vec i) 0 x -
       \prod_(x < M.+1) const_mx (m:=M.+1) p 0 x = h * p ^+ M.
     move=> h0; rewrite [X in X - _](bigD1 i)//= !mxE eqxx mulr1.
-    rewrite (eq_bigr (fun=> p)); last first.
+    rewrite (eq_bigr (fun=> p)).
       by move=> j ji; rewrite !mxE eq_sym (negbTE ji) mulr0 addr0.
-    rewrite [X in _ - X](eq_bigr (fun=> p)); last by move=> *; rewrite mxE.
+    rewrite [X in _ - X](eq_bigr (fun=> p)); first by move=> *; rewrite mxE.
     rewrite [X in _ - X](bigD1 i)//= -mulrBl addrAC subrr add0r; congr (h * _).
     transitivity (\prod_(i0 in @predC1 [the eqType of 'I_M.+1] i) p).
       by apply: eq_bigl => j; rewrite inE.
@@ -690,10 +689,10 @@ have /cvg_lim : h^-1 * (product_and (const_mx p + h *: err_vec i) -
     by move/near_eq_cvg/cvg_trans; apply; exact: cvg_cst.
   apply: cvg_trans; apply: near_eq_cvg; near=> k.
   have <-// := H k.
-    congr (_ * (_ - _)).
-    apply: eq_bigr => /= j _.
-    by rewrite !mxE.
-  by near: k; exact: nbhs_dnbhs_neq.
+    by near: k; exact: nbhs_dnbhs_neq.
+  congr (_ * (_ - _)).
+  apply: eq_bigr => /= j _.
+  by rewrite !mxE.
 by apply; exact: Rhausdorff.
 Unshelve. all: by end_near. Qed.
 
@@ -707,8 +706,7 @@ From mathcomp Require Import perm.
 Section Lukasiewicz_lemmas.
 Local Open Scope dl_scope.
 Local Open Scope ring_scope.
-Context {R : realType}.
-Variable p : R.
+Context {R : realType} (p : R).
 Hypothesis p1 : 1 <= p.
 
 Local Notation "[[ e ]]_ l" := (translation l p e).
@@ -716,7 +714,7 @@ Local Notation "[[ e ]]_ l" := (translation l p e).
 Lemma h1neq2 l : [[dl_real 1 `== dl_real 2 : expr boolT_fuzzy ]]_l = 2/3.
 Proof.
 rewrite /= -subr_eq0 opprK !nat1r pnatr_eq0/=.
-rewrite (_ : 1 - 2 = -1); last by lra.
+rewrite (_ : 1 - 2 = -1); first by lra.
 rewrite normrM normrN normr1 mul1r ger0_norm//.
 by rewrite /maxr; case: ifPn; lra.
 Qed.
@@ -847,7 +845,7 @@ Lemma Yager_not_idempotent :
 Proof.
 exists (dl_real 1 `== dl_real 2).
 rewrite h1neq2 /= !big_ord_recl !big_ord0 !tnthS !tnth0 h1neq2.
-rewrite addr0 /maxr invr1 !powRr1; [| lra | lra | lra].
+rewrite addr0 /maxr invr1 !powRr1; [lra..|].
 by case: ifPn; lra.
 Qed.
 
@@ -856,8 +854,7 @@ End Yager_counterexapmle.
 Section Yager_lemmas.
 Local Open Scope dl_scope.
 Local Open Scope ring_scope.
-Context {R : realType}.
-Variable p : R.
+Context {R : realType} (p : R).
 Hypothesis p1 : 1 <= p.
 
 Local Notation "[[ e ]]_ l" := (translation l p e).
@@ -1211,8 +1208,7 @@ End Yager_lemmas.
 Section Godel_lemmas.
 Local Open Scope dl_scope.
 Local Open Scope ring_scope.
-Context {R : realType}.
-Variable p : R.
+Context {R : realType} (p : R).
 Hypothesis p1 : 1 <= p.
 
 Local Notation "[[ e ]]_ l" := (translation l p e).
@@ -1347,8 +1343,7 @@ End Godel_lemmas.
 Section product_lemmas.
 Local Open Scope dl_scope.
 Local Open Scope ring_scope.
-Context {R : realType}.
-Variable p : R.
+Context {R : realType} (p : R).
 Hypothesis p1 : 1 <= p.
 
 Local Notation "[[ e ]]_ l" := (translation l p e).
@@ -1519,10 +1514,8 @@ End product_lemmas.
 Section lattice_fuzzy_lemmas.
 Local Open Scope dl_scope.
 Local Open Scope ring_scope.
-Context {R : realType}.
-Variable p : R.
+Context {R : realType} (p : R) (dl : DL).
 Hypothesis p1 : 1 <= p.
-Variable dl : DL.
 
 Local Notation "[[ e ]]_ l" := (translation l p e).
 

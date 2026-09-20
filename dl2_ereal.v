@@ -1,11 +1,11 @@
 From HB Require Import structures.
 Require Import Stdlib.Program.Equality.
-From mathcomp Require Import all_boot all_order all_algebra.
-From mathcomp Require Import lra perm.
+From mathcomp Require Import boot order algebra interval_inference.
+From mathcomp Require Import arithmetic_tactic perm.
 From mathcomp Require Import all_classical.
-From mathcomp Require Import reals ereal interval_inference.
+From mathcomp Require Import reals ereal.
 From mathcomp Require Import topology derive normedtype sequences
- exp measure lebesgue_measure lebesgue_integral hoelder.
+  exp measure lebesgue_measure lebesgue_integral hoelder.
 Require Import mathcomp_extra analysis_extra dl dl2.
 
 (**md**************************************************************************)
@@ -41,8 +41,7 @@ Import numFieldTopology.Exports.
 Section dl2_lemmas.
 Local Open Scope dl_scope.
 Local Open Scope ring_scope.
-Context {R : realType}.
-Variable p : R.
+Context {R : realType} (p : R).
 
 Local Notation "[[ e ]]_dl2e" := (@dl2_ereal_translation R _ e).
 
@@ -126,13 +125,13 @@ Lemma dl2_ereal_translations_coincide t (e : @expr R t) n m j :
   [[ e ]]_dl2e ~= [[ e ]]_B.
 Proof.
 dependent induction e using expr_ind' => //=; move=> [|[|[|[|]]]]t0//.
-- rewrite (JMeq_eq (IHe1 n m j _)); last by (right; right; right; left).
-  by rewrite (JMeq_eq (IHe2 n m j _)); last by (right; left).
-- rewrite (JMeq_eq (IHe1 n m l _)); last by (right; right; right; right).
-  rewrite (JMeq_eq (IHe2 n m l _)); last by (right; left).
-  by rewrite (JMeq_eq (IHe3 m n l _)); last by (right; left).
-- rewrite (JMeq_eq (IHe1 n m j _)); last by (right; left).
-  by rewrite (JMeq_eq (IHe2 n m j _)); last by (right; right; left).
+- rewrite (JMeq_eq (IHe1 n m j _)); first by (right; right; right; left).
+  by rewrite (JMeq_eq (IHe2 n m j _)); first by (right; left).
+- rewrite (JMeq_eq (IHe1 n m l _)); first by (right; right; right; right).
+  rewrite (JMeq_eq (IHe2 n m l _)); first by (right; left).
+  by rewrite (JMeq_eq (IHe3 m n l _)); first by (right; left).
+- rewrite (JMeq_eq (IHe1 n m j _)); first by (right; left).
+  by rewrite (JMeq_eq (IHe2 n m j _)); first by (right; right; left).
 Qed.
 
 Lemma dl2_ereal_translations_Fun_coincide n m (e : expr (funT n m)) :
@@ -172,7 +171,7 @@ Qed.
 Lemma dl2_nary_inversion_andE1 n (s : 'I_n -> expr (boolT_undef impl_def m_def l_def)) :
   is_dl2 true ([[ dl_mand s ]]_dl2e) -> (forall i, is_dl2 true ([[ s i ]]_dl2e)).
 Proof.
-rewrite/is_dl2/= nsume_eq0/=; last by move=> i _; exact/dl2_ereal_translation_le0.
+rewrite/is_dl2/= nsume_eq0/=; first by move=> i _; exact/dl2_ereal_translation_le0.
 by move=> /allP/= h i; rewrite h ?mem_index_enum.
 Qed.
 

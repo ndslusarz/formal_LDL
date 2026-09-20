@@ -1,11 +1,11 @@
 From HB Require Import structures.
 Require Import Stdlib.Program.Equality.
-From mathcomp Require Import all_boot all_order all_algebra perm.
-From mathcomp Require Import lra.
+From mathcomp Require Import boot order algebra perm interval_inference.
+From mathcomp Require Import arithmetic_tactic.
 From mathcomp Require Import all_classical.
-From mathcomp Require Import reals ereal interval_inference.
+From mathcomp Require Import reals ereal.
 From mathcomp Require Import topology derive normedtype sequences
- exp measure lebesgue_measure lebesgue_integral hoelder.
+  exp measure lebesgue_measure lebesgue_integral hoelder.
 Require Import mathcomp_extra analysis_extra dl.
 
 (**md**************************************************************************)
@@ -48,8 +48,7 @@ HB.instance Definition _ (R : realType) x y z v :=
 Section dl2_lemmas.
 Local Open Scope dl_scope.
 Local Open Scope ring_scope.
-Context {R : realType}.
-Variable p : R.
+Context {R : realType} (p : R).
 
 Local Notation "[[ e ]]_dl2" := (@dl2_translation R _ e).
 
@@ -209,7 +208,7 @@ Lemma dl2_nary_inversion_mandE1 n (s : 'I_n -> expr boolT_dl2) :
   is_dl2 true ([[ dl_mand s ]]_dl2) -> (forall i, is_dl2 true ([[ s i ]]_dl2)).
 Proof.
 move: s; case: n => [s _|n s/=]; first by case.
-rewrite nsumr_eq0//=; last by move=> i _; exact/dl2_translation_le0.
+rewrite nsumr_eq0//=; first by move=> i _; exact/dl2_translation_le0.
 by move/allP => h i; exact/h/mem_index_enum.
 Qed.
 
@@ -238,13 +237,13 @@ Lemma dl2_translations_coincide t (e : @expr R t) n m j :
   [[ e ]]_dl2 ~= [[ e ]]_B.
 Proof.
 dependent induction e using expr_ind' => //=; move=> [|[|[|[|]]]]t0//.
-- rewrite (JMeq_eq (IHe1 n m j _)); last by right; right; right; left.
-  by rewrite (JMeq_eq (IHe2 n m j _)); last by right; left.
-- rewrite (JMeq_eq (IHe1 n m l _)); last by right; right; right; right.
-  rewrite (JMeq_eq (IHe2 n m l _)); last by right; left.
-  by rewrite (JMeq_eq (IHe3 m n l _)); last by right; left.
-- rewrite (JMeq_eq (IHe1 n m j _)); last by right; left.
-  by rewrite (JMeq_eq (IHe2 n m j _)); last by right; right; left.
+- rewrite (JMeq_eq (IHe1 n m j _)); first by right; right; right; left.
+  by rewrite (JMeq_eq (IHe2 n m j _)); first by right; left.
+- rewrite (JMeq_eq (IHe1 n m l _)); first by right; right; right; right.
+  rewrite (JMeq_eq (IHe2 n m l _)); first by right; left.
+  by rewrite (JMeq_eq (IHe3 m n l _)); first by right; left.
+- rewrite (JMeq_eq (IHe1 n m j _)); first by right; left.
+  by rewrite (JMeq_eq (IHe2 n m j _)); first by right; right; left.
 Qed.
 
 Lemma dl2_translations_Fun_coincide n m (e : expr (funT n m)) :
@@ -276,8 +275,7 @@ End dl2_lemmas.
 Section shadow_lifting_dl2_and.
 Local Open Scope ring_scope.
 Local Open Scope classical_set_scope.
-Context {R : realType}.
-Variable M : nat.
+Context {R : realType} (M : nat).
 Hypothesis M0 : M != 0%N.
 
 Definition dl2_and {n} (v : 'rV[R]_n) := (\sum_(i < n) v ``_ i)%R.
@@ -304,9 +302,9 @@ have /cvg_lim : h^-1 * (dl2_and (const_mx p + h *: err_vec i) -
       \sum_(x < M.+1) (const_mx p + h *: err_vec i) ``_ x -
       \sum_(x < M.+1) (const_mx (n:=M.+1) (m:=1) p) ``_ x = h.
     move=> h0; rewrite [X in X - _](bigD1 i)//= !mxE eqxx mulr1.
-    rewrite (eq_bigr (fun=> p)); last first.
+    rewrite (eq_bigr (fun=> p)).
       by move=> j ji; rewrite !mxE eq_sym (negbTE ji) mulr0 addr0.
-    rewrite [X in _ - X](eq_bigr (fun=> p)); last by move=> *; rewrite mxE.
+    rewrite [X in _ - X](eq_bigr (fun=> p)); first by move=> *; rewrite mxE.
     rewrite [X in _ - X](bigD1 i)//= (addrC p h) -addrA.
     by rewrite addrA -(addrA h) addrK.
   have : h^-1 * h @[h --> (0:R)^'] --> (1:R)%R.
