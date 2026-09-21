@@ -1,7 +1,7 @@
 From HB Require Import structures.
 Require Import Stdlib.Program.Equality.
-From mathcomp Require Import all_boot all_order all_algebra.
-From mathcomp Require Import lra.
+From mathcomp Require Import boot order algebra.
+From mathcomp Require Import arithmetic_tactic.
 From mathcomp Require Import all_classical.
 From mathcomp Require Import reals ereal.
 From mathcomp Require Import topology derive normedtype sequences
@@ -323,8 +323,7 @@ End product_dl_mul.
 Section fuzzy_translation.
 Local Open Scope ring_scope.
 Local Open Scope dl_scope.
-Context {R : realType}.
-Variables (l : DL) (p : R).
+Context {R : realType} (l : DL) (p : R).
 
 Fixpoint translation {t} (e : @expr R t) {struct e} : type_translation t :=
   match e in expr t return type_translation t with
@@ -478,8 +477,7 @@ Notation "[[ e ]]_dl2" := (dl2_translation e) : dl_scope.
 Section stl_ereal_translation.
 Local Open Scope ereal_scope.
 Local Open Scope dl_scope.
-Context {R : realType}.
-Variables (p : R) (nu : R).
+Context {R : realType} (p : R) (nu : R).
 Hypothesis p1 : (1 <= p)%R.
 Hypothesis nu0 : (0 < nu)%R.
 
@@ -566,8 +564,7 @@ End min_max_dev.
 Section stl_translation.
 Local Open Scope ring_scope.
 Local Open Scope dl_scope.
-Context {R : realType}.
-Variables (p : R) (nu : R).
+Context {R : realType} (p : R) (nu : R).
 Hypothesis p1 : 1 <= p.
 Hypothesis nu0 : 0 < nu.
 

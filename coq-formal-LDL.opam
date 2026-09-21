@@ -31,9 +31,8 @@ build: [make "-j%{jobs}%"]
 install: [make "install"]
 depends: [
   "coq" 
-  "rocq-mathcomp-ssreflect" {>= "2.5.0"}
-  "rocq-mathcomp-analysis" {>= "1.16.0"}
-  "coq-mathcomp-algebra-tactics" {>= "1.2.7"}
+  "rocq-mathcomp-ssreflect" {>= "2.6.0"}
+  "rocq-mathcomp-analysis" {>= "1.18.0"}
 ]
 
 tags: [
@@ -43,6 +42,4 @@ authors: [
   "Reynald Affeldt"
   "Alessandro Bruni"
   "Natalia Ślusarz"
-  "Kathrin Stark"
-  "Ekaterina Komendantskaya"
 ]

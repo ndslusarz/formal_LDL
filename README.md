@@ -37,7 +37,6 @@ in `stl_infty_seq_calc.v`.
 - Additional dependencies:
   - [MathComp](https://math-comp.github.io)
   - [MathComp Analysis](https://github.com/math-comp/analysis)
-  - [MathComp Algebra Tactics](https://github.com/math-comp/algebra-tactics)
 - Related publication(s):
   - [Taming Differentiable Logics with Coq Formalisation (arXiv)](https://arxiv.org/abs/2403.13700) 
   - [Taming Differentiable Logics with Coq Formalisation (LIPIcs)](https://doi.org/10.4230/LIPIcs.ITP.2024.4) 

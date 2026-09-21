@@ -1,9 +1,9 @@
 From HB Require Import structures.
 Require Import Stdlib.Program.Equality.
-From mathcomp Require Import all_boot all_order all_algebra perm.
-From mathcomp Require Import lra.
+From mathcomp Require Import boot order algebra perm.
+From mathcomp Require Import arithmetic_tactic interval_inference.
 From mathcomp Require Import all_classical.
-From mathcomp Require Import reals ereal interval_inference.
+From mathcomp Require Import reals ereal.
 From mathcomp Require Import topology derive normedtype sequences exp measure.
 From mathcomp Require Import lebesgue_measure lebesgue_integral hoelder realfun.
 Require Import mathcomp_extra analysis_extra dl.
@@ -39,7 +39,7 @@ have a_min_e : a_min = nu.-[[e]]_stl.
 have -> : a = 0 by rewrite /a a_min_e subrr ?mul0r.
 rewrite !addr0 !mulr0 expR0 !mulr1/= a_min_e.
 have -> : ((nu.-[[e]]_stl + nu.-[[e]]_stl) * (1 + 1)^-1) = nu.-[[e]]_stl.
-  by rewrite -mulr2n -mulr_natr -mulrA divff// mulr1.
+  by rewrite -(mulr2n (nu.-[[e]]_stl)) -mulr_natr -mulrA divff// mulr1.
 case: ifPn => // h1; case: ifPn => // h2.
 by apply/eqP; rewrite eq_le !leNgt h1 h2.
 Qed.
@@ -71,7 +71,7 @@ have a_max_e : a_max = nu.-[[e]]_stl.
 have -> : a = 0 by rewrite /a a_max_e subrr ?mul0r.
 rewrite !mulr0 expR0 !mulr1/= a_max_e.
 have -> : ((nu.-[[e]]_stl + nu.-[[e]]_stl) * (1 + 1)^-1) = nu.-[[e]]_stl.
-  by rewrite -mulr2n -mulr_natr -mulrA divff// mulr1.
+  by rewrite -(mulr2n (nu.-[[e]]_stl)) -mulr_natr -mulrA divff// mulr1.
 case: ifPn => // h1; case: ifPn => // h2.
 by apply/eqP; rewrite eq_le !leNgt h1 h2.
 Qed.
@@ -97,13 +97,13 @@ Lemma stl_translations_coincide t (e : @expr R t) n m j :
   nu.-[[ e ]]_stl ~= [[ e ]]_B.
 Proof.
 dependent induction e using expr_ind' => //=; move=> [|[|[|[|]]]]t0//.
-- rewrite (JMeq_eq (IHe1 n m j _)); last by right; right; right; left.
-  by rewrite (JMeq_eq (IHe2 n m j _)); last by right; left.
-- rewrite (JMeq_eq (IHe1 n m l _)); last by right; right; right; right.
-  rewrite (JMeq_eq (IHe2 n m l _)); last by right; left.
-  by rewrite (JMeq_eq (IHe3 m n l _)); last by right; left.
-- rewrite (JMeq_eq (IHe1 n m j _)); last by right; left.
-  by rewrite (JMeq_eq (IHe2 n m j _)); last by right; right; left.
+- rewrite (JMeq_eq (IHe1 n m j _)); first by right; right; right; left.
+  by rewrite (JMeq_eq (IHe2 n m j _)); first by right; left.
+- rewrite (JMeq_eq (IHe1 n m l _)); first by right; right; right; right.
+  rewrite (JMeq_eq (IHe2 n m l _)); first by right; left.
+  by rewrite (JMeq_eq (IHe3 m n l _)); first by right; left.
+- rewrite (JMeq_eq (IHe1 n m j _)); first by right; left.
+  by rewrite (JMeq_eq (IHe2 n m j _)); first by right; right; left.
 Qed.
 
 Lemma stl_translations_Fun_coincide n m (e : expr (funT n m)) :
@@ -141,7 +141,7 @@ move: Es; case: n => [Es _|n Es]; first by case.
 rewrite /is_stl /= /stl_and /stl_and_gt0 /stl_and_lt0 /min_dev.
 set a_min := \big[minr/nu.-[[Es ord0]]_stl]_(i < n.+1) nu.-[[Es i]]_stl.
 case: ifPn=>[hminlt0|].
-  rewrite pmulr_lge0; last first.
+  rewrite pmulr_lge0.
     by rewrite invr_gt0// sumr_gt0//; exists ord0; split; rewrite ?mem_index_enum// expR_gt0.
   rewrite leNgt sumr_lt0//=.
     by move => i _ _; rewrite -mulrA !nmulr_rle0 ?expR_ge0// (le_lt_trans _ hminlt0).
@@ -182,7 +182,7 @@ case: ifPn=> [hmaxgt0 _|].
   by exists x; exact/ltW.
 rewrite -leNgt => hmaxle0.
 case: ifPn => [hmaxlt0|].
-  rewrite leNgt nmulr_rlt0.
+  rewrite leNgt nmulr_rlt0; last first.
     by rewrite invr_gt0 sumr_gt0//; exists ord0; rewrite mem_index_enum expR_gt0.
   rewrite sumr_lt0//.
     by move=> i _ _; rewrite nmulr_rle0//= (le_lt_trans _ hmaxlt0)// le_bigmax.
@@ -335,14 +335,14 @@ have sum_top : (\sum_(a < n.+1) v a * expR (- p0 * min_dev a v)) @[p0 --> +oo] -
   (*top sum non-minimum elements*)
   have sum_top_rest :
       (\sum_(a < n.+1 | v a != min_val) v a * expR (- t * min_dev a v))%R @[t --> +oo] --> 0.
-    rewrite [X in _ --> X](_ : _ = \sum_(a < n.+1 | v a != min_val) 0); last by rewrite big1.
+    rewrite [X in _ --> X](_ : _ = \sum_(a < n.+1 | v a != min_val) 0); first by rewrite big1.
     apply/cvgrPdist_le => /= e e0.
     near=> t.
     rewrite big_seq_cond [X in _ - X]big_seq_cond.
     near: t; move: e e0; apply/cvgrPdist_le.
     apply: cvg_sum => a /andP [av amin].
     rewrite -(mulr0 (v a)).
-    apply: cvgM; first exact: cvg_cst.
+    apply: cvgM; first by [].
     under eq_fun do rewrite mulrC.
     apply: (@cvg_comp _ _ _ _ _ _ -oo).
       apply/gt0_cvgMrNy; first by rewrite min_dev_gt0 ?min_val_eq.
@@ -365,7 +365,7 @@ have sum_bot : (\sum_(a < n.+1) expR (- p0 * min_dev a v)) @[p0 --> +oo] -->
   (*top sum non-minimum elements*)
   have sum_bot_rest :
       (\sum_(a < n.+1 | v a != min_val) expR (- t * min_dev a v))%R @[t --> +oo] --> 0.
-    rewrite [X in _ --> X](_ : _ = \sum_(a < n.+1 | v a != min_val) 0); last by rewrite big1.
+    rewrite [X in _ --> X](_ : _ = \sum_(a < n.+1 | v a != min_val) 0); first by rewrite big1.
     apply/cvgrPdist_le => /= e e0.
     near=> t.
     rewrite big_seq_cond [X in _ - X]big_seq_cond.
@@ -374,7 +374,7 @@ have sum_bot : (\sum_(a < n.+1) expR (- p0 * min_dev a v)) @[p0 --> +oo] -->
     under eq_fun do rewrite mulrC.
     apply: (@cvg_comp _ _ _ _ _ _ -oo).
       apply/gt0_cvgMrNy; first by rewrite min_dev_gt0 ?min_val_eq.
-      exact/cvgNrNy/cvg_id.
+      exact/cvgNrNy.
     exact/cvgNy_compNP/cvgr_expR.
   rewrite -[X in _ --> X]addr0.
   apply: cvgD; last exact sum_bot_rest.
@@ -429,7 +429,7 @@ have sum_top :
   have sum_top_rest :
       (\sum_(a < n.+1 | v a != min_val) \big[minr/v ord0]_(i < n.+1) v i * expR (min_dev a v)
        * expR (t * min_dev a v))%R @[t --> +oo] --> 0.
-    rewrite [X in _ --> X](_ : _ = \sum_(a < n.+1 | v a != min_val) 0); last by rewrite big1.
+    rewrite [X in _ --> X](_ : _ = \sum_(a < n.+1 | v a != min_val) 0); first by rewrite big1.
     apply/cvgrPdist_le => /= e e0.
     near=> t.
     near: t; move: e e0; apply/cvgrPdist_le.
@@ -439,7 +439,7 @@ have sum_top :
     near=> t.
     rewrite -mulrA -expRD.
     near: t; move: e e0; apply/cvgrPdist_le.
-    apply: cvgM => //; first exact: cvg_cst.
+    apply: cvgM => //.
     apply/(@cvg_comp _ _ _ _ _ _ -oo); last exact/cvgNy_compNP/cvgr_expR.
     apply/(@cvg_comp _ _ _ _ _ _ -oo); last exact/cvg_addrl_Ny.
     under eq_cvg do rewrite -(opprK (min_dev a v)) mulrN -mulNr.
@@ -448,9 +448,9 @@ have sum_top :
     exact/cvgNrNy.
   rewrite -(addr0 (min_val * (\sum_(a < n.+1 | v a == min_val) 1))).
   apply: cvgD; last exact sum_top_rest.
-  rewrite [X in _ --> X](_ : _ = (\sum_(i < n.+1 | v i == min_val) min_val));
-    last first.
-  - rewrite -(mulr1 min_val) {1}mulr1. rewrite -mulr_sumr.
+  rewrite [X in _ --> X](_ : _ = (\sum_(i < n.+1 | v i == min_val) min_val)).
+  - rewrite -(mulr1 min_val) {1}mulr1.
+    rewrite -mulr_sumr.
     by rewrite //; congr (_ * _); apply: eq_bigr => i _; rewrite natr1.
   - apply: cvg_sum => a /eqP amin.
     rewrite /min_dev amin subrr mul0r expR0 mulr1.
@@ -466,7 +466,7 @@ have sum_bot : (\sum_(a < n.+1) expR (p0 * min_dev a v)) @[p0 --> +oo] -->
   (*bot sum non-minimum elements*)
   have sum_bot_rest :
       (\sum_(a < n.+1 | v a != min_val)  expR (t * min_dev a v))%R @[t --> +oo] --> 0.
-    rewrite [X in _ --> X](_ : _ = \sum_(a < n.+1 | v a != min_val) 0); last by rewrite big1.
+    rewrite [X in _ --> X](_ : _ = \sum_(a < n.+1 | v a != min_val) 0); first by rewrite big1.
     apply/cvgrPdist_le => /= e e0.
     near=> t.
     rewrite big_seq_cond [X in _ - X]big_seq_cond.
@@ -555,9 +555,9 @@ Lemma mip_at_right (p h : R) i : 0 < h ->
 Proof.
 move=> h0/=.
 rewrite (bigminD1 i)// !mxE eqxx mulr1.
-rewrite (eq_bigr (fun=> p)); last first.
+rewrite (eq_bigr (fun=> p)).
   by move=> /= j ji; rewrite !mxE eq_sym (negbTE ji) mulr0 addr0.
-rewrite big_const/= iter_minr//; last 2 first.
+rewrite big_const/= iter_minr//.
 - by rewrite card_ordS.
 - by rewrite lerDl// mulr_ge0// ltW.
 by rewrite /minr ltNge lerDl (ltW h0).
@@ -569,9 +569,9 @@ Lemma mip_at_left (p h : R) i : h < 0 ->
 Proof.
 move=> h0 /=.
 rewrite (bigminD1 i)// !mxE eqxx mulr1.
-rewrite (eq_bigr (fun=> p)); last first.
+rewrite (eq_bigr (fun=> p)).
   by move=> /= j ji; rewrite !mxE eq_sym (negbTE ji) mulr0 addr0.
-rewrite big_const/= iter_minr'//; last 2 first.
+rewrite big_const/= iter_minr'//.
 - by rewrite card_ordS.
 - by rewrite gerDl// mulr_le0_ge0// ltW.
 rewrite /minr; case: ifPn => //.
@@ -586,9 +586,9 @@ Lemma mip'_at_right (p h : R) i : h > 0 ->
 Proof.
 move=> h0 /=.
 rewrite (bigminD1 i)// !mxE eqxx mulr1.
-rewrite (eq_bigr (fun=> p)); last first.
+rewrite (eq_bigr (fun=> p)).
   by move=> /= j ji; rewrite !mxE eq_sym (negbTE ji) mulr0 addr0.
-rewrite big_const/= iter_minr//; last 2 first.
+rewrite big_const/= iter_minr//.
 - by rewrite card_ordS.
 - by rewrite lerDl// mulr_ge0// ltW.
 by rewrite /minr ltNge lerDl (ltW h0).
@@ -600,9 +600,9 @@ Lemma mip'_at_left (p h : R) i : h < 0 ->
 Proof.
 move=> h0 /=.
 rewrite (bigminD1 i)// !mxE eqxx mulr1.
-rewrite (eq_bigr (fun=> p)); last first.
+rewrite (eq_bigr (fun=> p)).
   by move=> /= j ji; rewrite !mxE eq_sym (negbTE ji) mulr0 addr0.
-rewrite big_const/= iter_minr'//; last 2 first.
+rewrite big_const/= iter_minr'//.
 - by rewrite card_ordS.
 - by rewrite gerDl// mulr_le0_ge0// ltW.
 rewrite /minr; case: ifPn => //.
@@ -635,13 +635,13 @@ have H h : h > 0 ->
   congr (_ / _).
     rewrite (bigD1 i)//=.
     rewrite /fun_of_rV !mxE eqxx mulr1.
-    rewrite (_ : min_dev _ _ = h / p); last first.
+    rewrite (_ : min_dev _ _ = h / p).
       rewrite /min_dev !mip_at_right// !mxE eqxx/= mulr1.
       by rewrite -addrA addrCA subrr addr0.
-    rewrite (eq_bigr (fun=> p)); last first.
+    rewrite (eq_bigr (fun=> p)).
       move=> j /negbTE ji.
       rewrite !mxE eq_sym ji mulr0 addr0.
-      rewrite (_ : min_dev _ _ = 0); last first.
+      rewrite (_ : min_dev _ _ = 0).
         rewrite /min_dev mip'_at_right// !mxE eq_sym ji/=.
         by rewrite mulr0 addr0 subrr mul0r.
       by rewrite mulr0 expR0 mulr1.
@@ -654,7 +654,7 @@ have H h : h > 0 ->
   by rewrite addrAC subrr add0r addrC.
 apply/cvgrPdist_le => /= e e0; near=> t.
 rewrite H//= -[X in (_ / _ - X)](mul1r p).
-rewrite -[X in (_ / _ - X * _)](@divff _ (M.+1%:R + expR (- nu * (t / p)))); last first.
+rewrite -[X in (_ / _ - X * _)](@divff _ (M.+1%:R + expR (- nu * (t / p)))).
   by rewrite lt0r_neq0// addr_gt0// ?expR_gt0// ltr0n lt0n.
 rewrite (mulrAC _ (_^-1) p) -mulrBl.
 have -> : ((p * M.+1%:R) + ((p + t) * expR (- nu * (t / p)))) -
@@ -667,7 +667,7 @@ near: t; move: e e0; apply/cvgrPdist_le.
 apply: cvgM.
   by under eq_fun do rewrite mulrAC; exact: expR_cvg0.
 apply: cvgV; first by rewrite lt0r_neq0.
-rewrite -!natr1; apply: cvgD; first exact: cvg_cst.
+rewrite -!natr1; apply: cvgD; first by [].
 by under eq_fun do rewrite mulrAC; exact: expR_cvg0.
 Unshelve. all: end_near. Qed.
 
@@ -682,10 +682,10 @@ have H h : h < 0 -> (stl_and_gt0 (fun_of_rV _ (const_mx p + h *: err_vec i))) =
   move=> h0.
   rewrite /stl_and_gt0/= (bigD1 i)//=.
   congr (_ / _).
-    rewrite /fun_of_rV !mxE eqxx mulr1 (_ : min_dev _ _ = 0); last first.
+    rewrite /fun_of_rV !mxE eqxx mulr1 (_ : min_dev _ _ = 0).
       by rewrite /min_dev mip_at_left// !mxE eqxx/=; lra.
     rewrite mulr0 expR0 mulr1 addrC.
-    rewrite (eq_bigr (fun=> p * expR (- nu * (- h / (p + h))))); last first.
+    rewrite (eq_bigr (fun=> p * expR (- nu * (- h / (p + h))))).
       move=> j /negbTE ji.
       rewrite !mxE eq_sym ji mulr0 addr0.
       rewrite (_ : min_dev _ _ = - h / (p + h))//.
@@ -693,9 +693,9 @@ have H h : h < 0 -> (stl_and_gt0 (fun_of_rV _ (const_mx p + h *: err_vec i))) =
     rewrite big_const/= iter_addr addr0 card_ordS.
     by rewrite -[in LHS]mulr_natr mulrAC.
   rewrite /= (bigD1 i)//=.
-  rewrite (_ : min_dev _ _ = 0); last first.
+  rewrite (_ : min_dev _ _ = 0).
     by rewrite /min_dev /fun_of_rV mip_at_left// !mxE/= eqxx/=; lra.
-  rewrite (eq_bigr (fun=> (expR (- nu * (- h / (p + h)))))); last first.
+  rewrite (eq_bigr (fun=> (expR (- nu * (- h / (p + h)))))).
     move=> j /negbTE ji.
     rewrite /min_dev mip'_at_left//.
     by rewrite /fun_of_rV !mxE eq_sym ji/= mulr0 addr0 opprD addrA subrr sub0r.
@@ -705,7 +705,7 @@ apply/cvgrPdist_le => /= e e0; near=> t.
 rewrite H//=.
 rewrite /= stl_and_gt0_const.
 rewrite -[X in (_ / _ - X)](mul1r p).
-rewrite -[X in (_ / _ - X * _)](@divff _ (M.+1%:R * expR (- nu * (- t / (p + t))) + 1)); last first.
+rewrite -[X in (_ / _ - X * _)](@divff _ (M.+1%:R * expR (- nu * (- t / (p + t))) + 1)).
   rewrite lt0r_neq0// addr_gt0// ?expR_gt0// mulr_gt0//.
   rewrite (mulrAC _ (_^-1) p) -mulrBl.
   have -> : ((p * M.+1%:R * expR (- nu * (- t / (p + t)))) + (p + t)) -
@@ -716,19 +716,18 @@ rewrite -[X in (_ / _ - X * _)](@divff _ (M.+1%:R * expR (- nu * (- t / (p + t))
   rewrite div1r.
   near: t; move: e e0; apply/cvgrPdist_le.
   apply: cvgV => //.
-  rewrite -[X in _ --> X]natr1; apply: cvgD; last exact: cvg_cst.
-  rewrite -[X in _ --> X]mulr1; apply: cvgM; first exact: cvg_cst.
+  rewrite -[X in _ --> X]natr1; apply: cvgD; last by [].
+  rewrite -[X in _ --> X]mulr1; apply: cvgM; first by [].
   rewrite -expR0; apply: continuous_cvg; first exact: continuous_expR.
   rewrite -[X in _ --> X](mulr0 (- nu)).
-  apply: cvgM; first exact: cvg_cst.
-  rewrite [X in _ --> X](_ : _ = (- 0) * p^-1); last by rewrite oppr0 mul0r.
+  apply: cvgM; first by [].
+  rewrite [X in _ --> X](_ : _ = (- 0) * p^-1); first by rewrite oppr0 mul0r.
   apply: cvgM.
-    apply: cvgN.
-    by apply: cvg_at_left_filter; exact: cvg_id.
+    by apply: cvgN; exact: cvg_at_left_filter.
   apply: cvgV => //.
   rewrite -[X in _ --> X]addr0.
-  apply: cvgD; first exact: cvg_cst.
-  by apply: cvg_at_left_filter; exact: cvg_id.
+  apply: cvgD; first by [].
+  exact: cvg_at_left_filter.
 Unshelve. all: end_near. Qed.
 
 Lemma shadowlifting_stl_and_gt0_cvg (p : R) i : p != 0 ->
@@ -793,23 +792,23 @@ have Mp : derivable (fun z => M.+1%:R * (p + z)) x 1.
 rewrite -[X in is_derive _ _ _ X]subr0; apply: is_deriveB.
 apply: DeriveDef.
   by apply: derivableM; [exact: Mp|exact: derivable_DVexpR].
-rewrite deriveM; [|exact: Mp|exact: derivable_DVexpR].
-rewrite deriveM; [|exact: derivable_cst|exact: derivable_addr].
-rewrite derive_comp; [|exact: derivableVD|exact: derivable_expR].
-rewrite (_ : 'D_1 expR _ = expR (- x / (p + x))); last first.
+rewrite deriveM; [exact: Mp|exact: derivable_DVexpR|].
+rewrite deriveM; [exact: derivable_cst|exact: derivable_addr|].
+rewrite derive_comp; [exact: derivableVD|exact: derivable_expR|].
+rewrite (_ : 'D_1 expR _ = expR (- x / (p + x))).
   by rewrite -[in RHS]derive_expR.
-rewrite deriveD; [| exact: derivable_cst|exact: derivable_id].
+rewrite deriveD; [exact: derivable_cst|exact: derivable_id|].
 rewrite derive_cst add0r.
 rewrite derive_id [M.+1%:R%:A]scaler1.
 rewrite derive_cst scaler0 addr0.
-rewrite deriveM/=; [|exact: derivable_subr|exact: derivableDV].
-rewrite deriveV; [|exact: px_neq0|exact: derivable_addr].
-rewrite deriveD; [|exact: derivable_cst|exact: derivable_id].
+rewrite deriveM/=; [exact: derivable_subr|exact: derivableDV|].
+rewrite deriveV; [exact: px_neq0|exact: derivable_addr|].
+rewrite deriveD; [exact: derivable_cst|exact: derivable_id|].
 rewrite derive_cst add0r.
 rewrite derive_id.
 set pxA := (X in - x *: X).
-rewrite (_ : pxA = (- (p + x) ^- 2))//; last by rewrite /pxA /GRing.scale/= mulr1.
-rewrite deriveN; last exact: derivable_id.
+rewrite (_ : pxA = (- (p + x) ^- 2))//; first by rewrite /pxA /GRing.scale/= mulr1.
+rewrite deriveN; first exact: derivable_id.
 rewrite derive_id scalerN1.
 rewrite [X in X + _ = _]scalerAl scalerCA -[LHS]mulrDr.
 rewrite [X in _ = X + _ + _]mulrC -!mulrA -2!mulrDr; congr *%R.
@@ -837,16 +836,16 @@ apply: DeriveDef.
   apply: derivableM; first exact: derivable_id.
   apply: derivableD; first exact: derivable_cst.
   by apply: derivableV; [by rewrite expR_eq0|exact: expnup].
-rewrite /den' deriveM; last 2 first.
+rewrite /den' deriveM.
   exact: derivable_id.
   apply: derivableD; first exact: derivable_cst.
   by apply: derivableV; [by rewrite expR_eq0|exact: expnup].
-rewrite deriveD; last 2 first.
+rewrite deriveD.
   exact: derivable_cst.
   by apply: derivableV; [by rewrite expR_eq0|exact: expnup].
 rewrite derive_cst add0r/=.
-rewrite deriveV/=; [|by rewrite expR_eq0|exact: expnup].
-rewrite derive_comp; last 2 first.
+rewrite deriveV/=; [by rewrite expR_eq0|exact: expnup|].
+rewrite derive_comp.
   under eq_fun.
     move=> z.
     rewrite -mulrA.
@@ -854,16 +853,16 @@ rewrite derive_comp; last 2 first.
   apply: (@derivableM _ _ (cst nu)); first exact: derivable_cst.
   exact: derivableVD.
   exact: derivable_expR.
-rewrite (_ : 'D_1 expR _ = expR (nu * - x / (p + x))); last first.
+rewrite (_ : 'D_1 expR _ = expR (nu * - x / (p + x))).
   by rewrite -[in RHS](@derive_expR R).
-rewrite deriveM; last 2 first.
+rewrite deriveM.
   by apply: derivableM; [exact: derivable_cst|exact: derivable_subr].
   exact: derivableDV.
-rewrite deriveV; [|exact: px_neq0|exact: derivable_addr].
-rewrite deriveM; [|exact: derivable_cst|exact: derivable_subr].
+rewrite deriveV; [exact: px_neq0|exact: derivable_addr|].
+rewrite deriveM; [exact: derivable_cst|exact: derivable_subr|].
 rewrite derive_cst scaler0 addr0.
-rewrite deriveN; last exact: derivable_id.
-rewrite deriveD; [|exact: derivable_cst|exact: derivable_id].
+rewrite deriveN; first exact: derivable_id.
+rewrite deriveD; [exact: derivable_cst|exact: derivable_id|].
 rewrite derive_id derive_cst add0r.
 rewrite scalerN1.
 rewrite [X in _ + X = _]/GRing.scale/= mulr1.
@@ -898,31 +897,31 @@ have H h : h > 0 ->
   rewrite /stl_and_lt0/=.
   congr (_ / _).
     rewrite (bigD1 i)//= /fun_of_rV.
-    rewrite (_ : min_dev _ _ = h / p); last first.
+    rewrite (_ : min_dev _ _ = h / p).
       by rewrite /min_dev mip_at_right// !mxE eqxx/=; lra.
     rewrite mip_at_right//.
-    rewrite (eq_bigr (fun=> p)); last first.
+    rewrite (eq_bigr (fun=> p)).
       move=> j /negbTE ji.
-      rewrite (_ : min_dev _ _ = 0); last first.
+      rewrite (_ : min_dev _ _ = 0).
         by rewrite /min_dev mip'_at_right// !mxE eq_sym ji mulr0 addr0 subrr mul0r.
       by rewrite mulr0 expR0 !mulr1.
     rewrite big_const/= iter_addr addr0 card_ordS addrC.
     by rewrite (mulrC M.+1%:R p) mulr_natr.
   rewrite (bigD1 i)//=.
-  rewrite (_ : min_dev _ _ = h / p); last first.
+  rewrite (_ : min_dev _ _ = h / p).
     by rewrite /min_dev mip_at_right// /fun_of_rV !mxE eqxx mulr1 addrAC subrr add0r.
   rewrite addrC; congr (_ + _).
-  rewrite (eq_bigr (fun=> 1)).
+  rewrite (eq_bigr (fun=> 1)); last first.
     by rewrite big_const/= card_ordS iter_addr addr0.
   move=> j /negbTE ji.
-  rewrite (_ : min_dev _ _ = 0); last first.
+  rewrite (_ : min_dev _ _ = 0).
     by rewrite /min_dev mip'_at_right// /fun_of_rV !mxE eq_sym ji mulr0 addr0 subrr mul0r.
   by rewrite mulr0 expR0.
 apply/cvgrPdist_le => /= eps eps0; near=> x.
 rewrite [X in normr (_ - X)](_ : _ =
     (M.+1%:R + expR (nu * (x / p)))^-1 *
     expR (nu * (x / p)) *
-    ((expR (x / p) - 1) / (x / p))); last first.
+    ((expR (x / p) - 1) / (x / p))).
   rewrite H//.
   set a := expR (x / p).
   set b := expR (nu * (x / p)).
@@ -930,33 +929,33 @@ rewrite [X in normr (_ - X)](_ : _ =
   congr (_ / _).
   rewrite -[X in _ - X](mulr1 p).
   rewrite -[X in _ - (_ * X)](@mulVf _ (M.+1%:R + b)).
-    rewrite mulrCA mulrC -mulrBr -!mulrA.
-    congr (_ * _).
-    rewrite -mulrC -mulrDr -mulrBr.
-    nra.
-  by rewrite gt_eqF// addr_gt0// ?ltr0n ?lt0n// expR_gt0.
+    by rewrite gt_eqF// addr_gt0// ?ltr0n ?lt0n// expR_gt0.
+  rewrite mulrCA mulrC -mulrBr -!mulrA.
+  congr (_ * _).
+  rewrite -mulrC -mulrDr -mulrBr.
+  nra.
 near: x; move: eps eps0; apply/cvgrPdist_le.
 rewrite -(mulr1 M.+2%:R^-1).
 rewrite -(mulr1 (M.+2%:R^-1 * 1)).
 apply: cvgM.
   apply: cvgM.
     apply: cvgV; first by [].
-    rewrite -(natr1 (M.+1)); apply: cvgD; first exact: cvg_cst.
+    rewrite -(natr1 (M.+1)); apply: cvgD; first by [].
     by under eq_fun do rewrite mulrCA mulrC; exact: expR_cvg0.
   by under eq_fun do rewrite mulrCA mulrC; exact: expR_cvg0.
 have MpV (x : R) : is_derive x 1 ( *%R^~ p^-1) p^-1.
-  rewrite [X in is_derive _ _ X _](_ : _ = p^-1 *: id); last first.
+  rewrite [X in is_derive _ _ X _](_ : _ = p^-1 *: id).
     by apply/funext => y /=; rewrite mulrC.
   rewrite [X in is_derive _ _ _ X](_ : _ = p^-1 *: (1:R))//.
-    exact: is_deriveZ.
-  by rewrite scaler1.
+    by rewrite scaler1.
+  exact: is_deriveZ.
 apply: (@lhopital_at_right R (fun x => expR (x / p) - 1)
     (fun x => p^-1 * expR (x / p)) (fun x => x / p) (fun=> p^-1) _ _ _ p0).
 - move=> x; rewrite in_itv/= => /andP[x0 xp].
   rewrite -[X in is_derive _ _ _ X]subr0; apply: is_deriveB => /=.
   by rewrite mulrC; exact: is_derive1_comp.
 - rewrite -[X in _ --> X](subrr 1).
-  apply: cvgB; last exact: cvg_cst.
+  apply: cvgB; last by [].
   by under eq_fun do rewrite mulrC; exact: expR_cvg0.
 - rewrite -[X in _ --> X](mul0r p^-1).
   by apply: cvgMr_tmp; exact: cvg_at_right_filter.
@@ -968,7 +967,7 @@ apply: (@lhopital_at_right R (fun x => expR (x / p) - 1)
     over.
   apply: continuous_cvg; first exact: continuous_expR.
   rewrite -[X in _ --> X](mul0r p^-1).
-  by apply: cvgM; [exact/cvg_at_right_filter|exact: cvg_cst].
+  by apply: cvgM; [exact/cvg_at_right_filter|].
 Unshelve. all: end_near. Qed.
 
 Lemma shadowlifting_stl_and_lt0_cvg_at_left (p : R) i : 0 < p ->
@@ -985,21 +984,21 @@ have H h : h < 0 ->
   move=> h0.
   rewrite /stl_and_lt0/= (bigD1 i)//=.
   congr (_ / _).
-    rewrite (_ : min_dev _ _ = 0); last first.
+    rewrite (_ : min_dev _ _ = 0).
       by rewrite /min_dev mip_at_left// /fun_of_rV !mxE eqxx/=; lra.
     rewrite mulr0 expR0 !mulr1 addrC.
     rewrite (eq_bigr (fun=> (p + h) * expR (- h / (p + h)) *
-                            expR (nu * (- h / (p + h))))); last first.
+                            expR (nu * (- h / (p + h))))).
       move=> j /negbTE ji.
-      rewrite (_ : min_dev _ _ = -h / (p + h)); last first.
+      rewrite (_ : min_dev _ _ = -h / (p + h)).
         by rewrite /min_dev mip'_at_left// /fun_of_rV !mxE/= eq_sym ji/=; lra.
       by rewrite mip'_at_left.
     rewrite big_const/= iter_addr addr0 card_ordS mip_at_left//.
     by rewrite -[in LHS]mulr_natl !mulrA (mulrC (M.+1%:R)) addrA.
   rewrite /= (bigD1 i)//=.
-  rewrite (_ : min_dev _ _ = 0); last first.
+  rewrite (_ : min_dev _ _ = 0).
     by rewrite /min_dev mip_at_left// /fun_of_rV !mxE eqxx/=; lra.
-  rewrite (eq_bigr (fun=> expR (nu * (- h / (p + h))))); last first.
+  rewrite (eq_bigr (fun=> expR (nu * (- h / (p + h))))).
     move=> j /negbTE ji.
     rewrite /min_dev mip'_at_left//.
     by rewrite /fun_of_rV !mxE eq_sym ji mulr0 addr0 opprD addrA subrr sub0r.
@@ -1014,15 +1013,15 @@ have ? : a x != 0 by rewrite ?gt_eqF ?expR_gt0.
 have ? : (M.+1%:R * a x) + 1 != 0.
   by rewrite gt_eqF// addr_gt0// mulr_gt0// ?expR_gt0// ltr0n// lt0n.
 rewrite [X in normr (_ - X)](_ : _ =
-    (a x * (M.+1%:R + (a x)^-1))^-1 + num x / den x); last first.
+    (a x * (M.+1%:R + (a x)^-1))^-1 + num x / den x).
   rewrite /= H// mulrA -/(b x) -/(a x).
   rewrite -[X in _ - X](mul1r p) -[X in _ - (X * p)](@mulfV _ (((M.+1%:R * a x) + 1)))//.
   rewrite -(mulrAC _ p) -mulrBl (mulrDl _ _ p) mul1r opprD !addrA.
   rewrite [X in _ * (X / _)](_ : _ =
-    (p + x) * M.+1%:R * b x * a x + x - M.+1%:R * a x * p); last first.
+    (p + x) * M.+1%:R * b x * a x + x - M.+1%:R * a x * p).
     by rewrite -!addrA !(addrC p) -!addrA (addrC (-p)) subrr addr0.
   rewrite (_ : _ / _ = a x * ((p + x) * M.+1%:R * b x + x * (a x)^-1 - M.+1%:R * p)
-                       / (a x * (M.+1%:R + (a x)^-1))); last first.
+                       / (a x * (M.+1%:R + (a x)^-1))).
     congr (_ / _); last by rewrite mulrDr mulfV// mulrC.
     rewrite !mulrDr (mulrC (a x) (_ / _)) -(mulrA x) (@mulVf _ (a x))// mulr1.
     by rewrite !mulrN {1}(mulrC (a x)) [in RHS](mulrC (a x)) -!mulrA (mulrC p).
@@ -1040,67 +1039,63 @@ have a01 : a x @[x --> nbhs 0^'-] --> (1:R).
   apply: cvgM; last first.
     apply: cvgV; first by rewrite gt_eqF.
     rewrite -{2}(addr0 p).
-    apply: cvgD; first exact: cvg_cst.
-    exact/cvg_at_left_filter/cvg_id.
+    apply: cvgD; first by [].
+    exact/cvg_at_left_filter.
   rewrite -{2}(mulr0 nu) -{2}oppr0.
-  apply: cvgM; first exact: cvg_cst.
-  by apply: cvgN; exact/cvg_at_left_filter/cvg_id.
+  apply: cvgM; first by [].
+  by apply: cvgN; exact/cvg_at_left_filter.
 rewrite -[X in _ --> X]addr0.
 apply: cvgD.
   apply: cvgV; first by [].
   rewrite -(mul1r M.+2%:R).
   apply: cvgM; first exact: a01.
   rewrite -(natr1 M.+1).
-  apply: cvgD; first exact: cvg_cst.
+  apply: cvgD; first by [].
   rewrite -invr1 /a.
   exact: cvgV.
 rewrite /num /den /a /b.
 have H1 : - x * nu / (x + p) ^+ 2 @[x --> 0] --> - 0 * nu / (0 + p) ^+ 2.
   apply: cvgM.
-    apply: cvgM.
-      by apply: cvgN; exact: cvg_id.
-     exact: cvg_cst.
+    apply: cvgM; last by [].
+    exact: cvgN.
   apply: continuous_cvg.
-    apply: continuousV; last exact: cvg_id.
+    apply: continuousV; last by [].
     by rewrite add0r sqrf_eq0 gt_eqF.
   rewrite expr2.
   under eq_fun do rewrite expr2.
-  apply: cvgM.
-    by apply: cvgD; [exact: cvg_id|exact: cvg_cst].
-  by apply: cvgD; [exact: cvg_id|exact: cvg_cst].
+  by apply: cvgM; exact: cvgD.
 have H2 : (*(expR (nu * (x / (x + p))) + M.+1%:R +
     expR (nu * (x / (x + p))) * x * (- x * nu / (x + p) ^+ 2 + nu / (x + p)))*) den' p x
     @[x --> (0:R)^'] --> ((1:R) + M.+1%:R).
   rewrite -[X in _ --> X]addr0.
   have H2 : nu * (x0 / (x0 + p)) @[x0 --> 0^'] --> 0.
     rewrite -[X in _ --> X](mulr0 nu).
-    apply: cvgM; first exact: cvg_cst.
+    apply: cvgM; first by [].
     rewrite -[X in _ --> X](mul0r p^-1).
-    apply: cvgM.
-      by apply/continuous_withinNx; exact: cvg_id.
+    apply: cvgM; first exact/continuous_withinNx.
     apply: cvgV; first by rewrite gt_eqF.
     rewrite -[X in _ --> X](add0r p).
-    by apply: cvgD; [exact/continuous_withinNx/cvg_id|exact: cvg_cst].
+    by apply: cvgD; [exact/continuous_withinNx|].
   apply: cvgD.
-    apply: cvgD; last exact: cvg_cst.
+    apply: cvgD; last by [].
     rewrite -[X in _ --> X]expR0.
     by apply: continuous_cvg; [exact: continuous_expR|exact: H2].
-  rewrite [X in _ --> X](_ : _ = 1 * 0 * (nu / p)); last first.
+  rewrite [X in _ --> X](_ : _ = 1 * 0 * (nu / p)).
     by rewrite mulr0 mul0r.
   apply: cvgM.
-    apply: cvgM; last exact/continuous_withinNx/cvg_id.
+    apply: cvgM; last exact/continuous_withinNx.
     rewrite -expR0.
     by apply: continuous_cvg; [exact: continuous_expR|exact: H2].
   rewrite -[X in _ --> X]add0r.
   apply: cvgD.
-    rewrite [X in _ --> X](_ : _ = (- 0) * nu / (0 + p) ^+ 2); last first.
+    rewrite [X in _ --> X](_ : _ = (- 0) * nu / (0 + p) ^+ 2).
       by rewrite oppr0 mul0r mul0r.
     by apply: cvg_within_filter; exact: H1.
-  apply: cvgM; first exact: cvg_cst.
+  apply: cvgM; first by [].
   apply: cvgV; first by rewrite gt_eqF.
   rewrite -[X in _ --> X](add0r p).
-  apply: cvgD; last exact: cvg_cst.
-  exact/continuous_withinNx/cvg_id.
+  apply: cvgD; last by [].
+  exact/continuous_withinNx.
 have M10 : 1 + M.+1%:R != 0 :> R by rewrite gt_eqF.
 have [e/= e0 ep] := @cvgr_neq0 _ _ _ _ (dnbhs_filter 0) _ _ H2 M10.
 near (0:R)^'+ => q.
@@ -1115,13 +1110,13 @@ apply: (@lhopital_at_left R _ (num' p) _ (den' p) (- q)).
   rewrite inE /ball/= sub0r normrN ltr0_norm// ltrNl//.
   by rewrite (lt_trans _ px)// ltrN2//.
 - rewrite -[X in _ --> X](subrr (M.+1%:R * p)).
-  apply: cvgB; last exact: cvg_cst.
+  apply: cvgB; last by [].
   under eq_fun do rewrite -mulrA.
   apply: cvgMl_tmp.
   rewrite -[X in _ --> X]mulr1.
   apply: cvgM.
     rewrite -[X in _ --> X]addr0.
-    apply: cvgD; first exact: cvg_cst.
+    apply: cvgD; first by [].
     exact: cvg_at_left_filter.
   rewrite -[X in _ --> X]expR0.
   apply: continuous_cvg; first exact: continuous_expR.
@@ -1131,12 +1126,10 @@ apply: (@lhopital_at_left R _ (num' p) _ (den' p) (- q)).
   apply: cvgV; first by rewrite gt_eqF.
   apply: cvg_at_left_filter.
   rewrite -[X in _ --> X]addr0.
-  by apply: cvgD; [exact: cvg_cst|exact: cvg_id].
+  exact: cvgD.
 - rewrite -[X in _ --> X](mul0r (M.+1%:R + 1^-1)).
-  apply: cvgM.
-    by apply: cvg_at_left_filter; exact: cvg_id.
-  apply: cvgD.
-    by apply: cvg_at_left_filter; exact: cvg_cst.
+  apply: cvgM; first exact: cvg_at_left_filter.
+  apply: cvgD; first exact: cvg_at_left_filter.
   exact: cvgV.
 - move=> x; rewrite in_itv/= => /andP[xp x0].
   rewrite /den'.
@@ -1147,22 +1140,22 @@ apply: (@lhopital_at_left R _ (num' p) _ (den' p) (- q)).
   have H3 : expR (nu * (x / (x + p))) @[x --> 0^'-] -->
             expR (nu * (0 / (0 + p))).
     apply: continuous_cvg; first exact: continuous_expR.
-    apply: cvgM; first exact: cvg_cst.
-    apply: cvgM. exact/cvg_at_left_filter/cvg_id.
+    apply: cvgM; first by [].
+    apply: cvgM. exact/cvg_at_left_filter.
     apply: cvgV; first by rewrite add0r gt_eqF.
-    by apply: cvgD; [exact/cvg_at_left_filter/cvg_id|exact: cvg_cst].
+    by apply: cvgD; [exact/cvg_at_left_filter|].
   apply: cvgM; last first.
     apply: cvgV.
       by rewrite /den' !(mul0r,mulr0,addr0) gt_eqF// addr_gt0// ?expR_gt0 ?ltr0n ?lt0n.
     apply: cvgD.
-      by apply: cvgD; [exact: H3|exact: cvg_cst].
+      by apply: cvgD; [exact: H3|].
     apply: cvgM.
-      by apply: cvgM; [exact: H3|exact/cvg_at_left_filter/cvg_id].
+      by apply: cvgM; [exact: H3|exact/cvg_at_left_filter].
     apply: cvgD.
       by apply: cvg_at_left_filter; exact: H1.
-    apply: cvgM; first exact: cvg_cst.
+    apply: cvgM; first by [].
     apply: cvgV; first by rewrite add0r gt_eqF.
-    by apply: cvgD; [exact/cvg_at_left_filter/cvg_id|exact: cvg_cst].
+    by apply: cvgD; [exact/cvg_at_left_filter|].
   rewrite /num'.
   pose c x := expR (nu * (x / (x + p))).
   rewrite -{2}(mulr0 (M.+1%:R * b 0 / (0 + p))).
@@ -1177,19 +1170,19 @@ apply: (@lhopital_at_left R _ (num' p) _ (den' p) (- q)).
     rewrite -/(b x) -/(c x).
     rewrite -addrA -mulrDl -mulrA.
     rewrite (mulrC x) mulrA -mulrDr.
-    rewrite -mulrA mulrDr mulrN mulfV; last by rewrite addrC px_neq0'.
+    rewrite -mulrA mulrDr mulrN mulfV; first by rewrite addrC px_neq0'.
     rewrite mulrDr mulrN1 addrCA (mulrC _ M.+1%:R) subrr addr0.
     rewrite mulrA (mulrC x) expr2 invfM.
     by rewrite !mulrA -(mulrA _ (x + p)) mulfV ?mulr1// addrC px_neq0'.
-  apply: cvgM; last first. exact/cvg_at_left_filter/cvg_id.
+  apply: cvgM; last first. exact/cvg_at_left_filter.
   apply: cvgM; last first.
     apply: cvgV; first by rewrite gt_eqF ?add0r.
-    by apply: cvgD; [exact/cvg_at_left_filter/cvg_id|exact: cvg_cst].
-  apply: cvgM; first exact: cvg_cst.
+    by apply: cvgD; [exact/cvg_at_left_filter|].
+  apply: cvgM; first by [].
   apply: continuous_cvg; first exact: continuous_expR.
-  apply: cvgM; first by apply: cvgN; exact/cvg_at_left_filter/cvg_id.
+  apply: cvgM; first by apply: cvgN; exact/cvg_at_left_filter.
   apply: cvgV; first by rewrite gt_eqF ?addr0.
-  by apply: cvgD; [exact: cvg_cst|exact/cvg_at_left_filter/cvg_id].
+  by apply: cvgD; [|exact/cvg_at_left_filter].
 Unshelve. all: end_near. Qed.
 
 Lemma shadowlifting_stl_and_lt0_cvg (p : R) i : p > 0 ->

@@ -1,9 +1,9 @@
 From HB Require Import structures.
 Require Import Stdlib.Program.Equality.
-From mathcomp Require Import all_boot all_order all_algebra.
-From mathcomp Require Import lra.
+From mathcomp Require Import boot order algebra interval_inference.
+From mathcomp Require Import arithmetic_tactic.
 From mathcomp Require Import all_classical reals.
-From mathcomp Require Import reals ereal interval_inference.
+From mathcomp Require Import reals ereal.
 From mathcomp Require Import topology derive normedtype sequences
  exp measure lebesgue_measure lebesgue_integral hoelder finmap multiset.
 Require Import mathcomp_extra analysis_extra dl fuzzy.
@@ -89,9 +89,8 @@ Definition mor_impl_dl (R : realType) :=
 Section hypersequent_lukasiewicz.
 Local Open Scope ring_scope.
 Local Open Scope dl_scope.
-Context {R : realType} {K : choiceType}.
+Context {R : realType} {K : choiceType} (p : R).
 Implicit Types s : seq K.
-Variable p : R.
 Hypothesis p1 : 1 <= p.
 Local Notation "[[ e ]]_ l" := (@translation R l p _ e).
 
@@ -929,9 +928,8 @@ End hypersequent_lukasiewicz.
 Section hypersequent_product.
 Local Open Scope ring_scope.
 Local Open Scope dl_scope.
-Context {R : realType} {K : choiceType}.
+Context {R : realType} {K : choiceType} (p : R).
 Implicit Types (s : seq K).
-Variable p : R.
 Hypothesis p1 : 1 <= p.
 Local Notation "[[ e ]]_ l" := (@translation R l p _ e).
 
@@ -1629,9 +1627,8 @@ End hypersequent_product.
 Section hypersequent_godel.
 Local Open Scope ring_scope.
 Local Open Scope dl_scope.
-Context {R : realType} {K : choiceType}.
+Context {R : realType} {K : choiceType} (p : R).
 Implicit Types (s : seq K).
-Variable p : R.
 Hypothesis p1 : 1 <= p.
 Local Notation "[[ e ]]_ l" := (@translation R l p _ e).
 
@@ -2048,11 +2045,12 @@ intros; rewrite//=. dependent induction H.
   + exists (A |- [:: a `=> b]); subst; first by rewrite mem_head.
     move: IH2.
     rewrite /= !big_cons !big_nil /=.
-    case: ifP.
+    case: ifPn.
     * have := translate_boolT_01 p1 Godel b.
-      by rewrite /maxr{1}/minr; case: ifPn; case: ifPn; try lra.
-    * have := big_minr_godel_le1 (tnth (in_tuple A)).
-      rewrite big_tnth /minr /maxr.
+      by rewrite /maxr {1}/minr; case: ifPn; case: ifPn; try lra.
+    * have : \big[minr/1]_(j <- A) [[j]]_Godel <= 1.
+        by rewrite big_tnth; exact: big_minr_godel_le1.
+      rewrite /maxr {2}/minr.
       by case: ifP; case: ifP; case: ifP; lra.
   + by exists q => //; rewrite !in_cons IH1 !orbT.
 - case IHseq_calc_godel1 => [q1].
@@ -2271,8 +2269,9 @@ intros; rewrite//=. dependent induction H.
     rewrite //= /minR/maxR !big_cons/=.
     rewrite //= /minR/maxR !big_cons ?big_nil/= in IH12 IH22.
     rewrite {1}/minr. case: ifPn; case: ifPn; intros; rewrite//=.
-    * have := translate_boolT_01 p1 Godel (dl_or (tnth (in_tuple B))).
-      by rewrite /=/maxR big_tnth; case/andP.
+    * rewrite big_tnth.
+      have := translate_boolT_01 p1 Godel (dl_or (tnth (in_tuple B))).
+      by rewrite /= {1}/maxR; case/andP.
     * have := big_minr_godel_le1 (tnth (in_tuple (A1 ++ A2))).
       by move: i; rewrite leNgt big_tnth => ->.
     * have hAA := translate_boolT_01 p1 Godel (dl_and (tnth (in_tuple (A1 ++ A2)))).
@@ -2281,8 +2280,9 @@ intros; rewrite//=. dependent induction H.
       have {hAA}-> : \big[minr/1]_(j <- A1 ++ A2) [[j]]_Godel = 0.
         apply/eqP; rewrite eq_le big_tnth leNgt n/=.
         by case/andP : hAA.
+      rewrite big_tnth.
       have := translate_boolT_01 p1 Godel (dl_or (tnth (in_tuple B))).
-      by rewrite /= /maxR big_tnth; case/andP.
+      by rewrite /= {1}/maxR; case/andP.
     * rewrite /maxr in IH12. move: IH12.
       have ha := translate_boolT_01 p1 Godel a.
       case: ifPn; intros; rewrite//=; first lra.
@@ -2300,9 +2300,9 @@ intros; rewrite//=. dependent induction H.
       rewrite//= /minR in hA2.
       case: ifPn; intros; rewrite//=.
       - rewrite H1 [leLHS]big_tnth hA1.
+        rewrite big_tnth.
         have := translate_boolT_01 p1 Godel (dl_or (tnth (in_tuple B))).
-        rewrite /= /maxR big_tnth.
-        rewrite big_tnth [leRHS]big_tnth in i.
+        rewrite /= {1}/maxR.
         by case/andP.
       - clear helper IH12 ha.
         rewrite big_tnth hA1 -ltNge big_tnth in n2.

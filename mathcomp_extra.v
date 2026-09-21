@@ -1,7 +1,6 @@
 Require Import Stdlib.Program.Equality.
-From mathcomp Require Import all_boot all_order all_algebra.
-From mathcomp Require Import lra.
-From mathcomp Require Import perm.
+From mathcomp Require Import boot order algebra perm.
+From mathcomp Require Import arithmetic_tactic.
 
 (**md**************************************************************************)
 (* # Additions to MathComp                                                    *)
@@ -75,7 +74,7 @@ have -> := @MatrixFormula.nth_seq_of_rV R _ 0 (const_mx p) (Ordinal kM).
 by rewrite mxE nth_nseq kM.
 Qed.
 
-(* TODO(rei): this notation breaks the display of ball predicates *)
+(* TODO: this notation breaks the display of ball predicates *)
 Notation "u '``_' i" := (u 0%R i) : ring_scope.
 
 Section alias_for_bigops.
@@ -165,15 +164,15 @@ elim => [s h|n ih s h]; first by rewrite big_ord0; split => // _; case.
 rewrite big_ord_recl.
 split.
   move/eqP.
-  rewrite prod1; last 2 first.
+  rewrite prod1.
   - by apply: h; rewrite in_cons eqxx.
   - by apply: prod01 => i; apply: h.
   move/andP => [/eqP e1] /eqP.
-  rewrite ih; last first.
+  have [] := ih (s \o lift ord0) _.
     by move=> i; apply: h.
-  move=> h' i0.
+  move=> + _ => /[apply] + i0.
   by case: (unliftP ord0 i0) => /= [j ->|->].
-by move=> h'; rewrite h' mul1r ih.
+by move=> h'; rewrite h' mul1r; exact/ih.
 Qed.
 
 Lemma prodrN1 {R : realDomainType} (T : eqType) (l : seq T) (f : T -> R) :
@@ -193,20 +192,20 @@ elim.
 - by rewrite big_nil.
 - move => a l0 h1 h2 .
   rewrite big_cons big_seq.
-  rewrite paddr_eq0; last 2 first.
+  rewrite paddr_eq0.
   + by apply: h2; rewrite mem_head.
   + by apply: sumr_ge0 => i il0; apply: h2; rewrite in_cons il0 orbT.
   split.
   + move/andP => [/eqP a0].
-    rewrite -big_seq h1 => h3 e.
-      by rewrite in_cons => /predU1P[->//|el0]; exact: h3.
-    by apply: h2; rewrite in_cons e orbT.
+    rewrite -big_seq => /h1 h3 e.
+    rewrite in_cons => /predU1P[->//|el0]; apply/h3 => // e0 e0l0.
+    by apply: h2; rewrite in_cons e0l0 orbT.
   + move=> h3.
     apply/andP; split.
       by apply/eqP; apply: h3; rewrite mem_head.
     rewrite psumr_eq0.
-      by apply/allP => x xl0; apply/implyP => _; apply/eqP; apply: h3; rewrite in_cons xl0 orbT.
-    by move=> i xl0; apply: h2; rewrite in_cons xl0 orbT.
+      by move=> i xl0; apply: h2; rewrite in_cons xl0 orbT.
+    by apply/allP => x xl0; apply/implyP => _; apply/eqP; apply: h3; rewrite in_cons xl0 orbT.
 Qed.
 
 Lemma maxr0_le {R : realDomainType} (x : R) : - maxr x 0 = 0 -> x <= 0.
@@ -493,29 +492,29 @@ rewrite inE => /predU1P[-> |a2l].
 by rewrite !big_cons ih.
 Qed.
 
-Lemma perm_eq_big_min {d} {R : orderType d}  (a1 a2 : R) (l1 l2 : seq R) :
+Lemma perm_eq_big_min {d} {R : orderType d} (a1 a2 : R) (l1 l2 : seq R) :
   perm_eq (a1 :: l1) (a2 :: l2) ->
   \big[Order.min/a1]_(i <- l1) i = \big[Order.min/a2]_(i <- l2) i.
 Proof.
 move=> pi.
 rewrite -big_min_def_cons (perm_big _ pi)/= (@big_min_def _ _ a1 a2).
-- by rewrite big_min_def_cons.
 - by rewrite -(perm_mem pi) inE eqxx.
 - by rewrite mem_head.
+- by rewrite big_min_def_cons.
 Qed.
 
-Lemma perm_eq_fun (n : nat) (pi : {perm 'I_n}) :
+Lemma perm_eq_fun n (pi : {perm 'I_n}) :
   perm_eq (index_enum 'I_n) [seq pi i | i <- index_enum 'I_n].
 Proof.
 apply/allP => i/=.
 rewrite mem_cat => /orP[ hi | hi ].
   rewrite !count_uniq_mem//.
-  - rewrite hi (_ : i \in map pi (index_enum 'I_n))//.
-    by apply/mapP; exists ((perm_inv pi) i); [ exact/mem_index_enum | rewrite permKV].
-  - by rewrite map_inj_uniq ?index_enum_uniq//; exact/perm_inj.
   - by rewrite index_enum_uniq.
+  - by rewrite map_inj_uniq ?index_enum_uniq//; exact/perm_inj.
+  - rewrite hi (_ : i \in map pi (index_enum 'I_n))//.
+    by apply/mapP; exists ((perm_inv pi) i); [exact/mem_index_enum|rewrite permKV].
 rewrite !count_uniq_mem.
-- by rewrite hi mem_index_enum.
-- by rewrite map_inj_uniq ?index_enum_uniq//; exact/perm_inj.
 - by rewrite index_enum_uniq.
+- by rewrite map_inj_uniq ?index_enum_uniq//; exact/perm_inj.
+- by rewrite hi mem_index_enum.
 Qed.

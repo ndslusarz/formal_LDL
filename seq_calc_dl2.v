@@ -1,9 +1,9 @@
 From HB Require Import structures.
 Require Import Stdlib.Program.Equality.
-From mathcomp Require Import all_boot all_order all_algebra.
-From mathcomp Require Import lra.
+From mathcomp Require Import boot order algebra interval_inference.
+From mathcomp Require Import arithmetic_tactic.
 From mathcomp Require Import all_classical.
-From mathcomp Require Import reals ereal interval_inference.
+From mathcomp Require Import reals ereal.
 From mathcomp Require Import topology derive normedtype sequences
  exp measure lebesgue_measure lebesgue_integral hoelder finmap multiset.
 Require Import mathcomp_extra analysis_extra dl dl2.
@@ -50,8 +50,7 @@ Implicit Type Q P S : hypersequent.
 Implicit Type A B C D X Y : seq formula.
 Implicit Type a b c : formula.
 
-Reserved Notation "Q |- P" (no associativity, at level 61).
-Notation "Q |- P" := (Q, P).
+Local Notation "Q |- P" := (Q, P).
 
 Inductive seq_calc_dl2 : hypersequent -> Prop :=
 | id_dl2 : forall Q a,

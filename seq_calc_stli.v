@@ -1,9 +1,9 @@
 From HB Require Import structures.
 Require Import Stdlib.Program.Equality.
-From mathcomp Require Import all_ssreflect all_algebra.
-From mathcomp Require Import lra.
+From mathcomp Require Import boot order algebra interval_inference.
+From mathcomp Require Import arithmetic_tactic.
 From mathcomp Require Import all_classical reals.
-From mathcomp Require Import reals ereal interval_inference.
+From mathcomp Require Import reals ereal.
 From mathcomp Require Import topology derive normedtype sequences
   exp measure lebesgue_measure lebesgue_integral hoelder finmap multiset.
 Require Import mathcomp_extra analysis_extra dl stl_infty.
@@ -25,6 +25,8 @@ Import numFieldTopology.Exports.
 (*                                                                            *)
 (******************************************************************************)
 
+Reserved Notation "Q |- P" (no associativity, at level 61).
+
 Section stl_hypersequent_calc.
 Local Open Scope ereal_scope.
 Local Open Scope dl_scope.
@@ -32,8 +34,7 @@ Context {R : realType} {K : choiceType}.
 Implicit Types s : seq K.
 Local Notation "[[ e ]]_stli" := (@stl_infty_translation R _ e).
 
-Reserved Notation "Q |- P" (no associativity, at level 61).
-Notation "Q |- P" := (Q, P).
+Local Notation "Q |- P" := (Q, P).
 (*entailment as pair (A, B) where A |- B*)
 
 Let formula := @expr R (boolT_def impl_def m_def l_def).
