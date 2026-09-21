@@ -34,7 +34,7 @@ in {
 
   ## select an entry to build in the following `bundles` set
   ## defaults to "default"
-  default-bundle = "9.1";
+  default-bundle = "9.2";
 
   ## write one `bundles.name` attribute set per
   ## alternative configuration
@@ -46,7 +46,17 @@ in {
     rocqPackages = common-bundle // {
       rocq-core.override.version = "9.1";
       coq.override.version = "9.1";
-      mathcomp.override.version = "2.5.0";
+      mathcomp.override.version = "2.6.0";
+      mathcomp-finmap.override.version = "2.2.4";
+    };
+  };
+
+  bundles."9.2" = {
+    inherit push-branches;
+    rocqPackages = common-bundle // {
+      rocq-core.override.version = "9.2";
+      coq.override.version = "9.2";
+      mathcomp.override.version = "2.6.0";
     };
   };
 

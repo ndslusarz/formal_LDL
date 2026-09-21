@@ -5,7 +5,7 @@
 ## https://nixos.org/manual/nixpkgs/stable/#sec-language-coq
 
 { lib, mkCoqDerivation, coq
-  , mathcomp, mathcomp-analysis, mathcomp-algebra-tactics
+  , stdlib, mathcomp, mathcomp-analysis
   , version ? null }:
 
 with lib; mkCoqDerivation {
@@ -32,9 +32,9 @@ with lib; mkCoqDerivation {
   # release."1.0.0".sha256 = "";
 
   propagatedBuildInputs = [
+    stdlib
     mathcomp
     mathcomp-analysis
-    mathcomp-algebra-tactics
   ];
 
   meta = {
